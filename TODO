@@ -1,0 +1,90 @@
+Components		TODO
+
+align
+	pals
+			tests
+			docs
+		dp
+			tests
+			docs
+		filter
+			tests
+			docs
+alignment
+			tests
+			docs
+bigarray
+			tests
+bio
+			tests
+concurrent
+			tests
+feat
+			tests
+featgroup
+			implementation - various details
+			tests
+			docs
+future
+			tests
+graphics
+	color
+			tests
+			docs
+	kmercolor
+			tests
+			docs
+index
+	kmerindex
+			tests
+interval
+			implement GobDecode properly
+			tests
+			docs
+io
+	alignio
+			tests
+			docs
+	lexbytes
+			tests
+		fastareader
+			tests
+	lexstrings
+			tests
+	featio
+		bed
+			tests
+		gff
+			tests
+	seqio
+		fasta
+			tests
+		fastq
+			tests
+	treeio
+		newick
+			implement
+			tests
+matrix
+	sparse
+			tests
+			docs
+morass
+			tests
+			docs
+nmf
+			test
+			docs 
+pwm
+			tests
+			docs
+seq
+			tests
+			docs
+tree
+			complete implementation
+			tests
+			docs
+util
+			tests
+			docs
