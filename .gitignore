@@ -1,0 +1,6 @@
+*.[568]
+_obj
+bin/
+pkg/
+cmd/cmd
+*.swp
