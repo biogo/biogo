@@ -31,10 +31,10 @@ type Aligner struct {
 	minHitLength int
 	minId        float64
 	comp         bool
-	cores        int
+	threads      int
 }
 
-func NewAligner(a, b *seq.Seq, k, minLength int, minId float64, comp bool, cores int) *Aligner {
+func NewAligner(a, b *seq.Seq, k, minLength int, minId float64, comp bool, threads int) *Aligner {
 	return &Aligner{
 		a:            a,
 		b:            b,
@@ -42,7 +42,7 @@ func NewAligner(a, b *seq.Seq, k, minLength int, minId float64, comp bool, cores
 		minHitLength: minLength,
 		minId:        minId,
 		comp:         comp,
-		cores:        cores,
+		threads:      threads,
 	}
 }
 
@@ -58,10 +58,10 @@ func (self *Aligner) AlignTraps(trapezoids []*filter.Trapezoid) (segSols []DPHit
 
 	sort.Sort(&traps{trapezoids})
 
-	dp := make(chan *DP, self.cores)
+	dp := make(chan *DP, self.threads)
 	result := make(chan DPHit)
 
-	for i := 0; i < self.cores; i++ {
+	for i := 0; i < self.threads; i++ {
 		dp <- &DP{
 			a:       self.a,
 			b:       self.b,

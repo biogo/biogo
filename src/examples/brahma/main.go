@@ -114,14 +114,14 @@ func main() {
 	indexName := flag.String("index", "", "Filename for index cache.")
 	outName := flag.String("out", "", "Filename for output. Defaults to stdout.")
 	flag.Float64Var(&minOverlap, "overlap", 0.05, "Overlap between features.")
-	cores := flag.Int("cores", 2, "Number of cores to use.")
+	threads := flag.Int("threads", 2, "Number of threads to use.")
 	bufferLen := flag.Int("buffer", 1000, "Length of ouput buffer.")
 	help := flag.Bool("help", false, "Print this usage message.")
 
 	flag.Parse()
 
-	runtime.GOMAXPROCS(*cores)
-	fmt.Fprintf(os.Stderr, "Using %d cores.\n", runtime.GOMAXPROCS(0))
+	runtime.GOMAXPROCS(*threads)
+	fmt.Fprintf(os.Stderr, "Using %d threads.\n", runtime.GOMAXPROCS(0))
 
 	if *help || *sourceName == "" {
 		flag.Usage()
@@ -199,10 +199,10 @@ func main() {
 	processWg := &sync.WaitGroup{}
 	outputWg := &sync.WaitGroup{}
 
-	if *cores < 2 {
-		*cores = 2
+	if *threads < 2 {
+		*threads = 2
 	}
-	for i := 0; i < *cores-1; i++ {
+	for i := 0; i < *threads-1; i++ {
 		processWg.Add(1)
 		go processServer(intervalTree, process, buffer, processWg)
 	}

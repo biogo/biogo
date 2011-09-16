@@ -36,7 +36,7 @@ func main() {
 	limit := flag.Int("time", 10, "time limit for NMF.")
 	sf := flag.Float64("sf", 0.01, "factor for sparcity of estimating matrices for NMF.")
 	tol := flag.Float64("tol", 0.001, "tolerance for NMF.")
-	cores := flag.Int("cores", 2, "number of cores to use.")
+	threads := flag.Int("threads", 2, "number of threads to use.")
 	seed := flag.Int64("seed", -1, "seed for random number generator (-1 uses system clock).")
 	cpuprofile := flag.String("cpuprofile", "", "write cpu profile to this file.")
 	help := flag.Bool("help", false, "print this usage message.")
@@ -48,9 +48,9 @@ func main() {
 		os.Exit(1)
 	}
 
-	runtime.GOMAXPROCS(*cores)
-	sparse.MaxProcs = *cores
-	fmt.Fprintf(os.Stderr, "Using %d cores.\n", runtime.GOMAXPROCS(0))
+	runtime.GOMAXPROCS(*threads)
+	sparse.MaxProcs = *threads
+	fmt.Fprintf(os.Stderr, "Using %d threads.\n", runtime.GOMAXPROCS(0))
 	if *cpuprofile != "" {
 		if profile, e = os.Create(*cpuprofile); e != nil {
 			fmt.Fprintf(os.Stderr, "Error: %v.", e)

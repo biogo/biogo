@@ -72,7 +72,7 @@ func main() {
 	tmpChunk := flag.Int("chunk", 1<<20, "Chunk size for morass.")
 	tmpConcurrent := flag.Bool("tmpcon", false, "Process morass concurrently.")
 
-	cores := flag.Int("cores", 1, "Number of cores to use for alignment.")
+	threads := flag.Int("threads", 1, "Number of threads to use for alignment.")
 	maxMem := flag.Uint64("mem", 1<<32, "Maximum nominal memory.")
 
 	logToFile := flag.Bool("log", false, "Log to file.")
@@ -86,7 +86,7 @@ func main() {
 
 	flag.Parse()
 
-	runtime.GOMAXPROCS(*cores)
+	runtime.GOMAXPROCS(*threads)
 
 	if *cpuprofile != "" {
 		if profile, err = os.Create(*cpuprofile); err != nil {
@@ -191,7 +191,7 @@ func main() {
 				}
 
 				lifeline := make(chan bool)
-				if *cores > 1 {
+				if *threads > 1 {
 					go func() {
 						for {
 							fmt.Printf("Recording filter hits - %d recorded\r", filterMorass.Pos())
@@ -266,7 +266,7 @@ func main() {
 			} else {
 				workingQuery = query
 			}
-			aligner = dp.NewAligner(workingQuery, target, filterParams.WordSize, *minHitLen, *minId, comp, *cores)
+			aligner = dp.NewAligner(workingQuery, target, filterParams.WordSize, *minHitLen, *minId, comp, *threads)
 			hits := aligner.AlignTraps(trapezoids)
 			if hitCoverage, err = dp.SumDPLengths(hits); err != nil {
 				if debug {

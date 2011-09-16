@@ -30,23 +30,23 @@ type Processor struct {
 	*sync.WaitGroup
 }
 
-// Return a new Processor to operate the function f over the number of cores specified taking
-// input from queue and placing the result in buffer. Cores is limited by GOMAXPROCS, if cores is greater
-// GOMAXPROCS or less than 1 then cores is set to GOMAXPROCS.
-func NewProcessor(f Eval, cores int, queue chan interface{}, buffer chan Result) (p *Processor) {
-	if available := runtime.GOMAXPROCS(0); cores > available || cores < 1 {
-		cores = available
+// Return a new Processor to operate the function f over the number of threads specified taking
+// input from queue and placing the result in buffer. Cores is limited by GOMAXPROCS, if threads is greater
+// GOMAXPROCS or less than 1 then threads is set to GOMAXPROCS.
+func NewProcessor(f Eval, threads int, queue chan interface{}, buffer chan Result) (p *Processor) {
+	if available := runtime.GOMAXPROCS(0); threads > available || threads < 1 {
+		threads = available
 	}
 
 	p = &Processor{
 		in:        queue,
 		out:       buffer,
 		stop:      make(chan bool),
-		working:   make(chan bool, cores),
+		working:   make(chan bool, threads),
 		WaitGroup: &sync.WaitGroup{},
 	}
 
-	for i := 0; i < cores; i++ {
+	for i := 0; i < threads; i++ {
 		p.Add(1)
 		go func() {
 			p.working <- true

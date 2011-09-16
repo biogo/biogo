@@ -18,9 +18,9 @@ import (
 
 func main() {
 	var (
-		in           *fasta.Reader
+		in                *fasta.Reader
 		out, csv, profile *os.File
-		e            os.Error
+		e                 os.Error
 	)
 
 	inName := flag.String("in", "", "Filename for input to be factorised. Defaults to stdin.")
@@ -34,7 +34,7 @@ func main() {
 	hi := flag.Float64("hi", 0.9, "maximum proportion of kmer representation to use in NMF.")
 	sf := flag.Float64("sf", 0.01, "factor for sparcity of estimating matrices for NMF.")
 	tol := flag.Float64("tol", 0.001, "tolerance for NMF.")
-	cores := flag.Int("cores", 2, "number of cores to use.")
+	threads := flag.Int("threads", 2, "number of threads to use.")
 	seed := flag.Int64("seed", -1, "seed for random number generator (-1 uses system clock).")
 	cpuprofile := flag.String("cpuprofile", "", "write cpu profile to this file.")
 	help := flag.Bool("help", false, "print this usage message.")
@@ -46,9 +46,9 @@ func main() {
 		os.Exit(1)
 	}
 
-	runtime.GOMAXPROCS(*cores)
-	sparse.MaxProcs = *cores
-	fmt.Fprintf(os.Stderr, "Using %d cores.\n", runtime.GOMAXPROCS(0))
+	runtime.GOMAXPROCS(*threads)
+	sparse.MaxProcs = *threads
+	fmt.Fprintf(os.Stderr, "Using %d threads.\n", runtime.GOMAXPROCS(0))
 	if *cpuprofile != "" {
 		if profile, e = os.Create(*cpuprofile); e != nil {
 			fmt.Fprintf(os.Stderr, "Error: %v.", e)
@@ -238,7 +238,7 @@ func printFeature(out, csv *os.File, V, W, H *sparse.Sparse, motifs map[kmerinde
 		plist := make(WeightList, 0)
 		for j := 0; j < posCount; j++ {
 			plist = append(plist, Weight{weight: H.At(i, j), index: positionsTable[j]})
-			hipats[j] = append(hipats[j], Weight{weight: H.At(i,j), index: i})
+			hipats[j] = append(hipats[j], Weight{weight: H.At(i, j), index: i})
 		}
 
 		sort.Sort(&plist)
@@ -254,11 +254,11 @@ func printFeature(out, csv *os.File, V, W, H *sparse.Sparse, motifs map[kmerinde
 	}
 
 	fmt.Fprint(csv, "position\tfeature\tweight")
-	for j:=0; j<patternCount; j++ {
+	for j := 0; j < patternCount; j++ {
 		fmt.Fprintf(csv, "\t%d", j)
 	}
 	fmt.Fprintln(csv)
-	for i := 0; i<=maxPos; i++ {
+	for i := 0; i <= maxPos; i++ {
 		if pos, ok := positionsTable[i]; ok {
 			all := ""
 			for _, pat := range hipats[pos] {

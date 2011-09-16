@@ -30,13 +30,13 @@ import (
 )
 
 // Apply a function to an array slice using a Processor
-func Map(f Eval, slice []interface{}, cores, maxChunkSize int) (error os.Error) {
+func Map(f Eval, slice []interface{}, threads, maxChunkSize int) (error os.Error) {
 	queue := make(chan interface{}, 1)
 	buffer := make(chan Result)
-	p := NewProcessor(f, cores, queue, buffer)
+	p := NewProcessor(f, threads, queue, buffer)
 	defer p.Stop()
 
-	chunkSize := util.Min(int(math.Ceil(float64(len(slice))/float64(cores))), maxChunkSize)
+	chunkSize := util.Min(int(math.Ceil(float64(len(slice))/float64(threads))), maxChunkSize)
 
 	quit := make(chan bool)
 
@@ -65,11 +65,11 @@ func Map(f Eval, slice []interface{}, cores, maxChunkSize int) (error os.Error) 
 }
 
 // A future Map function - synchronisation is via a bio/future.Promise
-func SpawnMap(f Eval, slice []interface{}, cores, maxChunkSize int) *future.Promise {
+func SpawnMap(f Eval, slice []interface{}, threads, maxChunkSize int) *future.Promise {
 	promise := future.NewPromise(false, false, false)
 
 	go func() {
-		e := Map(f, slice, cores, maxChunkSize)
+		e := Map(f, slice, threads, maxChunkSize)
 		if e == nil {
 			promise.Fulfill(slice)
 		} else {
