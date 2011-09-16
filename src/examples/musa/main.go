@@ -1,3 +1,4 @@
+//give some idea about patterns reported by ganesh - not rigorous
 package main
 
 import (
@@ -18,7 +19,7 @@ type Weight struct {
 func main() {
 	var in *bufio.Reader
 
-	inName := flag.String("in", "", "Filename for input to be annotated. Defaults to stdin.")
+	inName := flag.String("in", "", "Filename for input to be analysed. Defaults to stdin.")
 	filterString := flag.String("f", "", "Comma separated list of categories to filter on.")
 	closest := flag.Bool("relax", false, "Find the longest near match.")
 	help := flag.Bool("help", false, "Print this usage message.")

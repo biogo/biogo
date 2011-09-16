@@ -23,7 +23,7 @@ func main() {
 		e            os.Error
 	)
 
-	inName := flag.String("in", "", "Filename for input to be annotated. Defaults to stdin.")
+	inName := flag.String("in", "", "Filename for input to be factorised. Defaults to stdin.")
 	outName := flag.String("out", "", "Filename for output. Defaults to stdout.")
 	k := flag.Int("k", 8, "kmer size to use.")
 	cat := flag.Int("cat", 5, "number of categories.")
