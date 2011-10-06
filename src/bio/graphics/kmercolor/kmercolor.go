@@ -73,7 +73,8 @@ type KmerRainbow struct {
 	BackGround *color.HSVAColor
 }
 
-func NewKmerRainbow(w, h int, index *kmerindex.Index, color *color.HSVAColor) *KmerRainbow { // should generalise the BG color
+func NewKmerRainbow(r image.Rectangle, index *kmerindex.Index, color *color.HSVAColor) *KmerRainbow { // should generalise the BG color
+	h := r.Dy()
 	kmers := make([]int, h)
 	kmask := util.Pow4(index.GetK())
 	kmaskf := float32(kmask)
@@ -84,7 +85,7 @@ func NewKmerRainbow(w, h int, index *kmerindex.Index, color *color.HSVAColor) *K
 	max := util.Max(kmers...)
 
 	return &KmerRainbow{
-		RGBA:       image.NewRGBA(w, h),
+		RGBA:       image.NewRGBA(r),
 		Index:      index,
 		Max:        max,
 		BackGround: color,
@@ -164,7 +165,7 @@ func NewCGR(index *kmerindex.Index, color *color.HSVAColor) *CGR { // should gen
 	k := uint(index.GetK())
 
 	return &CGR{
-		RGBA:       image.NewRGBA(1<<k, 1<<k),
+		RGBA:       image.NewRGBA(image.Rect(0, 0, 1<<k, 1<<k)),
 		Index:      index,
 		Max:        max,
 		BackGround: color,

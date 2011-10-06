@@ -8,6 +8,7 @@ import (
 	"bio/graphics/color"
 	"bio/graphics/kmercolor"
 	"bio/io/seqio/fasta"
+	"image"
 	"image/png"
 )
 
@@ -51,7 +52,7 @@ func main() {
 				os.Exit(0)
 			} else {
 				base := &color.HSVAColor{0, 1, 0, 1}
-				rainbow := kmercolor.NewKmerRainbow(sequence.Len() / *chunk, *height, index, base)
+				rainbow := kmercolor.NewKmerRainbow(image.Rect(0, 0, sequence.Len() / *chunk, *height), index, base)
 				for i := 0; (i+1)**chunk < sequence.Len(); i++ {
 					rainbow.Paint(kmercolor.V, i, *chunk, i, i+1)
 				}
