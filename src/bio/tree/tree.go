@@ -30,7 +30,6 @@ type Tree struct { // struct for saving associated metadata to avoid computation
 	matrixAltered bool
 }
 
-
 // Tree functions
 
 func New(name string) *Tree {
@@ -91,10 +90,10 @@ func (self *Tree) matrixFromTree() {
 	// assume the nodelist is OK - it isn't (ignore for the moment)
 
 	var nodes, leaf, internal NodeList
-	nodes.nodeList = self.nodes.nodeList.Copy()
+	copy(nodes.nodeList, self.nodes.nodeList)
 	sort.Sort(nodes)
 	for _, v := range self.nodes.nodeList {
-		if v.(*Node).children.Len() > 0 {
+		if v.children.Len() > 0 {
 			internal.nodeList = append(internal.nodeList, v)
 		} else {
 			leaf.nodeList = append(leaf.nodeList, v)
@@ -107,10 +106,10 @@ func (self *Tree) matrixFromTree() {
 	}
 
 	for i, node := range internal.nodeList {
-		decendents := node.(*Node).Leaves(false)
+		decendents := node.Leaves(false)
 		for j, d := range leaf.nodeList {
-			if decendents.nodeMap[d.(*Node).Name] {
-				result[i][j] = d.(*Node).length
+			if decendents.nodeMap[d.Name] {
+				result[i][j] = d.length
 			} else {
 				result[i][j] = float32(math.NaN())
 			}

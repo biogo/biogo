@@ -15,9 +15,6 @@ package tree
 //   You should have received a copy of the GNU General Public License
 //   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
-import (
-	"container/vector"
-)
 
 const (
 	PreOrder = iota
@@ -50,7 +47,7 @@ func (self *Node) AddNode(n *Node) {
 	n.tree = self.tree
 	self.tree.nodes.Push(n)
 	for _, c := range n.children.nodeList {
-		self.tree.nodes.Push(c.(*Node))
+		self.tree.nodes.Push(c)
 	}
 }
 
@@ -81,12 +78,10 @@ func (self *Node) PreOrder(includeSelf bool, c chan *Node, quit chan bool) {
 			this *Node
 		)
 
-		stack := vector.Vector{}
-		stack.Insert(0, self)
+		stack := []*Node{self}
 		for len(stack) > 0 {
 			i = len(stack) - 1
-			this = stack[i].(*Node)
-			stack = stack[:i]
+			this, stack = stack[i], stack[:i]
 			if this == self || includeSelf {
 				select {
 				case c <- this:
@@ -95,7 +90,7 @@ func (self *Node) PreOrder(includeSelf bool, c chan *Node, quit chan bool) {
 				}
 			}
 			if this.children.Len() > 0 {
-				stack.InsertVector(len(stack), &this.children.nodeList)
+				stack = append(stack, append(this.children.nodeList, stack...)...)
 			}
 		}
 	}()
@@ -112,15 +107,14 @@ func (self *Node) PostOrder(includeSelf bool, c chan *Node, quit chan bool) {
 			this, child *Node
 		)
 
-		childIndex := vector.IntVector{}
-		childIndex.Push(0)
+		childIndex := []int{0}
 		this = self
 		for {
 			index = childIndex[len(childIndex)-1]
 			if index < len(this.children.nodeList) {
-				child = this.children.nodeList[index].(*Node)
+				child = this.children.nodeList[index]
 				if len(child.children.nodeList) > 0 {
-					childIndex.Push(0)
+					childIndex = append(childIndex, 0)
 					this = child
 					index = 0
 				} else {
@@ -170,11 +164,10 @@ func (self *Node) PrePostOrder(includeSelf bool, c chan *Node, quit chan bool) {
 				i, index    int
 			)
 
-			childIndex := vector.IntVector{}
-			childIndex.Push(0)
+			childIndex := []int{0}
 			this = self
 			for {
-				index = childIndex.Last()
+				index = childIndex[len(childIndex)-1]
 				if index < 1 {
 					if this != self || includeSelf {
 						select {
@@ -184,10 +177,10 @@ func (self *Node) PrePostOrder(includeSelf bool, c chan *Node, quit chan bool) {
 						}
 					}
 				}
-				if index < this.children.nodeList.Len() {
-					child = this.children.nodeList[index].(*Node)
+				if index < len(this.children.nodeList) {
+					child = this.children.nodeList[index]
 					if len(child.children.nodeList) > 0 {
-						childIndex.Push(0)
+						childIndex = append(childIndex, 0)
 						this = child
 						index = 0
 					} else {
@@ -226,16 +219,14 @@ func (self *Node) LevelOrder(includeSelf bool, c chan *Node, quit chan bool) {
 		}()
 
 		var (
-			queue vector.Vector
-			this/*, child*/ *Node
-			child interface{} // until container vector removed this is necessary
+			this, child *Node
 		)
 
-		queue.Push(self)
+		queue := []*Node{self}
 
-		for queue.Len() > 0 {
-			this = queue[0].(*Node)
-			queue.Delete(0)
+		for len(queue) > 0 {
+			this = queue[0]
+			queue = append(queue[:0], queue[1:]...)
 			if this != self || includeSelf {
 				select {
 				case c <- this:
@@ -243,9 +234,9 @@ func (self *Node) LevelOrder(includeSelf bool, c chan *Node, quit chan bool) {
 					return
 				}
 			}
-			if this.children.nodeList.Len() > 0 {
+			if len(this.children.nodeList) > 0 {
 				for _, child = range this.children.nodeList {
-					queue.Push(child)
+					queue = append(queue, child)
 				}
 			}
 		}
@@ -313,14 +304,12 @@ func (self *Node) LeafIterator(includeSelf bool) (c chan *Node, quit chan bool) 
 				this *Node
 			)
 
-			stack := vector.Vector{}
-			stack.Push(self)
+			stack := []*Node{self}
 			for len(stack) > 0 {
 				i = len(stack) - 1
-				this = stack[i].(*Node)
-				stack = stack[:i]
+				this, stack = stack[i], stack[:i]
 				if len(this.children.nodeList) > 0 {
-					stack.InsertVector(len(stack), &this.children.nodeList)
+					stack = append(stack, append(this.children.nodeList, stack...)...)
 				} else {
 					select {
 					case c <- this:

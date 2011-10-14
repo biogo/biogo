@@ -15,39 +15,38 @@ package tree
 //   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 import (
-	"container/vector"
 	"os"
 )
 
 type NodeList struct {
-	nodeList vector.Vector
+	nodeList []*Node
 	nodeMap  map[string]bool // use number of children? instead of bool
 }
 
 func (self NodeList) Len() int {
-	return self.nodeList.Len()
+	return len(self.nodeList)
 }
 
 func (self NodeList) Less(i, j int) bool {
-	return self.nodeList[i].(*Node).Name < self.nodeList[j].(*Node).Name
+	return self.nodeList[i].Name < self.nodeList[j].Name
 }
 
 func (self NodeList) Swap(i, j int) {
-	ni := self.nodeList.At(i).(*Node).Name
-	nj := self.nodeList.At(j).(*Node).Name
+	ni := self.nodeList[i].Name
+	nj := self.nodeList[i].Name
 	self.nodeMap[ni], self.nodeMap[nj] = self.nodeMap[nj], self.nodeMap[ni]
-	self.nodeList.Swap(i, j)
+	self.nodeList[i], self.nodeList[j] = self.nodeList[j], self.nodeList[i]
 }
 
 func (self *NodeList) Pop() (n *Node) {
-	n = self.nodeList.Pop().(*Node)
+	n, self.nodeList = self.nodeList[len(self.nodeList)-1], self.nodeList[:len(self.nodeList)-1]
 	self.nodeMap[n.Name] = false, false
 	return
 }
 
 func (self *NodeList) Push(n *Node) (err os.Error) {
 	if _, present := self.nodeMap[n.Name]; !present {
-		self.nodeList.Push(n)
+		self.nodeList = append(self.nodeList, n)
 		self.nodeMap[n.Name] = true
 	} else {
 		err = os.NewError("Cannot push non-unique nodes onto NodeList")
@@ -57,8 +56,6 @@ func (self *NodeList) Push(n *Node) (err os.Error) {
 }
 
 func (self *NodeList) At(i int) (n *Node) {
-	n = self.nodeList.At(i).(*Node)
+	n = self.nodeList[i]
 	return
 }
-
-// Extend this so that can call vector.Vector provided function 
