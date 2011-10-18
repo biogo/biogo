@@ -39,9 +39,9 @@ func Factors(X, Wo, Ho *sparse.Sparse, tolerance float64, iterations int, limit 
 
 	gW := W.Dot(H.Dot(hT)).Sub(X.Dot(hT))
 	gH := wT.Dot(W).Dot(H).Sub(wT.Dot(X))
-	
+
 	gradient := gW.Stack(gH.T()).Norm(matrix.Fro)
-	toleranceW := math.Fmax(0.001, tolerance) * gradient
+	toleranceW := math.Max(0.001, tolerance) * gradient
 	toleranceH := toleranceW
 
 	wFilter := func(r, c int, v float64) bool {

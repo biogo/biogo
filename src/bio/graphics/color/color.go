@@ -15,8 +15,8 @@ package color
 //   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 import (
+	"image/color"
 	"math"
-	"image"
 )
 
 const maxUintF = float64(^uint32(0))
@@ -25,16 +25,16 @@ type HSVAColor struct {
 	H, S, V, A float32
 }
 
-func HSVA(c image.Color) HSVAColor {
+func HSVA(c color.Color) HSVAColor {
 	r, g, b, a := c.RGBA()
 	red := float64(r)
 	blue := float64(b)
 	green := float64(g)
 
-	max := math.Fmax(red, green)
-	max = math.Fmax(max, blue)
-	min := math.Fmin(red, green)
-	min = math.Fmin(min, blue)
+	max := math.Max(red, green)
+	max = math.Max(max, blue)
+	min := math.Min(red, green)
+	min = math.Min(min, blue)
 	chroma := max - min
 
 	var hue float64
@@ -42,7 +42,7 @@ func HSVA(c image.Color) HSVAColor {
 	case chroma == 0:
 		hue = math.NaN()
 	case max == red:
-		hue = math.Fmod((green-blue)/chroma, 6)
+		hue = math.Mod((green-blue)/chroma, 6)
 	case max == green:
 		hue = (blue-red)/chroma + 2
 	case max == blue:
@@ -51,7 +51,7 @@ func HSVA(c image.Color) HSVAColor {
 
 	hue *= 60
 
-	return HSVAColor{H: float32(hue), S: float32(chroma / max), V: float32(max), A: float32(float64(a)/maxUintF)}
+	return HSVAColor{H: float32(hue), S: float32(chroma / max), V: float32(max), A: float32(float64(a) / maxUintF)}
 }
 
 func (self *HSVAColor) RGBA() (r, g, b, a uint32) {
@@ -73,8 +73,8 @@ func (self *HSVAColor) RGBA() (r, g, b, a uint32) {
 	}
 
 	chroma := V * S
-	hue := math.Fmod(H, 360) / 60
-	x := chroma * (1 - math.Fabs(math.Fmod(hue, 2)-1))
+	hue := math.Mod(H, 360) / 60
+	x := chroma * (1 - math.Abs(math.Mod(hue, 2)-1))
 
 	switch math.Floor(hue) {
 	case 0:

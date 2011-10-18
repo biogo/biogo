@@ -213,7 +213,7 @@ func (self *Sparse) Det() (d float64) {
 func (self *Sparse) Min() (m float64) {
 	m = math.MaxFloat64
 	for _, col := range self.matrix {
-		m = math.Fmin(col.min(), m)
+		m = math.Min(col.min(), m)
 	}
 
 	return
@@ -223,7 +223,7 @@ func (self *Sparse) Min() (m float64) {
 func (self *Sparse) Max() (m float64) {
 	m = -math.MaxFloat64
 	for _, col := range self.matrix {
-		m = math.Fmax(col.max(), m)
+		m = math.Max(col.max(), m)
 	}
 
 	return
@@ -308,27 +308,27 @@ func (self *Sparse) Norm(ord int) (n float64) {
 	case 1:
 		sum := self.SumAxis(matrix.Cols)
 		for _, e := range sum.matrix[0] {
-			n = math.Fmax(math.Fabs(e.value), n)
+			n = math.Max(math.Abs(e.value), n)
 		}
 		return
 	case matrix.Inf:
 		sum := self.SumAxis(matrix.Rows)
 		for _, e := range sum.matrix[0] {
-			n = math.Fmax(math.Fabs(e.value), n)
+			n = math.Max(math.Abs(e.value), n)
 		}
 		return
 	case -1:
 		n = math.MaxFloat64
 		sum := self.SumAxis(matrix.Cols)
 		for _, e := range sum.matrix[0] {
-			n = math.Fmin(math.Fabs(e.value), n)
+			n = math.Min(math.Abs(e.value), n)
 		}
 		return
 	case -matrix.Inf:
 		n = math.MaxFloat64
 		sum := self.SumAxis(matrix.Rows)
 		for _, e := range sum.matrix[0] {
-			n = math.Fmin(math.Fabs(e.value), n)
+			n = math.Min(math.Abs(e.value), n)
 		}
 		return
 	case matrix.Fro:
@@ -410,7 +410,7 @@ func (self *Sparse) MaxAxis(cols bool) (m *Sparse) {
 					n = v
 				}
 			}
-			fmt.Println(i,n)
+			fmt.Println(i, n)
 			data = append(data, elem{i, n})
 		}
 		m.matrix[0] = make([]elem, len(data))
@@ -879,7 +879,7 @@ func (self *Sparse) CleanError(error float64) (m *Sparse) {
 	t := make(sparsecol, 0, len(self.matrix[0]))
 	for j, col := range self.matrix {
 		for _, e := range col {
-			if math.Fabs(e.value) > error {
+			if math.Abs(e.value) > error {
 				t = append(t, e)
 			}
 		}

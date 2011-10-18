@@ -297,12 +297,12 @@ func (c sparsecol) foldequal(a sparsecol) (equality bool) {
 func (c sparsecol) foldapprox(a sparsecol, error float64) (equality bool) {
 	if len(c) > 0 && len(a) > 0 && (c[len(c)-1].r < a[0].r || a[len(a)-1].r < c[0].r) {
 		for _, e := range a {
-			if math.Fabs(e.value) > error {
+			if math.Abs(e.value) > error {
 				return
 			}
 		}
 		for _, e := range c {
-			if math.Fabs(e.value) > error {
+			if math.Abs(e.value) > error {
 				return
 			}
 		}
@@ -313,20 +313,20 @@ func (c sparsecol) foldapprox(a sparsecol, error float64) (equality bool) {
 	for i < len(c) && j < len(a) {
 		switch {
 		case c[i].r < a[j].r:
-			if math.Fabs(c[i].value) > error {
+			if math.Abs(c[i].value) > error {
 				return
 			} else {
 				i++
 			}
 		case c[i].r == a[j].r:
-			if math.Fabs(c[i].value-a[j].value) > error {
+			if math.Abs(c[i].value-a[j].value) > error {
 				return
 			} else {
 				i++
 				j++
 			}
 		case c[i].r > a[j].r:
-			if math.Fabs(a[j].value) > error {
+			if math.Abs(a[j].value) > error {
 				return
 			} else {
 				j++
@@ -338,13 +338,13 @@ func (c sparsecol) foldapprox(a sparsecol, error float64) (equality bool) {
 	switch {
 	case i < len(c):
 		for _, e := range c[i:] {
-			if math.Fabs(e.value) > error {
+			if math.Abs(e.value) > error {
 				return
 			}
 		}
 	case j < len(a):
 		for _, e := range a[j:] {
-			if math.Fabs(e.value) > error {
+			if math.Abs(e.value) > error {
 				return
 			}
 		}
