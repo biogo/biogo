@@ -40,7 +40,7 @@ func (self NodeList) Swap(i, j int) {
 
 func (self *NodeList) Pop() (n *Node) {
 	n, self.nodeList = self.nodeList[len(self.nodeList)-1], self.nodeList[:len(self.nodeList)-1]
-	self.nodeMap[n.Name] = false, false
+	delete(self.nodeMap, n.Name)
 	return
 }
 
