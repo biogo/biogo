@@ -89,7 +89,7 @@ type StateFn func(*Lexer) (StateFn, Item)
 // Lexer holds the state of the scanner.
 type Lexer struct {
 	r       *bufio.Reader // the Reader being scanned.
-	Buffer  []int         // buffer to store tokens being built.
+	Buffer  []rune        // buffer to store tokens being built.
 	state   StateFn       // the next lexing function to enter.
 	line    int           // current line of the input.
 	pos     int           // current position in line of the input.
@@ -128,14 +128,14 @@ func (self *Lexer) Rewind(state StateFn) {
 }
 
 // Next returns the next rune in the input.
-func (self *Lexer) Next() (rune int, err os.Error) {
-	if rune, _, err = self.r.ReadRune(); err != nil {
+func (self *Lexer) Next() (char rune, err os.Error) {
+	if char, _, err = self.r.ReadRune(); err != nil {
 		return
 	}
 
-	self.Buffer = append(self.Buffer, rune)
+	self.Buffer = append(self.Buffer, char)
 
-	if rune == '\n' {
+	if char == '\n' {
 		self.line++
 		self.lastPos, self.pos = self.pos, 1
 	} else {
@@ -163,8 +163,8 @@ func (self *Lexer) Backup() (err os.Error) {
 }
 
 // Peek returns but does not consume the next rune in the input.
-func (self *Lexer) Peek() (rune int, err os.Error) {
-	if rune, err = self.Next(); err != nil {
+func (self *Lexer) Peek() (char rune, err os.Error) {
+	if char, err = self.Next(); err != nil {
 		return
 	}
 
@@ -253,18 +253,18 @@ func (self *Lexer) Errorf(format string, args ...interface{}) (StateFn, Item) {
 	return nil, Item{ItemError, fmt.Sprintf(format, args...)}
 }
 
-// IsSpace reports whether r is a space character.
-func IsSpace(r int) bool {
-	switch r {
+// IsSpace reports whether char is a space character.
+func IsSpace(char rune) bool {
+	switch char {
 	case ' ', '\t', '\n', '\r':
 		return true
 	}
 	return false
 }
 
-// IsAlphaNumeric reports whether r is an alphabetic, digit, or underscore.
-func IsAlphaNumeric(r int) bool {
-	return r == '_' || unicode.IsLetter(r) || unicode.IsDigit(r)
+// IsAlphaNumeric reports whether char is an alphabetic, digit, or underscore.
+func IsAlphaNumeric(char rune) bool {
+	return char == '_' || unicode.IsLetter(char) || unicode.IsDigit(char)
 }
 
 // ScanNumber scans a number: decimal, octal, hex, or float.  This

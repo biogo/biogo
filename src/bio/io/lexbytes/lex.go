@@ -265,7 +265,7 @@ func IsSpace(char byte) bool {
 
 // IsAlphaNumeric reports whether char is an alphabetic, digit, or underscore.
 func IsAlphaNumeric(char byte) bool {
-	return char == '_' || unicode.IsLetter(int(char)) || unicode.IsDigit(int(char))
+	return char == '_' || unicode.IsLetter(rune(char)) || unicode.IsDigit(rune(char))
 }
 
 // ScanNumber scans a number: decimal, octal, hex, or float.  This
