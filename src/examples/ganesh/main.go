@@ -104,7 +104,7 @@ func main() {
 		} else {
 			line = strings.TrimSpace(line)
 			if row := strings.Split(line, *sep); len(row) != len(colNames)+1 {
-				fmt.Fprintln(os.Stderr, "Table row mismatch at line %d.\n", count)
+				fmt.Fprintf(os.Stderr, "Table row mismatch at line %d.\n", count)
 				os.Exit(0)
 			} else {
 				rowData := make([]float64, len(row)-1)

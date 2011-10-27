@@ -52,7 +52,7 @@ func main() {
 		} else {
 			line = strings.TrimSpace(line)
 			if row := strings.Split(line, "\t"); len(row) != 3 {
-				fmt.Fprintln(os.Stderr, "Table corrupted at line %d.\n", count)
+				fmt.Fprintf(os.Stderr, "Table corrupted at line %d.\n", count)
 				os.Exit(0)
 			} else {
 				for i, part := range row[1:] {
