@@ -44,10 +44,10 @@ func (self *DP) alignRecursion(z *filter.Trapezoid) {
 		percent    float64
 	)
 
-	debug.Printf("A [%d,%d]x[%d,%d] %v\n", z.Bot, z.Top, z.Lft, z.Rgt, !self.comp)
-	mid = (z.Bot + z.Top) / 2
+	debug.Printf("A [%d,%d]x[%d,%d] %v\n", z.Bottom, z.Top, z.Left, z.Right, !self.comp)
+	mid = (z.Bottom + z.Top) / 2
 
-	self.traceForwardPath(mid, mid-z.Rgt, mid-z.Lft)
+	self.traceForwardPath(mid, mid-z.Right, mid-z.Left)
 	for x := 1; true; x++ {
 		self.traceReversePath(self.dp[forward].Bepos, self.dp[forward].Aepos, self.dp[forward].Aepos,
 			mid+MaxIGap, BlockCost+2*x*DiffCost)
@@ -63,7 +63,7 @@ func (self *DP) alignRecursion(z *filter.Trapezoid) {
 	ltrp := *z
 	htrp := *z
 	ltrp.Top = hit.Bbpos - MaxIGap
-	htrp.Bot = hit.Bepos + MaxIGap
+	htrp.Bottom = hit.Bepos + MaxIGap
 	debug.Println("-0")
 	if hit.Bepos-hit.Bbpos >= self.minLen && hit.Aepos-hit.Abpos >= self.minLen {
 		debug.Println("--1")
@@ -78,25 +78,25 @@ func (self *DP) alignRecursion(z *filter.Trapezoid) {
 			var ta, tb, ua, ub int
 			debug.Println("length", len(self.trapezoids))
 			for j, t := range self.trapezoids {
-				debug.Println("start", t.Top, t.Bot, t.Lft, t.Rgt)
-				if t.Bot >= hit.Bepos {
-					debug.Println("broke", t.Bot, hit.Bepos)
+				debug.Println("start", t.Top, t.Bottom, t.Left, t.Right)
+				if t.Bottom >= hit.Bepos {
+					debug.Println("broke", t.Bottom, hit.Bepos)
 					break
 				}
 
-				tb = t.Top - t.Bot + 1
-				ta = t.Rgt - t.Lft + 1
+				tb = t.Top - t.Bottom + 1
+				ta = t.Right - t.Left + 1
 
-				if t.Lft < hit.Ldiag {
+				if t.Left < hit.Ldiag {
 					ua = hit.Ldiag
 				} else {
-					ua = t.Lft
+					ua = t.Left
 				}
 
-				if t.Rgt > hit.Hdiag {
+				if t.Right > hit.Hdiag {
 					ub = hit.Hdiag
 				} else {
-					ub = t.Rgt
+					ub = t.Right
 				}
 
 				if ua > ub {
@@ -107,7 +107,7 @@ func (self *DP) alignRecursion(z *filter.Trapezoid) {
 				ua = ub - ua + 1
 
 				if t.Top > hit.Bepos {
-					ub = hit.Bepos - t.Bot + 1
+					ub = hit.Bepos - t.Bottom + 1
 				} else {
 					ub = tb
 				}
@@ -125,11 +125,11 @@ func (self *DP) alignRecursion(z *filter.Trapezoid) {
 		}
 	}
 
-	if ltrp.Top-ltrp.Bot > self.minLen && ltrp.Top < z.Top-MaxIGap {
+	if ltrp.Top-ltrp.Bottom > self.minLen && ltrp.Top < z.Top-MaxIGap {
 		self.alignRecursion(&ltrp)
 	}
 
-	if htrp.Top-htrp.Bot > self.minLen {
+	if htrp.Top-htrp.Bottom > self.minLen {
 		self.alignRecursion(&htrp)
 	}
 	debug.Printf("  Hit from (%d,%d) to (%d,%d) within [%d,%d] score %d %v\n",

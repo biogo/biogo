@@ -82,7 +82,7 @@ func (self *Aligner) AlignTraps(trapezoids []*filter.Trapezoid) (segSols []DPHit
 	wg := &sync.WaitGroup{}
 	for i, z := range trapezoids {
 		if !covered[i] {
-			if z.Top-z.Bot < self.k {
+			if z.Top-z.Bottom < self.k {
 				continue
 			}
 

@@ -24,7 +24,7 @@ func (self traps) Len() int {
 }
 
 func (self traps) Less(i, j int) bool {
-	return (*self.traps[i]).Bot < (*self.traps[j]).Bot
+	return (*self.traps[i]).Bottom < (*self.traps[j]).Bottom
 }
 
 func (self traps) Swap(i, j int) {
