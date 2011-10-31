@@ -174,21 +174,21 @@ func main() {
 	both := !*sameStrand
 	for _, comp := range [...]bool{false, true} {
 		if comp {
-			log.Println("Working on complementary strands.")
+			log.Println("Working on complementary strands")
 		} else {
-			log.Println("Working on self strand.")
+			log.Println("Working on self strand")
 		}
 		if both || !comp {
+			var workingQuery *seq.Seq
+			if comp {
+				workingQuery, _ = query.RevComp()
+			} else {
+				workingQuery = query
+			}
+
 			if filterMorass, err = morass.New("krishna_"+strconv.Itoa(pid), *tmpDir, *tmpChunk, *tmpConcurrent); err == nil {
-				var workingQuery *seq.Seq
 				log.Println("Filtering")
 				timer.Interval()
-
-				if comp {
-					workingQuery, _ = query.RevComp()
-				} else {
-					workingQuery = query
-				}
 
 				lifeline := make(chan bool)
 				if *threads > 1 {
@@ -224,7 +224,7 @@ func main() {
 
 			log.Println("Merging")
 			timer.Interval()
-			merger = filter.NewMerger(index, query, filterParams)
+			merger = filter.NewMerger(index, workingQuery, filterParams)
 			for {
 				if err = filterMorass.Pull(&hit); err != nil {
 					break
@@ -260,12 +260,7 @@ func main() {
 
 			log.Println("Aligning")
 			timer.Interval()
-			var workingQuery *seq.Seq
-			if comp {
-				workingQuery, _ = query.RevComp()
-			} else {
-				workingQuery = query
-			}
+
 			aligner = dp.NewAligner(workingQuery, target, filterParams.WordSize, *minHitLen, *minId, comp, *threads)
 			hits := aligner.AlignTraps(trapezoids)
 			if hitCoverage, err = dp.SumDPLengths(hits); err != nil {
