@@ -228,6 +228,5 @@ func (self *Filter) addHit(tubeIndex, QLo, QHi int) (e os.Error) {
 		QTo:       QHi + self.k,
 		DiagIndex: self.target.Len() - tubeIndex*self.tubeOffset,
 	}
-
 	return self.morass.Push(fh)
 }

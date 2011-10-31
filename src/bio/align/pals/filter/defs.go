@@ -14,8 +14,6 @@ package filter
 //   You should have received a copy of the GNU General Public License
 //   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
-import ()
-
 // Ukonnen's Lemma
 func MinWordsPerFilterHit(hitLength, wordLength, maxErrors int) int {
 	return hitLength + 1 - wordLength*(maxErrors+1)
@@ -29,12 +27,6 @@ var (
 	BlockCost  int     = DiffCost * MaxIGap
 	RMatchCost float64 = float64(DiffCost) + 1
 )
-
-type Trapezoid struct {
-	Next     *Trapezoid // Organized in a list linked on this field
-	Top, Bot int        // B (query) coords of top and bottom of trapzoidal zone
-	Lft, Rgt int        // Left and right diagonals of trapzoidal zone
-}
 
 type Params struct {
 	WordSize   int
