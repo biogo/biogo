@@ -25,8 +25,7 @@ import (
 
 func FeatureOf(contigs *seq.Seq, from, to int, comp bool) (feature *feat.Feature, err os.Error) {
 	if comp {
-		from = contigs.Len() - to
-		to = contigs.Len() - from
+		from, to = contigs.Len() - to, contigs.Len() - from
 	}
 	if from >= to {
 		return nil, bio.NewError(fmt.Sprintf("%s: from > to", contigs.ID), 0, nil)
@@ -88,11 +87,10 @@ func FeaturePairOf(target, query *seq.Seq, hit dp.DPHit, comp bool) (pair *Featu
 		strand int8
 	)
 
-	// +1 to positions to convert from 0-indexation used in slices to 1-indexation used by sequences and features
-	if t, err = FeatureOf(target, hit.Abpos+1, hit.Aepos+1, false); err != nil {
+	if t, err = FeatureOf(target, hit.Abpos, hit.Aepos, false); err != nil {
 		return
 	}
-	if q, err = FeatureOf(query, hit.Bbpos+1, hit.Bepos+1, comp); err != nil {
+	if q, err = FeatureOf(query, hit.Bbpos, hit.Bepos, comp); err != nil {
 		return
 	}
 

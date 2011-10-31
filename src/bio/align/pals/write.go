@@ -52,8 +52,7 @@ func (self *Writer) Write(pair *FeaturePair) (n int, err os.Error) {
 	t.Score = float64(pair.Score)
 	t.Strand = pair.Strand
 	t.Frame = -1
-	t.Attributes = []byte(fmt.Sprintf("Target %s %d %d; maxe %.2g", pair.A.ID, pair.A.Start, pair.A.End, pair.Error))
-
+	t.Attributes = []byte(fmt.Sprintf("Target %s %d %d; maxe %.2g", pair.A.ID, pair.A.Start+1, pair.A.End, pair.Error)) // +1 is kludge for absence of gffwriter
 	return self.w.Write(t)
 }
 
