@@ -16,7 +16,6 @@
 package filter
 
 import (
-	"os"
 	"bio"
 	"bio/seq"
 	"bio/index/kmerindex"
@@ -51,7 +50,7 @@ func New(index *kmerindex.Index, params Params) (f *Filter) {
 	return
 }
 
-func (self *Filter) Filter(query *seq.Seq, selfAlign, complement bool, morass *morass.Morass) (err os.Error) {
+func (self *Filter) Filter(query *seq.Seq, selfAlign, complement bool, morass *morass.Morass) (err error) {
 	self.selfAlign = selfAlign
 	self.complement = complement
 	self.morass = morass
@@ -125,7 +124,7 @@ func (self *Filter) Filter(query *seq.Seq, selfAlign, complement bool, morass *m
 }
 
 // Called when q=Qlen - 1 to flush any hits in each tube.
-func (self *Filter) tubeFlush(tubeIndex int) (e os.Error) {
+func (self *Filter) tubeFlush(tubeIndex int) (e error) {
 	tube := &self.tubes[tubeIndex%cap(self.tubes)]
 
 	if tube.Count < self.minKmersPerHit {
@@ -149,7 +148,7 @@ func (self *Filter) tubeIndex(d int) int {
 }
 
 // Found a common k-mer SeqT[t] and SeqQ[q].
-func (self *Filter) commonKmer(t, q int) (e os.Error) {
+func (self *Filter) commonKmer(t, q int) (e error) {
 	if self.selfAlign && ((self.complement && (q < self.target.Len()-t)) || (!self.complement && (q <= t))) {
 		return
 	}
@@ -174,7 +173,7 @@ func (self *Filter) commonKmer(t, q int) (e os.Error) {
 	return
 }
 
-func (self *Filter) hitTube(tubeIndex, q int) (e os.Error) {
+func (self *Filter) hitTube(tubeIndex, q int) (e error) {
 	tube := &self.tubes[tubeIndex%cap(self.tubes)]
 
 	if tube.Count == 0 {
@@ -205,7 +204,7 @@ func (self *Filter) hitTube(tubeIndex, q int) (e os.Error) {
 
 // Called when end of a tube is reached
 // A point in the tube -- the point with maximal q -- is (Tlen-1,q-1).
-func (self *Filter) tubeEnd(q int) (e os.Error) {
+func (self *Filter) tubeEnd(q int) (e error) {
 	diagIndex := self.diagIndex(self.target.Len()-1, q-1)
 	tubeIndex := self.tubeIndex(diagIndex)
 
@@ -222,7 +221,7 @@ func (self *Filter) tubeEnd(q int) (e os.Error) {
 	return
 }
 
-func (self *Filter) addHit(tubeIndex, QLo, QHi int) (e os.Error) {
+func (self *Filter) addHit(tubeIndex, QLo, QHi int) (e error) {
 	fh := FilterHit{
 		QFrom:     QLo,
 		QTo:       QHi + self.k,

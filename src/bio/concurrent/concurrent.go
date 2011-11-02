@@ -17,18 +17,16 @@
 //
 package concurrent
 
-import "os"
-
 // The Concurrent interface represents a processor that allows adding jobs and retrieving results
 type Concurrent interface {
 	Process(...interface{})
-	Result() (interface{}, os.Error)
+	Result() (interface{}, error)
 }
 
 // Function type that operates on data
-type Eval func(...interface{}) (interface{}, os.Error)
+type Eval func(...interface{}) (interface{}, error)
 
 type Result struct {
 	Value interface{}
-	Error os.Error
+	Error error
 }

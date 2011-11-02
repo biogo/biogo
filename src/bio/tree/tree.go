@@ -16,7 +16,7 @@
 package tree
 
 import (
-	"os"
+	"errors"
 	"math"
 	"sort"
 )
@@ -52,7 +52,7 @@ func (self *Tree) Root(root *Node) *Node {
 	return self.root
 }
 
-func (self *Tree) Matrix(matrix *Matrix) (m *Matrix, e os.Error) {
+func (self *Tree) Matrix(matrix *Matrix) (m *Matrix, e error) {
 	if matrix != nil {
 		self.matrix = matrix
 		self.matrixAltered = true
@@ -64,10 +64,10 @@ func (self *Tree) Matrix(matrix *Matrix) (m *Matrix, e os.Error) {
 	return self.matrix, e
 }
 
-func (self *Tree) Reconcile() os.Error {
+func (self *Tree) Reconcile() error {
 	switch {
 	case self.treeAltered && self.matrixAltered: // can't know what to do - this is bad
-		return os.NewError("Both tree and matrix altered: cannot reconcile")
+		return errors.New("Both tree and matrix altered: cannot reconcile")
 	case !self.treeAltered && self.matrixAltered: // matrix has been altered so update tree
 		self.matrixAltered = false
 		return self.treeFromMatrix()
@@ -81,7 +81,7 @@ func (self *Tree) Reconcile() os.Error {
 	panic("cannot reach")
 }
 
-func (self *Tree) treeFromMatrix() (err os.Error) {
+func (self *Tree) treeFromMatrix() (err error) {
 	// generate a tree from matrix
 	return
 }

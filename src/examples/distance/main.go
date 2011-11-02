@@ -11,7 +11,7 @@ import (
 func main() {
 	var (
 		in *fasta.Reader
-		e  os.Error
+		e  error
 	)
 
 	inName := flag.String("in", "", "Filename for input. Defaults to stdin.")
@@ -43,7 +43,7 @@ func main() {
 				os.Exit(0)
 			} else {
 				if baseLine, ok := index.NormalisedKmerFrequencies(); ok {
-					var err os.Error
+					var err error
 					for i := 0; (i+1)**chunk < sequence.Len(); i++ {
 						sub, _ := sequence.Trunc(i**chunk+1, (i+1)**chunk)
 						if index, err = kmerindex.New(*k, sub); err != nil {

@@ -42,7 +42,7 @@ func initLog(fileName string) {
 
 func main() {
 	var (
-		err          os.Error
+		err          error
 		filterParams *filter.Params
 		//		dpParams     *pals.Params
 		index          *kmerindex.Index
@@ -247,7 +247,7 @@ func main() {
 				merger.MergeFilterHit(&hit)
 			}
 
-			if err != nil && err != os.EOF {
+			if err != nil && err != io.EOF {
 				if debug {
 					log.SetFlags(log.LstdFlags | log.Lshortfile)
 				}

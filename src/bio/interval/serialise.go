@@ -17,7 +17,6 @@ package interval
 //   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 import (
-	"os"
 	"bytes"
 	"gob"
 	"bio"
@@ -25,7 +24,7 @@ import (
 
 const Version int = 1
 
-func (self *Interval) GobEncode() (b []byte, err os.Error) {
+func (self *Interval) GobEncode() (b []byte, err error) {
 	var branch []byte
 
 	buffer := bytes.NewBuffer(b)
@@ -66,7 +65,7 @@ func (self *Interval) GobEncode() (b []byte, err os.Error) {
 
 	return
 }
-func (self *Interval) GobDecode(b []byte) (err os.Error) {
+func (self *Interval) GobDecode(b []byte) (err error) {
 	var (
 		version int
 		branch  []byte

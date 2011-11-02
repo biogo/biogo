@@ -17,7 +17,7 @@ func main() {
 		in, min *fasta.Reader
 		align   *alignment.Alignment
 		out     *gff.Writer
-		e       os.Error
+		e       error
 	)
 
 	inName := flag.String("in", "", "Filename for input. Defaults to stdin.")

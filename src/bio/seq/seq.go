@@ -18,7 +18,6 @@
 package seq
 
 import (
-	"os"
 	"bio"
 	"bio/util"
 	"bio/featgroup"
@@ -85,7 +84,7 @@ func (self *Seq) MoltypeAsString() string {
 	return moltypesToString[self.Moltype]
 }
 
-func (self *Seq) Trunc(start, end int) (s *Seq, err os.Error) {
+func (self *Seq) Trunc(start, end int) (s *Seq, err error) {
 	var ts []byte
 
 	if start < self.Offset || end < self.Offset ||
@@ -136,7 +135,7 @@ func (self *Seq) Trunc(start, end int) (s *Seq, err os.Error) {
 	}, nil
 }
 
-func (self *Seq) RevComp() (s *Seq, err os.Error) {
+func (self *Seq) RevComp() (s *Seq, err error) {
 	rs := make([]byte, len(self.Seq))
 
 	if self.Moltype == bio.DNA || self.Moltype == bio.RNA {
@@ -190,7 +189,7 @@ func (self *Seq) Join(s *Seq, where int) {
 	}
 }
 
-func (self *Seq) Stitch(f *featgroup.FeatureGroup) (s *Seq, err os.Error) {
+func (self *Seq) Stitch(f *featgroup.FeatureGroup) (s *Seq, err error) {
 	t := interval.NewTree()
 	var i *interval.Interval
 

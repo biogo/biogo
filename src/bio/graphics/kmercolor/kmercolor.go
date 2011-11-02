@@ -15,7 +15,6 @@ package kmercolor
 //   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 import (
-	"os"
 	"image"
 	"bio/util"
 	"bio/index/kmerindex"
@@ -105,7 +104,7 @@ func (self *KmerRainbow) SubImage(r image.Rectangle) image.Image {
 	}
 }
 
-func (self *KmerRainbow) Paint(vary int, start, size, left, right int) (i *image.RGBA, err os.Error) {
+func (self *KmerRainbow) Paint(vary int, start, size, left, right int) (i *image.RGBA, err error) {
 	right = util.Min(right, self.Rect.Dx())
 	kmers := make([]uint32, self.RGBA.Rect.Dy())
 	kmask := util.Pow4(self.Index.GetK())
@@ -185,7 +184,7 @@ func (self *CGR) SubImage(r image.Rectangle) image.Image {
 	}
 }
 
-func (self *CGR) Paint(vary int, desch bool, start, size int) (i *image.RGBA, err os.Error) {
+func (self *CGR) Paint(vary int, desch bool, start, size int) (i *image.RGBA, err error) {
 	k := self.Index.GetK()
 
 	kmask := util.Pow4(k)

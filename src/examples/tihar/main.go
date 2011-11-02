@@ -20,7 +20,7 @@ func main() {
 	var (
 		in                *fasta.Reader
 		out, csv, profile *os.File
-		e                 os.Error
+		e                 error
 	)
 
 	inName := flag.String("in", "", "Filename for input to be factorised. Defaults to stdin.")

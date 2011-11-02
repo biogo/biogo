@@ -15,7 +15,6 @@ package concurrent
 //   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 import (
-	"os"
 	"runtime"
 	"sync"
 	"bio"
@@ -84,7 +83,7 @@ func (self *Processor) Process(value ...interface{}) {
 }
 
 // Get the result
-func (self *Processor) Result() (interface{}, os.Error) {
+func (self *Processor) Result() (interface{}, error) {
 	r := <-self.out
 	return r.Value, r.Error
 }

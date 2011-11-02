@@ -18,7 +18,6 @@
 package seq
 
 import (
-	"os"
 	"bio"
 	"math"
 )
@@ -53,7 +52,7 @@ func (self *Quality) End() int {
 	return self.Offset + len(self.Qual)
 }
 
-func (self *Quality) Trunc(start, end int) (q *Quality, err os.Error) {
+func (self *Quality) Trunc(start, end int) (q *Quality, err error) {
 	var ts []int8
 
 	if start < self.Offset || end < self.Offset || start > len(self.Qual)+self.Offset || end > len(self.Qual)+self.Offset {
@@ -106,7 +105,7 @@ func SolexaToSanger(q int8) int8 {
 
 // Return the quality as a Sanger quality string
 func (self *Quality) String() string {
-	qs := make([]byte,0, len(self.Qual))
+	qs := make([]byte, 0, len(self.Qual))
 	for _, q := range self.Qual {
 		if q <= 93 {
 			q += 33

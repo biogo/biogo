@@ -15,10 +15,6 @@
 //
 package matrix
 
-import (
-	"os"
-)
-
 const (
 	Cols = true
 	Rows = !Cols
@@ -38,8 +34,8 @@ type ApplyFunc func(r, c int, v float64) float64
 type Matrix interface {
 	Copy() Matrix
 	Dims() (int, int)
-	Set(r, c int, v float64) os.Error
-	At(r, c int) (float64, os.Error)
+	Set(r, c int, v float64) error
+	At(r, c int) (float64, error)
 	Norm() float64
 	T() Matrix
 	Det() float64

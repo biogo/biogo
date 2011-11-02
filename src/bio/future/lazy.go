@@ -38,7 +38,7 @@ func Lazily(f Eval, rc chan interface{}, init ...interface{}) func() interface{}
 		defer func() {
 			if r := recover(); r != nil {
 				if e, ok := r.(runtime.Error); ok {
-					if e.String() == "runtime error: send on closed channel" {
+					if e.Error() == "runtime error: send on closed channel" {
 						return
 					}
 				}

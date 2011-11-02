@@ -46,7 +46,7 @@ func NewReader(f io.ReadCloser) *Reader {
 }
 
 // Returns a new fasta format reader using a filename.
-func NewReaderName(name string) (r *Reader, err os.Error) {
+func NewReaderName(name string) (r *Reader, err error) {
 	var f *os.File
 	if f, err = os.Open(name); err != nil {
 		return
@@ -55,7 +55,7 @@ func NewReaderName(name string) (r *Reader, err os.Error) {
 }
 
 // Read a single sequence and return it or an error.
-func (self *Reader) Read() (sequence *seq.Seq, err os.Error) {
+func (self *Reader) Read() (sequence *seq.Seq, err error) {
 	var line, label, body []byte
 	label = self.last
 
@@ -89,7 +89,7 @@ READ:
 				err = nil
 				break
 			} else {
-				return nil, os.EOF
+				return nil, io.EOF
 			}
 		}
 	}
@@ -100,7 +100,7 @@ READ:
 }
 
 // Rewind the reader.
-func (self *Reader) Rewind() (err os.Error) {
+func (self *Reader) Rewind() (err error) {
 	if s, ok := self.f.(io.Seeker); ok {
 		self.last = nil
 		_, err = s.Seek(0, 0)
@@ -111,7 +111,7 @@ func (self *Reader) Rewind() (err os.Error) {
 }
 
 // Close the reader.
-func (self *Reader) Close() (err os.Error) {
+func (self *Reader) Close() (err error) {
 	return self.f.Close()
 }
 
@@ -137,7 +137,7 @@ func NewWriter(f io.WriteCloser, width int) *Writer {
 
 // Returns a new fasta format writer using a filename, truncating any existing file.
 // If appending is required use NewWriter and os.OpenFile.
-func NewWriterName(name string, width int) (w *Writer, err os.Error) {
+func NewWriterName(name string, width int) (w *Writer, err error) {
 	var f *os.File
 	if f, err = os.Create(name); err != nil {
 		return
@@ -146,7 +146,7 @@ func NewWriterName(name string, width int) (w *Writer, err os.Error) {
 }
 
 // Write a single sequence and return the number of bytes written and any error.
-func (self *Writer) Write(s *seq.Seq) (n int, err os.Error) {
+func (self *Writer) Write(s *seq.Seq) (n int, err error) {
 	var ln int
 	if n, err = self.w.WriteString(self.IDPrefix + string(s.ID) + "\n"); err == nil {
 		for i := 0; i*self.Width <= s.Len(); i++ {
@@ -163,7 +163,7 @@ func (self *Writer) Write(s *seq.Seq) (n int, err os.Error) {
 }
 
 // Close the writer, flushing any unwritten sequence.
-func (self *Writer) Close() (err os.Error) {
+func (self *Writer) Close() (err error) {
 	if err = self.w.Flush(); err != nil {
 		return
 	}

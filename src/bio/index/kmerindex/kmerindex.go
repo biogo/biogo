@@ -20,7 +20,6 @@
 package kmerindex
 
 import (
-	"os"
 	"fmt"
 	"math"
 	"bio"
@@ -61,7 +60,7 @@ func init() {
 }
 
 // Create a new Kmer Index with a word size k based on sequence
-func New(k int, sequence *seq.Seq) (i *Index, err os.Error) {
+func New(k int, sequence *seq.Seq) (i *Index, err error) {
 	switch {
 	case k > MaxKmerLen:
 		return nil, bio.NewError("k greater than MaxKmerLen", 0, []int{k, MaxKmerLen})
@@ -110,7 +109,7 @@ func (self *Index) Build() {
 }
 
 // Return an array of positions for the Kmer string kmertext
-func (self *Index) GetPositionsString(kmertext string) (positions []int, err os.Error) {
+func (self *Index) GetPositionsString(kmertext string) (positions []int, err error) {
 	switch {
 	case len(kmertext) != self.k:
 		return nil, bio.NewError("Sequence length does not match Kmer length", 0, fmt.Sprintf("%d:%s", self.k, kmertext))
@@ -127,7 +126,7 @@ func (self *Index) GetPositionsString(kmertext string) (positions []int, err os.
 }
 
 // Return an array of positions for the Kmer kmer
-func (self *Index) GetPositionsKmer(kmer Kmer) (positions []int, err os.Error) {
+func (self *Index) GetPositionsKmer(kmer Kmer) (positions []int, err error) {
 	if kmer > self.kMask {
 		return nil, bio.NewError("Kmer out of range", 0, []Kmer{kmer, self.kMask})
 	}
@@ -216,12 +215,12 @@ func (self *Index) KmerIndex() (map[Kmer][]int, bool) {
 // errors should be handled through a panic which will be recovered by ForEachKmerOf
 type Eval func(index *Index, j, kmer int)
 
-func (self *Index) ForEachKmerOf(s *seq.Seq, start, end int, f Eval) (err os.Error) {
+func (self *Index) ForEachKmerOf(s *seq.Seq, start, end int, f Eval) (err error) {
 	defer func() {
 		if !Debug {
 			if r := recover(); r != nil {
 				var ok bool
-				err, ok = r.(os.Error)
+				err, ok = r.(error)
 				if !ok {
 					err = bio.NewError(fmt.Sprintf("pkg: %v", r), 1, r)
 				}
@@ -294,7 +293,7 @@ func (self *Index) StringOf(kmer Kmer) string {
 func (self *Index) GCof(kmer Kmer) float32 {
 	gc := 0
 	for i := self.k - 1; i >= 0; i, kmer = i-1, kmer>>2 {
-		gc += int((kmer&1)^(kmer&2))
+		gc += int((kmer & 1) ^ (kmer & 2))
 	}
 
 	return float32(gc) / float32(self.k)
@@ -315,7 +314,7 @@ func StringOfLen(k int, kmer Kmer) string {
 func GCof(k int, kmer Kmer) float32 {
 	gc := 0
 	for i := k - 1; i >= 0; i, kmer = i-1, kmer>>2 {
-		gc += int((kmer&1)^(kmer&2))
+		gc += int((kmer & 1) ^ (kmer & 2))
 	}
 
 	return float32(gc) / float32(k)
@@ -340,7 +339,7 @@ func ComplementOfLen(k int, kmer Kmer) (c Kmer) {
 }
 
 // Convert a string of bases into a Kmer, returns an error if string length does not match word length
-func (self *Index) KmerOf(kmertext string) (kmer Kmer, err os.Error) {
+func (self *Index) KmerOf(kmertext string) (kmer Kmer, err error) {
 	if len(kmertext) != self.k {
 		return 0, bio.NewError("Sequence length does not match Kmer length", 0, fmt.Sprintf("%d:%s", self.k, kmertext))
 	}

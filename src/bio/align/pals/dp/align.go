@@ -15,7 +15,6 @@ package dp
 //   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 import (
-	"os"
 	"bio/seq"
 	"sort"
 	"sync"
@@ -156,7 +155,7 @@ func (self *Aligner) AlignTraps(trapezoids []*filter.Trapezoid) (segSols []DPHit
 	return segSols
 }
 
-func SumDPLengths(hits []DPHit) (sum int, e os.Error) {
+func SumDPLengths(hits []DPHit) (sum int, e error) {
 	for _, hit := range hits {
 		length := hit.Aepos - hit.Abpos
 		if length < 0 {

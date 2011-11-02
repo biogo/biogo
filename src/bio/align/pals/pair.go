@@ -15,7 +15,6 @@ package pals
 //   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 import (
-	"os"
 	"fmt"
 	"bio"
 	"bio/seq"
@@ -23,9 +22,9 @@ import (
 	"bio/align/pals/dp"
 )
 
-func FeatureOf(contigs *seq.Seq, from, to int, comp bool) (feature *feat.Feature, err os.Error) {
+func FeatureOf(contigs *seq.Seq, from, to int, comp bool) (feature *feat.Feature, err error) {
 	if comp {
-		from, to = contigs.Len() - to, contigs.Len() - from
+		from, to = contigs.Len()-to, contigs.Len()-from
 	}
 	if from >= to {
 		return nil, bio.NewError(fmt.Sprintf("%s: from > to", contigs.ID), 0, nil)
@@ -81,7 +80,7 @@ func FeatureOf(contigs *seq.Seq, from, to int, comp bool) (feature *feat.Feature
 	}, nil
 }
 
-func FeaturePairOf(target, query *seq.Seq, hit dp.DPHit, comp bool) (pair *FeaturePair, err os.Error) {
+func FeaturePairOf(target, query *seq.Seq, hit dp.DPHit, comp bool) (pair *FeaturePair, err error) {
 	var (
 		t, q   *feat.Feature
 		strand int8

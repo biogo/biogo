@@ -24,7 +24,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	var err os.Error
+	var err error
 
 	if in1, err = fasta.NewReaderName(*inName1); err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v.", err)

@@ -17,7 +17,7 @@ type Logger interface {
 	Fatalf(format string, v ...interface{})
 	Fatalln(v ...interface{})
 	Flags() int
-	Output(calldepth int, s string) os.Error
+	Output(calldepth int, s string) error
 	Panic(v ...interface{})
 	Panicf(format string, v ...interface{})
 	Panicln(v ...interface{})

@@ -105,7 +105,7 @@ func main() {
 		source    *gff.Reader
 		out       *gff.Writer
 		indexFile *os.File
-		e         os.Error
+		e         error
 		store     bool
 	)
 

@@ -28,7 +28,6 @@
 package bigarray
 
 import (
-	"os"
 	"fmt"
 	"runtime"
 	"bio/util"
@@ -84,11 +83,11 @@ func (self *BigI32Array) At(i int64) (v int32) {
 }
 
 // Return a BigArray slice from position start to position end.
-func (self *BigI32Array) Slice(start, end int64) (slice *BigI32Array, err os.Error) {
+func (self *BigI32Array) Slice(start, end int64) (slice *BigI32Array, err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			var ok bool
-			if err, ok = r.(os.Error); !ok {
+			if err, ok = r.(error); !ok {
 				caller := util.Name(1) // is this the right level? defer may screw with things
 				err = fmt.Errorf("%v.%v: %v", caller.Package, caller.Function, r)
 			}
@@ -112,11 +111,11 @@ func (self *BigI32Array) Slice(start, end int64) (slice *BigI32Array, err os.Err
 }
 
 // Append a BigArray to the current BigArray
-func (self *BigI32Array) Append(a *BigI32Array, err os.Error) {
+func (self *BigI32Array) Append(a *BigI32Array, err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			var ok bool
-			if err, ok = r.(os.Error); !ok {
+			if err, ok = r.(error); !ok {
 				caller := util.Name(1) // is this the right level? defer may screw with things
 				err = fmt.Errorf("%v.%v: %v", caller.Package, caller.Function, r)
 			}
@@ -148,11 +147,11 @@ func (self *BigI32Array) Append(a *BigI32Array, err os.Error) {
 // Alter the underlying geometry of the BigArray. loBits specifies the width of the addressing
 // of the low order-addressed slices. A smaller number decreases the average amount of wasted
 // space but will have an impact on slicing and appending speed.
-func (self *BigI32Array) Reshape(loBits byte, err os.Error) {
+func (self *BigI32Array) Reshape(loBits byte, err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			var ok bool
-			if err, ok = r.(os.Error); !ok {
+			if err, ok = r.(error); !ok {
 				caller := util.Name(1) // is this the right level? defer may screw with things
 				err = fmt.Errorf("%v.%v: %v", caller.Package, caller.Function, r)
 			}
@@ -172,11 +171,11 @@ func (self *BigI32Array) Reshape(loBits byte, err os.Error) {
 }
 
 // Return a Go native slice from a BigArray - must be no longer than MaxInt
-func (self *BigI32Array) NativeSlice(start, end int64) (slice []int32, err os.Error) {
+func (self *BigI32Array) NativeSlice(start, end int64) (slice []int32, err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			var ok bool
-			if err, ok = r.(os.Error); !ok {
+			if err, ok = r.(error); !ok {
 				caller := util.Name(1) // is this the right level? defer may screw with things
 				err = fmt.Errorf("%v.%v: %v", caller.Package, caller.Function, r)
 			}

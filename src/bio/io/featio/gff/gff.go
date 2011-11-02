@@ -72,7 +72,7 @@ func NewReader(f io.ReadCloser) *Reader {
 }
 
 // Returns a new GFF reader using a filename.
-func NewReaderName(name string) (r *Reader, err os.Error) {
+func NewReaderName(name string) (r *Reader, err error) {
 	var f *os.File
 	if f, err = os.Open(name); err != nil {
 		return
@@ -80,7 +80,7 @@ func NewReaderName(name string) (r *Reader, err os.Error) {
 	return NewReader(f), nil
 }
 
-func (self *Reader) commentMetaline(line []byte) (f *feat.Feature, err os.Error) {
+func (self *Reader) commentMetaline(line []byte) (f *feat.Feature, err error) {
 	// Load these into a slice in a MetaField of the Feature
 	fields := strings.Split(string(line), " ")
 	switch fields[0] {
@@ -143,7 +143,7 @@ func (self *Reader) commentMetaline(line []byte) (f *feat.Feature, err os.Error)
 	return
 }
 
-func (self *Reader) metaSequence(moltype, id string) (sequence *seq.Seq, err os.Error) {
+func (self *Reader) metaSequence(moltype, id string) (sequence *seq.Seq, err error) {
 	var line, body []byte
 
 	for {
@@ -176,7 +176,7 @@ func (self *Reader) metaSequence(moltype, id string) (sequence *seq.Seq, err os.
 }
 
 // Read a single feature or part and return it or an error.
-func (self *Reader) Read() (f *feat.Feature, err os.Error) {
+func (self *Reader) Read() (f *feat.Feature, err error) {
 	var (
 		line  []byte
 		elems [][]byte
@@ -254,7 +254,7 @@ func (self *Reader) Read() (f *feat.Feature, err os.Error) {
 }
 
 // Rewind the reader.
-func (self *Reader) Rewind() (err os.Error) {
+func (self *Reader) Rewind() (err error) {
 	if s, ok := self.f.(io.Seeker); ok {
 		_, err = s.Seek(0, 0)
 	} else {
@@ -264,7 +264,7 @@ func (self *Reader) Rewind() (err os.Error) {
 }
 
 // Close the reader.
-func (self *Reader) Close() (err os.Error) {
+func (self *Reader) Close() (err error) {
 	return self.f.Close()
 }
 
@@ -302,7 +302,7 @@ func NewWriter(f io.WriteCloser, v, width int, header bool) (w *Writer) {
 // Returns a new GFF format writer using a filename, truncating any existing file.
 // If appending is required use NewWriter and os.OpenFile.
 // When header is true, a version header will be written to the GFF.
-func NewWriterName(name string, v, width int, header bool) (w *Writer, err os.Error) {
+func NewWriterName(name string, v, width int, header bool) (w *Writer, err error) {
 	var f *os.File
 	if f, err = os.Create(name); err != nil {
 		return
@@ -311,7 +311,7 @@ func NewWriterName(name string, v, width int, header bool) (w *Writer, err os.Er
 }
 
 // Write a single feature and return the number of bytes written and any error.
-func (self *Writer) Write(f *feat.Feature) (n int, err os.Error) {
+func (self *Writer) Write(f *feat.Feature) (n int, err error) {
 	return self.w.WriteString(self.String(f) + "\n")
 }
 
@@ -348,7 +348,7 @@ func (self *Writer) String(f *feat.Feature) (line string) {
 }
 
 // Write meta data to a GFF file.
-func (self *Writer) WriteMetaData(d interface{}) (n int, err os.Error) {
+func (self *Writer) WriteMetaData(d interface{}) (n int, err error) {
 	switch t := d.(type) {
 	case []byte, string:
 		n, err = self.w.WriteString("##" + d.(string) + "\n")
@@ -371,14 +371,14 @@ func (self *Writer) WriteMetaData(d interface{}) (n int, err os.Error) {
 }
 
 // Write a comment line to a GFF file
-func (self *Writer) WriteComment(c string) (n int, err os.Error) {
+func (self *Writer) WriteComment(c string) (n int, err error) {
 	n, err = self.w.WriteString("# " + c + "\n")
 
 	return
 }
 
 // Close the writer, flushing any unwritten data.
-func (self *Writer) Close() (err os.Error) {
+func (self *Writer) Close() (err error) {
 	if err = self.w.Flush(); err != nil {
 		return
 	}

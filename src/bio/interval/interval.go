@@ -19,7 +19,6 @@
 package interval
 
 import (
-	"os"
 	"math"
 	"rand"
 	"bio"
@@ -85,7 +84,7 @@ type Interval struct {
 }
 
 // Create a new Interval.
-func New(chrom string, start, end, line int, meta interface{}) (*Interval, os.Error) {
+func New(chrom string, start, end, line int, meta interface{}) (*Interval, error) {
 	if end < start {
 		return nil, bio.NewError("Interval end < start", 0, []int{start, end})
 	}

@@ -17,7 +17,6 @@
 package lexstrings
 
 import (
-	"os"
 	"fmt"
 	"strings"
 	"unicode"
@@ -128,7 +127,7 @@ func (self *Lexer) Rewind(state StateFn) {
 }
 
 // Next returns the next rune in the input.
-func (self *Lexer) Next() (char rune, err os.Error) {
+func (self *Lexer) Next() (char rune, err error) {
 	if char, _, err = self.r.ReadRune(); err != nil {
 		return
 	}
@@ -147,7 +146,7 @@ func (self *Lexer) Next() (char rune, err os.Error) {
 }
 
 // Backup steps back one rune. Can only be called once per call of next.
-func (self *Lexer) Backup() (err os.Error) {
+func (self *Lexer) Backup() (err error) {
 	if err = self.r.UnreadRune(); err != nil {
 		return
 	}
@@ -163,7 +162,7 @@ func (self *Lexer) Backup() (err os.Error) {
 }
 
 // Peek returns but does not consume the next rune in the input.
-func (self *Lexer) Peek() (char rune, err os.Error) {
+func (self *Lexer) Peek() (char rune, err error) {
 	if char, err = self.Next(); err != nil {
 		return
 	}
@@ -186,7 +185,7 @@ func (self *Lexer) Ignore() {
 }
 
 // Accept consumes the next rune if it's from the valid set.
-func (self *Lexer) Accept(valid string) (ok bool, err os.Error) {
+func (self *Lexer) Accept(valid string) (ok bool, err error) {
 	if next, err := self.Next(); err == nil && strings.IndexRune(valid, next) >= 0 {
 		return true, nil
 	} else if err != nil {
@@ -198,7 +197,7 @@ func (self *Lexer) Accept(valid string) (ok bool, err os.Error) {
 }
 
 // AcceptRun consumes a run of runes from the valid set.
-func (self *Lexer) AcceptRun(valid string) (err os.Error) {
+func (self *Lexer) AcceptRun(valid string) (err error) {
 	for {
 		if next, err := self.Next(); err == nil && strings.IndexRune(valid, next) < 0 {
 			break
@@ -212,7 +211,7 @@ func (self *Lexer) AcceptRun(valid string) (err os.Error) {
 }
 
 // AcceptNot consumes the next char if it's not from the invalid set.
-func (self *Lexer) AcceptNot(invalid string) (ok bool, err os.Error) {
+func (self *Lexer) AcceptNot(invalid string) (ok bool, err error) {
 	if next, err := self.Next(); err == nil && strings.IndexRune(invalid, next) < 0 {
 		return true, nil
 	} else if err != nil {
@@ -224,7 +223,7 @@ func (self *Lexer) AcceptNot(invalid string) (ok bool, err os.Error) {
 }
 
 // AcceptRunNot consumes a run of bytes not from the invalid set.
-func (self *Lexer) AcceptRunNot(invalid string) (err os.Error) {
+func (self *Lexer) AcceptRunNot(invalid string) (err error) {
 	for {
 		if next, err := self.Next(); err == nil && strings.IndexRune(invalid, next) >= 0 {
 			break
@@ -278,7 +277,7 @@ func IsAlphaNumeric(char rune) bool {
 //		self.Emit(ItemNumber)
 //		return <nextStateFn>
 //	}
-func (self *Lexer) ScanNumber() (ok bool, err os.Error) {
+func (self *Lexer) ScanNumber() (ok bool, err error) {
 	// Optional leading sign.
 	if _, err = self.Accept("+-"); err != nil {
 		return

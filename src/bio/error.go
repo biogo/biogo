@@ -30,7 +30,7 @@ type Error struct {
 
 func NewError(message string, skip int, item interface{}) (err *Error) {
 	err = &Error{
-		pc: make([]uintptr, 1),
+		pc:      make([]uintptr, 1),
 		message: message,
 		Item:    item,
 	}
@@ -73,6 +73,6 @@ func (self *Error) Tracef(depth int) (trace string) {
 	return
 }
 
-func (self *Error) String() string {
+func (self *Error) Error() string {
 	return self.message
 }

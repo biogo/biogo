@@ -14,9 +14,7 @@ package tree
 //   You should have received a copy of the GNU General Public License
 //   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
-import (
-	"os"
-)
+import "errors"
 
 type NodeList struct {
 	nodeList []*Node
@@ -44,12 +42,12 @@ func (self *NodeList) Pop() (n *Node) {
 	return
 }
 
-func (self *NodeList) Push(n *Node) (err os.Error) {
+func (self *NodeList) Push(n *Node) (err error) {
 	if _, present := self.nodeMap[n.Name]; !present {
 		self.nodeList = append(self.nodeList, n)
 		self.nodeMap[n.Name] = true
 	} else {
-		err = os.NewError("Cannot push non-unique nodes onto NodeList")
+		err = errors.New("Cannot push non-unique nodes onto NodeList")
 	}
 
 	return

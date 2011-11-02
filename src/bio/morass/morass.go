@@ -25,6 +25,8 @@ package morass
 
 import (
 	"bio"
+	"errors"
+	"io"
 	"os"
 	"runtime"
 	"io/ioutil"
@@ -76,7 +78,7 @@ type Morass struct {
 	pos, length int64
 	chunk       sortable
 	done        chan sortable
-	error       chan os.Error
+	err         chan error
 	prefix      string
 	dir         string
 	files       files
@@ -85,7 +87,7 @@ type Morass struct {
 	AutoClean   bool
 }
 
-func New(prefix, dir string, chunkSize int, concurrent bool) (*Morass, os.Error) {
+func New(prefix, dir string, chunkSize int, concurrent bool) (*Morass, error) {
 	d, err := ioutil.TempDir(dir, prefix)
 	if err != nil {
 		return nil, err
@@ -96,7 +98,7 @@ func New(prefix, dir string, chunkSize int, concurrent bool) (*Morass, os.Error)
 		dir:    d,
 		done:   make(chan sortable, 1),
 		files:  make(files, 0),
-		error:  make(chan os.Error, 1),
+		err:    make(chan error, 1),
 	}
 
 	m.chunk = make(sortable, 0, chunkSize)
@@ -114,12 +116,12 @@ func New(prefix, dir string, chunkSize int, concurrent bool) (*Morass, os.Error)
 	return m, nil
 }
 
-func (self *Morass) Push(e LessInterface) (err os.Error) {
+func (self *Morass) Push(e LessInterface) (err error) {
 	self.mutex.Lock()
 	defer self.mutex.Unlock()
 
 	select {
-	case err = <-self.error:
+	case err = <-self.err:
 		if err != nil {
 			return
 		}
@@ -146,14 +148,14 @@ func (self *Morass) Push(e LessInterface) (err os.Error) {
 	return
 }
 
-func (self *Morass) write(writing sortable) (err os.Error) {
+func (self *Morass) write(writing sortable) (err error) {
 	defer func() {
-		self.error <- err
+		self.err <- err
 		self.done <- writing[:0]
 	}()
 
 	select {
-	case <-self.error:
+	case <-self.err:
 	default:
 	}
 
@@ -184,12 +186,12 @@ func (self *Morass) Pos() int64 { return self.pos }
 
 func (self *Morass) Len() int64 { return self.length }
 
-func (self *Morass) Finalise() (err os.Error) {
+func (self *Morass) Finalise() (err error) {
 	self.mutex.Lock()
 	defer self.mutex.Unlock()
 
 	select {
-	case err = <-self.error:
+	case err = <-self.err:
 		if err != nil {
 			return
 		}
@@ -203,7 +205,7 @@ func (self *Morass) Finalise() (err os.Error) {
 		} else {
 			if len(self.chunk) > 0 {
 				go self.write(self.chunk)
-				err = <-self.error
+				err = <-self.err
 			}
 		}
 		self.pos = 0
@@ -217,7 +219,7 @@ func (self *Morass) Finalise() (err os.Error) {
 			if _, err = f.file.Seek(0, 0); err != nil {
 				return
 			}
-			if err = f.decoder.Decode(&f.head); err != nil && err != os.EOF {
+			if err = f.decoder.Decode(&f.head); err != nil && err != io.EOF {
 				return
 			}
 		}
@@ -228,7 +230,7 @@ func (self *Morass) Finalise() (err os.Error) {
 	return nil
 }
 
-func (self *Morass) Clear() (err os.Error) {
+func (self *Morass) Clear() (err error) {
 	self.mutex.Lock()
 	defer self.mutex.Unlock()
 
@@ -249,24 +251,24 @@ func (self *Morass) Clear() (err os.Error) {
 	return
 }
 
-func (self *Morass) CleanUp() (err os.Error) {
+func (self *Morass) CleanUp() (err error) {
 	self.mutex.Lock()
 	defer self.mutex.Unlock()
 
 	return os.RemoveAll(self.dir)
 }
 
-func (self *Morass) Pull(e LessInterface) (err os.Error) {
+func (self *Morass) Pull(e LessInterface) (err error) {
 	self.mutex.Lock()
 	defer self.mutex.Unlock()
 
 	if len(self.chunk) == 0 {
-		return os.EOF
+		return io.EOF
 	}
 
 	v := reflect.ValueOf(e)
 	if !reflect.Indirect(v).CanSet() {
-		return os.NewError("morass: Cannot set e")
+		return errors.New("morass: Cannot set e")
 	}
 
 	if self.fast {
@@ -275,7 +277,7 @@ func (self *Morass) Pull(e LessInterface) (err os.Error) {
 			self.pos++
 			err = nil
 		} else {
-			err = os.EOF
+			err = io.EOF
 		}
 	} else {
 		if self.files.Len() > 0 {
@@ -285,7 +287,7 @@ func (self *Morass) Pull(e LessInterface) (err os.Error) {
 			switch err = low.decoder.Decode(&low.head); err {
 			case nil:
 				heap.Push(&self.files, low)
-			case os.EOF:
+			case io.EOF:
 				err = nil
 				fallthrough
 			default:
@@ -298,11 +300,11 @@ func (self *Morass) Pull(e LessInterface) (err os.Error) {
 			if self.AutoClean {
 				os.RemoveAll(self.dir)
 			}
-			err = os.EOF
+			err = io.EOF
 		}
 	}
 
-	if err != os.EOF {
+	if err != io.EOF {
 		reflect.Indirect(v).Set(reflect.ValueOf(e))
 	}
 

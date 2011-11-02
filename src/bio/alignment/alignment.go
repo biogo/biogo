@@ -18,7 +18,6 @@
 package alignment
 
 import (
-	"os"
 	"bytes"
 	"strings"
 	"bio"
@@ -116,7 +115,7 @@ func (self *Alignment) Flush(where int, fill byte) *Alignment {
 	return self
 }
 
-func (self *Alignment) Trunc(start, end int) (a *Alignment, err os.Error) {
+func (self *Alignment) Trunc(start, end int) (a *Alignment, err error) {
 	var t *seq.Seq
 	a = &Alignment{}
 	for _, s := range *self {
@@ -128,7 +127,7 @@ func (self *Alignment) Trunc(start, end int) (a *Alignment, err os.Error) {
 	return
 }
 
-func (self *Alignment) RevComp() (a *Alignment, err os.Error) {
+func (self *Alignment) RevComp() (a *Alignment, err error) {
 	var t *seq.Seq
 	a = &Alignment{}
 	for _, s := range *self {
@@ -140,7 +139,7 @@ func (self *Alignment) RevComp() (a *Alignment, err os.Error) {
 	return
 }
 
-func (self *Alignment) Join(a *Alignment, fill byte, where int) (b *Alignment, err os.Error) {
+func (self *Alignment) Join(a *Alignment, fill byte, where int) (b *Alignment, err error) {
 	if len(*self) != len(*a) {
 		return nil, bio.NewError("Alignments do not hold the same number of sequences", 0, []*Alignment{self, a})
 	}
@@ -171,7 +170,7 @@ func (self *Alignment) Join(a *Alignment, fill byte, where int) (b *Alignment, e
 	return self, nil
 }
 
-func (self *Alignment) Stitch(f *featgroup.FeatureGroup) (a *Alignment, err os.Error) {
+func (self *Alignment) Stitch(f *featgroup.FeatureGroup) (a *Alignment, err error) {
 	t := interval.NewTree()
 	var i *interval.Interval
 
@@ -229,7 +228,7 @@ func (self *Alignment) Stitch(f *featgroup.FeatureGroup) (a *Alignment, err os.E
 
 type ConsFunc func(value []byte) byte
 
-func (self *Alignment) Consensus(f ConsFunc, fill byte) (c *seq.Seq, err os.Error) {
+func (self *Alignment) Consensus(f ConsFunc, fill byte) (c *seq.Seq, err error) {
 	start := self.Start()
 	end := self.End()
 	c = &seq.Seq{Offset: start}
@@ -247,7 +246,7 @@ func (self *Alignment) Consensus(f ConsFunc, fill byte) (c *seq.Seq, err os.Erro
 	return
 }
 
-func (self *Alignment) Column(pos int) (c []byte, err os.Error) {
+func (self *Alignment) Column(pos int) (c []byte, err error) {
 	c = make([]byte, 0, len(*self))
 	for _, s := range *self {
 		if pos < 0 || pos >= s.Len() {

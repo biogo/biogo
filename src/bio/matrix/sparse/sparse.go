@@ -18,7 +18,7 @@ package sparse
 // N.B. There is fairly extensive use of unrecovered panics in sparse to avoid unreadable matrix formulae.
 
 import (
-	"os"
+	"errors"
 	"runtime"
 	"sync"
 	"fmt"
@@ -58,7 +58,7 @@ type Sparse struct {
 // Return a sparse matrix based on a slice of float64 slices
 func Matrix(a [][]float64) (m *Sparse) {
 	if len(a) == 0 {
-		panic(os.NewError("zero dimension in matrix definition"))
+		panic(errors.New("zero dimension in matrix definition"))
 	}
 
 	maxRowLen := 0
@@ -87,7 +87,7 @@ func Matrix(a [][]float64) (m *Sparse) {
 	}
 
 	if m.c = len(m.matrix); m.c == 0 {
-		panic(os.NewError("zero dimension in matrix definition"))
+		panic(errors.New("zero dimension in matrix definition"))
 	}
 
 	return
@@ -96,7 +96,7 @@ func Matrix(a [][]float64) (m *Sparse) {
 // Return the O matrix
 func Zero(r, c int) (m *Sparse) {
 	if r < 1 || c < 1 {
-		panic(os.NewError("zero dimension in matrix definition"))
+		panic(errors.New("zero dimension in matrix definition"))
 	}
 
 	return &Sparse{
@@ -109,7 +109,7 @@ func Zero(r, c int) (m *Sparse) {
 // Return the I matrix
 func Identity(s int) (m *Sparse) {
 	if s < 1 {
-		panic(os.NewError("zero dimension in matrix definition"))
+		panic(errors.New("zero dimension in matrix definition"))
 	}
 
 	m = &Sparse{
@@ -232,7 +232,7 @@ func (self *Sparse) Max() (m float64) {
 // Set the value at (r, c) to v
 func (self *Sparse) Set(r, c int, v float64) {
 	if r >= self.r || c >= self.c || r < 0 || c < 0 {
-		panic(os.NewError("Out of bound"))
+		panic(errors.New("Out of bound"))
 	}
 
 	self.set(r, c, v)
@@ -266,7 +266,7 @@ func (self *Sparse) set(r, c int, v float64) {
 // Return the value at (r, c)
 func (self *Sparse) At(r, c int) (v float64) {
 	if r >= self.r || c >= self.c || c < 0 || r < 0 {
-		panic(os.NewError("Out of bound"))
+		panic(errors.New("Out of bound"))
 	}
 	return self.at(r, c)
 }
@@ -339,7 +339,7 @@ func (self *Sparse) Norm(ord int) (n float64) {
 		}
 		return math.Sqrt(n)
 	default:
-		panic(os.NewError("Invalid norm order for matrix"))
+		panic(errors.New("Invalid norm order for matrix"))
 	}
 
 	panic("cannot reach")
@@ -544,7 +544,7 @@ func (self *Sparse) Sub(b *Sparse) (m *Sparse) {
 // Multiply two matrices element by element
 func (self *Sparse) MulElem(b *Sparse) (m *Sparse) {
 	if self.r != b.r || self.c != b.c {
-		panic(os.NewError("Dimension mismatch"))
+		panic(errors.New("Dimension mismatch"))
 	}
 
 	m = &Sparse{
@@ -580,7 +580,7 @@ func (self *Sparse) Equals(b *Sparse) bool {
 			defer func() {
 				if r := recover(); r != nil {
 					if e, ok := r.(runtime.Error); ok {
-						if e.String() == "runtime error: send on closed channel" {
+						if e.Error() == "runtime error: send on closed channel" {
 							return
 						}
 					}
@@ -614,7 +614,7 @@ func (self *Sparse) EqualsApprox(b *Sparse, error float64) bool {
 			defer func() {
 				if r := recover(); r != nil {
 					if e, ok := r.(runtime.Error); ok {
-						if e.String() == "runtime error: send on closed channel" {
+						if e.Error() == "runtime error: send on closed channel" {
 							return
 						}
 					}
@@ -677,7 +677,7 @@ func (self *Sparse) Sum() (s float64) {
 // Calculate the inner product of two matrices
 func (self *Sparse) Inner(b *Sparse) (p float64) {
 	if self.r != b.r || self.c != b.c {
-		panic(os.NewError("Dimension mismatch"))
+		panic(errors.New("Dimension mismatch"))
 	}
 
 	for j, col := range self.matrix {
@@ -691,7 +691,7 @@ func (self *Sparse) Inner(b *Sparse) (p float64) {
 func (self *Sparse) Dot(b *Sparse) (p *Sparse) {
 	switch {
 	case self.c != b.r:
-		panic(os.NewError("Dimension mismatch"))
+		panic(errors.New("Dimension mismatch"))
 	}
 
 	p = &Sparse{
@@ -729,7 +729,7 @@ func (self *Sparse) Dot(b *Sparse) (p *Sparse) {
 func (self *Sparse) Stack(b *Sparse) (m *Sparse) {
 	defer func() {
 		if r := recover(); r != nil {
-			if err, ok := r.(os.Error); !ok {
+			if err, ok := r.(error); !ok {
 				panic(fmt.Errorf("pkg: %v", r))
 			} else {
 				panic(err)
@@ -738,7 +738,7 @@ func (self *Sparse) Stack(b *Sparse) (m *Sparse) {
 	}()
 
 	if self.c != b.c {
-		panic(os.NewError("Dimension mismatch"))
+		panic(errors.New("Dimension mismatch"))
 	}
 
 	m = &Sparse{
@@ -773,7 +773,7 @@ func (self *Sparse) Stack(b *Sparse) (m *Sparse) {
 func (self *Sparse) Augment(b *Sparse) (m *Sparse) {
 	defer func() {
 		if r := recover(); r != nil {
-			if err, ok := r.(os.Error); !ok {
+			if err, ok := r.(error); !ok {
 				panic(fmt.Errorf("pkg: %v", r))
 			} else {
 				panic(err)
@@ -782,7 +782,7 @@ func (self *Sparse) Augment(b *Sparse) (m *Sparse) {
 	}()
 
 	if self.r != b.r {
-		panic(os.NewError("Dimension mismatch"))
+		panic(errors.New("Dimension mismatch"))
 	}
 
 	m = self.Copy()

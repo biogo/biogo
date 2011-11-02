@@ -43,7 +43,7 @@ func NewReader(f io.ReadCloser) *Reader {
 }
 
 // Returns a new fasta format reader using a filename.
-func NewReaderName(name string) (r *Reader, err os.Error) {
+func NewReaderName(name string) (r *Reader, err error) {
 	var f *os.File
 	if f, err = os.Open(name); err != nil {
 		return
@@ -52,7 +52,7 @@ func NewReaderName(name string) (r *Reader, err os.Error) {
 }
 
 // Read a single sequence and return it or an error.
-func (self *Reader) Read() (sequence *seq.Seq, err os.Error) {
+func (self *Reader) Read() (sequence *seq.Seq, err error) {
 	sequence = &seq.Seq{}
 	expectedType := lex.ItemID
 	for {
@@ -70,7 +70,7 @@ func (self *Reader) Read() (sequence *seq.Seq, err os.Error) {
 			}
 		case item.Type == lex.ItemEOF:
 			if len(sequence.ID) == 0 && len(sequence.Seq) == 0 {
-				err = os.EOF
+				err = io.EOF
 			}
 			fallthrough
 		case item.Type == lex.ItemEnd:
@@ -108,7 +108,7 @@ func inID(l *lex.Lexer) (lex.StateFn, lex.Item) {
 
 func inSeq(l *lex.Lexer) (lex.StateFn, lex.Item) {
 	switch char, err := l.Next(); {
-	case err == os.EOF:
+	case err == io.EOF:
 		l.Buffer = l.Buffer[:len(l.Buffer)]
 		if len(l.Buffer) > 0 {
 			return inSeq, l.Emit(lex.ItemSeq)
@@ -139,7 +139,7 @@ func inSeq(l *lex.Lexer) (lex.StateFn, lex.Item) {
 }
 
 // Rewind the reader.
-func (self *Reader) Rewind() (err os.Error) {
+func (self *Reader) Rewind() (err error) {
 	if s, ok := self.f.(io.Seeker); ok {
 		_, err = s.Seek(0, 0)
 		self.l.Rewind(scanForID)
@@ -150,6 +150,6 @@ func (self *Reader) Rewind() (err os.Error) {
 }
 
 // Close the reader.
-func (self *Reader) Close() (err os.Error) {
+func (self *Reader) Close() (err error) {
 	return self.f.Close()
 }

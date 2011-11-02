@@ -21,7 +21,6 @@ import (
 	"bio/util"
 	"bio/align/pals/filter"
 	"bio/align/pals/dp"
-	"os"
 	"unsafe"
 	"reflect"
 )
@@ -67,7 +66,7 @@ func FilterMemRequired(target *seq.Seq, filterParams filter.Params) uint64 {
 }
 
 func AvgIndexListLength(target *seq.Seq, filterParams filter.Params) uint64 {
-	return uint64(target.Len()) / (1<<(uint64(filterParams.WordSize)*2))
+	return uint64(target.Len()) / (1 << (uint64(filterParams.WordSize) * 2))
 }
 
 func TotalMemRequired(target, query *seq.Seq, filterParams filter.Params) uint64 {
@@ -79,7 +78,7 @@ func TotalMemRequired(target, query *seq.Seq, filterParams filter.Params) uint64
 	return filter + uint64(sequence)
 }
 
-func OptimiseParameters(minHitLen int, minId float64, target, query *seq.Seq, tubeOffset int, maxMem uint64) (filterParams *filter.Params, dpParams *dp.Params, e os.Error) {
+func OptimiseParameters(minHitLen int, minId float64, target, query *seq.Seq, tubeOffset int, maxMem uint64) (filterParams *filter.Params, dpParams *dp.Params, e error) {
 	if minId < 0 || minId > 1.0 {
 		e = bio.NewError("bad minId", 0, minId)
 		return

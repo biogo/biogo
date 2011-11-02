@@ -15,15 +15,12 @@
 //
 package featio
 
-import (
-	"os"
-	"bio/feat"
-)
+import "bio/feat"
 
 type Reader interface {
-	Read() (*feat.Feature, os.Error)
+	Read() (*feat.Feature, error)
 }
 
 type Writer interface {
-	Write(*feat.Feature) os.Error
+	Write(*feat.Feature) error
 }

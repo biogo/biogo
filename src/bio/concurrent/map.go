@@ -22,7 +22,6 @@ package concurrent
 //   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 import (
-	"os"
 	"math"
 	"bio"
 	"bio/future"
@@ -30,7 +29,7 @@ import (
 )
 
 // Apply a function to an array slice using a Processor
-func Map(f Eval, slice []interface{}, threads, maxChunkSize int) (error os.Error) {
+func Map(f Eval, slice []interface{}, threads, maxChunkSize int) (error error) {
 	queue := make(chan interface{}, 1)
 	buffer := make(chan Result)
 	p := NewProcessor(f, threads, queue, buffer)

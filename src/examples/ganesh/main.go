@@ -23,7 +23,7 @@ func main() {
 		in      *bufio.Reader
 		out     *bufio.Writer
 		profile *os.File
-		e       os.Error
+		e       error
 	)
 
 	inName := flag.String("in", "", "Filename for input to be factorised. Defaults to stdin.")

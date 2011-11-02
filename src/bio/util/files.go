@@ -29,10 +29,10 @@ var buffer = make([]byte, bufferLen)
 
 type ReadSeekStater interface {
 	io.ReadSeeker
-	Stat() (*os.FileInfo, os.Error)
+	Stat() (*os.FileInfo, error)
 }
 
-func Hash(file ReadSeekStater) (sum []byte, err os.Error) {
+func Hash(file ReadSeekStater) (sum []byte, err error) {
 	var fi *os.FileInfo
 	if fi, err = file.Stat(); err != nil || fi.IsDirectory() {
 		return nil, bio.NewError("Is a directory", 0, file)
@@ -48,7 +48,7 @@ func Hash(file ReadSeekStater) (sum []byte, err os.Error) {
 		h.Write(buffer[:n])
 	}
 
-	if err == os.EOF || err == io.ErrUnexpectedEOF {
+	if err == io.EOF || err == io.ErrUnexpectedEOF {
 		err = nil
 	}
 

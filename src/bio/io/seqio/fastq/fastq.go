@@ -46,7 +46,7 @@ func NewReader(f io.ReadCloser) *Reader {
 }
 
 // Returns a new fastq format reader using a filename.
-func NewReaderName(name string) (r *Reader, err os.Error) {
+func NewReaderName(name string) (r *Reader, err error) {
 	var f *os.File
 	if f, err = os.Open(name); err != nil {
 		return
@@ -55,7 +55,7 @@ func NewReaderName(name string) (r *Reader, err os.Error) {
 }
 
 // Read a single sequence and return it or an error.
-func (self *Reader) Read() (sequence *seq.Seq, err os.Error) {
+func (self *Reader) Read() (sequence *seq.Seq, err error) {
 	var line, label, seqBody, qualBody []byte
 	sequence = &seq.Seq{}
 
@@ -126,7 +126,7 @@ func (self *Reader) decodeQuality(q []byte) (qs []int8) {
 	return qs
 }
 // Rewind the reader.
-func (self *Reader) Rewind() (err os.Error) {
+func (self *Reader) Rewind() (err error) {
 	if s, ok := self.f.(io.Seeker); ok {
 		_, err = s.Seek(0, 0)
 	} else {
@@ -136,7 +136,7 @@ func (self *Reader) Rewind() (err os.Error) {
 }
 
 // Close the reader.
-func (self *Reader) Close() (err os.Error) {
+func (self *Reader) Close() (err error) {
 	return self.f.Close()
 }
 
@@ -167,7 +167,7 @@ func NewWriter(f io.WriteCloser) *Writer {
 
 // Returns a new fastq format writer using a filename, truncating any existing file.
 // If appending is required use NewWriter and os.OpenFile.
-func NewWriterName(name string) (w *Writer, err os.Error) {
+func NewWriterName(name string) (w *Writer, err error) {
 	var f *os.File
 	if f, err = os.Create(name); err != nil {
 		return
@@ -176,7 +176,7 @@ func NewWriterName(name string) (w *Writer, err os.Error) {
 }
 
 // Write a single sequence and return the number of bytes written and any error.
-func (self *Writer) Write(s *seq.Seq) (n int, err os.Error) {
+func (self *Writer) Write(s *seq.Seq) (n int, err error) {
 	if s.Quality == nil {
 		return 0, bio.NewError("No quality associated with sequence", 0, s)
 	}
@@ -232,7 +232,7 @@ func (self *Writer) encodeQuality(q []int8) (qe []byte) {
 }
 
 // Close the writer, flushing any unwritten sequence.
-func (self *Writer) Close() (err os.Error) {
+func (self *Writer) Close() (err error) {
 	if err = self.w.Flush(); err != nil {
 		return
 	}

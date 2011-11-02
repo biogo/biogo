@@ -13,7 +13,7 @@ func main() {
 	var (
 		in      *fasta.Reader
 		out     *fasta.Writer
-		e       os.Error
+		e       error
 		profile *os.File
 	)
 
@@ -57,7 +57,7 @@ func main() {
 
 	var (
 		sequence *seq.Seq
-		err      os.Error
+		err      error
 	)
 
 	t := &seq.Seq{}

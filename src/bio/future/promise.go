@@ -25,12 +25,11 @@ package future
 import (
 	"bio"
 	"sync"
-	"os"
 )
 
 type scroll struct {
 	value interface{}
-	error os.Error
+	error error
 }
 
 // Promises can be mutable or not, recoverable or not and may relay internal error states
@@ -69,14 +68,14 @@ func (self *Promise) messageState() (message scroll, set bool) {
 }
 
 // Fulfill a promise, allowing listeners to unblock.
-func (self *Promise) Fulfill(value interface{}) os.Error {
+func (self *Promise) Fulfill(value interface{}) error {
 	self.Lock()
 	defer self.Unlock()
 
 	return self.fulfill(value)
 }
 
-func (self *Promise) fulfill(value interface{}) (e os.Error) {
+func (self *Promise) fulfill(value interface{}) (e error) {
 	m, set := self.messageState()
 
 	if m.error != nil {
@@ -104,14 +103,14 @@ func (self *Promise) fulfill(value interface{}) (e os.Error) {
 }
 
 // Fail a promise allowing listeners to unblock, but sending an error state.
-func (self *Promise) Fail(value interface{}, error os.Error) bool {
+func (self *Promise) Fail(value interface{}, error error) bool {
 	self.Lock()
 	defer self.Unlock()
 
 	return self.fail(value, error)
 }
 
-func (self *Promise) fail(value interface{}, error os.Error) (f bool) {
+func (self *Promise) fail(value interface{}, error error) (f bool) {
 	m, _ := self.messageState()
 
 	if m.error == nil && m.value == nil {
@@ -158,7 +157,7 @@ func (self *Promise) Break() {
 }
 
 // Wait for a promise to be fulfilled, failed or recovered.
-func (self *Promise) Future() (interface{}, os.Error) {
+func (self *Promise) Future() (interface{}, error) {
 	m := <-self.message
 	self.message <- m
 	return m.value, m.error

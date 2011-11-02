@@ -36,7 +36,7 @@ func NewWriter(f io.WriteCloser, v, width int, header bool) (w *Writer) {
 
 // Returns a new PALS writer using a filename, truncating any existing file.
 // If appending is required use NewWriter and os.OpenFile.
-func NewWriterName(name string, v, width int, header bool) (w *Writer, err os.Error) {
+func NewWriterName(name string, v, width int, header bool) (w *Writer, err error) {
 	var f *os.File
 	if f, err = os.Create(name); err != nil {
 		return
@@ -45,7 +45,7 @@ func NewWriterName(name string, v, width int, header bool) (w *Writer, err os.Er
 }
 
 // Write a single feature and return the number of bytes written and any error.
-func (self *Writer) Write(pair *FeaturePair) (n int, err os.Error) {
+func (self *Writer) Write(pair *FeaturePair) (n int, err error) {
 	t.Location = pair.B.ID
 	t.Start = pair.B.Start
 	t.End = pair.B.End
@@ -57,6 +57,6 @@ func (self *Writer) Write(pair *FeaturePair) (n int, err os.Error) {
 }
 
 // Close the writer, flushing any unwritten data.
-func (self *Writer) Close() (err os.Error) {
+func (self *Writer) Close() (err error) {
 	return self.w.Close()
 }

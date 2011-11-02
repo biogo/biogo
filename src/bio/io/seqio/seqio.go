@@ -15,15 +15,12 @@
 //
 package seqio
 
-import (
-	"os"
-	"bio/seq"
-)
+import "bio/seq"
 
 type Reader interface {
-	Read() (*seq.Seq, os.Error)
+	Read() (*seq.Seq, error)
 }
 
 type Writer interface {
-	Write(*seq.Seq) (int, os.Error)
+	Write(*seq.Seq) (int, error)
 }

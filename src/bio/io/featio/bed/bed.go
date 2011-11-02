@@ -61,7 +61,7 @@ func NewReader(f io.ReadCloser, b int) *Reader {
 }
 
 // Returns a new BED reader using a filename.
-func NewReaderName(name string, b int) (r *Reader, err os.Error) {
+func NewReaderName(name string, b int) (r *Reader, err error) {
 	var f *os.File
 	if f, err = os.Open(name); err != nil {
 		return
@@ -69,9 +69,8 @@ func NewReaderName(name string, b int) (r *Reader, err os.Error) {
 	return NewReader(f, b), nil
 }
 
-
 // Read a single feature and return it or an error.
-func (self *Reader) Read() (f *feat.Feature, err os.Error) {
+func (self *Reader) Read() (f *feat.Feature, err error) {
 	var (
 		line  string
 		elems []string
@@ -120,7 +119,7 @@ func (self *Reader) Read() (f *feat.Feature, err os.Error) {
 }
 
 // Rewind the reader.
-func (self *Reader) Rewind() (err os.Error) {
+func (self *Reader) Rewind() (err error) {
 	if s, ok := self.f.(io.Seeker); ok {
 		_, err = s.Seek(0, 0)
 	} else {
@@ -130,7 +129,7 @@ func (self *Reader) Rewind() (err os.Error) {
 }
 
 // Close the reader.
-func (self *Reader) Close() (err os.Error) {
+func (self *Reader) Close() (err error) {
 	return self.f.Close()
 }
 
@@ -152,7 +151,7 @@ func NewWriter(f io.WriteCloser, b int) *Writer {
 
 // Returns a new BED format writer using a filename, truncating any existing file.
 // If appending is required use NewWriter and os.OpenFile.
-func NewWriterName(name string, b int) (w *Writer, err os.Error) {
+func NewWriterName(name string, b int) (w *Writer, err error) {
 	var f *os.File
 	if f, err = os.Create(name); err != nil {
 		return
@@ -161,7 +160,7 @@ func NewWriterName(name string, b int) (w *Writer, err os.Error) {
 }
 
 // Write a single feature and return the number of bytes written and any error.
-func (self *Writer) Write(f *feat.Feature) (n int, err os.Error) {
+func (self *Writer) Write(f *feat.Feature) (n int, err error) {
 	return self.w.WriteString(self.String(f) + "\n")
 }
 
@@ -185,7 +184,7 @@ func (self *Writer) String(f *feat.Feature) (line string) {
 }
 
 // Close the writer, flushing any unwritten data.
-func (self *Writer) Close() (err os.Error) {
+func (self *Writer) Close() (err error) {
 	if err = self.w.Flush(); err != nil {
 		return
 	}

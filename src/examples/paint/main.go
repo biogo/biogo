@@ -16,7 +16,7 @@ func main() {
 	var (
 		in  *fasta.Reader
 		out *os.File
-		e   os.Error
+		e   error
 	)
 
 	inName := flag.String("in", "", "Filename for input. Defaults to stdin.")

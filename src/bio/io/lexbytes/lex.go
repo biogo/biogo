@@ -17,7 +17,6 @@
 package lexbytes
 
 import (
-	"os"
 	"fmt"
 	"bytes"
 	"unicode"
@@ -128,7 +127,7 @@ func (self *Lexer) Rewind(state StateFn) {
 }
 
 // Next returns the next char in the input.
-func (self *Lexer) Next() (char byte, err os.Error) {
+func (self *Lexer) Next() (char byte, err error) {
 	if char, err = self.r.ReadByte(); err != nil {
 		return
 	}
@@ -147,7 +146,7 @@ func (self *Lexer) Next() (char byte, err os.Error) {
 }
 
 // Backup steps back one char. Can only be called once per call of next.
-func (self *Lexer) Backup() (err os.Error) {
+func (self *Lexer) Backup() (err error) {
 	if err = self.r.UnreadByte(); err != nil {
 		return
 	}
@@ -163,7 +162,7 @@ func (self *Lexer) Backup() (err os.Error) {
 }
 
 // Peek returns but does not consume the next char in the input.
-func (self *Lexer) Peek() (char byte, err os.Error) {
+func (self *Lexer) Peek() (char byte, err error) {
 	if char, err = self.Next(); err != nil {
 		return
 	}
@@ -187,7 +186,7 @@ func (self *Lexer) Ignore() {
 }
 
 // Accept consumes the next char if it's from the valid set.
-func (self *Lexer) Accept(valid []byte) (ok bool, err os.Error) {
+func (self *Lexer) Accept(valid []byte) (ok bool, err error) {
 	if next, err := self.Next(); err == nil && bytes.IndexByte(valid, next) >= 0 {
 		return true, nil
 	} else if err != nil {
@@ -199,7 +198,7 @@ func (self *Lexer) Accept(valid []byte) (ok bool, err os.Error) {
 }
 
 // AcceptRun consumes a run of bytes from the valid set.
-func (self *Lexer) AcceptRun(valid []byte) (err os.Error) {
+func (self *Lexer) AcceptRun(valid []byte) (err error) {
 	for {
 		if next, err := self.Next(); err == nil && bytes.IndexByte(valid, next) < 0 {
 			break
@@ -213,7 +212,7 @@ func (self *Lexer) AcceptRun(valid []byte) (err os.Error) {
 }
 
 // AcceptNot consumes the next char if it's not from the invalid set.
-func (self *Lexer) AcceptNot(invalid []byte) (ok bool, err os.Error) {
+func (self *Lexer) AcceptNot(invalid []byte) (ok bool, err error) {
 	if next, err := self.Next(); err == nil && bytes.IndexByte(invalid, next) < 0 {
 		return true, nil
 	} else if err != nil {
@@ -225,7 +224,7 @@ func (self *Lexer) AcceptNot(invalid []byte) (ok bool, err os.Error) {
 }
 
 // AcceptRunNot consumes a run of bytes not from the invalid set.
-func (self *Lexer) AcceptRunNot(invalid []byte) (err os.Error) {
+func (self *Lexer) AcceptRunNot(invalid []byte) (err error) {
 	for {
 		if next, err := self.Next(); err == nil && bytes.IndexByte(invalid, next) >= 0 {
 			break
@@ -279,7 +278,7 @@ func IsAlphaNumeric(char byte) bool {
 //		self.Emit(ItemNumber)
 //		return <nextStateFn>
 //	}
-func (self *Lexer) ScanNumber() (ok bool, err os.Error) {
+func (self *Lexer) ScanNumber() (ok bool, err error) {
 	// Optional leading sign.
 	if _, err = self.Accept([]byte("+-")); err != nil {
 		return

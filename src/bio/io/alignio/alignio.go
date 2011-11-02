@@ -16,7 +16,7 @@
 package alignio
 
 import (
-	"os"
+	"io"
 	"bio/seq"
 	"bio/io/seqio"
 	"bio/alignment"
@@ -30,14 +30,14 @@ func NewReader(r seqio.Reader) *Reader {
 	return &Reader{r}
 }
 
-func (self *Reader) Read() (a *alignment.Alignment, err os.Error) {
+func (self *Reader) Read() (a *alignment.Alignment, err error) {
 	var s *seq.Seq
 	a = &alignment.Alignment{}
 	for {
 		if s, err = self.Reader.Read(); err == nil {
 			a.Add(s)
 		} else {
-			if err == os.EOF {
+			if err == io.EOF {
 				return a, nil
 			} else {
 				return nil, err
@@ -56,7 +56,7 @@ func NewWriter(w seqio.Writer) *Writer {
 	return &Writer{w}
 }
 
-func (self *Writer) Write(a *alignment.Alignment) (n int, err os.Error) {
+func (self *Writer) Write(a *alignment.Alignment) (n int, err error) {
 	var c int
 	for _, s := range *a {
 		c, err = self.Writer.Write(s)
