@@ -55,8 +55,6 @@ func (self *Aligner) AlignTraps(trapezoids []*filter.Trapezoid) (segSols []DPHit
 
 	covered := make([]bool, len(trapezoids)) // all false
 
-	sort.Sort(&traps{trapezoids})
-
 	dp := make(chan *DP, self.threads)
 	result := make(chan DPHit)
 

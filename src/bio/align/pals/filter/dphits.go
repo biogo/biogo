@@ -14,6 +14,12 @@ package filter
 //   You should have received a copy of the GNU General Public License
 //   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
+type FilterHit struct {
+	QFrom     int
+	QTo       int
+	DiagIndex int
+}
+
 func (self FilterHit) Less(y interface{}) bool {
 	return self.QFrom < y.(FilterHit).QFrom
 }

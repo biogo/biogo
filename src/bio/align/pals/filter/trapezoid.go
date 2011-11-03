@@ -51,3 +51,18 @@ func (self *Trapezoid) Clip(lagPosition, lagClip int) {
 		self.Right = right
 	}
 }
+
+type Trapezoids []*Trapezoid
+
+func (self Trapezoids) Len() int {
+	return len(self)
+}
+
+func (self Trapezoids) Less(i, j int) bool {
+	return self[i].Bottom < self[j].Bottom
+}
+
+func (self Trapezoids) Swap(i, j int) {
+	self[i], self[j] = self[j], self[i]
+}
+

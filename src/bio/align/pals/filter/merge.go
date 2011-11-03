@@ -17,6 +17,7 @@ package filter
 import (
 	"bio/seq"
 	"bio/index/kmerindex"
+	"sort"
 )
 
 const (
@@ -35,7 +36,7 @@ type Merger struct { // these are static so should be part of object Merger
 	trapCount                  int
 }
 
-func NewMerger(index *kmerindex.Index, query *seq.Seq, filterParams *Params) (m *Merger) {
+func NewMerger(index *kmerindex.Index, query *seq.Seq, filterParams *Params, selfCompare bool) (m *Merger) {
 	tubeWidth := filterParams.TubeOffset + filterParams.MaxError
 	binWidth := tubeWidth - 1
 	leftPadding := diagonalPadding + binWidth
@@ -52,15 +53,12 @@ func NewMerger(index *kmerindex.Index, query *seq.Seq, filterParams *Params) (m 
 		target:        index.Seq,
 		filterParams:  filterParams,
 		query:         query,
+		selfComparison: selfCompare,
 		bottomPadding: index.GetK() + 2,
 		leftPadding:   leftPadding,
 		binWidth:      binWidth,
 		eoTerm:        eoTerm,
 		trapOrder:     eoTerm,
-	}
-
-	if index.Seq == query {
-		m.selfComparison = true
 	}
 
 	return m
@@ -236,7 +234,7 @@ func (self *Merger) clipTrapezoids() {
 	}
 }
 
-func (self *Merger) FinaliseMerge() (trapezoids []*Trapezoid) {
+func (self *Merger) FinaliseMerge() (trapezoids Trapezoids) {
 	var next *Trapezoid
 	for base := self.trapOrder; base != self.eoTerm; base = next {
 		next = base.Next
@@ -251,17 +249,19 @@ func (self *Merger) FinaliseMerge() (trapezoids []*Trapezoid) {
 		self.freeTraps = self.tail.Join(self.freeTraps)
 	}
 
-	trapezoids = make([]*Trapezoid, self.trapCount)
+	trapezoids = make(Trapezoids, self.trapCount)
 	for i, z := 0, self.trapList; i < self.trapCount; i++ {
 		trapezoids[i] = z
 		z = z.Next
 		trapezoids[i].Next = nil
 	}
 
+	sort.Sort(Trapezoids(trapezoids))
+
 	return
 }
 
-func SumTrapLengths(trapezoids []*Trapezoid) (sum int) {
+func SumTrapLengths(trapezoids Trapezoids) (sum int) {
 	for _, temp := range trapezoids {
 		length := temp.Top - temp.Bottom
 		sum += length

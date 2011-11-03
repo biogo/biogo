@@ -40,9 +40,3 @@ type TubeState struct {
 	QHi   int
 	Count int
 }
-
-type FilterHit struct {
-	QFrom     int
-	QTo       int
-	DiagIndex int
-}

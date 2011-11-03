@@ -207,7 +207,6 @@ func (self *Filter) hitTube(tubeIndex, q int) (e error) {
 func (self *Filter) tubeEnd(q int) (e error) {
 	diagIndex := self.diagIndex(self.target.Len()-1, q-1)
 	tubeIndex := self.tubeIndex(diagIndex)
-
 	tube := &self.tubes[tubeIndex%cap(self.tubes)]
 
 	if tube.Count >= self.minKmersPerHit {
@@ -227,5 +226,6 @@ func (self *Filter) addHit(tubeIndex, QLo, QHi int) (e error) {
 		QTo:       QHi + self.k,
 		DiagIndex: self.target.Len() - tubeIndex*self.tubeOffset,
 	}
+
 	return self.morass.Push(fh)
 }

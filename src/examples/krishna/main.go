@@ -224,7 +224,7 @@ func main() {
 
 			log.Println("Merging")
 			timer.Interval()
-			merger = filter.NewMerger(index, workingQuery, filterParams)
+			merger = filter.NewMerger(index, workingQuery, filterParams, *selfCompare)
 			for {
 				if err = filterMorass.Pull(&hit); err != nil {
 					break
@@ -246,7 +246,6 @@ func main() {
 				}
 				merger.MergeFilterHit(&hit)
 			}
-
 			if err != nil && err != io.EOF {
 				if debug {
 					log.SetFlags(log.LstdFlags | log.Lshortfile)

@@ -14,22 +14,6 @@ package dp
 //   You should have received a copy of the GNU General Public License
 //   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
-import "bio/align/pals/filter"
-
-//
-type traps struct{ traps []*filter.Trapezoid }
-
-func (self traps) Len() int {
-	return len(self.traps)
-}
-
-func (self traps) Less(i, j int) bool {
-	return (*self.traps[i]).Bottom < (*self.traps[j]).Bottom
-}
-
-func (self traps) Swap(i, j int) {
-	self.traps[i], self.traps[j] = self.traps[j], self.traps[i]
-}
 
 //
 type starts struct{ hits []DPHit }
