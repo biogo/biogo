@@ -20,6 +20,11 @@ type FilterHit struct {
 	DiagIndex int
 }
 
+// This is a direct translation of the qsort compar function used by PALS.
+// However it results in a different sort order (with respect to the non-key
+// fields) for FilterHits because of differences in the underlying sort
+// algorithms and their respective sort stability.
+// This appears to have some impact on FilterHit merging.
 func (self FilterHit) Less(y interface{}) bool {
 	return self.QFrom < y.(FilterHit).QFrom
 }
