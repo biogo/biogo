@@ -1,20 +1,20 @@
 package main
 
 import (
-	"flag"
-	"os"
-	"runtime"
-	"sync"
-	"fmt"
-	"strings"
-	"strconv"
-	"sort"
-	"gob"
-	"bio/util"
-	"bio/io/featio/gff"
 	"bio/feat"
 	"bio/interval"
+	"bio/io/featio/gff"
+	"bio/util"
 	"container/heap"
+	"encoding/gob"
+	"flag"
+	"fmt"
+	"os"
+	"runtime"
+	"sort"
+	"strconv"
+	"strings"
+	"sync"
 )
 
 const (

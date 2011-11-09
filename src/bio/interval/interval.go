@@ -19,10 +19,10 @@
 package interval
 
 import (
-	"math"
-	"rand"
 	"bio"
 	"bio/util"
+	"math"
+	"math/rand"
 )
 
 const negRecLogHalf = 1.4426950408889634073599246810018921374266459541529859341354 // -1/Log(0.5)

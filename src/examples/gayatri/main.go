@@ -1,19 +1,19 @@
 package main
 
 import (
-	"flag"
-	"os"
-	"runtime"
-	"runtime/pprof"
-	"fmt"
-	"sort"
-	"rand"
-	"time"
-	"bio/io/seqio/fasta"
 	"bio/index/kmerindex"
+	"bio/io/seqio/fasta"
 	"bio/matrix"
 	"bio/matrix/sparse"
 	"bio/nmf"
+	"flag"
+	"fmt"
+	"math/rand"
+	"os"
+	"runtime"
+	"runtime/pprof"
+	"sort"
+	"time"
 )
 
 func main() {

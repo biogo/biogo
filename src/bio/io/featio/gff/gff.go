@@ -349,7 +349,7 @@ func (self *Writer) String(f *feat.Feature) (line string) {
 
 // Write meta data to a GFF file.
 func (self *Writer) WriteMetaData(d interface{}) (n int, err error) {
-	switch t := d.(type) {
+	switch d.(type) {
 	case []byte, string:
 		n, err = self.w.WriteString("##" + d.(string) + "\n")
 	case *seq.Seq:

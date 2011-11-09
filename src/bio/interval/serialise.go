@@ -17,9 +17,9 @@ package interval
 //   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 import (
-	"bytes"
-	"gob"
 	"bio"
+	"bytes"
+	"encoding/gob"
 )
 
 const Version int = 1

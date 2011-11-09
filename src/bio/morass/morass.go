@@ -25,16 +25,16 @@ package morass
 
 import (
 	"bio"
+	"container/heap"
+	"encoding/gob"
 	"errors"
 	"io"
-	"os"
-	"runtime"
 	"io/ioutil"
-	"gob"
+	"os"
 	"reflect"
-	"sync"
+	"runtime"
 	"sort"
-	"container/heap"
+	"sync"
 )
 
 // Is the receiver less than the parameterised interface

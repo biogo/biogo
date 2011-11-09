@@ -18,14 +18,14 @@ package sparse
 // N.B. There is fairly extensive use of unrecovered panics in sparse to avoid unreadable matrix formulae.
 
 import (
-	"errors"
-	"runtime"
-	"sync"
-	"fmt"
-	"strconv"
-	"math"
-	"rand"
 	"bio/matrix"
+	"errors"
+	"fmt"
+	"math"
+	"math/rand"
+	"runtime"
+	"strconv"
+	"sync"
 )
 
 var (

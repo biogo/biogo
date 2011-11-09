@@ -1,21 +1,21 @@
 package main
 
 import (
-	"flag"
-	"os"
-	"io"
-	"bufio"
-	"runtime"
-	"runtime/pprof"
-	"strings"
-	"strconv"
-	"fmt"
-	"sort"
-	"rand"
-	"time"
 	"bio/matrix"
 	"bio/matrix/sparse"
 	"bio/nmf"
+	"bufio"
+	"flag"
+	"fmt"
+	"io"
+	"math/rand"
+	"os"
+	"runtime"
+	"runtime/pprof"
+	"sort"
+	"strconv"
+	"strings"
+	"time"
 )
 
 func main() {
