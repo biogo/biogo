@@ -169,8 +169,7 @@ func main() {
 		}
 		log.Fatalf("Error: %v.", err)
 	}
-	//TODO: treat each query contig as an atom and filter/merge and align it using modifications of the concurrent code in concurrent-filter-naive branch
-	// pattern to do only self non-comp or both strands
+
 	both := !*sameStrand
 	for _, comp := range [...]bool{false, true} {
 		if comp {
@@ -260,7 +259,7 @@ func main() {
 			log.Println("Aligning")
 			timer.Interval()
 
-			aligner = dp.NewAligner(workingQuery, target, filterParams.WordSize, *minHitLen, *minId, comp, *threads)
+			aligner = dp.NewAligner(target, workingQuery, filterParams.WordSize, *minHitLen, *minId, *threads)
 			hits := aligner.AlignTraps(trapezoids)
 			if hitCoverage, err = dp.SumDPLengths(hits); err != nil {
 				if debug {

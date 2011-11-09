@@ -17,140 +17,103 @@ package dp
 import (
 	"bio/seq"
 	"sort"
-	"sync"
 	"bio"
 	"bio/align/pals/filter"
 )
 
-const debug debugging = false
-
 type Aligner struct {
-	a, b         *seq.Seq
-	k            int
-	minHitLength int
-	minId        float64
-	comp         bool
-	threads      int
+	target, query *seq.Seq
+	k             int
+	minHitLength  int
+	minId         float64
+	threads       int
+	segments      []DPHit
 }
 
-func NewAligner(a, b *seq.Seq, k, minLength int, minId float64, comp bool, threads int) *Aligner {
+func NewAligner(target, query *seq.Seq, k, minLength int, minId float64, threads int) *Aligner {
 	return &Aligner{
-		a:            a,
-		b:            b,
+		target:       target,
+		query:        query,
 		k:            k,
 		minHitLength: minLength,
 		minId:        minId,
-		comp:         comp,
 		threads:      threads,
 	}
 }
 
-func (self *Aligner) AlignTraps(trapezoids []*filter.Trapezoid) (segSols []DPHit) {
+func (self *Aligner) AlignTraps(trapezoids []*filter.Trapezoid) (segments []DPHit) {
+	covered := make([]bool, len(trapezoids))
 
-	numSegs := 0
-	fseg := 0
-
-	minLen := self.minHitLength
-	maxDiff := 1 - self.minId
-
-	covered := make([]bool, len(trapezoids)) // all false
-
-	dp := make(chan *DP, self.threads)
-	result := make(chan DPHit)
-
-	for i := 0; i < self.threads; i++ {
-		dp <- &DP{
-			a:       self.a,
-			b:       self.b,
-			minLen:  minLen,
-			maxDiff: maxDiff,
-			comp:    self.comp,
-			covered: covered,
-			result:  result,
+	dp := &kernel{
+		target:     self.target,
+		query:      self.query,
+		trapezoids: trapezoids,
+		covered:    covered,
+		minLen:     self.minHitLength,
+		maxDiff:    1 - self.minId,
+	}
+	for i, t := range trapezoids {
+		if !dp.covered[i] && t.Top-t.Bottom >= self.k {
+			dp.slot = i
+			dp.alignRecursion(t)
 		}
 	}
-
-	go func() {
-		for {
-			segSols = append(segSols, <-result)
-		}
-	}()
-
-	wg := &sync.WaitGroup{}
-	for i, z := range trapezoids {
-		if !covered[i] {
-			if z.Top-z.Bottom < self.k {
-				continue
-			}
-
-			wg.Add(1)
-			go func(p *DP, i int) {
-				defer func() {
-					dp <- p
-					wg.Done()
-				}()
-				p.trapezoids = trapezoids[i+1:]
-				p.slot = i
-
-				p.alignRecursion(trapezoids[i])
-			}(<-dp, i)
-		}
-	}
-
-	//wait for alignments to finish
-	wg.Wait()
-	numSegs = len(segSols)
+	segments = make([]DPHit, len(dp.segments))
+	copy(segments, dp.segments)
 
 	/* Remove lower scoring segments that begin or end at
 	   the same point as a higher scoring segment.       */
-	sort.Sort(&starts{segSols[fseg:]})
 
-	var j int
+	if len(segments) > 0 {
+		var i, j int
 
-	for i := fseg; i < numSegs; i = j {
-		for j = i + 1; j < numSegs; j++ {
-			if segSols[j].Abpos != segSols[i].Abpos {
-				break
-			}
-			if segSols[j].Bbpos != segSols[i].Bbpos {
-				break
-			}
-			if segSols[j].Score > segSols[i].Score {
-				segSols[i].Score = -1
-				i = j
-			} else {
-				segSols[j].Score = -1
+		sort.Sort(starts(segments))
+		for i = 0; i < len(segments); i = j {
+			for j = i + 1; j < len(segments); j++ {
+				if segments[j].Abpos != segments[i].Abpos {
+					break
+				}
+				if segments[j].Bbpos != segments[i].Bbpos {
+					break
+				}
+				if segments[j].Score > segments[i].Score {
+					segments[i].Score = -1
+					i = j
+				} else {
+					segments[j].Score = -1
+				}
 			}
 		}
-	}
 
-	sort.Sort(&ends{segSols[fseg:]})
-
-	for i := fseg; i < numSegs; i = j {
-		for j = i + 1; j < numSegs; j++ {
-			if segSols[j].Aepos != segSols[i].Aepos {
-				break
-			}
-			if segSols[j].Bepos != segSols[i].Bepos {
-				break
-			}
-			if segSols[j].Score > segSols[i].Score {
-				segSols[i].Score = -1
-				i = j
-			} else {
-				segSols[j].Score = -1
+		sort.Sort(ends(segments))
+		for i = 0; i < len(segments); i = j {
+			for j = i + 1; j < len(segments); j++ {
+				if segments[j].Aepos != segments[i].Aepos {
+					break
+				}
+				if segments[j].Bepos != segments[i].Bepos {
+					break
+				}
+				if segments[j].Score > segments[i].Score {
+					segments[i].Score = -1
+					i = j
+				} else {
+					segments[j].Score = -1
+				}
 			}
 		}
-	}
-	for i := fseg; i < numSegs; i++ {
-		if segSols[i].Score >= 0 {
-			segSols[fseg] = segSols[i]
-			fseg++
+
+		found := 0
+		for i = 0; i < len(segments); i++ {
+			if segments[i].Score >= 0 {
+				segments[found] = segments[i]
+				found++
+			}
 		}
+		segments = segments[:found]
 	}
-	segSols = segSols[:fseg]
-	trapezoids = nil
-	return segSols
+
+	return
 }
 
 func SumDPLengths(hits []DPHit) (sum int, e error) {

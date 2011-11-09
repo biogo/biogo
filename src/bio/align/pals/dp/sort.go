@@ -16,31 +16,31 @@ package dp
 //
 
 //
-type starts struct{ hits []DPHit }
+type starts []DPHit
 
 func (self starts) Len() int {
-	return len(self.hits)
+	return len(self)
 }
 
 func (self starts) Less(i, j int) bool {
-	return self.hits[i].Abpos < self.hits[j].Abpos
+	return self[i].Abpos < self[j].Abpos
 }
 
 func (self starts) Swap(i, j int) {
-	self.hits[i], self.hits[j] = self.hits[j], self.hits[i]
+	self[i], self[j] = self[j], self[i]
 }
 
 //
-type ends struct{ hits []DPHit }
+type ends []DPHit
 
 func (self ends) Len() int {
-	return len(self.hits)
+	return len(self)
 }
 
 func (self ends) Less(i, j int) bool {
-	return self.hits[i].Aepos < self.hits[j].Aepos
+	return self[i].Aepos < self[j].Aepos
 }
 
 func (self ends) Swap(i, j int) {
-	self.hits[i], self.hits[j] = self.hits[j], self.hits[i]
+	self[i], self[j] = self[j], self[i]
 }

@@ -31,9 +31,9 @@ type Params struct {
 }
 
 type DPHit struct {
-	Abpos, Bbpos int     // Start coordinate of local alignment
-	Aepos, Bepos int     // End coordinate of local alignment
-	Ldiag, Hdiag int     // Alignment is between (anti)diagonals ldiag & hdiag
-	Score        int     // Score of alignment where match = 1, difference = -3
-	Error        float64 // Lower bound on error rate of match
+	Abpos, Bbpos              int     // Start coordinate of local alignment
+	Aepos, Bepos              int     // End coordinate of local alignment
+	LowDiagonal, HighDiagonal int     // Alignment is between (anti)diagonals ldiag & hdiag
+	Score                     int     // Score of alignment where match = 1, difference = -3
+	Error                     float64 // Lower bound on error rate of match
 }
