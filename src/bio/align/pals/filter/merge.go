@@ -73,7 +73,7 @@ func (self *Merger) MergeFilterHit(hit *FilterHit) {
 	Bottom := hit.QFrom
 
 	var temp, free *Trapezoid
-	for base := self.trapOrder; true; base = temp {
+	for base := self.trapOrder; ; base = temp {
 		temp = base.Next
 		if Bottom-self.bottomPadding > base.Top {
 			if free == nil {
