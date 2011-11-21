@@ -17,8 +17,8 @@ package nw
 
 import (
 	"bio"
-	"bio/seq"
 	"bio/alignment"
+	"bio/seq"
 	"bio/util"
 )
 
@@ -41,7 +41,7 @@ type Aligner struct {
 }
 
 func (self *Aligner) Align(reference, query *seq.Seq) (aln *alignment.Alignment) {
-	r, c := reference.Len(), query.Len()
+	r, c := reference.Len()+1, query.Len()+1
 	table := make([][]int, r)
 	for i := range table {
 		table[i] = make([]int, c)
@@ -49,7 +49,7 @@ func (self *Aligner) Align(reference, query *seq.Seq) (aln *alignment.Alignment)
 
 	for i := 1; i < r; i++ {
 		for j := 1; j < c; j++ {
-			if rVal, qVal := LookUp.ValueToCode[reference.Seq[i-1]], LookUp.ValueToCode[query.Seq[i-1]]; rVal < 0 || qVal < 0 {
+			if rVal, qVal := LookUp.ValueToCode[reference.Seq[i-1]], LookUp.ValueToCode[query.Seq[j-1]]; rVal < 0 || qVal < 0 {
 				continue
 			} else {
 				match := table[i-1][j-1] + self.Matrix[rVal][qVal]
@@ -65,28 +65,31 @@ func (self *Aligner) Align(reference, query *seq.Seq) (aln *alignment.Alignment)
 
 	var score, scoreDiag, scoreUp, scoreLeft int
 
-	i, j := r, c
+	i, j := r-1, c-1
 	for i > 0 && j > 0 {
 		score = table[i][j]
-		scoreDiag = table[i-i][j-1]
+		scoreDiag = table[i-1][j-1]
 		scoreUp = table[i][j-1]
 		scoreLeft = table[i-1][j]
-		if rVal, qVal := LookUp.ValueToCode[reference.Seq[i-1]], LookUp.ValueToCode[query.Seq[i-1]]; rVal < 0 || qVal < 0 {
+		if rVal, qVal := LookUp.ValueToCode[reference.Seq[i-1]], LookUp.ValueToCode[query.Seq[j-1]]; rVal < 0 || qVal < 0 {
 			continue
 		} else {
-			if score == scoreDiag+self.Matrix[rVal][qVal] {
+			switch {
+			case score == scoreDiag+self.Matrix[rVal][qVal]:
 				refAln.Seq = append(refAln.Seq, reference.Seq[i-1])
 				queryAln.Seq = append(queryAln.Seq, query.Seq[j-1])
 				i--
 				j--
-			} else if score == scoreLeft+self.Gap {
+			case score == scoreLeft+self.Gap:
 				refAln.Seq = append(refAln.Seq, reference.Seq[i-1])
 				queryAln.Seq = append(queryAln.Seq, self.GapChar)
 				i--
-			} else if score == scoreUp+self.Gap {
+			case score == scoreUp+self.Gap:
 				refAln.Seq = append(refAln.Seq, self.GapChar)
 				queryAln.Seq = append(queryAln.Seq, query.Seq[j-1])
 				j--
+			default:
+				panic("lost path")
 			}
 		}
 	}
