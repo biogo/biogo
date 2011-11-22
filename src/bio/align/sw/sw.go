@@ -13,7 +13,7 @@
 //   You should have received a copy of the GNU General Public License
 //   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
-package nw
+package sw
 
 import (
 	"bio"
@@ -47,6 +47,8 @@ func (self *Aligner) Align(reference, query *seq.Seq) (aln *alignment.Alignment)
 		table[i] = make([]int, c)
 	}
 
+	max, maxI, maxJ := 0, 0, 0
+
 	for i := 1; i < r; i++ {
 		for j := 1; j < c; j++ {
 			if rVal, qVal := LookUp.ValueToCode[reference.Seq[i-1]], LookUp.ValueToCode[query.Seq[j-1]]; rVal < 0 || qVal < 0 {
@@ -55,7 +57,10 @@ func (self *Aligner) Align(reference, query *seq.Seq) (aln *alignment.Alignment)
 				match := table[i-1][j-1] + self.Matrix[rVal][qVal]
 				delete := table[i-1][j] + self.Gap
 				insert := table[i][j-1] + self.Gap
-				table[i][j] = util.Max(match, delete, insert)
+				table[i][j] = util.Max(0, match, delete, insert)
+				if table[i][j] >= max { // greedy so make farthest down and right
+					max, maxI, maxJ = table[i][j], i, j
+				}
 			}
 		}
 	}
@@ -65,9 +70,10 @@ func (self *Aligner) Align(reference, query *seq.Seq) (aln *alignment.Alignment)
 
 	var score, scoreDiag, scoreUp, scoreLeft int
 
-	i, j := r-1, c-1
-	for i > 0 && j > 0 {
-		score = table[i][j]
+	for i, j := maxI, maxJ; i > 0 && j > 0; {
+		if score = table[i][j]; score == 0 {
+			break
+		}
 		scoreDiag = table[i-1][j-1]
 		scoreUp = table[i][j-1]
 		scoreLeft = table[i-1][j]
@@ -92,15 +98,6 @@ func (self *Aligner) Align(reference, query *seq.Seq) (aln *alignment.Alignment)
 				panic("lost path")
 			}
 		}
-	}
-
-	for ; i > 0; i-- {
-		refAln.Seq = append(refAln.Seq, reference.Seq[i-1])
-		queryAln.Seq = append(queryAln.Seq, self.GapChar)
-	}
-	for ; j > 0; j-- {
-		refAln.Seq = append(refAln.Seq, self.GapChar)
-		queryAln.Seq = append(queryAln.Seq, query.Seq[j-1])
 	}
 
 	for i, j := 0, len(refAln.Seq)-1; i < j; i, j = i+1, j-1 {
