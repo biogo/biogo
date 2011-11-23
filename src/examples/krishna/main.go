@@ -189,7 +189,7 @@ func main() {
 				log.Println("Filtering")
 				timer.Interval()
 
-				lifeline := make(chan bool)
+				lifeline := make(chan struct{})
 				if *threads > 1 {
 					go func() {
 						for {

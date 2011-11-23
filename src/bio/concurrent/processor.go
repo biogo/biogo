@@ -24,7 +24,7 @@ import (
 type Processor struct {
 	in      chan interface{}
 	out     chan Result
-	stop    chan bool
+	stop    chan struct{}
 	working chan bool
 	*sync.WaitGroup
 }
@@ -40,7 +40,7 @@ func NewProcessor(f Eval, threads int, queue chan interface{}, buffer chan Resul
 	p = &Processor{
 		in:        queue,
 		out:       buffer,
-		stop:      make(chan bool),
+		stop:      make(chan struct{}),
 		working:   make(chan bool, threads),
 		WaitGroup: &sync.WaitGroup{},
 	}
