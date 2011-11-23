@@ -15,11 +15,11 @@ package pals
 //   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 import (
-	"fmt"
 	"bio"
-	"bio/seq"
-	"bio/feat"
 	"bio/align/pals/dp"
+	"bio/feat"
+	"bio/seq"
+	"fmt"
 )
 
 func FeatureOf(contigs *seq.Seq, from, to int, comp bool) (feature *feat.Feature, err error) {
@@ -74,7 +74,7 @@ func FeatureOf(contigs *seq.Seq, from, to int, comp bool) (feature *feat.Feature
 	}
 
 	return &feat.Feature{
-		ID:    contig.seq.ID,
+		ID:    append([]byte{}, contig.seq.ID...),
 		Start: contigFrom,
 		End:   contigTo,
 	}, nil

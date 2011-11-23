@@ -65,8 +65,8 @@ func (self *Aligner) Align(reference, query *seq.Seq) (aln *alignment.Alignment)
 		}
 	}
 
-	refAln := &seq.Seq{ID: reference.ID, Seq: make([]byte, 0, reference.Len())}
-	queryAln := &seq.Seq{ID: query.ID, Seq: make([]byte, 0, query.Len())}
+	refAln := &seq.Seq{ID: append([]byte{}, reference.ID...), Seq: make([]byte, 0, reference.Len())}
+	queryAln := &seq.Seq{ID: append([]byte{}, query.ID...), Seq: make([]byte, 0, query.Len())}
 
 	var score, scoreDiag, scoreUp, scoreLeft int
 

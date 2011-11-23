@@ -71,7 +71,7 @@ func (self *Quality) Trunc(start, end int) (q *Quality, err error) {
 	}
 
 	return &Quality{
-		ID:       self.ID,
+		ID:       append([]byte{}, self.ID...),
 		Qual:     ts,
 		Offset:   start,
 		Strand:   self.Strand,
@@ -87,7 +87,7 @@ func (self *Quality) Reverse() *Quality {
 	}
 
 	return &Quality{
-		ID:       self.ID,
+		ID:       append([]byte{}, self.ID...),
 		Qual:     rs,
 		Offset:   0,
 		Strand:   -self.Strand,

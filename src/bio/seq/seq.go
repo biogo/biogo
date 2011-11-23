@@ -19,9 +19,9 @@ package seq
 
 import (
 	"bio"
-	"bio/util"
 	"bio/featgroup"
 	"bio/interval"
+	"bio/util"
 )
 
 const (
@@ -124,7 +124,7 @@ func (self *Seq) Trunc(start, end int) (s *Seq, err error) {
 	}
 
 	return &Seq{
-		ID:       self.ID,
+		ID:       append([]byte{}, self.ID...),
 		Seq:      ts,
 		Offset:   start,
 		Strand:   self.Strand,
@@ -164,7 +164,7 @@ func (self *Seq) RevComp() (s *Seq, err error) {
 	}
 
 	return &Seq{
-		ID:       self.ID,
+		ID:       append([]byte{}, self.ID...),
 		Seq:      rs,
 		Offset:   0,
 		Strand:   -self.Strand,
