@@ -349,15 +349,12 @@ func (self *Sparse) Norm(ord int) (n float64) {
 func (self *Sparse) SumAxis(cols bool) (m *Sparse) {
 	m = &Sparse{}
 	if cols {
-		//running := make(chan bool, MaxProcs)
 		wg := &sync.WaitGroup{}
 		m.r, m.c, m.matrix = 1, self.c, make([]sparsecol, self.c)
 		for i, c := range self.matrix {
-			//running <- true
 			wg.Add(1)
 			go func(i int, c sparsecol) {
 				defer func() {
-					//<-running
 					wg.Done()
 				}()
 				m.matrix[i] = sparsecol{elem{r: 0, value: c.sum()}}
@@ -385,15 +382,12 @@ func (self *Sparse) SumAxis(cols bool) (m *Sparse) {
 func (self *Sparse) MaxAxis(cols bool) (m *Sparse) {
 	m = &Sparse{}
 	if cols {
-		//running := make(chan bool, MaxProcs)
 		wg := &sync.WaitGroup{}
 		m.r, m.c, m.matrix = 1, self.c, make([]sparsecol, self.c)
 		for i, c := range self.matrix {
-			//running <- true
 			wg.Add(1)
 			go func(i int, c sparsecol) {
 				defer func() {
-					//<-running
 					wg.Done()
 				}()
 				m.matrix[i] = sparsecol{elem{r: 0, value: c.max()}}
@@ -424,15 +418,12 @@ func (self *Sparse) MaxAxis(cols bool) (m *Sparse) {
 func (self *Sparse) MinAxis(cols bool) (m *Sparse) {
 	m = &Sparse{}
 	if cols {
-		//running := make(chan bool, MaxProcs)
 		wg := &sync.WaitGroup{}
 		m.r, m.c, m.matrix = 1, self.c, make([]sparsecol, self.c)
 		for i, c := range self.matrix {
-			//running <- true
 			wg.Add(1)
 			go func(i int, c sparsecol) {
 				defer func() {
-					//<-running
 					wg.Done()
 				}()
 				m.matrix[i] = sparsecol{elem{r: 0, value: c.min()}}
@@ -497,14 +488,11 @@ func (self *Sparse) Add(b *Sparse) (m *Sparse) {
 		matrix: make([]sparsecol, self.c),
 	}
 
-	//running := make(chan bool, MaxProcs)
 	wg := &sync.WaitGroup{}
 	for j, col := range self.matrix {
-		//running <- true
 		wg.Add(1)
 		go func(j int, col sparsecol) {
 			defer func() {
-				//<-running
 				wg.Done()
 			}()
 			m.matrix[j] = col.foldadd(b.matrix[j])
@@ -523,14 +511,11 @@ func (self *Sparse) Sub(b *Sparse) (m *Sparse) {
 		matrix: make([]sparsecol, self.c),
 	}
 
-	//running := make(chan bool, MaxProcs)
 	wg := &sync.WaitGroup{}
 	for j, col := range self.matrix {
-		//running <- true
 		wg.Add(1)
 		go func(j int, col sparsecol) {
 			defer func() {
-				//<-running
 				wg.Done()
 			}()
 			m.matrix[j] = col.foldsub(b.matrix[j])
@@ -553,14 +538,11 @@ func (self *Sparse) MulElem(b *Sparse) (m *Sparse) {
 		matrix: make([]sparsecol, self.c),
 	}
 
-	//running := make(chan bool, MaxProcs)
 	wg := &sync.WaitGroup{}
 	for j, col := range self.matrix {
-		//running <- true
 		wg.Add(1)
 		go func(j int, col sparsecol) {
 			defer func() {
-				//<-running
 				wg.Done()
 			}()
 			m.matrix[j] = col.foldmul(b.matrix[j])
@@ -647,14 +629,11 @@ func (self *Sparse) Scalar(f float64) (m *Sparse) {
 		matrix: make([]sparsecol, self.c),
 	}
 
-	//running := make(chan bool, MaxProcs)
 	wg := &sync.WaitGroup{}
 	for j, col := range self.matrix {
-		//running <- true
 		wg.Add(1)
 		go func(j int, col sparsecol) {
 			defer func() {
-				//<-running
 				wg.Done()
 			}()
 			m.matrix[j] = col.scale(f)
@@ -702,15 +681,12 @@ func (self *Sparse) Dot(b *Sparse) (p *Sparse) {
 
 	t := self.T()
 
-	//running := make(chan bool, MaxProcs)
 	wg := &sync.WaitGroup{}
 
 	for j, col := range b.matrix {
-		//running <- true
 		wg.Add(1)
 		go func(j int, col sparsecol) {
 			defer func() {
-				//<-running
 				wg.Done()
 			}()
 			for i, row := range t.matrix {
@@ -747,14 +723,11 @@ func (self *Sparse) Stack(b *Sparse) (m *Sparse) {
 		matrix: make([]sparsecol, self.c),
 	}
 
-	//running := make(chan bool, MaxProcs)
 	wg := &sync.WaitGroup{}
 	for j, col := range b.matrix {
-		//running <- true
 		wg.Add(1)
 		go func(j int, col sparsecol) {
 			defer func() {
-				//<-running
 				wg.Done()
 			}()
 			m.matrix[j] = make(sparsecol, len(self.matrix[j]), len(self.matrix[j])+len(col))
