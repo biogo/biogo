@@ -37,7 +37,7 @@ func Map(f Eval, slice []interface{}, threads, maxChunkSize int) (error error) {
 
 	chunkSize := util.Min(int(math.Ceil(float64(len(slice))/float64(threads))), maxChunkSize)
 
-	quit := make(chan bool)
+	quit := make(chan struct{})
 
 	go func() {
 		for s := 0; s*chunkSize < len(slice); s++ {

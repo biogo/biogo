@@ -51,9 +51,9 @@ func (self *Node) AddNode(n *Node) {
 	}
 }
 
-func (self *Node) NodeIterator(order byte, includeSelf bool) (c chan *Node, quit chan bool) {
+func (self *Node) NodeIterator(order byte, includeSelf bool) (c chan *Node, quit chan struct {}) {
 	c = make(chan *Node)
-	quit = make(chan bool)
+	quit = make(chan struct {})
 	switch order {
 	case PreOrder:
 		self.PreOrder(includeSelf, c, quit)
@@ -67,7 +67,7 @@ func (self *Node) NodeIterator(order byte, includeSelf bool) (c chan *Node, quit
 	return
 }
 
-func (self *Node) PreOrder(includeSelf bool, c chan *Node, quit chan bool) {
+func (self *Node) PreOrder(includeSelf bool, c chan *Node, quit chan struct {}) {
 	go func() {
 		defer func() {
 			close(c)
@@ -96,7 +96,7 @@ func (self *Node) PreOrder(includeSelf bool, c chan *Node, quit chan bool) {
 	}()
 }
 
-func (self *Node) PostOrder(includeSelf bool, c chan *Node, quit chan bool) {
+func (self *Node) PostOrder(includeSelf bool, c chan *Node, quit chan struct {}) {
 	go func() {
 		defer func() {
 			close(c)
@@ -144,7 +144,7 @@ func (self *Node) PostOrder(includeSelf bool, c chan *Node, quit chan bool) {
 	}()
 }
 
-func (self *Node) PrePostOrder(includeSelf bool, c chan *Node, quit chan bool) {
+func (self *Node) PrePostOrder(includeSelf bool, c chan *Node, quit chan struct {}) {
 	go func() {
 		defer func() {
 			close(c)
@@ -212,7 +212,7 @@ func (self *Node) PrePostOrder(includeSelf bool, c chan *Node, quit chan bool) {
 	}()
 }
 
-func (self *Node) LevelOrder(includeSelf bool, c chan *Node, quit chan bool) {
+func (self *Node) LevelOrder(includeSelf bool, c chan *Node, quit chan struct {}) {
 	go func() {
 		defer func() {
 			close(c)
@@ -251,9 +251,9 @@ func (self *Node) Nodes(order byte, includeSelf bool) (nodes NodeList) {
 	return
 }
 
-func (self *Node) InternalNodeIterator(includeSelf bool) (c chan *Node, quit chan bool) {
+func (self *Node) InternalNodeIterator(includeSelf bool) (c chan *Node, quit chan struct {}) {
 	c = make(chan *Node)
-	quit = make(chan bool)
+	quit = make(chan struct {})
 	go func() {
 		defer func() {
 			close(c)
@@ -282,9 +282,9 @@ func (self *Node) InternalNodes(includeSelf bool) (internals NodeList) {
 	return
 }
 
-func (self *Node) LeafIterator(includeSelf bool) (c chan *Node, quit chan bool) {
+func (self *Node) LeafIterator(includeSelf bool) (c chan *Node, quit chan struct {}) {
 	c = make(chan *Node)
-	quit = make(chan bool)
+	quit = make(chan struct {})
 	go func() {
 		defer func() {
 			close(c)

@@ -16,28 +16,29 @@
 package bed
 
 import (
-	"os"
-	"io"
-	"bufio"
-	"strings"
-	"strconv"
 	"bio"
 	"bio/feat"
+	"bufio"
+	"fmt"
+	"io"
+	"os"
+	"strconv"
+	"strings"
 )
 
 const (
-	chrom = iota
-	start
-	end
-	name
-	score
-	strand
-	thickStart
-	thickEnd
-	rgb
-	blockCount
-	blockSizes
-	blockStarts
+	chromField = iota
+	startField
+	endField
+	nameField
+	scoreField
+	strandField
+	thickStartField
+	thickEndField
+	rgbField
+	blockCountField
+	blockSizesField
+	blockStartsField
 	lastfield
 )
 
@@ -49,6 +50,7 @@ type Reader struct {
 	f       io.ReadCloser
 	r       *bufio.Reader
 	BedType int
+	line    int
 }
 
 // Returns a new BED format reader using f.
@@ -74,57 +76,80 @@ func (self *Reader) Read() (f *feat.Feature, err error) {
 	var (
 		line  string
 		elems []string
-		s     int8
+		se    error
 		ok    bool
 	)
 
 	if line, err = self.r.ReadString('\n'); err == nil {
+		self.line++
 		if len(line) > 0 && line[len(line)-1] == '\r' {
 			line = line[:len(line)-1]
 		}
 		line = strings.TrimSpace(line)
-		elems = strings.SplitN(line, "\t", self.BedType)
+		elems = strings.SplitN(line, "\t", self.BedType+1)
+		if len(elems) < self.BedType {
+			return nil, bio.NewError(fmt.Sprintf("Bad bedtype on line %d", self.line), 0, line)
+		}
+	} else {
+		return
 	}
 
-	if s, ok = CharToStrand[elems[strand]]; !ok {
-		s = 0
+	f = &feat.Feature{Moltype: bio.DNA}
+
+	for i := range elems {
+		switch i {
+		case chromField:
+			f.Location = []byte(elems[i])
+			if self.BedType <= nameField {
+				f.ID = []byte(elems[chromField] + ":" + elems[startField] + ".." + elems[endField])
+			}
+		case startField:
+			f.Start, se = strconv.Atoi(elems[i])
+			if se != nil {
+				f.Start = 0
+			}
+		case endField:
+			f.End, se = strconv.Atoi(elems[i])
+			if se != nil {
+				f.End = 0
+			}
+		case nameField:
+			f.ID = []byte(elems[i])
+		case scoreField:
+			if f.Score, se = strconv.Atof64(elems[i]); se != nil {
+				f.Score = 0
+			}
+		case strandField:
+			if f.Strand, ok = CharToStrand[elems[i]]; !ok {
+				f.Strand = 0
+			}
+
+			// The following fields are unsupported at this stage
+		case thickStartField:
+		case thickEndField:
+		case rgbField:
+		case blockCountField:
+		case blockSizesField:
+		case blockStartsField:
+		}
 	}
 
-	start, se := strconv.Atoi(elems[start])
-	if se != nil {
-		start = 0
-	}
-	end, se := strconv.Atoi(elems[end])
-	if se != nil {
-		end = 0
-	}
-	score, se := strconv.Atof64(elems[score])
-	if se != nil {
-		score = 0
-	}
-
-	return &feat.Feature{
-		ID:         []byte(elems[name]),
-		Location:   []byte(elems[chrom]),
-		Start:      start,
-		End:        end,
-		Feature:    nil,
-		Score:      score,
-		Attributes: nil,
-		Comments:   nil,
-		Frame:      0,
-		Strand:     s,
-		Moltype:    bio.DNA,
-	}, err
+	return
 }
+
+// Return the current line number
+func (self *Reader) Line() int { return self.line }
 
 // Rewind the reader.
 func (self *Reader) Rewind() (err error) {
 	if s, ok := self.f.(io.Seeker); ok {
-		_, err = s.Seek(0, 0)
+		if _, err = s.Seek(0, 0); err == nil {
+			self.line = 0
+		}
 	} else {
 		err = bio.NewError("Not a Seeker", 0, self)
 	}
+
 	return
 }
 
