@@ -48,7 +48,6 @@ func (self *Interval) GobEncode() (b []byte, err error) {
 	encoder.Encode(self.line)
 	encoder.Encode(self.priority)
 	encoder.Encode(self.maxEnd)
-	encoder.Encode(self.minEnd)
 	encoder.Encode(self.Meta)
 
 	if self.left != nil {
@@ -100,7 +99,6 @@ func (self *Interval) GobDecode(b []byte) (err error) {
 	decoder.Decode(self.line)
 	decoder.Decode(self.priority)
 	decoder.Decode(self.maxEnd)
-	decoder.Decode(self.minEnd)
 	decoder.Decode(self.Meta)
 
 	decoder.Decode(branch)

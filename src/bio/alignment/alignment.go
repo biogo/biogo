@@ -18,13 +18,13 @@
 package alignment
 
 import (
-	"bytes"
-	"strings"
 	"bio"
-	"bio/seq"
 	"bio/featgroup"
 	"bio/interval"
+	"bio/seq"
 	"bio/util"
+	"bytes"
+	"strings"
 )
 
 const (
@@ -196,26 +196,28 @@ func (self *Alignment) Stitch(f *featgroup.FeatureGroup) (a *Alignment, err erro
 	)
 
 	left := self.Start()
-	for segment := range t.Traverse() {
-		if segment.End() < left {
-			continue
-		}
-		if last == nil { // start of the features
-			start = segment.Start()
-		}
-		if last.End() < segment.Start()-1 { // at least one position gap between this feature and the last
-			for i, sequence := range *self {
-				(*a)[i].Seq = append((*a)[i].Seq, sequence.Seq[util.Max(0, start-sequence.Offset):last.End()-sequence.Offset]...)
+	for chromosome := range t {
+		for segment := range t.Traverse(chromosome) {
+			if segment.End() < left {
+				continue
 			}
-			start = segment.Start()
-		}
-		if segment.End() > self.End() { // this is the last useful segment
-			for i, sequence := range *self {
-				(*a)[i].Seq = append((*a)[i].Seq, sequence.Seq[util.Max(0, start-sequence.Offset):util.Min(len(sequence.Seq), last.End()-sequence.Offset)]...)
+			if last == nil { // start of the features
+				start = segment.Start()
 			}
-			break
+			if last.End() < segment.Start()-1 { // at least one position gap between this feature and the last
+				for i, sequence := range *self {
+					(*a)[i].Seq = append((*a)[i].Seq, sequence.Seq[util.Max(0, start-sequence.Offset):last.End()-sequence.Offset]...)
+				}
+				start = segment.Start()
+			}
+			if segment.End() > self.End() { // this is the last useful segment
+				for i, sequence := range *self {
+					(*a)[i].Seq = append((*a)[i].Seq, sequence.Seq[util.Max(0, start-sequence.Offset):util.Min(len(sequence.Seq), last.End()-sequence.Offset)]...)
+				}
+				break
+			}
+			last = segment
 		}
-		last = segment
 	}
 
 	for i := 0; i < len(*self); i++ {

@@ -238,7 +238,7 @@ func main() {
 	outputWg.Wait()
 }
 
-func processServer(index *interval.Tree, queue, output chan *feat.Feature, wg *sync.WaitGroup) {
+func processServer(index interval.Tree, queue, output chan *feat.Feature, wg *sync.WaitGroup) {
 	defer wg.Done()
 	var (
 		buffer      []byte   = make([]byte, 0, annotationLength)
