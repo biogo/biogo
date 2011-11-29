@@ -21,6 +21,7 @@ package interval
 import (
 	"bio"
 	"bio/util"
+	"fmt"
 	"math"
 	"math/rand"
 )
@@ -573,4 +574,16 @@ func (self *Interval) remove() (root, removed *Interval) {
 // Return the range of the node's subtree span
 func (self *Interval) Range() (int, int) {
 	return self.minStart, self.maxEnd
+}
+
+// Default function for String method
+var StringFunc = defaultStringFunc
+
+func defaultStringFunc(i *Interval) string {
+	return fmt.Sprintf("%s:[%d, %d)", i.chromosome, i.start, i.end)
+}
+
+// String method
+func (self *Interval) String() string {
+	return StringFunc(self)
 }
