@@ -1,26 +1,18 @@
-// Implementation of a promise multiple goroutine synchronisation and communication system
-// based on the approach used in Alice. Promises will safely allow multiple promisers to
-// interact with multiple promisees.
-//
-// New or non-error Broken Promises can be Fulfilled or Failed, Fulfilled or Failed Promises
-// can be Broken and any state of Promise can be Recovered.
-//
+package future
 // Copyright ©2011 Dan Kortschak <dan.kortschak@adelaide.edu.au>
 //
-//   This program is free software: you can redistribute it and/or modify
-//   it under the terms of the GNU General Public License as published by
-//   the Free Software Foundation, either version 3 of the License, or
-//   (at your option) any later version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 //
-//   This program is distributed in the hope that it will be useful,
-//   but WITHOUT ANY WARRANTY; without even the implied warranty of
-//   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//   GNU General Public License for more details.
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
 //
-//   You should have received a copy of the GNU General Public License
-//   along with this program.  If not, see <http://www.gnu.org/licenses/>.
-//
-package future
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import (
 	"bio"
@@ -32,6 +24,13 @@ type scroll struct {
 	error error
 }
 
+// Implementation of a promise multiple goroutine synchronisation and communication system
+// based on the approach used in Alice. Promises will safely allow multiple promisers to
+// interact with multiple promisees.
+//
+// New or non-error Broken Promises can be Fulfilled or Failed, Fulfilled or Failed Promises
+// can be Broken and any state of Promise can be Recovered.
+//
 // Promises can be mutable or not, recoverable or not and may relay internal error states
 // to other listeners.
 // Mutable promises may have their value state changed with subsequence Fulfill calls.
