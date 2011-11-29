@@ -1,9 +1,9 @@
 package main
 
 import (
-	"bio/seq"
-	"bio/align/pals/dp"
-	"bio/align/pals"
+	"github.com/kortschak/BioGo/bio/align/pals"
+	"github.com/kortschak/BioGo/bio/align/pals/dp"
+	"github.com/kortschak/BioGo/bio/seq"
 )
 
 func WriteDPHits(w *pals.Writer, target, query *seq.Seq, hits []dp.DPHit, comp bool) (n int, err error) {

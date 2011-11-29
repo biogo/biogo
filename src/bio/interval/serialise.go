@@ -1,25 +1,25 @@
-package interval
 // Package to find intersections between intervals or sort intervals.
-//
+package interval
 // Copyright ©2011 Dan Kortschak <dan.kortschak@adelaide.edu.au>
+// Derived from quicksect.py of bx-python ©James Taylor bitbucket.org/james_taylor/bx-python
 //
-//   This program is free software: you can redistribute it and/or modify
-//   it under the terms of the GNU General Public License as published by
-//   the Free Software Foundation, either version 3 of the License, or
-//   (at your option) any later version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 //
-//   This program is distributed in the hope that it will be useful,
-//   but WITHOUT ANY WARRANTY; without even the implied warranty of
-//   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//   GNU General Public License for more details.
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
 //
-//   You should have received a copy of the GNU General Public License
-//   along with this program.  If not, see <http://www.gnu.org/licenses/>.
-//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 import (
-	"bio"
 	"bytes"
 	"encoding/gob"
+	"github.com/kortschak/BioGo/bio"
 )
 
 const Version int = 1
@@ -48,7 +48,6 @@ func (self *Interval) GobEncode() (b []byte, err error) {
 	encoder.Encode(self.line)
 	encoder.Encode(self.priority)
 	encoder.Encode(self.maxEnd)
-	encoder.Encode(self.minEnd)
 	encoder.Encode(self.Meta)
 
 	if self.left != nil {
@@ -100,7 +99,6 @@ func (self *Interval) GobDecode(b []byte) (err error) {
 	decoder.Decode(self.line)
 	decoder.Decode(self.priority)
 	decoder.Decode(self.maxEnd)
-	decoder.Decode(self.minEnd)
 	decoder.Decode(self.Meta)
 
 	decoder.Decode(branch)

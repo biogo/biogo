@@ -26,14 +26,17 @@ the underlying language make up for this in the interim.
 
 There are no tests, although the small suite of example programs do cover a
 reasonable amount of the library. I have every intention of fully covering the
-library with tests. I plan to use Gustavo Niemeyer's gocheck.
+library with tests. I plan to use Gustavo Niemeyer's gocheck and example tests.
 
 Installation:
 
-BioGo installation currently depends on gb <https://github.com/skelterjohn/go-gb>.
-
 Assuming $GOROOT is set correctly, the following will build BioGo:
 
+With gb <https://github.com/skelterjohn/go-gb>...
+
 $ cd BioGo
-$ export GOPATH=$GOPATH:$PWD
 $ gb
+
+or with goinstall...
+
+$ goinstall github.com/kortschak/BioGo

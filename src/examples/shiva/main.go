@@ -2,10 +2,10 @@ package main
 
 import (
 	"flag"
-	"os"
 	"fmt"
-	"bio/seq"
-	"bio/io/seqio/fasta"
+	"github.com/kortschak/BioGo/bio/io/seqio/fasta"
+	"github.com/kortschak/BioGo/bio/seq"
+	"os"
 	"runtime/pprof"
 )
 

@@ -1,30 +1,28 @@
 // Kmer indexing package based on Bob Edgar and Gene Meyers' approach used in PALS.
 //
 // Currently limited to Kmers of 15 nucleotides due to int constraints in Go.
-//
+package kmerindex
 // Copyright ©2011 Dan Kortschak <dan.kortschak@adelaide.edu.au>
 //
-//   This program is free software: you can redistribute it and/or modify
-//   it under the terms of the GNU General Public License as published by
-//   the Free Software Foundation, either version 3 of the License, or
-//   (at your option) any later version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 //
-//   This program is distributed in the hope that it will be useful,
-//   but WITHOUT ANY WARRANTY; without even the implied warranty of
-//   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//   GNU General Public License for more details.
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
 //
-//   You should have received a copy of the GNU General Public License
-//   along with this program.  If not, see <http://www.gnu.org/licenses/>.
-//
-package kmerindex
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import (
 	"fmt"
+	"github.com/kortschak/BioGo/bio"
+	"github.com/kortschak/BioGo/bio/seq"
+	"github.com/kortschak/BioGo/bio/util"
 	"math"
-	"bio"
-	"bio/seq"
-	"bio/util"
 )
 
 var Debug bool

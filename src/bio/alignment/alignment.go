@@ -1,30 +1,28 @@
 // Basic sequence alignment package
-//
+package alignment
 // Copyright ©2011 Dan Kortschak <dan.kortschak@adelaide.edu.au>
 //
-//   This program is free software: you can redistribute it and/or modify
-//   it under the terms of the GNU General Public License as published by
-//   the Free Software Foundation, either version 3 of the License, or
-//   (at your option) any later version.
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
 //
-//   This program is distributed in the hope that it will be useful,
-//   but WITHOUT ANY WARRANTY; without even the implied warranty of
-//   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//   GNU General Public License for more details.
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
 //
-//   You should have received a copy of the GNU General Public License
-//   along with this program.  If not, see <http://www.gnu.org/licenses/>.
-//
-package alignment
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import (
 	"bytes"
+	"github.com/kortschak/BioGo/bio"
+	"github.com/kortschak/BioGo/bio/featgroup"
+	"github.com/kortschak/BioGo/bio/interval"
+	"github.com/kortschak/BioGo/bio/seq"
+	"github.com/kortschak/BioGo/bio/util"
 	"strings"
-	"bio"
-	"bio/seq"
-	"bio/featgroup"
-	"bio/interval"
-	"bio/util"
 )
 
 const (
@@ -196,26 +194,28 @@ func (self *Alignment) Stitch(f *featgroup.FeatureGroup) (a *Alignment, err erro
 	)
 
 	left := self.Start()
-	for segment := range t.Traverse() {
-		if segment.End() < left {
-			continue
-		}
-		if last == nil { // start of the features
-			start = segment.Start()
-		}
-		if last.End() < segment.Start()-1 { // at least one position gap between this feature and the last
-			for i, sequence := range *self {
-				(*a)[i].Seq = append((*a)[i].Seq, sequence.Seq[util.Max(0, start-sequence.Offset):last.End()-sequence.Offset]...)
+	for chromosome := range t {
+		for segment := range t.Traverse(chromosome) {
+			if segment.End() < left {
+				continue
 			}
-			start = segment.Start()
-		}
-		if segment.End() > self.End() { // this is the last useful segment
-			for i, sequence := range *self {
-				(*a)[i].Seq = append((*a)[i].Seq, sequence.Seq[util.Max(0, start-sequence.Offset):util.Min(len(sequence.Seq), last.End()-sequence.Offset)]...)
+			if last == nil { // start of the features
+				start = segment.Start()
 			}
-			break
+			if last.End() < segment.Start()-1 { // at least one position gap between this feature and the last
+				for i, sequence := range *self {
+					(*a)[i].Seq = append((*a)[i].Seq, sequence.Seq[util.Max(0, start-sequence.Offset):last.End()-sequence.Offset]...)
+				}
+				start = segment.Start()
+			}
+			if segment.End() > self.End() { // this is the last useful segment
+				for i, sequence := range *self {
+					(*a)[i].Seq = append((*a)[i].Seq, sequence.Seq[util.Max(0, start-sequence.Offset):util.Min(len(sequence.Seq), last.End()-sequence.Offset)]...)
+				}
+				break
+			}
+			last = segment
 		}
-		last = segment
 	}
 
 	for i := 0; i < len(*self); i++ {
