@@ -15,8 +15,8 @@ package pals
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import (
-	"bio/feat"
-	"bio/seq"
+	"github.com/kortschak/BioGo/bio/feat"
+	"github.com/kortschak/BioGo/bio/seq"
 )
 
 const (

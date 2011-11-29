@@ -15,11 +15,11 @@ package pals
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 import (
-	"bio"
-	"bio/align/pals/dp"
-	"bio/feat"
-	"bio/seq"
 	"fmt"
+	"github.com/kortschak/BioGo/bio"
+	"github.com/kortschak/BioGo/bio/align/pals/dp"
+	"github.com/kortschak/BioGo/bio/feat"
+	"github.com/kortschak/BioGo/bio/seq"
 )
 
 func FeatureOf(contigs *seq.Seq, from, to int, comp bool) (feature *feat.Feature, err error) {

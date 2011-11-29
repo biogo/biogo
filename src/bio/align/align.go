@@ -16,8 +16,8 @@ package align
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import (
-	"bio/alignment"
-	"bio/seq"
+	"github.com/kortschak/BioGo/bio/alignment"
+	"github.com/kortschak/BioGo/bio/seq"
 )
 
 type Aligner interface {

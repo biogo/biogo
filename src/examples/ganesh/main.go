@@ -1,12 +1,12 @@
 package main
 
 import (
-	"bio/matrix"
-	"bio/matrix/sparse"
-	"bio/nmf"
 	"bufio"
 	"flag"
 	"fmt"
+	"github.com/kortschak/BioGo/bio/matrix"
+	"github.com/kortschak/BioGo/bio/matrix/sparse"
+	"github.com/kortschak/BioGo/bio/nmf"
 	"io"
 	"math/rand"
 	"os"

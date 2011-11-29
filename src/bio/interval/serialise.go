@@ -17,9 +17,9 @@ package interval
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import (
-	"bio"
 	"bytes"
 	"encoding/gob"
+	"github.com/kortschak/BioGo/bio"
 )
 
 const Version int = 1

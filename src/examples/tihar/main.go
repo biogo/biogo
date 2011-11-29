@@ -1,13 +1,13 @@
 package main
 
 import (
-	"bio/index/kmerindex"
-	"bio/io/seqio/fasta"
-	"bio/matrix"
-	"bio/matrix/sparse"
-	"bio/nmf"
 	"flag"
 	"fmt"
+	"github.com/kortschak/BioGo/bio/index/kmerindex"
+	"github.com/kortschak/BioGo/bio/io/seqio/fasta"
+	"github.com/kortschak/BioGo/bio/matrix"
+	"github.com/kortschak/BioGo/bio/matrix/sparse"
+	"github.com/kortschak/BioGo/bio/nmf"
 	"math/rand"
 	"os"
 	"runtime"

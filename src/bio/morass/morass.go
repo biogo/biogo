@@ -22,10 +22,10 @@ package morass
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import (
-	"bio"
 	"container/heap"
 	"encoding/gob"
 	"errors"
+	"github.com/kortschak/BioGo/bio"
 	"io"
 	"io/ioutil"
 	"os"

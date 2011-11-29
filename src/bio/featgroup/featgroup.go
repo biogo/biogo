@@ -18,7 +18,7 @@ package featgroup
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import (
-	"bio/feat"
+	"github.com/kortschak/BioGo/bio/feat"
 )
 
 type FeatureGroup []*feat.Feature

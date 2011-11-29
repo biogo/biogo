@@ -1,14 +1,14 @@
 package main
 
 import (
-	"bio/feat"
-	"bio/interval"
-	"bio/io/featio/gff"
-	"bio/util"
 	"container/heap"
 	"encoding/gob"
 	"flag"
 	"fmt"
+	"github.com/kortschak/BioGo/bio/feat"
+	"github.com/kortschak/BioGo/bio/interval"
+	"github.com/kortschak/BioGo/bio/io/featio/gff"
+	"github.com/kortschak/BioGo/bio/util"
 	"os"
 	"runtime"
 	"sort"

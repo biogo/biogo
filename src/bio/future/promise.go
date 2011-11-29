@@ -15,7 +15,7 @@ package future
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import (
-	"bio"
+	"github.com/kortschak/BioGo/bio"
 	"sync"
 )
 

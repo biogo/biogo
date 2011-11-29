@@ -16,18 +16,18 @@ package gff
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import (
-	"os"
-	"io"
-	"time"
 	"bufio"
-	"fmt"
-	"strings"
 	"bytes"
+	"fmt"
+	"github.com/kortschak/BioGo/bio"
+	"github.com/kortschak/BioGo/bio/feat"
+	"github.com/kortschak/BioGo/bio/io/seqio/fasta"
+	"github.com/kortschak/BioGo/bio/seq"
+	"io"
+	"os"
 	"strconv"
-	"bio/seq"
-	"bio/io/seqio/fasta"
-	"bio/feat"
-	"bio"
+	"strings"
+	"time"
 )
 
 const (

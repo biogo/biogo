@@ -16,10 +16,10 @@ package seq
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import (
-	"bio"
-	"bio/featgroup"
-	"bio/interval"
-	"bio/util"
+	"github.com/kortschak/BioGo/bio"
+	"github.com/kortschak/BioGo/bio/featgroup"
+	"github.com/kortschak/BioGo/bio/interval"
+	"github.com/kortschak/BioGo/bio/util"
 )
 
 const (

@@ -15,10 +15,10 @@ package util
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import (
+	"crypto/md5"
+	"github.com/kortschak/BioGo/bio"
 	"io"
 	"os"
-	"bio"
-	"crypto/md5"
 )
 
 const (

@@ -2,10 +2,10 @@ package main
 
 import (
 	"flag"
-	"os"
 	"fmt"
-	"bio/index/kmerindex"
-	"bio/io/seqio/fasta"
+	"github.com/kortschak/BioGo/bio/index/kmerindex"
+	"github.com/kortschak/BioGo/bio/io/seqio/fasta"
+	"os"
 )
 
 func main() {

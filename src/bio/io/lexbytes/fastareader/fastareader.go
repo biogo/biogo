@@ -16,13 +16,13 @@ package fastareader
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import (
-	"os"
-	"io"
 	"bufio"
 	"fmt"
-	"bio"
-	"bio/seq"
-	lex "bio/io/lexbytes"
+	"github.com/kortschak/BioGo/bio"
+	lex "github.com/kortschak/BioGo/bio/io/lexbytes"
+	"github.com/kortschak/BioGo/bio/seq"
+	"io"
+	"os"
 )
 
 // Fasta sequence format reader type.

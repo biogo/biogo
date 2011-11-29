@@ -16,10 +16,10 @@ package bed
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import (
-	"bio"
-	"bio/feat"
 	"bufio"
 	"fmt"
+	"github.com/kortschak/BioGo/bio"
+	"github.com/kortschak/BioGo/bio/feat"
 	"io"
 	"os"
 	"strconv"
