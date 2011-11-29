@@ -46,9 +46,8 @@ func (self Tree) Insert(i *Interval) {
 }
 
 // Merge an Interval into the Tree.
-func (self Tree) Merge(i *Interval, overlap int) (replaced []*Interval) {
+func (self Tree) Merge(i *Interval, overlap int) (inserted, replaced []*Interval) {
 	if root, ok := self[i.chromosome]; ok {
-		var inserted []*Interval
 		inserted, replaced = root.merge(i, overlap)
 		removed := [][]*Interval{replaced}
 		self.replace(inserted, removed)
@@ -315,7 +314,7 @@ func (self *Interval) rotateLeft() (root *Interval) {
 	return
 }
 
-func (self *Interval) merge(i *Interval, overlap int) (inserted []*Interval, removed []*Interval) {
+func (self *Interval) merge(i *Interval, overlap int) (inserted, removed []*Interval) {
 	r := make(chan *Interval)
 	removed = []*Interval{}
 
@@ -325,7 +324,7 @@ func (self *Interval) merge(i *Interval, overlap int) (inserted []*Interval, rem
 			min, max = util.Min(min, old.start), util.Max(max, old.end)
 			removed = append(removed, old)
 		}
-		n, _ := New("", util.Min(i.start, min), util.Max(i.end, max), 0, nil)
+		n, _ := New(i.chromosome, util.Min(i.start, min), util.Max(i.end, max), 0, nil)
 		inserted = []*Interval{n}
 		// Do something sensible when only one interval is found and the only action is to extend or ignore
 	}()
@@ -469,7 +468,7 @@ func (self *Interval) flatten(i *Interval, overlap, tolerance int) (inserted []*
 		var last *Interval
 		for old := range r {
 			if last != nil && old.start-tolerance > last.end {
-				n, _ := New("", min, last.end, 0, nil)
+				n, _ := New(old.chromosome, min, last.end, 0, nil)
 				inserted = append(inserted, n)
 				min = old.start
 				j++
@@ -500,7 +499,7 @@ func (self *Interval) flattenWithin(i *Interval, slop, tolerance int) (inserted 
 		var last *Interval
 		for old := range r {
 			if last != nil && old.start-tolerance > last.end {
-				n, _ := New("", min, last.end, 0, nil)
+				n, _ := New(old.chromosome, min, last.end, 0, nil)
 				inserted = append(inserted, n)
 				min = old.start
 				j++
