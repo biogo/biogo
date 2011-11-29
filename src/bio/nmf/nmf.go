@@ -18,10 +18,10 @@ package nmf
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import (
-	"time"
+	"github.com/kortschak/BioGo/bio/matrix"
+	"github.com/kortschak/BioGo/bio/matrix/sparse"
 	"math"
-	"bio/matrix"
-	"bio/matrix/sparse"
+	"time"
 )
 
 // Default inner loop size for subproblem

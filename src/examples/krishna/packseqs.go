@@ -1,14 +1,14 @@
 package main
 
 import (
-	"os"
 	"fmt"
+	"github.com/kortschak/BioGo/bio/align/pals"
+	"github.com/kortschak/BioGo/bio/io/seqio/fasta"
+	"github.com/kortschak/BioGo/bio/seq"
+	"github.com/kortschak/BioGo/bio/util"
 	"log"
+	"os"
 	"path/filepath"
-	"bio/seq"
-	"bio/util"
-	"bio/io/seqio/fasta"
-	"bio/align/pals"
 )
 
 // temporary filler - write a logger

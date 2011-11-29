@@ -2,14 +2,14 @@ package main
 
 import (
 	"flag"
-	"os"
 	"fmt"
-	"bio/index/kmerindex"
-	"bio/graphics/color"
-	"bio/graphics/kmercolor"
-	"bio/io/seqio/fasta"
+	"github.com/kortschak/BioGo/bio/graphics/color"
+	"github.com/kortschak/BioGo/bio/graphics/kmercolor"
+	"github.com/kortschak/BioGo/bio/index/kmerindex"
+	"github.com/kortschak/BioGo/bio/io/seqio/fasta"
 	"image"
 	"image/png"
+	"os"
 )
 
 func main() {

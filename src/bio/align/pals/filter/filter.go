@@ -16,10 +16,10 @@ package filter
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import (
-	"bio"
-	"bio/seq"
-	"bio/index/kmerindex"
-	"bio/morass"
+	"github.com/kortschak/BioGo/bio"
+	"github.com/kortschak/BioGo/bio/index/kmerindex"
+	"github.com/kortschak/BioGo/bio/morass"
+	"github.com/kortschak/BioGo/bio/seq"
 )
 
 type Filter struct {

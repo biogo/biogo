@@ -2,21 +2,21 @@ package main
 
 import (
 	"flag"
-	"os"
+	"fmt"
+	"github.com/kortschak/BioGo/bio/align/pals"
+	"github.com/kortschak/BioGo/bio/align/pals/dp"
+	"github.com/kortschak/BioGo/bio/align/pals/filter"
+	"github.com/kortschak/BioGo/bio/index/kmerindex"
+	"github.com/kortschak/BioGo/bio/morass"
+	"github.com/kortschak/BioGo/bio/seq"
 	"io"
 	"log"
-	"time"
-	"fmt"
+	"os"
 	"runtime"
 	"runtime/pprof"
-	"strings"
 	"strconv"
-	"bio/seq"
-	"bio/index/kmerindex"
-	"bio/morass"
-	"bio/align/pals/filter"
-	"bio/align/pals/dp"
-	"bio/align/pals"
+	"strings"
+	"time"
 )
 
 const (

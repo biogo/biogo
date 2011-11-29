@@ -21,10 +21,10 @@ package concurrent
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import (
+	"github.com/kortschak/BioGo/bio"
+	"github.com/kortschak/BioGo/bio/future"
+	"github.com/kortschak/BioGo/bio/util"
 	"math"
-	"bio"
-	"bio/future"
-	"bio/util"
 )
 
 // Apply a function to an array slice using a Processor

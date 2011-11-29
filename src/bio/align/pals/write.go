@@ -15,11 +15,11 @@ package pals
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import (
-	"os"
-	"io"
 	"fmt"
-	"bio/feat"
-	"bio/io/featio/gff"
+	"github.com/kortschak/BioGo/bio/feat"
+	"github.com/kortschak/BioGo/bio/io/featio/gff"
+	"io"
+	"os"
 )
 
 var t *feat.Feature = &feat.Feature{Source: []byte("pals"), Feature: []byte("hit")}

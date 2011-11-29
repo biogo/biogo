@@ -15,7 +15,7 @@ package seqio
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import "bio/seq"
+import "github.com/kortschak/BioGo/bio/seq"
 
 type Reader interface {
 	Read() (*seq.Seq, error)

@@ -16,10 +16,10 @@ package kmercolor
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import (
+	"github.com/kortschak/BioGo/bio/graphics/color"
+	"github.com/kortschak/BioGo/bio/index/kmerindex"
+	"github.com/kortschak/BioGo/bio/util"
 	"image"
-	"bio/util"
-	"bio/index/kmerindex"
-	"bio/graphics/color"
 )
 
 const (

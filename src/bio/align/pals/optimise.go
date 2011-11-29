@@ -16,13 +16,13 @@ package pals
 
 import (
 	"fmt"
-	"bio"
-	"bio/seq"
-	"bio/util"
-	"bio/align/pals/filter"
-	"bio/align/pals/dp"
-	"unsafe"
+	"github.com/kortschak/BioGo/bio"
+	"github.com/kortschak/BioGo/bio/align/pals/dp"
+	"github.com/kortschak/BioGo/bio/align/pals/filter"
+	"github.com/kortschak/BioGo/bio/seq"
+	"github.com/kortschak/BioGo/bio/util"
 	"reflect"
+	"unsafe"
 )
 
 /***

@@ -18,9 +18,9 @@ package sparse
 // N.B. There is fairly extensive use of unrecovered panics in sparse to avoid unreadable matrix formulae.
 
 import (
-	"bio/matrix"
 	"errors"
 	"fmt"
+	"github.com/kortschak/BioGo/bio/matrix"
 	"math"
 	"math/rand"
 	"runtime"

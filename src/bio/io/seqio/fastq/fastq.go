@@ -16,12 +16,12 @@ package fastq
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import (
-	"os"
-	"io"
 	"bufio"
 	"bytes"
-	"bio"
-	"bio/seq"
+	"github.com/kortschak/BioGo/bio"
+	"github.com/kortschak/BioGo/bio/seq"
+	"io"
+	"os"
 )
 
 const (

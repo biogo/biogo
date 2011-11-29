@@ -2,14 +2,14 @@ package main
 
 import (
 	"flag"
-	"os"
 	"fmt"
-	"bio"
-	"bio/pwm"
-	"bio/io/alignio"
-	"bio/alignment"
-	"bio/io/seqio/fasta"
-	"bio/io/featio/gff"
+	"github.com/kortschak/BioGo/bio"
+	"github.com/kortschak/BioGo/bio/alignment"
+	"github.com/kortschak/BioGo/bio/io/alignio"
+	"github.com/kortschak/BioGo/bio/io/featio/gff"
+	"github.com/kortschak/BioGo/bio/io/seqio/fasta"
+	"github.com/kortschak/BioGo/bio/pwm"
+	"os"
 )
 
 func main() {

@@ -27,8 +27,8 @@ package bigarray
 
 import (
 	"fmt"
+	"github.com/kortschak/BioGo/bio/util"
 	"runtime"
-	"bio/util"
 )
 
 const (

@@ -19,10 +19,10 @@ package kmerindex
 
 import (
 	"fmt"
+	"github.com/kortschak/BioGo/bio"
+	"github.com/kortschak/BioGo/bio/seq"
+	"github.com/kortschak/BioGo/bio/util"
 	"math"
-	"bio"
-	"bio/seq"
-	"bio/util"
 )
 
 var Debug bool

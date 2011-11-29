@@ -15,8 +15,8 @@ package filter
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import (
-	"bio/seq"
-	"bio/index/kmerindex"
+	"github.com/kortschak/BioGo/bio/index/kmerindex"
+	"github.com/kortschak/BioGo/bio/seq"
 	"sort"
 )
 
@@ -50,15 +50,15 @@ func NewMerger(index *kmerindex.Index, query *seq.Seq, filterParams *Params, sel
 	}
 
 	m = &Merger{
-		target:        index.Seq,
-		filterParams:  filterParams,
-		query:         query,
+		target:         index.Seq,
+		filterParams:   filterParams,
+		query:          query,
 		selfComparison: selfCompare,
-		bottomPadding: index.GetK() + 2,
-		leftPadding:   leftPadding,
-		binWidth:      binWidth,
-		eoTerm:        eoTerm,
-		trapOrder:     eoTerm,
+		bottomPadding:  index.GetK() + 2,
+		leftPadding:    leftPadding,
+		binWidth:       binWidth,
+		eoTerm:         eoTerm,
+		trapOrder:      eoTerm,
 	}
 
 	return m
