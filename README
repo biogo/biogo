@@ -37,6 +37,7 @@ With gb <https://github.com/skelterjohn/go-gb>...
 $ cd BioGo
 $ gb
 
-or with goinstall...
+or with goinstall to see examples...
 
-$ goinstall github.com/kortschak/BioGo
+e.g.
+$ goinstall github.com/kortschak/BioGo/examples/krishna
