@@ -104,7 +104,7 @@ func main() {
 	}
 
 	if *logToFile {
-		initLog("krishna-" + time.LocalTime().Format(timeFormat) + "-" + strconv.Itoa(pid) + ".log")
+		initLog("krishna-" + time.Now().Format(timeFormat) + "-" + strconv.Itoa(pid) + ".log")
 	}
 
 	log.Println(os.Args)

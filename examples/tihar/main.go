@@ -174,7 +174,7 @@ func main() {
 	density := nonZero / float64(r*c)
 
 	if *seed == -1 {
-		*seed = time.Nanoseconds()
+		*seed = time.Now().UnixNano()
 	}
 	fmt.Fprintf(os.Stderr, "Using %v as random seed.\n", *seed)
 	rand.Seed(*seed)
@@ -185,7 +185,7 @@ func main() {
 
 	fmt.Fprintf(os.Stderr, "Dimensions of Kmer matrix = (%v, %v)\nDensity = %.3f %%\n%v\n", r, c, (density)*100, kmerMatrix)
 
-	W, H, ok := nmf.Factors(kmerMatrix, Wo, Ho, *tol, *iter, int64(*limit)*1e9)
+	W, H, ok := nmf.Factors(kmerMatrix, Wo, Ho, *tol, *iter, time.Duration(*limit)*1e9)
 
 	fmt.Fprintf(os.Stderr, "norm(H) = %v norm(W) = %v\n\nFinished = %v\n\n", H.Norm(matrix.Fro), W.Norm(matrix.Fro), ok)
 

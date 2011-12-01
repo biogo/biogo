@@ -57,7 +57,7 @@ type Reader struct {
 	Version       int
 	OneBased      bool
 	SourceVersion []byte
-	Date          *time.Time
+	Date          time.Time
 	TimeFormat    string // required for parsing date fields
 	Type          byte
 }

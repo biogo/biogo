@@ -27,10 +27,10 @@ import (
 // Default inner loop size for subproblem
 var InnerLoop = 20
 
-func Factors(X, Wo, Ho *sparse.Sparse, tolerance float64, iterations int, limit int64) (W, H *sparse.Sparse, ok bool) {
+func Factors(X, Wo, Ho *sparse.Sparse, tolerance float64, iterations int, limit time.Duration) (W, H *sparse.Sparse, ok bool) {
 	W = Wo
 	H = Ho
-	to := time.Nanoseconds()
+	to := time.Now()
 
 	hT := H.T()
 	wT := W.T()
@@ -59,7 +59,7 @@ func Factors(X, Wo, Ho *sparse.Sparse, tolerance float64, iterations int, limit 
 
 	for i := 1; i < iterations; i++ {
 		projection := sparse.Elements(gW.Filter(wFilter), (gH.Filter(hFilter))).Norm(matrix.Fro)
-		if projection < tolerance*gradient || time.Nanoseconds()-to > limit {
+		if projection < tolerance*gradient || time.Now().Sub(to) > limit {
 			break
 		}
 
