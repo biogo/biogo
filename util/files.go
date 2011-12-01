@@ -53,7 +53,7 @@ func Hash(file ReadSeekStater) (sum []byte, err error) {
 	}
 
 	file.Seek(0, 0)
-	sum = h.Sum()
+	sum = h.Sum(nil)
 
 	return
 }
