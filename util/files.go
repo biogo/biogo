@@ -29,12 +29,12 @@ var buffer = make([]byte, bufferLen)
 
 type ReadSeekStater interface {
 	io.ReadSeeker
-	Stat() (*os.FileInfo, error)
+	Stat() (os.FileInfo, error)
 }
 
 func Hash(file ReadSeekStater) (sum []byte, err error) {
-	var fi *os.FileInfo
-	if fi, err = file.Stat(); err != nil || fi.IsDirectory() {
+	var fi os.FileInfo
+	if fi, err = file.Stat(); err != nil || fi.IsDir() {
 		return nil, bio.NewError("Is a directory", 0, file)
 	}
 
