@@ -40,8 +40,6 @@ var (
 	}
 )
 
-type MetaFunc func(interface{}) interface{}
-
 type Seq struct {
 	ID       []byte
 	Seq      []byte
@@ -50,8 +48,7 @@ type Seq struct {
 	Circular bool
 	Moltype  byte
 	Quality  *Quality
-	Meta     interface{}
-	MetaHook map[string]MetaFunc // at this point RevComp and Trunc call function on Meta with those keys if they exist
+	Meta     interface{} // No operation on Seq objects implicitly copies or changes the contents of Meta.
 }
 
 func New(id, seq []byte, qual *Quality) *Seq {
@@ -109,18 +106,6 @@ func (self *Seq) Trunc(start, end int) (s *Seq, err error) {
 		}
 	}
 
-	var meta interface{}
-	if self.MetaHook != nil {
-		method := util.Name(1).Function
-		if _, ok := self.MetaHook[method]; ok {
-			meta = self.MetaHook[method](self.Meta)
-		} else {
-			meta = self.Meta
-		}
-	} else {
-		meta = self.Meta
-	}
-
 	return &Seq{
 		ID:       append([]byte{}, self.ID...),
 		Seq:      ts,
@@ -129,7 +114,6 @@ func (self *Seq) Trunc(start, end int) (s *Seq, err error) {
 		Circular: false,
 		Moltype:  self.Moltype,
 		Quality:  q,
-		Meta:     meta,
 	}, nil
 }
 
@@ -149,18 +133,6 @@ func (self *Seq) RevComp() (s *Seq, err error) {
 		q = self.Quality.Reverse()
 	}
 
-	var meta interface{}
-	if self.MetaHook != nil {
-		method := util.Name(1).Function
-		if _, ok := self.MetaHook[method]; ok {
-			meta = self.MetaHook[method](self.Meta)
-		} else {
-			meta = self.Meta
-		}
-	} else {
-		meta = self.Meta
-	}
-
 	return &Seq{
 		ID:       append([]byte{}, self.ID...),
 		Seq:      rs,
@@ -169,7 +141,6 @@ func (self *Seq) RevComp() (s *Seq, err error) {
 		Circular: self.Circular,
 		Moltype:  self.Moltype,
 		Quality:  q,
-		Meta:     meta,
 	}, nil
 }
 
@@ -179,11 +150,8 @@ func (self *Seq) Join(s *Seq, where int) {
 		s := make([]byte, len(s.Seq), len(s.Seq)+len(self.Seq))
 		copy(s, self.Seq)
 		self.Seq = append(s, self.Seq...)
-		// do anything to Meta of self that would be offset dependent
 	case Append:
 		self.Seq = append(self.Seq, s.Seq...)
-		// do anything to Meta from s that would be offset dependent
-		// and copy to into self.Meta
 	}
 }
 
