@@ -1,8 +1,8 @@
 *.[568]
-_obj
+[568].out
 bin/
 pkg/
 misc/
 cmd/cmd
 *.swp
-_test/
+_*
