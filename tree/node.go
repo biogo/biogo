@@ -50,27 +50,24 @@ func (self *Node) AddNode(n *Node) {
 	}
 }
 
-func (self *Node) NodeIterator(order byte, includeSelf bool) (c chan *Node, quit chan struct {}) {
+func (self *Node) NodeIterator(order byte, includeSelf bool, reaper <-chan struct{}) (c chan *Node) {
 	c = make(chan *Node)
-	quit = make(chan struct {})
 	switch order {
 	case PreOrder:
-		self.PreOrder(includeSelf, c, quit)
+		self.PreOrder(includeSelf, c, reaper)
 	case PostOrder:
-		self.PostOrder(includeSelf, c, quit)
+		self.PostOrder(includeSelf, c, reaper)
 	case PrePostOrder:
-		self.PrePostOrder(includeSelf, c, quit)
+		self.PrePostOrder(includeSelf, c, reaper)
 	case LevelOrder:
-		self.LevelOrder(includeSelf, c, quit)
+		self.LevelOrder(includeSelf, c, reaper)
 	}
 	return
 }
 
-func (self *Node) PreOrder(includeSelf bool, c chan *Node, quit chan struct {}) {
+func (self *Node) PreOrder(includeSelf bool, c chan *Node, reaper <-chan struct{}) {
 	go func() {
-		defer func() {
-			close(c)
-		}()
+		defer close(c)
 
 		var (
 			i    int
@@ -84,7 +81,7 @@ func (self *Node) PreOrder(includeSelf bool, c chan *Node, quit chan struct {}) 
 			if this == self || includeSelf {
 				select {
 				case c <- this:
-				case <-quit:
+				case <-reaper:
 					return
 				}
 			}
@@ -95,11 +92,9 @@ func (self *Node) PreOrder(includeSelf bool, c chan *Node, quit chan struct {}) 
 	}()
 }
 
-func (self *Node) PostOrder(includeSelf bool, c chan *Node, quit chan struct {}) {
+func (self *Node) PostOrder(includeSelf bool, c chan *Node, reaper <-chan struct{}) {
 	go func() {
-		defer func() {
-			close(c)
-		}()
+		defer close(c)
 
 		var (
 			index       int
@@ -119,7 +114,7 @@ func (self *Node) PostOrder(includeSelf bool, c chan *Node, quit chan struct {})
 				} else {
 					select {
 					case c <- child:
-					case <-quit:
+					case <-reaper:
 						return
 					}
 					childIndex[len(childIndex)-1]++
@@ -128,7 +123,7 @@ func (self *Node) PostOrder(includeSelf bool, c chan *Node, quit chan struct {})
 				if includeSelf || this != self {
 					select {
 					case c <- this:
-					case <-quit:
+					case <-reaper:
 						return
 					}
 				}
@@ -143,17 +138,15 @@ func (self *Node) PostOrder(includeSelf bool, c chan *Node, quit chan struct {})
 	}()
 }
 
-func (self *Node) PrePostOrder(includeSelf bool, c chan *Node, quit chan struct {}) {
+func (self *Node) PrePostOrder(includeSelf bool, c chan *Node, reaper <-chan struct{}) {
 	go func() {
-		defer func() {
-			close(c)
-		}()
+		defer close(c)
 
 		if self.children.Len() < 1 {
 			if includeSelf {
 				select {
 				case c <- self:
-				case <-quit:
+				case <-reaper:
 					return
 				}
 			}
@@ -171,7 +164,7 @@ func (self *Node) PrePostOrder(includeSelf bool, c chan *Node, quit chan struct 
 					if this != self || includeSelf {
 						select {
 						case c <- self:
-						case <-quit:
+						case <-reaper:
 							return
 						}
 					}
@@ -185,7 +178,7 @@ func (self *Node) PrePostOrder(includeSelf bool, c chan *Node, quit chan struct 
 					} else {
 						select {
 						case c <- child:
-						case <-quit:
+						case <-reaper:
 							return
 						}
 						childIndex[len(childIndex)-1]++
@@ -194,7 +187,7 @@ func (self *Node) PrePostOrder(includeSelf bool, c chan *Node, quit chan struct 
 					if includeSelf || this != self {
 						select {
 						case c <- this:
-						case <-quit:
+						case <-reaper:
 							return
 						}
 					}
@@ -211,11 +204,9 @@ func (self *Node) PrePostOrder(includeSelf bool, c chan *Node, quit chan struct 
 	}()
 }
 
-func (self *Node) LevelOrder(includeSelf bool, c chan *Node, quit chan struct {}) {
+func (self *Node) LevelOrder(includeSelf bool, c chan *Node, reaper <-chan struct{}) {
 	go func() {
-		defer func() {
-			close(c)
-		}()
+		defer close(c)
 
 		var (
 			this, child *Node
@@ -229,7 +220,7 @@ func (self *Node) LevelOrder(includeSelf bool, c chan *Node, quit chan struct {}
 			if this != self || includeSelf {
 				select {
 				case c <- this:
-				case <-quit:
+				case <-reaper:
 					return
 				}
 			}
@@ -243,28 +234,24 @@ func (self *Node) LevelOrder(includeSelf bool, c chan *Node, quit chan struct {}
 }
 
 func (self *Node) Nodes(order byte, includeSelf bool) (nodes NodeList) {
-	iterator, _ := self.NodeIterator(order, includeSelf)
-	for n := range iterator {
+	for n := range self.NodeIterator(order, includeSelf, nil) {
 		nodes.Push(n)
 	}
 	return
 }
 
-func (self *Node) InternalNodeIterator(includeSelf bool) (c chan *Node, quit chan struct {}) {
+func (self *Node) InternalNodeIterator(includeSelf bool, reaper <-chan struct{}) (c chan *Node) {
 	c = make(chan *Node)
-	quit = make(chan struct {})
 	go func() {
-		defer func() {
-			close(c)
-		}()
+		defer close(c)
 
-		iterator, q := self.NodeIterator(PreOrder, includeSelf)
-		for n := range iterator {
+		r := make(chan struct{})
+		for n := range self.NodeIterator(PreOrder, includeSelf, r) {
 			if n.children.Len() > 0 {
 				select {
 				case c <- n:
-				case <-quit:
-					close(q)
+				case <-reaper:
+					close(r)
 					return
 				}
 			}
@@ -274,26 +261,22 @@ func (self *Node) InternalNodeIterator(includeSelf bool) (c chan *Node, quit cha
 }
 
 func (self *Node) InternalNodes(includeSelf bool) (internals NodeList) {
-	iterator, _ := self.LeafIterator(includeSelf)
-	for n := range iterator {
+	for n := range self.LeafIterator(includeSelf, nil) {
 		internals.Push(n)
 	}
 	return
 }
 
-func (self *Node) LeafIterator(includeSelf bool) (c chan *Node, quit chan struct {}) {
+func (self *Node) LeafIterator(includeSelf bool, reaper <-chan struct{}) (c chan *Node) {
 	c = make(chan *Node)
-	quit = make(chan struct {})
 	go func() {
-		defer func() {
-			close(c)
-		}()
+		defer close(c)
 
 		if self.children.Len() < 1 {
 			if includeSelf {
 				select {
 				case c <- self:
-				case <-quit:
+				case <-reaper:
 					return
 				}
 			}
@@ -312,7 +295,7 @@ func (self *Node) LeafIterator(includeSelf bool) (c chan *Node, quit chan struct
 				} else {
 					select {
 					case c <- this:
-					case <-quit:
+					case <-reaper:
 						return
 					}
 				}
@@ -323,8 +306,7 @@ func (self *Node) LeafIterator(includeSelf bool) (c chan *Node, quit chan struct
 }
 
 func (self *Node) Leaves(includeSelf bool) (leaves NodeList) {
-	iterator, _ := self.LeafIterator(includeSelf)
-	for n := range iterator {
+	for n := range self.LeafIterator(includeSelf, nil) {
 		leaves.Push(n)
 	}
 	return
