@@ -1,6 +1,12 @@
 Components		TODO
 
 align
+	nw
+			tests
+			docs
+	sw
+			tests
+			docs
 	pals
 			tests
 			docs
