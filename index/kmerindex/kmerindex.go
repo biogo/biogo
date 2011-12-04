@@ -84,7 +84,7 @@ func New(k int, sequence *seq.Seq) (i *Index, err error) {
 
 // Build the table of Kmer frequencies - called by New
 func (self *Index) buildKmerTable() {
-	incrementFinger := func(index *Index, position, kmer int) {
+	incrementFinger := func(index *Index, _, kmer int) {
 		index.finger[kmer]++
 	}
 	self.ForEachKmerOf(self.Seq, 0, self.Seq.Len(), incrementFinger)
@@ -353,13 +353,14 @@ func (self *Index) KmerOf(kmertext string) (kmer Kmer, err error) {
 	return
 }
 
+
 func Distance(a, b map[Kmer]float64) (dist float64) {
-	c := make(map[Kmer]bool, len(a)+len(b))
+	c := make(map[Kmer]struct{}, len(a)+len(b))
 	for k := range a {
-		c[k] = true
+		c[k] = struct{}{}
 	}
 	for k := range b {
-		c[k] = true
+		c[k] = struct{}{}
 	}
 	for k := range c {
 		dist += math.Pow(a[k]-b[k], 2)

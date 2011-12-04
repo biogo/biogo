@@ -78,7 +78,7 @@ func NewKmerRainbow(r image.Rectangle, index *kmerindex.Index, color *color.HSVA
 	kmers := make([]int, h)
 	kmask := util.Pow4(index.GetK())
 	kmaskf := float32(kmask)
-	f := func(index *kmerindex.Index, j, kmer int) {
+	f := func(index *kmerindex.Index, _, kmer int) {
 		kmers[int(float32(kmer)*float32(h)/kmaskf)]++
 	}
 	index.ForEachKmerOf(index.Seq, 0, index.Seq.Len(), f)
@@ -110,7 +110,7 @@ func (self *KmerRainbow) Paint(vary int, start, size, left, right int) (i *image
 	kmers := make([]uint32, self.RGBA.Rect.Dy())
 	kmask := util.Pow4(self.Index.GetK())
 	kmaskf := float32(kmask)
-	f := func(index *kmerindex.Index, j, kmer int) {
+	f := func(index *kmerindex.Index, _, kmer int) {
 		kmers[int(float32(kmer)*float32(self.RGBA.Rect.Dy())/kmaskf)]++
 	}
 	self.Index.ForEachKmerOf(self.Index.Seq, start*size, (start+1)*size-1, f)
@@ -155,7 +155,7 @@ type CGR KmerRainbow
 
 func NewCGR(index *kmerindex.Index, color *color.HSVAColor) *CGR { // should generalise the BG color
 	max := 0
-	f := func(index *kmerindex.Index, j, kmer int) {
+	f := func(index *kmerindex.Index, _, kmer int) {
 		if freq := index.FingerAt(kmer); freq > max {
 			max = freq
 		}
@@ -190,7 +190,7 @@ func (self *CGR) Paint(vary int, desch bool, start, size int) (i *image.RGBA, er
 
 	kmask := util.Pow4(k)
 	kmers := make([]uint, kmask)
-	f := func(index *kmerindex.Index, j, kmer int) {
+	f := func(index *kmerindex.Index, _, kmer int) {
 		kmers[kmer]++
 	}
 	self.Index.ForEachKmerOf(self.Index.Seq, start*size, (start+1)*size-1, f)
