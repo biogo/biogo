@@ -397,7 +397,7 @@ func (self *Interval) Within(i *Interval, slop int, r chan<- *Interval) {
 
 func (self *Interval) within(i *Interval, slop int, r chan<- *Interval) {
 	// Short circuit search for known subtree failure 
-	if i.start-slop > self.minStart || i.end+slop < self.maxEnd {
+	if i.end-slop < self.minStart || i.start+slop > self.maxEnd {
 		return
 	}
 	if self.left != nil && i.start < self.left.maxEnd-slop {
