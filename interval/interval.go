@@ -167,6 +167,19 @@ func (self Tree) Flatten(i *Interval, overlap, tolerance int) (inserted []*Inter
 	return
 }
 
+// Flatten a range of intervals containing i so that only one interval covers any given location.
+// Return flattened intervals and all intervals originally in containing region.
+// No metadata is transfered to flattened intervals.
+func (self Tree) FlattenContaining(i *Interval, slop, tolerance int) (inserted []*Interval, removed [][]*Interval) {
+	if root, ok := self[i.chromosome]; ok {
+		r := make(chan *Interval)
+		go root.Contain(i, slop, r)
+		inserted, removed = root.Flatten(r, tolerance)
+	}
+
+	return
+}
+
 // Flatten a range of intervals within i so that only one interval covers any given location.
 // Return flattened intervals and all intervals originally in contained region.
 // No metadata is transfered to flattened intervals.

@@ -138,6 +138,17 @@ func ExampleFlatten() {
 	}
 }
 
+// flattened: ["example":[3, 10)]
+// original: [["example":[3, 7) "example":[5, 10)]]
+func ExampleFlattenContain() {
+	tree := CreateExampleTree("example", [][]int{{0, 4}, {8, 12}, {2, 3}, {5, 10}, {3, 7}, {-22, 6}, {34, 61}})
+
+	if i, err := interval.New("example", 6, 7, 0, nil); err == nil {
+		flat, original := tree.FlattenContaining(i, 0, 0)
+		fmt.Printf("flattened: %v\noriginal: %v\n", flat, original)
+	}
+}
+
 // flattened: ["example":[2, 7)]
 // original: [["example":[2, 3) "example":[3, 7)]]
 func ExampleFlattenWithin() {
