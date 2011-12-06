@@ -229,6 +229,12 @@ func (self *Interval) End() int { return self.end }
 
 func (self *Interval) Line() int { return self.line }
 
+func (self *Interval) Parent() *Interval { return self.parent }
+
+func (self *Interval) Left() *Interval { return self.left }
+
+func (self *Interval) Right() *Interval { return self.right }
+
 func (self *Interval) adjustRange() {
 	if self.left != nil && self.right != nil {
 		self.minStart = util.Min(self.start, self.left.minStart, self.right.minStart)
