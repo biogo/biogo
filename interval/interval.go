@@ -275,9 +275,8 @@ func (self *Interval) adjustRangeRecursive() {
 }
 
 func (self *Interval) adjustRangeParental() {
-	if self.parent != nil {
-		self.parent.adjustRange()
-		self.parent.adjustRangeParental()
+	for n := self.parent; n != nil; n = n.parent {
+		n.adjustRange()
 	}
 }
 
@@ -380,13 +379,13 @@ func (self *Interval) intersect(i *Interval, overlap int, r chan<- *Interval) {
 	if i.end-overlap < self.minStart || i.start+overlap > self.maxEnd {
 		return
 	}
-	if self.left != nil && i.start < self.left.maxEnd-overlap {
+	if self.left != nil && i.start <= self.left.maxEnd-overlap {
 		self.left.intersect(i, overlap, r)
 	}
 	if i.start <= self.end-overlap && i.end >= self.start+overlap {
 		r <- self
 	}
-	if self.right != nil && i.end > self.start+overlap {
+	if self.right != nil && i.end >= self.start+overlap {
 		self.right.intersect(i, overlap, r)
 	}
 }
@@ -459,6 +458,52 @@ func (self *Interval) traverse(r chan<- *Interval) {
 	}
 }
 
+// Return the previous interval in tree traverse order.
+func (self *Interval) ScanLeft() (n *Interval) {
+	if self.left != nil {
+		return self.left.RightMost()
+	}
+
+	if self.parent == nil {
+		return
+	}
+
+	for n = self; ; n = n.parent {
+		if n.parent == nil {
+			n = nil
+			break
+		} else if n.parent.right == n {
+			n = n.parent
+			break
+		}
+	}
+
+	return
+}
+
+// Return the next interval in tree traverse order.
+func (self *Interval) ScanRight() (n *Interval) {
+	if self.right != nil {
+		return self.right.LeftMost()
+	}
+
+	if self.parent == nil {
+		return
+	}
+
+	for n = self; ; n = n.parent {
+		if n.parent == nil {
+			n = nil
+			break
+		} else if n.parent.left == n {
+			n = n.parent
+			break
+		}
+	}
+
+	return
+}
+
 func (self *Interval) unlinkFromParent() {
 	if self.parent != nil {
 		if self.parent.left == self {
@@ -469,20 +514,18 @@ func (self *Interval) unlinkFromParent() {
 	}
 }
 
-func (self *Interval) leftMost() *Interval {
-	if self.left != nil {
-		return self.left.leftMost()
+func (self *Interval) LeftMost() (n *Interval) {
+	for n = self; n.left != nil; n = n.left {
 	}
 
-	return self
+	return
 }
 
-func (self *Interval) rightMost() *Interval {
-	if self.right != nil {
-		return self.right.rightMost()
+func (self *Interval) RightMost() (n *Interval) {
+	for n = self; n.right != nil; n = n.right {
 	}
 
-	return self
+	return
 }
 
 // Merge a range of intervals provided by r. Returns merged intervals in a slice and
@@ -544,14 +587,15 @@ func (self *Interval) remove() (root, removed *Interval) {
 	case self.left != nil && self.right != nil:
 		var promotable *Interval
 		if rand.Float64() < 0.5 {
-			promotable = self.left.rightMost()
+			promotable = self.left.RightMost()
 		} else {
-			promotable = self.right.leftMost()
+			promotable = self.right.LeftMost()
 		}
-		_, promotable = promotable.remove()
-		root = promotable
+		_, root = promotable.remove()
 		root.left, root.right, root.parent = removed.left, removed.right, removed.parent
-		root.priority, removed.priority = removed.priority, root.priority
+		if root.priority > removed.priority {
+			root.priority, removed.priority = removed.priority, root.priority
+		}
 	case self.left == nil && self.right == nil: // just return the node
 		break
 	case self.right == nil: // only a left node exists
