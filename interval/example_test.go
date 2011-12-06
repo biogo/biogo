@@ -68,12 +68,14 @@ func ExampleWithin() {
 	}
 }
 
+// "example":[-22, 6) <nil> <nil> <nil>
 // "example":[0, 4), "example":[2, 3), "example":[3, 7), "example":[5, 10), "example":[8, 12), "example":[34, 61)
 func ExampleRemove() {
 	tree := CreateExampleTree("example", [][]int{{0, 4}, {8, 12}, {2, 3}, {5, 10}, {3, 7}, {-22, 6}, {34, 61}})
 	if i, err := interval.New("example", -15, -2, 0, nil); err == nil {
 		for s := range tree.Intersect(i, 0) {
-			tree.Remove(s)
+			r := tree.Remove(s)
+			fmt.Println(r, r.Left(), r.Right(),r.Parent())
 		}
 	}
 

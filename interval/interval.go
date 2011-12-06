@@ -57,7 +57,7 @@ func (self Tree) Merge(i *Interval, overlap int) (inserted, replaced []*Interval
 	return
 }
 
-// Remove an interval, returning the removed interval.
+// Remove an interval, returning the removed interval with all pointers set to nil.
 func (self Tree) Remove(i *Interval) (removed *Interval) {
 	if root, ok := self[i.chromosome]; ok {
 		var newRoot *Interval
