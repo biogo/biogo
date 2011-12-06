@@ -155,35 +155,33 @@ func (self Tree) Range(chromosome string) (min, max int) {
 
 // Flatten a range of intervals intersecting i so that only one interval covers any given location. Intervals
 // less than tolerance positions apart are merged into a single new flattened interval.
-// Flatting is done by replacement. Return flattened intervals and all intervals originally in intersected region.
+// Return flattened intervals and all intervals originally in intersected region.
 // No metadata is transfered to flattened intervals.
 func (self Tree) Flatten(i *Interval, overlap, tolerance int) (inserted []*Interval, removed [][]*Interval) {
 	if root, ok := self[i.chromosome]; ok {
 		r := make(chan *Interval)
 		go root.Intersect(i, overlap, r)
 		inserted, removed = root.Flatten(r, tolerance)
-		self.replace(inserted, removed)
 	}
 
 	return
 }
 
 // Flatten a range of intervals within i so that only one interval covers any given location.
-// Flatting is done by replacement. Return flattened intervals and all intervals originally in intersected region.
+// Return flattened intervals and all intervals originally in contained region.
 // No metadata is transfered to flattened intervals.
 func (self Tree) FlattenWithin(i *Interval, slop, tolerance int) (inserted []*Interval, removed [][]*Interval) {
 	if root, ok := self[i.chromosome]; ok {
 		r := make(chan *Interval)
 		go root.Within(i, slop, r)
 		inserted, removed = root.Flatten(r, tolerance)
-		self.replace(inserted, removed)
 	}
 
 	return
 }
 
 func (self Tree) replace(inserted []*Interval, removed [][]*Interval) {
-	// Helper function for Merge methods. Unsafe for use when replacement intervals do not cover removed intervals.
+	// Helper function for Merge method. Unsafe for use when replacement intervals do not cover removed intervals.
 	for _, section := range removed {
 		for _, target := range section {
 			self.fastRemove(target)

@@ -127,26 +127,26 @@ func ExampleTraverseAll() {
 	fmt.Println(strings.Join(segs, ", "))
 }
 
-// "example":[0, 12), "example":[27, 61)
+// flattened: ["example":[0, 12) "example":[27, 61)]
+// original: [["example":[0, 4) "example":[2, 3) "example":[3, 7) "example":[5, 10) "example":[8, 12)] ["example":[27, 61)]]
 func ExampleFlatten() {
 	tree := CreateExampleTree("example", [][]int{{0, 4}, {8, 12}, {2, 3}, {5, 10}, {3, 7}, {27, 61}})
 	start, end := tree.Range("example")
 	if i, err := interval.New("example", start, end, 0, nil); err == nil {
-		tree.Flatten(i, 0, 0)
+		flat, original := tree.Flatten(i, 0, 0)
+		fmt.Printf("flattened: %v\noriginal: %v\n", flat, original)
 	}
-
-	PrintAll(tree)
 }
 
-// "example":[-22, 6), "example":[0, 4), "example":[2, 7), "example":[5, 10), "example":[8, 12), "example":[34, 61)
+// flattened: ["example":[2, 7)]
+// original: [["example":[2, 3) "example":[3, 7)]]
 func ExampleFlattenWithin() {
 	tree := CreateExampleTree("example", [][]int{{0, 4}, {8, 12}, {2, 3}, {5, 10}, {3, 7}, {-22, 6}, {34, 61}})
 
 	if i, err := interval.New("example", 2, 7, 0, nil); err == nil {
-		tree.FlattenWithin(i, 0, 0)
+		flat, original := tree.FlattenWithin(i, 0, 0)
+		fmt.Printf("flattened: %v\noriginal: %v\n", flat, original)
 	}
-
-	PrintAll(tree)
 }
 
 // Helpers
