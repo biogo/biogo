@@ -62,8 +62,12 @@ func (self Tree) Remove(i *Interval) (removed *Interval) {
 	if root, ok := self[i.chromosome]; ok {
 		var newRoot *Interval
 		if newRoot, removed = i.Remove(); i == root {
-			newRoot.parent = nil
-			self[i.chromosome] = newRoot
+			if newRoot != nil {
+				newRoot.parent = nil
+				self[i.chromosome] = newRoot
+			} else {
+				delete(self, i.chromosome)
+			}
 		}
 	}
 
@@ -71,12 +75,17 @@ func (self Tree) Remove(i *Interval) (removed *Interval) {
 }
 
 func (self Tree) fastRemove(i *Interval) (removed *Interval) {
-	// Remove an interval, returning the removed interval. Does not adjust ranges within tree.
+	// Remove an interval, returning the removed interval.
+	// Does not adjust ranges within tree.
 	if root, ok := self[i.chromosome]; ok {
 		var newRoot *Interval
 		if newRoot, removed = i.fastRemove(); i == root {
-			newRoot.parent = nil
-			self[i.chromosome] = newRoot
+			if newRoot != nil {
+				newRoot.parent = nil
+				self[i.chromosome] = newRoot
+			} else {
+				delete(self, i.chromosome)
+			}
 		}
 	}
 
@@ -150,7 +159,9 @@ func (self Tree) Range(chromosome string) (min, max int) {
 // No metadata is transfered to flattened intervals.
 func (self Tree) Flatten(i *Interval, overlap, tolerance int) (inserted []*Interval, removed [][]*Interval) {
 	if root, ok := self[i.chromosome]; ok {
-		inserted, removed = root.flatten(i, overlap, tolerance)
+		r := make(chan *Interval)
+		go root.Intersect(i, overlap, r)
+		inserted, removed = root.Flatten(r, tolerance)
 		self.replace(inserted, removed)
 	}
 
@@ -162,7 +173,9 @@ func (self Tree) Flatten(i *Interval, overlap, tolerance int) (inserted []*Inter
 // No metadata is transfered to flattened intervals.
 func (self Tree) FlattenWithin(i *Interval, slop, tolerance int) (inserted []*Interval, removed [][]*Interval) {
 	if root, ok := self[i.chromosome]; ok {
-		inserted, removed = root.flattenWithin(i, slop, tolerance)
+		r := make(chan *Interval)
+		go root.Within(i, slop, r)
+		inserted, removed = root.Flatten(r, tolerance)
 		self.replace(inserted, removed)
 	}
 
@@ -170,8 +183,7 @@ func (self Tree) FlattenWithin(i *Interval, slop, tolerance int) (inserted []*In
 }
 
 func (self Tree) replace(inserted []*Interval, removed [][]*Interval) {
-	// Helper function for Flatten* and Merge methods. Unsafe for use when replacement intervals do not cover removed intervals.
-	// TODO: Check this: Possibly always unsafe - in which case use root.adjustRangeRecursive() between loops.
+	// Helper function for Merge methods. Unsafe for use when replacement intervals do not cover removed intervals.
 	for _, section := range removed {
 		for _, target := range section {
 			self.fastRemove(target)
@@ -316,8 +328,10 @@ func (self *Interval) rotateLeft() (root *Interval) {
 func (self *Interval) merge(i *Interval, overlap int) (inserted, removed []*Interval) {
 	r := make(chan *Interval)
 	removed = []*Interval{}
+	wait := make(chan struct{})
 
 	go func() {
+		defer close(wait)
 		min, max := util.MaxInt, util.MinInt
 		for old := range r {
 			min, max = util.Min(min, old.start), util.Max(max, old.end)
@@ -329,6 +343,7 @@ func (self *Interval) merge(i *Interval, overlap int) (inserted, removed []*Inte
 	}()
 	self.intersect(i, overlap, r)
 	close(r)
+	<-wait
 
 	return
 }
@@ -351,7 +366,7 @@ func (self *Interval) intersect(i *Interval, overlap int, r chan<- *Interval) {
 	if self.left != nil && i.start < self.left.maxEnd-overlap {
 		self.left.intersect(i, overlap, r)
 	}
-	if i.start < self.end-overlap && i.end > self.start+overlap {
+	if i.start <= self.end-overlap && i.end >= self.start+overlap {
 		r <- self
 	}
 	if self.right != nil && i.end > self.start+overlap {
@@ -427,17 +442,14 @@ func (self *Interval) traverse(r chan<- *Interval) {
 	}
 }
 
-func (self *Interval) unlinkFromParent() *Interval {
-	if self.parent == nil {
-		return self
+func (self *Interval) unlinkFromParent() {
+	if self.parent != nil {
+		if self.parent.left == self {
+			self.parent.left = nil
+		} else if self.parent.right == self {
+			self.parent.right = nil
+		}
 	}
-	if self.parent.left == self {
-		self.parent.left = nil
-	} else if self.parent.right == self {
-		self.parent.right = nil
-	}
-
-	return self
 }
 
 func (self *Interval) leftMost() *Interval {
@@ -456,73 +468,43 @@ func (self *Interval) rightMost() *Interval {
 	return self
 }
 
-func (self *Interval) flatten(i *Interval, overlap, tolerance int) (inserted []*Interval, removed [][]*Interval) {
-	r := make(chan *Interval)
+// Merge a range of intervals provided by r. Returns merged intervals in a slice and
+// intervals contributing to merged intervals groups in a slice of slices.
+func (self *Interval) Flatten(r chan *Interval, tolerance int) (inserted []*Interval, removed [][]*Interval) {
 	inserted = []*Interval{}
 	removed = [][]*Interval{[]*Interval{}}
 
-	go func() {
-		min := util.MaxInt
-		j := 0
-		var last *Interval
-		for old := range r {
-			if last != nil && old.start-tolerance > last.end {
-				n, _ := New(old.chromosome, min, last.end, 0, nil)
-				inserted = append(inserted, n)
-				min = old.start
-				j++
-			} else {
-				min = util.Min(min, old.start)
-			}
-			if len(removed) < j {
-				removed = append(removed, []*Interval{})
-			}
-			removed[j] = append(removed[j], old)
-			last = old
+	min := util.MaxInt
+	var last *Interval
+	for old := range r {
+		if last != nil && old.start-tolerance > last.end {
+			n, _ := New(old.chromosome, min, last.end, 0, nil)
+			inserted = append(inserted, n)
+			min = old.start
+			removed = append(removed, []*Interval{})
+		} else {
+			min = util.Min(min, old.start)
 		}
-	}()
-	self.intersect(i, overlap, r)
-	close(r)
-
-	return
-}
-
-func (self *Interval) flattenWithin(i *Interval, slop, tolerance int) (inserted []*Interval, removed [][]*Interval) {
-	r := make(chan *Interval)
-	inserted = []*Interval{}
-	removed = [][]*Interval{[]*Interval{}}
-
-	go func() {
-		min := util.MaxInt
-		j := 0
-		var last *Interval
-		for old := range r {
-			if last != nil && old.start-tolerance > last.end {
-				n, _ := New(old.chromosome, min, last.end, 0, nil)
-				inserted = append(inserted, n)
-				min = old.start
-				j++
-			} else {
-				min = util.Min(min, old.start)
-			}
-			if len(removed) < j {
-				removed = append(removed, []*Interval{})
-			}
-			removed[j] = append(removed[j], old)
-			last = old
-		}
-	}()
-	self.within(i, slop, r)
-	close(r)
+		removed[len(removed)-1] = append(removed[len(removed)-1], old)
+		last = old
+	}
+	n, _ := New(last.chromosome, min, last.end, 0, nil)
+	inserted = append(inserted, n)
 
 	return
 }
 
 // Remove an interval. Returns the new root of the subtree and the removed interval.
 func (self *Interval) Remove() (root, removed *Interval) {
+	parent := self.parent
 	root, removed = self.fastRemove()
-	root.adjustRangeRecursive()
-	root.adjustRangeParental()
+	if root != nil {
+		root.adjustRangeRecursive()
+		root.adjustRangeParental()
+	} else if parent != nil {
+		parent.adjustRangeRecursive()
+		parent.adjustRangeParental()
+	}
 
 	return
 }
@@ -538,31 +520,36 @@ func (self *Interval) fastRemove() (root, removed *Interval) {
 }
 
 func (self *Interval) remove() (root, removed *Interval) {
-	removed = self.unlinkFromParent()
+	self.unlinkFromParent()
+	removed = self
 
-	if self.left == nil && self.right == nil {
-		return nil, removed
-	} else if (self.left == nil) != (self.right == nil) {
-		if self.left == nil {
-			self.parent.Insert(self.right)
-		} else if self.right == nil {
-			self.parent.Insert(self.left)
-		}
-	} else {
-		var promotable, descendent *Interval
+	switch {
+	case self.left != nil && self.right != nil:
+		var promotable *Interval
 		if rand.Float64() < 0.5 {
-			promotable, descendent = self.left.rightMost(), self.right
+			promotable = self.left.rightMost()
 		} else {
-			promotable, descendent = self.right.leftMost(), self.left
+			promotable = self.right.leftMost()
 		}
 		_, promotable = promotable.remove()
+		root = promotable
+		root.left, root.right, root.parent = removed.left, removed.right, removed.parent
+		root.priority, removed.priority = removed.priority, root.priority
+	case self.left == nil && self.right == nil: // just return the node
+		break
+	case self.right == nil: // only a left node exists
 		if self.parent != nil {
-			promotable = promotable.Insert(descendent)
-			root = self.parent.Insert(promotable)
+			root = self.parent.Insert(self.left)
 		} else {
-			root = promotable
-			root.left, root.right = removed.left, removed.right
-			root.priority, removed.priority = removed.priority, root.priority
+			root = self.left
+			root.parent = nil
+		}
+	case self.left == nil: // only a right nodes exists
+		if self.parent != nil {
+			root = self.parent.Insert(self.right)
+		} else {
+			root = self.right
+			root.parent = nil
 		}
 	}
 
@@ -578,7 +565,7 @@ func (self *Interval) Range() (int, int) {
 var StringFunc = defaultStringFunc
 
 func defaultStringFunc(i *Interval) string {
-	return fmt.Sprintf("%s:[%d, %d)", i.chromosome, i.start, i.end)
+	return fmt.Sprintf("%q:[%d, %d)", i.chromosome, i.start, i.end)
 }
 
 // String method
