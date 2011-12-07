@@ -891,9 +891,9 @@ func (self *Sparse) String() (s string) {
 			}
 
 			if j < self.c-1 {
-				l += fmt.Sprintf("%-*s", matrix.Precision+matrix.Pad[matrix.Format]+2, strconv.Ftoa64(self.at(i, j), matrix.Format, matrix.Precision))
+				l += fmt.Sprintf("%-*s", matrix.Precision+matrix.Pad[matrix.Format]+2, strconv.FormatFloat(self.at(i, j), matrix.Format, matrix.Precision, 64))
 			} else {
-				l += fmt.Sprintf("%-*s", matrix.Precision+matrix.Pad[matrix.Format], strconv.Ftoa64(self.at(i, j), matrix.Format, matrix.Precision))
+				l += fmt.Sprintf("%-*s", matrix.Precision+matrix.Pad[matrix.Format], strconv.FormatFloat(self.at(i, j), matrix.Format, matrix.Precision, 64))
 			}
 		}
 		switch {

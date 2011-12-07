@@ -116,7 +116,7 @@ func (self *Reader) Read() (f *feat.Feature, err error) {
 		case nameField:
 			f.ID = []byte(elems[i])
 		case scoreField:
-			if f.Score, se = strconv.Atof64(elems[i]); se != nil {
+			if f.Score, se = strconv.ParseFloat(elems[i], 64); se != nil {
 				f.Score = 0
 			}
 		case strandField:
@@ -196,7 +196,7 @@ func (self *Writer) String(f *feat.Feature) (line string) {
 		line += string(f.ID) + "\t"
 	}
 	if self.BedType > 4 {
-		line += strconv.Ftoa64(f.Score, 'g', -1) + "\t"
+		line += strconv.FormatFloat(f.Score, 'g', -1, 64) + "\t"
 	}
 	if self.BedType > 5 {
 		line += StrandToChar[f.Strand] + "\t"

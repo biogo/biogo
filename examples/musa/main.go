@@ -2,13 +2,13 @@
 package main
 
 import (
-	"flag"
-	"os"
 	"bufio"
-	"strings"
-	"strconv"
+	"flag"
 	"fmt"
 	"math"
+	"os"
+	"strconv"
+	"strings"
 )
 
 type Weight struct {
@@ -60,7 +60,7 @@ func main() {
 					part = strings.Trim(part, "[]()")
 					for _, p := range strings.Split(part, ",") {
 						if nw := strings.Split(p, "/"); len(nw) == 2 {
-							if w, err := strconv.Atof64(nw[1]); err != nil {
+							if w, err := strconv.ParseFloat(nw[1], 64); err != nil {
 								fmt.Fprintf(os.Stderr, "Float conversion error %v at line %d.\n", err, count)
 							} else {
 								list = append(list, &Weight{Name: nw[0], Weight: w})

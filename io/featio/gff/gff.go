@@ -226,7 +226,7 @@ func (self *Reader) Read() (f *feat.Feature, err error) {
 		fr = -1
 	}
 
-	score, se := strconv.Atof64(string(elems[score]))
+	score, se := strconv.ParseFloat(string(elems[score]), 64)
 	if se != nil {
 		score = 0
 	}
@@ -326,7 +326,7 @@ func (self *Writer) String(f *feat.Feature) (line string) {
 		string(f.Feature) + "\t" +
 		strconv.Itoa(start) + "\t" +
 		strconv.Itoa(f.End) + "\t" +
-		strconv.Ftoa64(f.Score, self.FloatFormat, self.Precision) + "\t"
+		strconv.FormatFloat(f.Score, self.FloatFormat, self.Precision, 64) + "\t"
 
 	if f.Moltype == bio.DNA {
 		line += strandToChar[f.Strand] + "\t"

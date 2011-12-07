@@ -109,7 +109,7 @@ func main() {
 			} else {
 				rowData := make([]float64, len(row)-1)
 				for i, val := range row[1:] {
-					if rowData[i], e = strconv.Atof64(val); e != nil {
+					if rowData[i], e = strconv.ParseFloat(val, 64); e != nil {
 						fmt.Fprintf(os.Stderr, "Float conversion error %v at line %d element %d.\n", e, count, i)
 						os.Exit(0)
 					}
