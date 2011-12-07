@@ -223,7 +223,7 @@ LOOP:
 			Start:      position + 1,
 			End:        position + length,
 			Score:      score,
-			Attributes: []byte(string(sequence.Seq[position:position+length]) + " " + strconv.Ftoa64(prob, self.FloatFormat, self.Precision)),
+			Attributes: []byte(string(sequence.Seq[position:position+length]) + " " + strconv.FormatFloat(prob, self.FloatFormat, self.Precision, 64)),
 			Strand:     sequence.Strand,
 			Moltype:    sequence.Moltype,
 			Frame:      -1,
