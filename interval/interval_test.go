@@ -379,8 +379,9 @@ func (s *S) TestRemove(c *check.C) {
 		ss = append(ss, s)
 	}
 	for _, s := range ss {
-		tree.Remove(s)
+		tree.FastRemove(s)
 	}
+	tree.AdjustRange("")
 	// Check no interval left here
 	found := []*Interval{}
 	for s := range tree.Intersect(root, 0) {

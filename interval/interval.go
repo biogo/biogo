@@ -74,9 +74,8 @@ func (self Tree) Remove(i *Interval) (removed *Interval) {
 	return
 }
 
-func (self Tree) fastRemove(i *Interval) (removed *Interval) {
-	// Remove an interval, returning the removed interval.
-	// Does not adjust ranges within tree.
+// Remove an interval, returning the removed interval. Does not adjust ranges within tree.
+func (self Tree) FastRemove(i *Interval) (removed *Interval) {
 	if root, ok := self[i.chromosome]; ok {
 		var newRoot *Interval
 		if newRoot, removed = i.fastRemove(); i == root {
@@ -90,6 +89,10 @@ func (self Tree) fastRemove(i *Interval) (removed *Interval) {
 	}
 
 	return
+}
+
+func (self Tree) AdjustRange(chromosome string) {
+	self[chromosome].adjustRangeRecursive()
 }
 
 // Find all intervals in Tree that overlap query. Return a channel that will convey results.
@@ -197,7 +200,7 @@ func (self Tree) replace(inserted []*Interval, removed [][]*Interval) {
 	// Helper function for Merge method. Unsafe for use when replacement intervals do not cover removed intervals.
 	for _, section := range removed {
 		for _, target := range section {
-			self.fastRemove(target)
+			self.FastRemove(target)
 		}
 	}
 	for _, replacement := range inserted {
