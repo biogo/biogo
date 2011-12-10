@@ -19,7 +19,6 @@ import (
 	check "launchpad.net/gocheck"
 	"math/rand"
 	"reflect"
-	"runtime"
 	"testing"
 )
 
@@ -48,9 +47,9 @@ func randomInterval(iLength, iLenVariance, locRange int) (i *Interval) {
 	return
 }
 
-func allIntervalsOf(tree Tree, n int) (ss []*Interval) {
+func fillSliceWith(r chan *Interval, n int) (ss []*Interval) {
 	ss = make([]*Interval, 0, n)
-	for s := range tree.Traverse("") {
+	for s := range r {
 		ss = append(ss, s)
 	}
 
@@ -195,7 +194,7 @@ func (s *S) TestScan(c *check.C) {
 
 	root := tree[""]
 
-	ss := allIntervalsOf(tree, n)
+	ss := fillSliceWith(tree.Traverse(""), n)
 
 	leftMost := root.LeftMost()
 	c.Check(leftMost, check.Equals, ss[0])
@@ -374,19 +373,13 @@ func (s *S) TestRemove(c *check.C) {
 	c.Check(count, check.Equals, 1)
 
 	// Remove all intersectors of the root
-	ss := []*Interval{}
-	for s := range tree.Intersect(root, 0) {
-		ss = append(ss, s)
-	}
+	ss := fillSliceWith(tree.Intersect(root, 0), n)
 	for _, s := range ss {
 		tree.FastRemove(s)
 	}
 	tree.AdjustRange("")
 	// Check no interval left here
-	found := []*Interval{}
-	for s := range tree.Intersect(root, 0) {
-		found = append(found, s)
-	}
+	found := fillSliceWith(tree.Intersect(root, 0), n)
 
 	c.Check(len(found), check.Equals, 0)
 }
@@ -414,7 +407,7 @@ func (s *S) TestInvariants(c *check.C) {
 	}
 
 	// get a set of all the intervals in the tree
-	ss := allIntervalsOf(tree, n)
+	ss := fillSliceWith(tree.Traverse(""), n)
 	rnd := make(map[int]struct{}, len(ss))
 	for i := range ss {
 		rnd[i] = struct{}{}
@@ -465,15 +458,9 @@ func (s *S) TestInvariants(c *check.C) {
 func (s *S) TestRemoveInsert(c *check.C) {
 	n := int(1e4)
 	tree := testTree(n, 1e3, 1e2, 1e5)
-	ss1 := make([]string, 0, n)
-	ss2 := make([]string, 0, n)
-	for s := range tree.Traverse("") {
-		ss1 = append(ss1, s.String())
-	}
+	ss1 := fillSliceWith(tree.Traverse(""), n)
 	tree.Insert(tree.Remove(tree[""]))
-	for s := range tree.Traverse("") {
-		ss2 = append(ss2, s.String())
-	}
+	ss2 := fillSliceWith(tree.Traverse(""), n)
 	c.Check(ss1, check.Equals, ss2)
 }
 
@@ -581,18 +568,13 @@ func BenchmarkTreeFlatten1e6(b *testing.B) {
 
 func repeatRemove(b *testing.B, n int) {
 	for i := 0; i < b.N; i++ {
-		for j := 0; j < 1e3/n; j++ {
+		for j := 0; j < 1e4/n; j++ {
 			b.StopTimer()
-			runtime.GC()
 			tree := testTree(n, 1e3, 1e2, 1e5)
-			ss := make([]*Interval, 0, n)
-			for s := range tree.Traverse("") {
-				ss = append(ss, s)
-			}
+			ss := fillSliceWith(tree.Traverse(""), n)
 			b.StartTimer()
 			for j := range ss {
 				tree.Remove(ss[j])
-				ss[j] = nil
 			}
 		}
 	}
@@ -604,4 +586,34 @@ func BenchmarkTreeRemove1e2(b *testing.B) {
 
 func BenchmarkTreeRemove1e3(b *testing.B) {
 	repeatRemove(b, 1e3)
+}
+
+func BenchmarkTreeRemove1e4(b *testing.B) {
+	repeatRemove(b, 1e4)
+}
+
+func repeatFastRemove(b *testing.B, n int) {
+	for i := 0; i < b.N; i++ {
+		for j := 0; j < 1e4/n; j++ {
+			b.StopTimer()
+			tree := testTree(n, 1e3, 1e2, 1e5)
+			ss := fillSliceWith(tree.Traverse(""), n)
+			b.StartTimer()
+			for j := range ss {
+				tree.FastRemove(ss[j])
+			}
+		}
+	}
+}
+
+func BenchmarkTreeFastRemove1e2(b *testing.B) {
+	repeatFastRemove(b, 1e2)
+}
+
+func BenchmarkTreeFastRemove1e3(b *testing.B) {
+	repeatFastRemove(b, 1e3)
+}
+
+func BenchmarkTreeFastRemove1e4(b *testing.B) {
+	repeatFastRemove(b, 1e4)
 }
