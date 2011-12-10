@@ -1,4 +1,4 @@
-package interval_test
+package interval
 // Copyright ©2011 Dan Kortschak <dan.kortschak@adelaide.edu.au>
 // 
 // This program is free software: you can redistribute it and/or modify
@@ -16,18 +16,17 @@ package interval_test
 
 import (
 	"fmt"
-	"github.com/kortschak/BioGo/interval"
 	"strings"
 )
 
 // "example":[-22, 6), "example":[0, 4), "example":[2, 3), "example":[3, 7), "example":[5, 10), "example":[8, 12), "example":[34, 61)
 func ExampleInsert() {
-	tree := interval.NewTree()
+	tree := NewTree()
 	chromosome := "example"
 	segments := [][]int{{0, 4}, {8, 12}, {2, 3}, {5, 10}, {3, 7}, {-22, 6}, {34, 61}}
 
 	for _, s := range segments {
-		if i, err := interval.New(chromosome, s[0], s[1], 0, nil); err == nil {
+		if i, err := New(chromosome, s[0], s[1], 0, nil); err == nil {
 			tree.Insert(i)
 		} else {
 			fmt.Println(err)
@@ -40,7 +39,7 @@ func ExampleInsert() {
 // "example":[-22, 6)
 func ExampleIntersect() {
 	tree := CreateExampleTree("example", [][]int{{0, 4}, {8, 12}, {2, 3}, {5, 10}, {3, 7}, {-22, 6}, {34, 61}})
-	if i, err := interval.New("example", -15, -2, 0, nil); err == nil {
+	if i, err := New("example", -15, -2, 0, nil); err == nil {
 		for s := range tree.Intersect(i, 0) {
 			fmt.Printf("%s\n", s)
 		}
@@ -51,7 +50,7 @@ func ExampleIntersect() {
 // "example":[3, 7)
 func ExampleContain() {
 	tree := CreateExampleTree("example", [][]int{{0, 4}, {8, 12}, {2, 3}, {5, 10}, {3, 7}, {-22, 6}, {34, 61}})
-	if i, err := interval.New("example", 4, 6, 0, nil); err == nil {
+	if i, err := New("example", 4, 6, 0, nil); err == nil {
 		for s := range tree.Contain(i, 0) {
 			fmt.Printf("%s\n", s)
 		}
@@ -61,7 +60,7 @@ func ExampleContain() {
 // "example":[2, 3)
 func ExampleWithin() {
 	tree := CreateExampleTree("example", [][]int{{0, 4}, {8, 12}, {2, 3}, {5, 10}, {3, 7}, {-22, 6}, {34, 61}})
-	if i, err := interval.New("example", 1, 5, 0, nil); err == nil {
+	if i, err := New("example", 1, 5, 0, nil); err == nil {
 		for s := range tree.Within(i, 0) {
 			fmt.Printf("%s\n", s)
 		}
@@ -72,7 +71,7 @@ func ExampleWithin() {
 // "example":[0, 4), "example":[2, 3), "example":[3, 7), "example":[5, 10), "example":[8, 12), "example":[34, 61)
 func ExampleRemove() {
 	tree := CreateExampleTree("example", [][]int{{0, 4}, {8, 12}, {2, 3}, {5, 10}, {3, 7}, {-22, 6}, {34, 61}})
-	if i, err := interval.New("example", -15, -2, 0, nil); err == nil {
+	if i, err := New("example", -15, -2, 0, nil); err == nil {
 		for s := range tree.Intersect(i, 0) {
 			r := tree.Remove(s)
 			fmt.Println(r, r.Left(), r.Right(),r.Parent())
@@ -93,11 +92,11 @@ func ExampleMerge() {
 	tree := CreateExampleTree("example", [][]int{{0, 4}, {8, 12}, {2, 3}, {5, 10}, {3, 7}, {34, 61}})
 	chromosome := "example"
 	segments := [][]int{{0, 1}, {27, 42}}
-	inserted := []*interval.Interval{}
-	replaced := []*interval.Interval{}
+	inserted := []*Interval{}
+	replaced := []*Interval{}
 
 	for _, s := range segments {
-		if i, err := interval.New(chromosome, s[0], s[1], 0, nil); err == nil {
+		if i, err := New(chromosome, s[0], s[1], 0, nil); err == nil {
 			n, o := tree.Merge(i, 0)
 			inserted = append(inserted, n...)
 			replaced = append(replaced, o...)
@@ -134,7 +133,7 @@ func ExampleTraverseAll() {
 func ExampleFlatten() {
 	tree := CreateExampleTree("example", [][]int{{0, 4}, {8, 12}, {2, 3}, {5, 10}, {3, 7}, {27, 61}})
 	start, end := tree.Range("example")
-	if i, err := interval.New("example", start, end, 0, nil); err == nil {
+	if i, err := New("example", start, end, 0, nil); err == nil {
 		flat, original := tree.Flatten(i, 0, 0)
 		fmt.Printf("flattened: %v\noriginal: %v\n", flat, original)
 	}
@@ -145,7 +144,7 @@ func ExampleFlatten() {
 func ExampleFlattenContain() {
 	tree := CreateExampleTree("example", [][]int{{0, 4}, {8, 12}, {2, 3}, {5, 10}, {3, 7}, {-22, 6}, {34, 61}})
 
-	if i, err := interval.New("example", 6, 7, 0, nil); err == nil {
+	if i, err := New("example", 6, 7, 0, nil); err == nil {
 		flat, original := tree.FlattenContaining(i, 0, 0)
 		fmt.Printf("flattened: %v\noriginal: %v\n", flat, original)
 	}
@@ -156,7 +155,7 @@ func ExampleFlattenContain() {
 func ExampleFlattenWithin() {
 	tree := CreateExampleTree("example", [][]int{{0, 4}, {8, 12}, {2, 3}, {5, 10}, {3, 7}, {-22, 6}, {34, 61}})
 
-	if i, err := interval.New("example", 2, 7, 0, nil); err == nil {
+	if i, err := New("example", 2, 7, 0, nil); err == nil {
 		flat, original := tree.FlattenWithin(i, 0, 0)
 		fmt.Printf("flattened: %v\noriginal: %v\n", flat, original)
 	}
@@ -164,18 +163,18 @@ func ExampleFlattenWithin() {
 
 // Helpers
 
-func CreateExampleTree(chromosome string, segments [][]int) (tree interval.Tree) {
-	tree = interval.NewTree()
+func CreateExampleTree(chromosome string, segments [][]int) (tree Tree) {
+	tree = NewTree()
 
 	for _, s := range segments {
-		i, _ := interval.New(chromosome, s[0], s[1], 0, nil)
+		i, _ := New(chromosome, s[0], s[1], 0, nil)
 		tree.Insert(i)
 	}
 
 	return
 }
 
-func PrintAll(t interval.Tree) {
+func PrintAll(t Tree) {
 	segs := []string{}
 	for i := range t.TraverseAll() {
 		segs = append(segs, i.String())
