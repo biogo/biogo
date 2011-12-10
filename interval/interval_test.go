@@ -356,8 +356,8 @@ func (s *S) TestLinearRootDelete(c *check.C) {
 }
 
 func (s *S) TestRemove(c *check.C) {
-	n := int(1e2)
-	tree := testTree(n, 1e3, 1e2, 1e4)
+	n := int(1e5)
+	tree := testTree(n, 1e3, 1e2, 1e6)
 
 	root := tree[""]
 

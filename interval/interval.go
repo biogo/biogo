@@ -507,16 +507,6 @@ func (self *Interval) ScanRight() (n *Interval) {
 	return
 }
 
-func (self *Interval) unlinkFromParent() {
-	if self.parent != nil {
-		if self.parent.left == self {
-			self.parent.left = nil
-		} else if self.parent.right == self {
-			self.parent.right = nil
-		}
-	}
-}
-
 func (self *Interval) LeftMost() (n *Interval) {
 	for n = self; n.left != nil; n = n.left {
 	}
@@ -582,39 +572,66 @@ func (self *Interval) fastRemove() (root, removed *Interval) {
 	return
 }
 
+func (self *Interval) changeLinkFromParentTo(l *Interval) {
+	if self.parent != nil {
+		if self.parent.left == self {
+			self.parent.left = l
+		} else if self.parent.right == self {
+			self.parent.right = l
+		}
+	}
+}
+
+func (self *Interval) skip() (replacement *Interval) {
+	switch {
+	case self.left != nil && self.right != nil:
+		panic("cannot skip a fully connected node")
+	case self.left != nil:
+		replacement = self.left
+		replacement.parent = self.parent
+	case self.right != nil:
+		replacement = self.right
+		replacement.parent = self.parent
+	default:
+		replacement = nil
+	}
+	self.changeLinkFromParentTo(replacement)
+
+	return
+}
+
 func (self *Interval) remove() (root, removed *Interval) {
-	self.unlinkFromParent()
 	removed = self
 
 	switch {
 	case self.left != nil && self.right != nil:
-		var promotable *Interval
 		if rand.Float64() < 0.5 {
-			promotable = self.left.RightMost()
+			root = self.left.RightMost()
 		} else {
-			promotable = self.right.LeftMost()
+			root = self.right.LeftMost()
 		}
-		_, root = promotable.remove()
-		root.left, root.right, root.parent = removed.left, removed.right, removed.parent
-		if root.priority > removed.priority {
-			root.priority, removed.priority = removed.priority, root.priority
+		root.skip()
+		root.parent = self.parent
+		root.left = self.left
+		if root.left != nil {
+			root.left.parent = root
 		}
-	case self.left == nil && self.right == nil: // just return the node
-		break
-	case self.right == nil: // only a left node exists
+		root.right = self.right
+		if root.right != nil {
+			root.right.parent = root
+		}
+		root.priority, self.priority = self.priority, root.priority
 		if self.parent != nil {
-			root = self.parent.Insert(self.left)
-		} else {
-			root = self.left
-			root.parent = nil
+			if self.parent.left == self {
+				self.parent.left = root
+			} else {
+				self.parent.right = root
+			}
 		}
-	case self.left == nil: // only a right nodes exists
-		if self.parent != nil {
-			root = self.parent.Insert(self.right)
-		} else {
-			root = self.right
-			root.parent = nil
-		}
+	case self.left == nil && self.right == nil:
+		self.changeLinkFromParentTo(nil)
+	default:
+		root = self.skip()
 	}
 
 	return
