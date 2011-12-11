@@ -160,11 +160,11 @@ func (self Tree) Range(chromosome string) (min, max int) {
 // less than tolerance positions apart are merged into a single new flattened interval.
 // Return flattened intervals and all intervals originally in intersected region.
 // No metadata is transfered to flattened intervals.
-func (self Tree) Flatten(i *Interval, overlap, tolerance int) (inserted []*Interval, removed [][]*Interval) {
+func (self Tree) Flatten(i *Interval, overlap, tolerance int) (flat []*Interval, rich [][]*Interval) {
 	if root, ok := self[i.chromosome]; ok {
 		r := make(chan *Interval)
 		go root.Intersect(i, overlap, r)
-		inserted, removed = root.Flatten(r, tolerance)
+		flat, rich = root.Flatten(r, tolerance)
 	}
 
 	return
@@ -173,11 +173,11 @@ func (self Tree) Flatten(i *Interval, overlap, tolerance int) (inserted []*Inter
 // Flatten a range of intervals containing i so that only one interval covers any given location.
 // Return flattened intervals and all intervals originally in containing region.
 // No metadata is transfered to flattened intervals.
-func (self Tree) FlattenContaining(i *Interval, slop, tolerance int) (inserted []*Interval, removed [][]*Interval) {
+func (self Tree) FlattenContaining(i *Interval, slop, tolerance int) (flat []*Interval, rich [][]*Interval) {
 	if root, ok := self[i.chromosome]; ok {
 		r := make(chan *Interval)
 		go root.Contain(i, slop, r)
-		inserted, removed = root.Flatten(r, tolerance)
+		flat, rich = root.Flatten(r, tolerance)
 	}
 
 	return
@@ -186,11 +186,11 @@ func (self Tree) FlattenContaining(i *Interval, slop, tolerance int) (inserted [
 // Flatten a range of intervals within i so that only one interval covers any given location.
 // Return flattened intervals and all intervals originally in contained region.
 // No metadata is transfered to flattened intervals.
-func (self Tree) FlattenWithin(i *Interval, slop, tolerance int) (inserted []*Interval, removed [][]*Interval) {
+func (self Tree) FlattenWithin(i *Interval, slop, tolerance int) (flat []*Interval, rich [][]*Interval) {
 	if root, ok := self[i.chromosome]; ok {
 		r := make(chan *Interval)
 		go root.Within(i, slop, r)
-		inserted, removed = root.Flatten(r, tolerance)
+		flat, rich = root.Flatten(r, tolerance)
 	}
 
 	return
@@ -523,26 +523,28 @@ func (self *Interval) RightMost() (n *Interval) {
 
 // Merge a range of intervals provided by r. Returns merged intervals in a slice and
 // intervals contributing to merged intervals groups in a slice of slices.
-func (self *Interval) Flatten(r chan *Interval, tolerance int) (inserted []*Interval, removed [][]*Interval) {
-	inserted = []*Interval{}
-	removed = [][]*Interval{[]*Interval{}}
+func (self *Interval) Flatten(r chan *Interval, tolerance int) (flat []*Interval, rich [][]*Interval) {
+	flat = []*Interval{}
+	rich = [][]*Interval{{}}
 
-	min := util.MaxInt
+	min, max := util.MaxInt, util.MinInt
 	var last *Interval
-	for old := range r {
-		if last != nil && old.start-tolerance > last.end {
-			n, _ := New(old.chromosome, min, last.end, 0, nil)
-			inserted = append(inserted, n)
-			min = old.start
-			removed = append(removed, []*Interval{})
+	for current := range r {
+		if last != nil && current.start-tolerance > max {
+			n, _ := New(current.chromosome, min, max, 0, nil)
+			flat = append(flat, n)
+			min = current.start
+			max = current.end
+			rich = append(rich, []*Interval{})
 		} else {
-			min = util.Min(min, old.start)
+			min = util.Min(min, current.start)
+			max = util.Max(max, current.end)
 		}
-		removed[len(removed)-1] = append(removed[len(removed)-1], old)
-		last = old
+		rich[len(rich)-1] = append(rich[len(rich)-1], current)
+		last = current
 	}
-	n, _ := New(last.chromosome, min, last.end, 0, nil)
-	inserted = append(inserted, n)
+	n, _ := New(last.chromosome, min, max, 0, nil)
+	flat = append(flat, n)
 
 	return
 }

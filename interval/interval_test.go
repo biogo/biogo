@@ -464,6 +464,78 @@ func (s *S) TestRemoveInsert(c *check.C) {
 	c.Check(ss1, check.Equals, ss2)
 }
 
+func (s *S) TestFlatten(c *check.C) {
+	n := int(1e4)
+	tree := testTree(n, 1e3, 1e2, 1e5)
+
+	root := tree[""]
+	flat, rich := tree.Flatten(root, 0, 0)
+	m := make(map[string]struct{}, n)
+
+	for i := range flat {
+		for j := range rich[i] {
+			c.Check(rich[i][j].start >= flat[i].start && rich[i][j].end <= flat[i].end, check.Equals, true)
+			m[rich[i][j].String()] = struct{}{}
+		}
+	}
+	for s := range tree.Traverse("") {
+		_, found := m[s.String()]
+		if s.start <= root.end && s.end >= root.start {
+			c.Check(found, check.Equals, true)
+		} else {
+			c.Check(found, check.Equals, false)
+		}
+	}
+}
+
+func (s *S) TestFlattenContaining(c *check.C) {
+	n := int(1e4)
+	tree := testTree(n, 1e3, 1e2, 1e5)
+
+	root := tree[""]
+	flat, rich := tree.FlattenContaining(root, 0, 0)
+	m := make(map[string]struct{}, n)
+
+	for i := range flat {
+		for j := range rich[i] {
+			c.Check(rich[i][j].start >= flat[i].start && rich[i][j].end <= flat[i].end, check.Equals, true)
+			m[rich[i][j].String()] = struct{}{}
+		}
+	}
+	for s := range tree.Traverse("") {
+		_, found := m[s.String()]
+		if s.start <= root.start && s.end >= root.end {
+			c.Check(found, check.Equals, true)
+		} else {
+			c.Check(found, check.Equals, false)
+		}
+	}
+}
+
+func (s *S) TestFlattenWithin(c *check.C) {
+	n := int(1e4)
+	tree := testTree(n, 1e3, 1e2, 1e5)
+
+	root := tree[""]
+	flat, rich := tree.FlattenWithin(root, 0, 0)
+	m := make(map[string]struct{}, n)
+
+	for i := range flat {
+		for j := range rich[i] {
+			c.Check(rich[i][j].start >= flat[i].start && rich[i][j].end <= flat[i].end, check.Equals, true)
+			m[rich[i][j].String()] = struct{}{}
+		}
+	}
+	for s := range tree.Traverse("") {
+		_, found := m[s.String()]
+		if s.start >= root.start && s.end <= root.end {
+			c.Check(found, check.Equals, true)
+		} else {
+			c.Check(found, check.Equals, false)
+		}
+	}
+}
+
 // Benchmarks
 func repeatInsertion(tree Tree, n, iLen, iLenVar, locRange int, b *testing.B) {
 	for j := 0; j < n; j++ {
