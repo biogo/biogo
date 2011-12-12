@@ -15,8 +15,8 @@ package seq
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import (
-	"testing"
+	check "launchpad.net/gocheck"
 )
 
-func TestQual(t *testing.T) {
+func (s *S) TestQualXXX(c *check.C) {
 }

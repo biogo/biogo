@@ -15,8 +15,16 @@ package seq
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import (
+	check "launchpad.net/gocheck"
 	"testing"
 )
 
-func TestSeq(t *testing.T) {
+// Tests
+func Test(t *testing.T) { check.TestingT(t) }
+
+type S struct{}
+
+var _ = check.Suite(&S{})
+
+func (s *S) TestSeqXXX(c *check.C) {
 }

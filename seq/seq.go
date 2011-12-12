@@ -84,18 +84,17 @@ func (self *Seq) Trunc(start, end int) (s *Seq, err error) {
 
 	if start < self.Offset || end < self.Offset ||
 		start > len(self.Seq)+self.Offset || end > len(self.Seq)+self.Offset {
-		return nil, bio.NewError("Start or end position out of range", 0, self)
+		return nil, bio.NewError("Start or end position out of range.", 0, self)
 	}
 
-	if !self.Circular || start <= end {
-		ts = make([]byte, end-start)
-		copy(ts, self.Seq[start-self.Offset:end-self.Offset])
+	if start <= end {
+		ts = append([]byte{}, self.Seq[start-self.Offset:end-self.Offset]...)
 	} else if self.Circular {
-		ts = make([]byte, len(self.Seq)-end, end-start)
+		ts = make([]byte, len(self.Seq)-start-self.Offset, len(self.Seq)+end-start)
 		copy(ts, self.Seq[start-self.Offset:])
 		ts = append(ts, self.Seq[:end-self.Offset]...)
 	} else {
-		return nil, bio.NewError("Start position greater than end position for non-circular molecule", 0, self)
+		return nil, bio.NewError("Start position greater than end position for non-circular molecule.", 0, self)
 	}
 
 	var q *Quality
@@ -125,7 +124,7 @@ func (self *Seq) RevComp() (s *Seq, err error) {
 			rs[i] = complement[self.Moltype][self.Seq[j]]
 		}
 	} else {
-		return nil, bio.NewError("Cannot reverse complement protein", 0, self)
+		return nil, bio.NewError("Cannot reverse-complement protein.", 0, self)
 	}
 
 	var q *Quality
@@ -144,15 +143,20 @@ func (self *Seq) RevComp() (s *Seq, err error) {
 	}, nil
 }
 
-func (self *Seq) Join(s *Seq, where int) {
+func (self *Seq) Join(s *Seq, where int) (err error) {
+	if self.Circular {
+		return bio.NewError("Cannot join circular molecule.", 0, self)
+	}
 	switch where {
 	case Prepend:
-		s := make([]byte, len(s.Seq), len(s.Seq)+len(self.Seq))
-		copy(s, self.Seq)
-		self.Seq = append(s, self.Seq...)
+		ts := make([]byte, len(s.Seq), len(s.Seq)+len(self.Seq))
+		copy(ts, s.Seq)
+		self.Seq = append(ts, self.Seq...)
 	case Append:
 		self.Seq = append(self.Seq, s.Seq...)
 	}
+
+	return
 }
 
 func (self *Seq) Stitch(f *featgroup.FeatureGroup) (s *Seq, err error) {
@@ -166,36 +170,22 @@ func (self *Seq) Stitch(f *featgroup.FeatureGroup) (s *Seq, err error) {
 			t.Insert(i)
 		}
 	}
-	// Mark the end of the sequence
-	i, _ = interval.New("EOS", self.End()+1, self.End()+1, 0, nil)
-	t.Insert(i)
 
-	s = &Seq{}
-	var (
-		start int
-		last  *interval.Interval
-	)
-
-	if span, err := interval.New("Sequence", self.Start(), self.End(), 0, nil); err != nil {
-		return nil, bio.NewError("Seq.End() < Seq.Start()", 0, self)
-		} else {
-		for segment := range t.Intersect(span, 1) {
-			if last == nil { // start of the features
-				start = segment.Start()
-			}
-			if last.End() < segment.Start()-1 { // at least one position gap between this feature and the last
-				s.Seq = append(s.Seq, self.Seq[util.Max(0, start-self.Offset):last.End()-self.Offset]...)
-				start = segment.Start()
-			}
-			if segment.End() > self.End() { // this is the last useful segment
-				s.Seq = append(s.Seq, self.Seq[util.Max(0, start-self.Offset):util.Min(len(self.Seq), last.End()-self.Offset)]...)
-				break
-			}
-			last = segment
+	ts := []byte{}
+	if span, err := interval.New("", self.Start(), self.End(), 0, nil); err != nil {
+		panic("Seq.End() < Seq.Start()")
+	} else {
+		f, _ := t.Flatten(span, 0, 0)
+		for _, seg := range f {
+			ts = append(ts, self.Seq[util.Max(seg.Start()-self.Offset, 0):util.Min(seg.End()-self.Offset, len(self.Seq))]...)
 		}
 	}
 
-	self.Seq = s.Seq
+	if self.Quality != nil {
+		self.Quality.Stitch(f)
+	}
+
+	self.Seq = ts
 	self.Offset = 0
 
 	return self, nil
