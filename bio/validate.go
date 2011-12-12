@@ -60,7 +60,7 @@ func (self *Validator) Check(n []byte) (valid bool, pos int) {
 }
 
 // Return a string indicating characters accepted as valid by the Validator.
-func (self *Validator) Valid() string {
+func (self *Validator) String() string {
 	valid := make([]byte, 0, 256)
 	for i, v := range self.valid {
 		if v {
