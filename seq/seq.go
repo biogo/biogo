@@ -41,7 +41,7 @@ var (
 )
 
 type Seq struct {
-	ID       []byte
+	ID       string
 	Seq      []byte
 	Offset   int
 	Strand   int8
@@ -51,7 +51,7 @@ type Seq struct {
 	Meta     interface{} // No operation on Seq objects implicitly copies or changes the contents of Meta.
 }
 
-func New(id, seq []byte, qual *Quality) *Seq {
+func New(id string, seq []byte, qual *Quality) *Seq {
 	return &Seq{
 		ID:       id,
 		Seq:      seq,
@@ -107,7 +107,7 @@ func (self *Seq) Trunc(start, end int) (s *Seq, err error) {
 	}
 
 	return &Seq{
-		ID:       append([]byte{}, self.ID...),
+		ID:       self.ID,
 		Seq:      ts,
 		Offset:   start,
 		Strand:   self.Strand,
@@ -134,7 +134,7 @@ func (self *Seq) RevComp() (s *Seq, err error) {
 	}
 
 	return &Seq{
-		ID:       append([]byte{}, self.ID...),
+		ID:       self.ID,
 		Seq:      rs,
 		Offset:   0,
 		Strand:   -self.Strand,
@@ -178,7 +178,7 @@ func (self *Seq) Stitch(f *featgroup.FeatureGroup) (s *Seq, err error) {
 
 	if span, err := interval.New("Sequence", self.Start(), self.End(), 0, nil); err != nil {
 		return nil, bio.NewError("Seq.End() < Seq.Start()", 0, self)
-	} else {
+		} else {
 		for segment := range t.Intersect(span, 1) {
 			if last == nil { // start of the features
 				start = segment.Start()

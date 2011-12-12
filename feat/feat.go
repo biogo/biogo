@@ -26,16 +26,16 @@ var (
 
 // Feature type
 type Feature struct {
-	ID          []byte
-	Source      []byte
-	Location    []byte
+	ID          string
+	Source      string
+	Location    string
 	Start       int
 	End         int
-	Feature     []byte
+	Feature     string
 	Score       float64
 	Probability float64
-	Attributes  []byte
-	Comments    []byte
+	Attributes  string
+	Comments    string
 	Frame       int8
 	Strand      int8
 	Moltype     byte
@@ -43,7 +43,7 @@ type Feature struct {
 }
 
 // Return a new Feature
-func New(ID []byte) *Feature {
+func New(ID string) *Feature {
 	return &Feature{ID: ID}
 }
 

@@ -82,8 +82,8 @@ func main() {
 
 	wm := pwm.New(matrix)
 
-	source := []byte("pwmscan")
-	feature := []byte("match")
+	source := "pwmscan"
+	feature := "match"
 
 	for {
 		if sequence, err := in.Read(); err != nil {

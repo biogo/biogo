@@ -33,8 +33,8 @@ type RepeatRecord struct {
 	Start, End, Left int
 }
 
-func (self *RepeatRecord) Parse(annot []byte) {
-	fields := strings.Split(string(annot), " ")
+func (self *RepeatRecord) Parse(annot string) {
+	fields := strings.Split(annot, " ")
 
 	self.Name = fields[1]
 	self.Class = fields[2]
@@ -278,7 +278,7 @@ func processServer(index interval.Tree, queue, output chan *feat.Feature, wg *sy
 		}
 
 		buffer = append(buffer, '"')
-		feature.Attributes = append(feature.Attributes, buffer...)
+		feature.Attributes += string(buffer)
 		output <- feature
 	}
 }

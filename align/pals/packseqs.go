@@ -30,7 +30,7 @@ type Packer struct {
 func NewPacker(id string) (p *Packer) {
 	return &Packer{
 		Packed: &seq.Seq{
-			ID:     []byte(id),
+			ID:     id,
 			Strand: 1,
 			Meta:   SeqMap{},
 		},

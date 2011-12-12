@@ -60,7 +60,7 @@ func (self *Reader) Read() (sequence *seq.Seq, err error) {
 		case item.Type == lex.ItemError:
 			return nil, bio.NewError(item.String(), 0, nil)
 		case item.Type == lex.ItemID && expectedType == item.Type:
-			sequence.ID = item.Val
+			sequence.ID = string(item.Val)
 			expectedType = lex.ItemSeq
 		case item.Type == lex.ItemSeq && expectedType == item.Type:
 			if len(sequence.Seq) == 0 {

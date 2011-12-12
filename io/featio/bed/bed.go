@@ -99,9 +99,9 @@ func (self *Reader) Read() (f *feat.Feature, err error) {
 	for i := range elems {
 		switch i {
 		case chromField:
-			f.Location = []byte(elems[i])
+			f.Location = elems[i]
 			if self.BedType <= nameField {
-				f.ID = []byte(elems[chromField] + ":" + elems[startField] + ".." + elems[endField])
+				f.ID = elems[chromField] + ":" + elems[startField] + ".." + elems[endField]
 			}
 		case startField:
 			f.Start, se = strconv.Atoi(elems[i])
@@ -114,7 +114,7 @@ func (self *Reader) Read() (f *feat.Feature, err error) {
 				f.End = 0
 			}
 		case nameField:
-			f.ID = []byte(elems[i])
+			f.ID = elems[i]
 		case scoreField:
 			if f.Score, se = strconv.ParseFloat(elems[i], 64); se != nil {
 				f.Score = 0

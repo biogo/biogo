@@ -94,7 +94,7 @@ READ:
 		}
 	}
 
-	sequence = seq.New(label, body, nil)
+	sequence = seq.New(string(label), body, nil)
 
 	return
 }
@@ -148,7 +148,7 @@ func NewWriterName(name string, width int) (w *Writer, err error) {
 // Write a single sequence and return the number of bytes written and any error.
 func (self *Writer) Write(s *seq.Seq) (n int, err error) {
 	var ln int
-	if n, err = self.w.WriteString(self.IDPrefix + string(s.ID) + "\n"); err == nil {
+	if n, err = self.w.WriteString(self.IDPrefix + s.ID + "\n"); err == nil {
 		for i := 0; i*self.Width <= s.Len(); i++ {
 			endLinePos := util.Min(self.Width*(i+1), s.Len())
 			ln, err = self.w.WriteString(self.SeqPrefix + string(s.Seq[self.Width*i:endLinePos]) + "\n")

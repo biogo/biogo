@@ -80,7 +80,7 @@ func NewReaderName(name string) (r *Reader, err error) {
 	return NewReader(f), nil
 }
 
-func (self *Reader) commentMetaline(line []byte) (f *feat.Feature, err error) {
+func (self *Reader) commentMetaline(line string) (f *feat.Feature, err error) {
 	// Load these into a slice in a MetaField of the Feature
 	fields := strings.Split(string(line), " ")
 	switch fields[0] {
@@ -117,7 +117,7 @@ func (self *Reader) commentMetaline(line []byte) (f *feat.Feature, err error) {
 			}
 			f = &feat.Feature{
 				Meta: &feat.Feature{
-					ID:    []byte(fields[1]),
+					ID:    fields[1],
 					Start: start,
 					End:   end,
 				},
@@ -169,7 +169,7 @@ func (self *Reader) metaSequence(moltype, id string) (sequence *seq.Seq, err err
 		}
 	}
 
-	sequence = seq.New([]byte(id), body, nil)
+	sequence = seq.New(id, body, nil)
 	sequence.Moltype = bio.StringToType[moltype]
 
 	return
@@ -178,25 +178,25 @@ func (self *Reader) metaSequence(moltype, id string) (sequence *seq.Seq, err err
 // Read a single feature or part and return it or an error.
 func (self *Reader) Read() (f *feat.Feature, err error) {
 	var (
-		line  []byte
-		elems [][]byte
+		line  string
+		elems []string
 		s     int8
 		ok    bool
 	)
 
 	for {
-		if line, err = self.r.ReadBytes('\n'); err == nil {
+		if line, err = self.r.ReadString('\n'); err == nil {
 			if len(line) > 0 && line[len(line)-1] == '\r' {
 				line = line[:len(line)-1]
 			}
-			line = bytes.TrimSpace(line)
+			line = strings.TrimSpace(line)
 			if len(line) == 0 { // ignore blank lines
 				continue
-			} else if bytes.HasPrefix(line, []byte("##")) {
+			} else if strings.HasPrefix(line, "##") {
 				f, err = self.commentMetaline(line[2:])
 				return
 			} else if line[0] != '#' { // ignore comments
-				elems = bytes.SplitN(line, []byte{'\t'}, 10)
+				elems = strings.SplitN(line, "\t", 10)
 				break
 			}
 		} else {
@@ -204,11 +204,11 @@ func (self *Reader) Read() (f *feat.Feature, err error) {
 		}
 	}
 
-	if s, ok = charToStrand[string(elems[strand])]; !ok {
+	if s, ok = charToStrand[elems[strand]]; !ok {
 		s = 0
 	}
 
-	startPos, se := strconv.Atoi(string(elems[start]))
+	startPos, se := strconv.Atoi(elems[start])
 	if se != nil {
 		startPos = 0
 	}
@@ -216,17 +216,17 @@ func (self *Reader) Read() (f *feat.Feature, err error) {
 		startPos--
 	}
 
-	endPos, se := strconv.Atoi(string(elems[end]))
+	endPos, se := strconv.Atoi(elems[end])
 	if se != nil {
 		endPos = 0
 	}
 
-	fr, se := strconv.Atoi(string(elems[frame]))
+	fr, se := strconv.Atoi(elems[frame])
 	if se != nil {
 		fr = -1
 	}
 
-	score, se := strconv.ParseFloat(string(elems[score]), 64)
+	score, se := strconv.ParseFloat(elems[score], 64)
 	if se != nil {
 		score = 0
 	}

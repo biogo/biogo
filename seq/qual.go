@@ -21,14 +21,14 @@ import (
 )
 
 type Quality struct {
-	ID       []byte
+	ID       string
 	Qual     []int8
 	Offset   int
 	Strand   int8
 	Circular bool
 }
 
-func NewQuality(id []byte, seq []int8) *Quality {
+func NewQuality(id string, seq []int8) *Quality {
 	return &Quality{
 		ID:       id,
 		Qual:     seq,
@@ -69,7 +69,7 @@ func (self *Quality) Trunc(start, end int) (q *Quality, err error) {
 	}
 
 	return &Quality{
-		ID:       append([]byte{}, self.ID...),
+		ID:       self.ID,
 		Qual:     ts,
 		Offset:   start,
 		Strand:   self.Strand,
@@ -85,7 +85,7 @@ func (self *Quality) Reverse() *Quality {
 	}
 
 	return &Quality{
-		ID:       append([]byte{}, self.ID...),
+		ID:       self.ID,
 		Qual:     rs,
 		Offset:   0,
 		Strand:   -self.Strand,

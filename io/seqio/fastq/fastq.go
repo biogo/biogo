@@ -77,7 +77,7 @@ READ:
 				if len(sequence.ID) == 0 {
 					return nil, bio.NewError("No ID line parsed at +line in fastq format", 0, nil)
 				}
-				if len(line) > 1 && bytes.Compare(sequence.ID, line[1:]) != 0 {
+				if len(line) > 1 && bytes.Compare(label, line[1:]) != 0 {
 					return nil, bio.NewError("Quality ID does not match sequence ID", 0, nil)
 				}
 				inQual = true
@@ -100,7 +100,8 @@ READ:
 		return nil, bio.NewError("Quality length does not match sequence length", 0, nil)
 	}
 
-	sequence = seq.New(label, seqBody, seq.NewQuality(label, self.decodeQuality(qualBody)))
+	labelString := string(label)
+	sequence = seq.New(labelString, seqBody, seq.NewQuality(labelString, self.decodeQuality(qualBody)))
 
 	return
 }
@@ -181,7 +182,7 @@ func (self *Writer) Write(s *seq.Seq) (n int, err error) {
 		return 0, bio.NewError("No quality associated with sequence", 0, s)
 	}
 	if s.Len() == s.Quality.Len() {
-		self.template[1] = s.ID
+		self.template[1] = []byte(s.ID)
 		self.template[3] = s.Seq
 		self.template[5] = self.encodeQuality(s.Quality.Qual)
 		var tn int

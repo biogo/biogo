@@ -22,7 +22,7 @@ import (
 	"os"
 )
 
-var t *feat.Feature = &feat.Feature{Source: []byte("pals"), Feature: []byte("hit")}
+var t *feat.Feature = &feat.Feature{Source: "pals", Feature: "hit"}
 
 // PALS pair writer type.
 type Writer struct {
@@ -52,7 +52,7 @@ func (self *Writer) Write(pair *FeaturePair) (n int, err error) {
 	t.Score = float64(pair.Score)
 	t.Strand = pair.Strand
 	t.Frame = -1
-	t.Attributes = []byte(fmt.Sprintf("Target %s %d %d; maxe %.2g", pair.A.ID, pair.A.Start+1, pair.A.End, pair.Error)) // +1 is kludge for absence of gffwriter
+	t.Attributes = fmt.Sprintf("Target %s %d %d; maxe %.2g", pair.A.ID, pair.A.Start+1, pair.A.End, pair.Error) // +1 is kludge for absence of gffwriter
 	return self.w.Write(t)
 }
 

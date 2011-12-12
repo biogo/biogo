@@ -74,7 +74,7 @@ func FeatureOf(contigs *seq.Seq, from, to int, comp bool) (feature *feat.Feature
 	}
 
 	return &feat.Feature{
-		ID:    append([]byte{}, contig.seq.ID...),
+		ID:    contig.seq.ID,
 		Start: contigFrom,
 		End:   contigTo,
 	}, nil
