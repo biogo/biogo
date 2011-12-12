@@ -97,9 +97,11 @@ func (self Tree) AdjustRange(chromosome string) {
 
 // Find all intervals in Tree that overlap query. Return a channel that will convey results.
 func (self Tree) Intersect(i *Interval, overlap int) (result chan *Interval) {
+	result = make(chan *Interval)
 	if root, ok := self[i.chromosome]; ok {
-		result = make(chan *Interval)
 		go root.Intersect(i, overlap, result)
+	} else {
+		close(result)
 	}
 
 	return
@@ -107,9 +109,11 @@ func (self Tree) Intersect(i *Interval, overlap int) (result chan *Interval) {
 
 // Find all intervals in Tree that entirely contain query. Return a channel that will convey results.
 func (self Tree) Contain(i *Interval, slop int) (result chan *Interval) {
+	result = make(chan *Interval)
 	if root, ok := self[i.chromosome]; ok {
-		result = make(chan *Interval)
 		go root.Contain(i, slop, result)
+	} else {
+		close(result)
 	}
 
 	return
@@ -117,9 +121,11 @@ func (self Tree) Contain(i *Interval, slop int) (result chan *Interval) {
 
 // Find all intervals in Tree that are entirely contained by query. Return a channel that will convey results.
 func (self Tree) Within(i *Interval, slop int) (result chan *Interval) {
+	result = make(chan *Interval)
 	if root, ok := self[i.chromosome]; ok {
-		result = make(chan *Interval)
 		go root.Within(i, slop, result)
+	} else {
+		close(result)
 	}
 
 	return
@@ -128,9 +134,13 @@ func (self Tree) Within(i *Interval, slop int) (result chan *Interval) {
 // Traverse all intervals for a chromosome in Tree in order. Return a channel that will convey results.
 func (self Tree) Traverse(chromosome string) (result chan *Interval) {
 	result = make(chan *Interval)
-	go func() {
-		self[chromosome].Traverse(result)
-	}()
+	if t := self[chromosome]; t != nil {
+		go func() {
+			t.Traverse(result)
+		}()
+	} else {
+		close(result)
+	}
 
 	return result
 }

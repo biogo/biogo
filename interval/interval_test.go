@@ -208,17 +208,17 @@ func (s *S) TestScan(c *check.C) {
 		last  *Interval
 		count int
 	)
-	for s := leftMost; s != nil && count <= n+1; s, count = s.ScanRight(), count+1 {
+	for seg := leftMost; seg != nil && count <= n+1; seg, count = seg.ScanRight(), count+1 {
 		if last != nil {
-			c.Check(s.start, check.Not(lessThan), last.start)
+			c.Check(seg.start, check.Not(lessThan), last.start)
 		}
 	}
 	c.Check(count, check.Equals, n)
 
 	last, count = nil, 0
-	for s := rightMost; s != nil && count <= n+1; s, count = s.ScanLeft(), count+1 {
+	for seg := rightMost; seg != nil && count <= n+1; seg, count = seg.ScanLeft(), count+1 {
 		if last != nil {
-			c.Check(last.start, check.Not(lessThan), s.start)
+			c.Check(last.start, check.Not(lessThan), seg.start)
 		}
 	}
 	c.Check(count, check.Equals, n)
@@ -256,15 +256,15 @@ func (s *S) TestIntersect(c *check.C) {
 		test := randomInterval(1e4, 1e2, 1e5)
 
 		// count all intersecting intervals in the tree
-		for s := range tree.Traverse("") {
-			if test.start <= s.end && test.end >= s.start {
+		for seg := range tree.Traverse("") {
+			if test.start <= seg.end && test.end >= seg.start {
 				exhaustive++
 			}
 		}
 
-		for s := range tree.Intersect(test, 0) {
+		for seg := range tree.Intersect(test, 0) {
 			intersects++
-			if test.start > s.end || test.end < s.start {
+			if test.start > seg.end || test.end < seg.start {
 				falseHits++
 			}
 		}
@@ -285,15 +285,15 @@ func (s *S) TestContain(c *check.C) {
 		test := randomInterval(1e4, 1e2, 1e5)
 
 		// count all containing intervals in the tree
-		for s := range tree.Traverse("") {
-			if test.start >= s.start && test.end <= s.end {
+		for seg := range tree.Traverse("") {
+			if test.start >= seg.start && test.end <= seg.end {
 				exhaustive++
 			}
 		}
 
-		for s := range tree.Contain(test, 0) {
+		for seg := range tree.Contain(test, 0) {
 			contains++
-			if test.start < s.start || test.end > s.end {
+			if test.start < seg.start || test.end > seg.end {
 				falseHits++
 			}
 		}
@@ -314,15 +314,15 @@ func (s *S) TestWithin(c *check.C) {
 		test := randomInterval(1e4, 1e2, 1e5)
 
 		// count all contained intervals in the tree
-		for s := range tree.Traverse("") {
-			if test.start <= s.start && test.end >= s.end {
+		for seg := range tree.Traverse("") {
+			if test.start <= seg.start && test.end >= seg.end {
 				exhaustive++
 			}
 		}
 
-		for s := range tree.Within(test, 0) {
+		for seg := range tree.Within(test, 0) {
 			withins++
-			if test.start > s.start || test.end < s.end {
+			if test.start > seg.start || test.end < seg.end {
 				falseHits++
 			}
 		}
@@ -387,23 +387,23 @@ func (s *S) TestRemove(c *check.C) {
 func (s *S) TestInvariants(c *check.C) {
 	n := int(1e4)
 	tree := testTree(n, 1e3, 1e2, 1e5)
-	for s := range tree.Traverse("") {
-		if s.parent != nil {
-			c.Check(s.parent.priority, check.Not(lessThan), s.priority)
+	for seg := range tree.Traverse("") {
+		if seg.parent != nil {
+			c.Check(seg.parent.priority, check.Not(lessThan), seg.priority)
 		}
 	}
 
 	// test removal of root
 	tree.Remove(tree[""])
 	var last *Interval
-	for s := range tree.Traverse("") {
+	for seg := range tree.Traverse("") {
 		if last != nil {
-			c.Check(s.start, check.Not(lessThan), last.start)
+			c.Check(seg.start, check.Not(lessThan), last.start)
 		}
-		if s.parent != nil {
-			c.Check(s.parent.priority, check.Not(lessThan), s.priority)
+		if seg.parent != nil {
+			c.Check(seg.parent.priority, check.Not(lessThan), seg.priority)
 		}
-		last = s
+		last = seg
 	}
 
 	// get a set of all the intervals in the tree
@@ -416,21 +416,21 @@ func (s *S) TestInvariants(c *check.C) {
 	// test removal of left-most
 	tree.Remove(ss[0])
 	last = nil
-	for s := range tree.Traverse("") {
+	for seg := range tree.Traverse("") {
 		if last != nil {
-			c.Check(s.start, check.Not(lessThan), last.start)
+			c.Check(seg.start, check.Not(lessThan), last.start)
 		}
-		if s.parent != nil {
-			c.Check(s.parent.priority, check.Not(lessThan), s.priority)
+		if seg.parent != nil {
+			c.Check(seg.parent.priority, check.Not(lessThan), seg.priority)
 		}
-		last = s
+		last = seg
 	}
 
 	// test removal of parent of right-most
 	tree.Remove(ss[len(ss)-1].parent)
-	for s := range tree.Traverse("") {
-		if s.parent != nil {
-			c.Check(s.parent.priority, check.Not(lessThan), s.priority)
+	for seg := range tree.Traverse("") {
+		if seg.parent != nil {
+			c.Check(seg.parent.priority, check.Not(lessThan), seg.priority)
 		}
 	}
 
@@ -444,14 +444,14 @@ func (s *S) TestInvariants(c *check.C) {
 		}
 	}
 	last = nil
-	for s := range tree.Traverse("") {
+	for seg := range tree.Traverse("") {
 		if last != nil {
-			c.Check(s.start, check.Not(lessThan), last.start)
+			c.Check(seg.start, check.Not(lessThan), last.start)
 		}
-		if s.parent != nil {
-			c.Check(s.parent.priority, check.Not(lessThan), s.priority)
+		if seg.parent != nil {
+			c.Check(seg.parent.priority, check.Not(lessThan), seg.priority)
 		}
-		last = s
+		last = seg
 	}
 }
 
@@ -478,9 +478,9 @@ func (s *S) TestFlatten(c *check.C) {
 			m[rich[i][j].String()] = struct{}{}
 		}
 	}
-	for s := range tree.Traverse("") {
-		_, found := m[s.String()]
-		if s.start <= root.end && s.end >= root.start {
+	for seg := range tree.Traverse("") {
+		_, found := m[seg.String()]
+		if seg.start <= root.end && seg.end >= root.start {
 			c.Check(found, check.Equals, true)
 		} else {
 			c.Check(found, check.Equals, false)
@@ -502,9 +502,9 @@ func (s *S) TestFlattenContaining(c *check.C) {
 			m[rich[i][j].String()] = struct{}{}
 		}
 	}
-	for s := range tree.Traverse("") {
-		_, found := m[s.String()]
-		if s.start <= root.start && s.end >= root.end {
+	for seg := range tree.Traverse("") {
+		_, found := m[seg.String()]
+		if seg.start <= root.start && seg.end >= root.end {
 			c.Check(found, check.Equals, true)
 		} else {
 			c.Check(found, check.Equals, false)
@@ -526,14 +526,42 @@ func (s *S) TestFlattenWithin(c *check.C) {
 			m[rich[i][j].String()] = struct{}{}
 		}
 	}
-	for s := range tree.Traverse("") {
-		_, found := m[s.String()]
-		if s.start >= root.start && s.end <= root.end {
+	for seg := range tree.Traverse("") {
+		_, found := m[seg.String()]
+		if seg.start >= root.start && seg.end <= root.end {
 			c.Check(found, check.Equals, true)
 		} else {
 			c.Check(found, check.Equals, false)
 		}
 	}
+}
+
+func (s *S) TestAbutt(c *check.C) {
+	tree := NewTree()
+
+	i, _ := New("", 0, 1, 0, nil)
+	j, _ := New("", 1, 1, 0, nil)
+	k, _ := New("", 1, 2, 0, nil)
+
+	tree.Insert(i)
+	tree.Insert(k)
+	ss := fillSliceWith(tree.Intersect(j, 0), 2)
+	c.Check(len(ss), check.Equals, 2)
+}
+
+func (s *S) TestOtherTree(c *check.C) {
+	tree := NewTree()
+
+	i, _ := New("", 0, 1, 0, nil)
+	j, _ := New("other", 1, 1, 0, nil)
+	k, _ := New("", 1, 2, 0, nil)
+
+	tree.Insert(i)
+	tree.Insert(k)
+	ss := fillSliceWith(tree.Intersect(j, 0), 0)
+	c.Check(len(ss), check.Equals, 0)
+
+	tree.Traverse("other")
 }
 
 // Benchmarks
