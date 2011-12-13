@@ -28,10 +28,6 @@ const (
 )
 
 var (
-	moltypesToString = [...]string{
-		"dna", "rna", "protein",
-	}
-
 	complement = [...]map[byte]byte{
 		{'a': 't', 'c': 'g', 'g': 'c', 't': 'a', 'n': 'n',
 			'A': 'T', 'C': 'G', 'G': 'C', 'T': 'A', 'N': 'N'}, // DNA rules
@@ -46,7 +42,7 @@ type Seq struct {
 	Offset   int
 	Strand   int8
 	Circular bool
-	Moltype  byte
+	Moltype  bio.Moltype
 	Quality  *Quality
 	Meta     interface{} // No operation on Seq objects implicitly copies or changes the contents of Meta.
 }
@@ -73,10 +69,6 @@ func (self *Seq) Start() int {
 
 func (self *Seq) End() int {
 	return self.Offset + len(self.Seq)
-}
-
-func (self *Seq) MoltypeAsString() string {
-	return moltypesToString[self.Moltype]
 }
 
 func (self *Seq) Trunc(start, end int) (s *Seq, err error) {

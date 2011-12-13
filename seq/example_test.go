@@ -22,13 +22,15 @@ import (
 	"strings"
 )
 
-// ACGCTGACTTGGTGCACGT
+// ACGCTGACTTGGTGCACGT dna
+// ACGCTGACTTGGTGCACGT rna
 //     ^ first invalid RNA position
 func ExampleSeq_New() {
 	d := New("example sequence", []byte("ACGCTGACTTGGTGCACGT"), nil) // Default to bio.DNA
-	fmt.Println(d)
+	fmt.Println(d, d.Moltype)
 	// Alternative using struct literal
 	r := &Seq{ID: "example RNA", Seq: d.Seq, Moltype: bio.RNA}
+	fmt.Println(r, r.Moltype)
 	if ok, pos := bio.ValidR.Check(r.Seq); ok {
 		fmt.Println("valid RNA")
 	} else {

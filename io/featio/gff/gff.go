@@ -59,7 +59,7 @@ type Reader struct {
 	SourceVersion []byte
 	Date          time.Time
 	TimeFormat    string // required for parsing date fields
-	Type          byte
+	Type          bio.Moltype
 }
 
 // Returns a new GFF format reader using f.
@@ -102,7 +102,7 @@ func (self *Reader) commentMetaline(line string) (f *feat.Feature, err error) {
 		}
 	case "Type":
 		if len(fields) > 1 {
-			self.Type = bio.StringToType[fields[1]] // self.Type should be a map[string]byte to allow for extend type defs
+			self.Type = bio.ParseMoltype[fields[1]] // self.Type should be a map[string]byte to allow for extend type defs
 		} else {
 			return nil, bio.NewError("Incomplete Type metaline", 0, fields)
 		}
@@ -170,7 +170,7 @@ func (self *Reader) metaSequence(moltype, id string) (sequence *seq.Seq, err err
 	}
 
 	sequence = seq.New(id, body, nil)
-	sequence.Moltype = bio.StringToType[moltype]
+	sequence.Moltype = bio.ParseMoltype[moltype]
 
 	return
 }
@@ -354,7 +354,7 @@ func (self *Writer) WriteMetaData(d interface{}) (n int, err error) {
 		n, err = self.w.WriteString("##" + d.(string) + "\n")
 	case *seq.Seq:
 		sw := fasta.NewWriter(self.f, self.Width)
-		sw.IDPrefix = "##" + d.(*seq.Seq).MoltypeAsString() + " "
+		sw.IDPrefix = fmt.Sprintf("##%s ", d.(*seq.Seq).Moltype)
 		sw.SeqPrefix = "##"
 		n, err = sw.Write(d.(*seq.Seq))
 	case *feat.Feature:

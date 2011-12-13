@@ -16,6 +16,7 @@ package feat
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import (
+	"github.com/kortschak/BioGo/bio"
 	"strconv"
 )
 
@@ -38,7 +39,7 @@ type Feature struct {
 	Comments    string
 	Frame       int8
 	Strand      int8
-	Moltype     byte
+	Moltype     bio.Moltype
 	Meta        interface{}
 }
 

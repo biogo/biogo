@@ -26,7 +26,20 @@ var (
 	FloatFormat byte = 'f'
 )
 
-var StringToType map[string]byte = map[string]byte{"DNA": DNA, "RNA": RNA, "Protein": Protein}
+type Moltype byte
+
+var moltypesToString = [...]string{
+	"dna", "rna", "protein",
+}
+
+func (self Moltype) String() string {
+	if self < 0 {
+		return "undefined"
+	}
+	return moltypesToString[self]
+}
+
+var ParseMoltype map[string]Moltype = map[string]Moltype{"DNA": DNA, "RNA": RNA, "Protein": Protein}
 
 // Convert from 1-based to 0-based indexing
 func OneToZero(pos int) int {
