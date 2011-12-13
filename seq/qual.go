@@ -19,21 +19,20 @@ import (
 	"github.com/kortschak/BioGo/featgroup"
 	"github.com/kortschak/BioGo/interval"
 	"github.com/kortschak/BioGo/util"
-	"math"
 )
 
 type Quality struct {
 	ID       string
-	Qual     []int8
+	Qual     []Qsanger
 	Offset   int
 	Strand   int8
 	Circular bool
 }
 
-func NewQuality(id string, seq []int8) *Quality {
+func NewQuality(id string, q []Qsanger) *Quality {
 	return &Quality{
 		ID:       id,
-		Qual:     seq,
+		Qual:     q,
 		Offset:   0,
 		Strand:   1,
 		Circular: false,
@@ -53,7 +52,7 @@ func (self *Quality) End() int {
 }
 
 func (self *Quality) Trunc(start, end int) (q *Quality, err error) {
-	var ts []int8
+	var ts []Qsanger
 
 	if start < self.Offset || end < self.Offset ||
 		start > len(self.Qual)+self.Offset || end > len(self.Qual)+self.Offset {
@@ -61,9 +60,9 @@ func (self *Quality) Trunc(start, end int) (q *Quality, err error) {
 	}
 
 	if start <= end {
-		ts = append([]int8{}, self.Qual[start-self.Offset:end-self.Offset]...)
+		ts = append([]Qsanger{}, self.Qual[start-self.Offset:end-self.Offset]...)
 	} else if self.Circular {
-		ts = make([]int8, len(self.Qual)-start-self.Offset, len(self.Qual)+end-start)
+		ts = make([]Qsanger, len(self.Qual)-start-self.Offset, len(self.Qual)+end-start)
 		copy(ts, self.Qual[start-self.Offset:])
 		ts = append(ts, self.Qual[:end-self.Offset]...)
 	} else {
@@ -80,7 +79,7 @@ func (self *Quality) Trunc(start, end int) (q *Quality, err error) {
 }
 
 func (self *Quality) Reverse() *Quality {
-	rs := make([]int8, len(self.Qual))
+	rs := make([]Qsanger, len(self.Qual))
 
 	for i, j := 0, len(self.Qual)-1; i < j; i, j = i+1, j-1 {
 		rs[i], rs[j] = self.Qual[j], self.Qual[i]
@@ -101,7 +100,7 @@ func (self *Quality) Join(q *Quality, where int) (err error) {
 	}
 	switch where {
 	case Prepend:
-		ts := make([]int8, len(q.Qual), len(q.Qual)+len(self.Qual))
+		ts := make([]Qsanger, len(q.Qual), len(q.Qual)+len(self.Qual))
 		copy(ts, q.Qual)
 		self.Qual = append(ts, self.Qual...)
 	case Append:
@@ -123,7 +122,7 @@ func (self *Quality) Stitch(f *featgroup.FeatureGroup) (q *Quality, err error) {
 		}
 	}
 
-	tq := []int8{}
+	tq := []Qsanger{}
 	if span, err := interval.New("", self.Start(), self.End(), 0, nil); err != nil {
 		panic("Seq.End() < Seq.Start()")
 	} else {
@@ -138,22 +137,12 @@ func (self *Quality) Stitch(f *featgroup.FeatureGroup) (q *Quality, err error) {
 
 	return self, nil
 }
-func SangerToSolexa(q int8) int8 {
-	return int8(10 * math.Log10(math.Pow(10, float64(q)/10)-1))
-}
-
-func SolexaToSanger(q int8) int8 {
-	return int8(10 * math.Log10(math.Pow(10, float64(q)/10)+1))
-}
 
 // Return the quality as a Sanger quality string
 func (self *Quality) String() string {
 	qs := make([]byte, 0, len(self.Qual))
 	for _, q := range self.Qual {
-		if q <= 93 {
-			q += 33
-		}
-		qs = append(qs, byte(q))
+		qs = append(qs, q.Encode(Sanger))
 	}
 	return string(qs)
 }

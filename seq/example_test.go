@@ -86,7 +86,7 @@ func ExampleSeq_RevComp_1() {
 // AGAAAGAGAAGGANAGGTAGGTGGAGGGAAAAAAATGGTGAATGGATTAAAAGATGAAAAGGATATAGAAGAAAN
 // !!!!7-+13345,#,3330+11135554550).6930!55523-54433059797873237796158853474.#
 func ExampleSeq_RevComp_2() {
-	q := &Quality{Qual: []int8{
+	q := &Quality{Qual: []Qsanger{
 		2, 13, 19, 22, 19, 18, 20, 23, 23, 20, 16, 21, 24, 22, 22, 18, 17, 18, 22, 23, 22, 24, 22, 24, 20, 15,
 		18, 18, 19, 19, 20, 12, 18, 17, 20, 20, 20, 18, 15, 18, 24, 21, 13, 8, 15, 20, 20, 19, 20, 20, 20, 18,
 		16, 16, 16, 10, 15, 18, 18, 18, 11, 2, 11, 20, 19, 18, 18, 16, 10, 12, 22, 0, 0, 0, 0}}
@@ -104,7 +104,7 @@ func ExampleSeq_RevComp_2() {
 // IIIHIEGA6.*!!!
 // !!!*.6AGEIHIII
 func ExampleQuality_Reverse() {
-	q := &Quality{Qual: []int8{40, 40, 40, 39, 40, 36, 38, 32, 21, 13, 9, 0, 0, 0}}
+	q := &Quality{Qual: []Qsanger{40, 40, 40, 39, 40, 36, 38, 32, 21, 13, 9, 0, 0, 0}}
 	fmt.Println(q)
 	t := q.Reverse()
 	fmt.Println(t)
