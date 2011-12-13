@@ -1,4 +1,3 @@
-// Basic sequence quality package
 package seq
 // Copyright ©2011 Dan Kortschak <dan.kortschak@adelaide.edu.au>
 //
