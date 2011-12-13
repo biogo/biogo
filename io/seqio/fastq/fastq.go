@@ -24,6 +24,27 @@ import (
 	"os"
 )
 
+/*
+Encodings
+
+
+
+                                                                                            Q-range  Encoding
+
+ Sanger         !"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHI···                                 0 - 40  Phred+33
+ Solexa                                 ··;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdefgh··· -5 - 40  Solexa+64
+ Illumina 1.3+                                 @ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdefgh···  0 - 40  Phred+64
+ Illumina 1.5+                                 xxḆCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdefgh···  3 - 40  Phred+64*
+ Illumina 1.8   !"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJ···                                0 - 40  Phred+33
+
+                !"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdefghijklmnopqrstuvwxyz{|}~
+                |                         |    |        |                              |                     |
+               33                        59   64       73                            104                   126
+
+ Q-range for typical raw reads
+
+ * 0=unused, 1=unused, 2=Read Segment Quality Control Indicator (Ḇ)
+*/
 const (
 	Sanger = iota
 	Solexa

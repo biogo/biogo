@@ -20,7 +20,7 @@ import (
 )
 
 // "example":[-22, 6), "example":[0, 4), "example":[2, 3), "example":[3, 7), "example":[5, 10), "example":[8, 12), "example":[34, 61)
-func ExampleInsert() {
+func ExampleTree_Insert() {
 	tree := NewTree()
 	chromosome := "example"
 	segments := [][]int{{0, 4}, {8, 12}, {2, 3}, {5, 10}, {3, 7}, {-22, 6}, {34, 61}}
@@ -37,7 +37,7 @@ func ExampleInsert() {
 }
 
 // "example":[-22, 6)
-func ExampleIntersect() {
+func ExampleTree_Intersect() {
 	tree := CreateExampleTree("example", [][]int{{0, 4}, {8, 12}, {2, 3}, {5, 10}, {3, 7}, {-22, 6}, {34, 61}})
 	if i, err := New("example", -15, -2, 0, nil); err == nil {
 		for s := range tree.Intersect(i, 0) {
@@ -48,7 +48,7 @@ func ExampleIntersect() {
 
 // "example":[-22, 6) 
 // "example":[3, 7)
-func ExampleContain() {
+func ExampleTree_Contain() {
 	tree := CreateExampleTree("example", [][]int{{0, 4}, {8, 12}, {2, 3}, {5, 10}, {3, 7}, {-22, 6}, {34, 61}})
 	if i, err := New("example", 4, 6, 0, nil); err == nil {
 		for s := range tree.Contain(i, 0) {
@@ -58,7 +58,7 @@ func ExampleContain() {
 }
 
 // "example":[2, 3)
-func ExampleWithin() {
+func ExampleTree_Within() {
 	tree := CreateExampleTree("example", [][]int{{0, 4}, {8, 12}, {2, 3}, {5, 10}, {3, 7}, {-22, 6}, {34, 61}})
 	if i, err := New("example", 1, 5, 0, nil); err == nil {
 		for s := range tree.Within(i, 0) {
@@ -69,7 +69,7 @@ func ExampleWithin() {
 
 // "example":[-22, 6) <nil> <nil> <nil>
 // "example":[0, 4), "example":[2, 3), "example":[3, 7), "example":[5, 10), "example":[8, 12), "example":[34, 61)
-func ExampleRemove() {
+func ExampleTree_Remove() {
 	tree := CreateExampleTree("example", [][]int{{0, 4}, {8, 12}, {2, 3}, {5, 10}, {3, 7}, {-22, 6}, {34, 61}})
 	if i, err := New("example", -15, -2, 0, nil); err == nil {
 		for s := range tree.Intersect(i, 0) {
@@ -88,7 +88,7 @@ func ExampleRemove() {
 // "example":[0, 4)
 // "example":[34, 61)
 // "example":[0, 4), "example":[2, 3), "example":[3, 7), "example":[5, 10), "example":[8, 12), "example":[27, 61)
-func ExampleMerge() {
+func ExampleTree_Merge() {
 	tree := CreateExampleTree("example", [][]int{{0, 4}, {8, 12}, {2, 3}, {5, 10}, {3, 7}, {34, 61}})
 	chromosome := "example"
 	segments := [][]int{{0, 1}, {27, 42}}
@@ -119,7 +119,7 @@ func ExampleMerge() {
 }
 
 // "example":[0, 4), "example":[2, 3), "example":[3, 7), "example":[5, 10), "example":[8, 12), "example":[27, 61)
-func ExampleTraverseAll() {
+func ExampleTree_TraverseAll() {
 	tree := CreateExampleTree("example", [][]int{{0, 4}, {8, 12}, {2, 3}, {5, 10}, {3, 7}, {27, 61}})
 	segs := []string{}
 	for i := range tree.TraverseAll() {
@@ -130,7 +130,7 @@ func ExampleTraverseAll() {
 
 // flattened: ["example":[0, 12) "example":[27, 61)]
 // original: [["example":[0, 4) "example":[2, 3) "example":[3, 7) "example":[5, 10) "example":[8, 12)] ["example":[27, 61)]]
-func ExampleFlatten() {
+func ExampleTree_Flatten() {
 	tree := CreateExampleTree("example", [][]int{{0, 4}, {8, 12}, {2, 3}, {5, 10}, {3, 7}, {27, 61}})
 	start, end := tree.Range("example")
 	if i, err := New("example", start, end, 0, nil); err == nil {
@@ -141,7 +141,7 @@ func ExampleFlatten() {
 
 // flattened: ["example":[3, 10)]
 // original: [["example":[3, 7) "example":[5, 10)]]
-func ExampleFlattenContain() {
+func ExampleTree_FlattenContain() {
 	tree := CreateExampleTree("example", [][]int{{0, 4}, {8, 12}, {2, 3}, {5, 10}, {3, 7}, {-22, 6}, {34, 61}})
 
 	if i, err := New("example", 6, 7, 0, nil); err == nil {
@@ -152,7 +152,7 @@ func ExampleFlattenContain() {
 
 // flattened: ["example":[2, 7)]
 // original: [["example":[2, 3) "example":[3, 7)]]
-func ExampleFlattenWithin() {
+func ExampleTree_FlattenWithin() {
 	tree := CreateExampleTree("example", [][]int{{0, 4}, {8, 12}, {2, 3}, {5, 10}, {3, 7}, {-22, 6}, {34, 61}})
 
 	if i, err := New("example", 2, 7, 0, nil); err == nil {
