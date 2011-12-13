@@ -45,17 +45,12 @@ Encodings
 
  * 0=unused, 1=unused, 2=Read Segment Quality Control Indicator (Ḇ)
 */
-const (
-	Sanger = iota
-	Solexa
-	Illumina
-)
 
 // Fastq sequence format reader type.
 type Reader struct {
 	f        io.ReadCloser
 	r        *bufio.Reader
-	Encoding int
+	Encoding seq.Encoding
 }
 
 // Returns a new fastq format reader using r.
@@ -127,21 +122,21 @@ READ:
 	return
 }
 
-func (self *Reader) decodeQuality(q []byte) (qs []int8) {
-	qs = make([]int8, 0, len(q))
+func (self *Reader) decodeQuality(q []byte) (qs []seq.Qsanger) {
+	qs = make([]seq.Qsanger, 0, len(q))
 
 	switch self.Encoding {
-	case Sanger:
+	case seq.Sanger, seq.Illumina1_8:
 		for _, qe := range q {
-			qs = append(qs, int8(qe)-33)
+			qs = append(qs, seq.Qsanger(qe-33))
 		}
-	case Solexa:
+	case seq.Solexa:
 		for _, qe := range q {
-			qs = append(qs, seq.SolexaToSanger(int8(qe)-64))
+			qs = append(qs, seq.Qsolexa(qe-64).ToSanger())
 		}
-	case Illumina:
+	case seq.Illumina1_3, seq.Illumina1_5:
 		for _, qe := range q {
-			qs = append(qs, int8(qe)-64)
+			qs = append(qs, seq.Qsanger(qe-64))
 		}
 	}
 
@@ -167,7 +162,7 @@ type Writer struct {
 	f        io.WriteCloser
 	w        *bufio.Writer
 	template [][]byte
-	Encoding int
+	Encoding seq.Encoding
 }
 
 // Returns a new fastq format writer using w.
@@ -222,31 +217,17 @@ func (self *Writer) Write(s *seq.Seq) (n int, err error) {
 }
 
 // Could do this by lookup - make three tables (or at least one table for Sanger -> Solexa)
-func (self *Writer) encodeQuality(q []int8) (qe []byte) {
+func (self *Writer) encodeQuality(q []seq.Qsanger) (qe []byte) {
 	qe = make([]byte, 0, len(q))
 
 	switch self.Encoding {
-	case Sanger:
+	case seq.Solexa:
 		for _, qv := range q {
-			if qv <= 93 {
-				qv += 33
-			}
-			qe = append(qe, byte(qv))
+			qe = append(qe, qv.ToSolexa().Encode(seq.Solexa))
 		}
-	case Solexa:
+	default:
 		for _, qv := range q {
-			qv = seq.SangerToSolexa(qv)
-			if qv <= 62 {
-				qv += 64
-			}
-			qe = append(qe, byte(qv))
-		}
-	case Illumina:
-		for _, qv := range q {
-			if qv <= 62 {
-				qv += 64
-			}
-			qe = append(qe, byte(qv))
+			qe = append(qe, qv.Encode(self.Encoding))
 		}
 	}
 
