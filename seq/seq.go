@@ -44,6 +44,7 @@ type Seq struct {
 	Circular bool
 	Moltype  bio.Moltype
 	Quality  *Quality
+	Inplace  bool
 	Meta     interface{} // No operation on Seq objects implicitly copies or changes the contents of Meta.
 }
 
@@ -56,7 +57,14 @@ func New(id string, seq []byte, qual *Quality) *Seq {
 		Circular: false,
 		Moltype:  0,
 		Quality:  qual,
+		Inplace:  false,
 	}
+}
+
+// Set Inplace and return self for chaining.
+func (self *Seq) WorkInplace(b bool) *Seq {
+	self.Inplace = b
+	return self
 }
 
 func (self *Seq) Len() int {
@@ -74,17 +82,29 @@ func (self *Seq) End() int {
 func (self *Seq) Trunc(start, end int) (s *Seq, err error) {
 	var ts []byte
 
+	if !self.Inplace && self.Quality != nil && self.Quality.Inplace {
+		return nil, bio.NewError("Inplace operation on Quality with non-Inplace operation on parent Seq.", 0, self)
+	}
+
 	if start < self.Offset || end < self.Offset ||
 		start > len(self.Seq)+self.Offset || end > len(self.Seq)+self.Offset {
 		return nil, bio.NewError("Start or end position out of range.", 0, self)
 	}
 
 	if start <= end {
-		ts = append([]byte{}, self.Seq[start-self.Offset:end-self.Offset]...)
+		if self.Inplace {
+			ts = self.Seq[start-self.Offset : end-self.Offset]
+		} else {
+			ts = append([]byte{}, self.Seq[start-self.Offset:end-self.Offset]...)
+		}
 	} else if self.Circular {
-		ts = make([]byte, len(self.Seq)-start-self.Offset, len(self.Seq)+end-start)
-		copy(ts, self.Seq[start-self.Offset:])
-		ts = append(ts, self.Seq[:end-self.Offset]...)
+		if self.Inplace {
+			ts = append(self.Seq[start-self.Offset:], self.Seq[:end-self.Offset]...) // not quite inplace for this op
+		} else {
+			ts = make([]byte, len(self.Seq)-start-self.Offset, len(self.Seq)+end-start)
+			copy(ts, self.Seq[start-self.Offset:])
+			ts = append(ts, self.Seq[:end-self.Offset]...)
+		}
 	} else {
 		return nil, bio.NewError("Start position greater than end position for non-circular molecule.", 0, self)
 	}
@@ -97,23 +117,44 @@ func (self *Seq) Trunc(start, end int) (s *Seq, err error) {
 		}
 	}
 
-	return &Seq{
-		ID:       self.ID,
-		Seq:      ts,
-		Offset:   start,
-		Strand:   self.Strand,
-		Circular: false,
-		Moltype:  self.Moltype,
-		Quality:  q,
-	}, nil
+	if self.Inplace {
+		s = self
+		s.Seq = ts
+		s.Circular = false
+		s.Quality = q
+	} else {
+		s = &Seq{
+			ID:       self.ID,
+			Seq:      ts,
+			Offset:   start,
+			Strand:   self.Strand,
+			Circular: false,
+			Moltype:  self.Moltype,
+			Quality:  q,
+		}
+	}
+
+	return
 }
 
 func (self *Seq) RevComp() (s *Seq, err error) {
-	rs := make([]byte, len(self.Seq))
+	var rs []byte
+	if self.Inplace {
+		rs = self.Seq
+	} else {
+		if self.Quality != nil && self.Quality.Inplace {
+			return nil, bio.NewError("Inplace operation on Quality with non-Inplace operation on parent Seq.", 0, self)
+		}
+		rs = make([]byte, len(self.Seq))
+	}
 
 	if self.Moltype == bio.DNA || self.Moltype == bio.RNA {
-		for i, j := 0, len(self.Seq)-1; i < len(self.Seq); i, j = i+1, j-1 {
-			rs[i] = complement[self.Moltype][self.Seq[j]]
+		i, j := 0, len(self.Seq)-1
+		for ; i < j; i, j = i+1, j-1 {
+			rs[i], rs[j] = complement[self.Moltype][self.Seq[j]], complement[self.Moltype][self.Seq[i]]
+		}
+		if i == j {
+			rs[i] = complement[self.Moltype][self.Seq[i]]
 		}
 	} else {
 		return nil, bio.NewError("Cannot reverse-complement protein.", 0, self)
@@ -124,34 +165,87 @@ func (self *Seq) RevComp() (s *Seq, err error) {
 		q = self.Quality.Reverse()
 	}
 
-	return &Seq{
-		ID:       self.ID,
-		Seq:      rs,
-		Offset:   0,
-		Strand:   -self.Strand,
-		Circular: self.Circular,
-		Moltype:  self.Moltype,
-		Quality:  q,
-	}, nil
+	if self.Inplace {
+		s = self
+		s.Quality = q
+	} else {
+		s = &Seq{
+			ID:       self.ID,
+			Seq:      rs,
+			Offset:   self.Offset + len(self.Seq),
+			Strand:   -self.Strand,
+			Circular: self.Circular,
+			Moltype:  self.Moltype,
+			Quality:  q,
+		}
+	}
+
+	return
 }
 
-func (self *Seq) Join(s *Seq, where int) (err error) {
+func (self *Seq) Join(s *Seq, where int) (j *Seq, err error) {
+	var (
+		ts []byte
+		ID string
+	)
+
 	if self.Circular {
-		return bio.NewError("Cannot join circular molecule.", 0, self)
+		return nil, bio.NewError("Cannot join circular molecule.", 0, self)
 	}
+
+	if !self.Inplace && self.Quality != nil && self.Quality.Inplace {
+		return nil, bio.NewError("Inplace operation on Quality with non-Inplace operation on parent Seq.", 0, self)
+	}
+
 	switch where {
 	case Prepend:
-		ts := make([]byte, len(s.Seq), len(s.Seq)+len(self.Seq))
+		ID = s.ID + "+" + self.ID
+		ts = make([]byte, len(s.Seq), len(s.Seq)+len(self.Seq))
 		copy(ts, s.Seq)
-		self.Seq = append(ts, self.Seq...)
+		ts = append(ts, self.Seq...)
 	case Append:
-		self.Seq = append(self.Seq, s.Seq...)
+		ID = self.ID + "+" + s.ID
+		if self.Inplace {
+			ts = append(self.Seq, s.Seq...)
+		} else {
+			ts = make([]byte, len(self.Seq), len(s.Seq)+len(self.Seq))
+			copy(ts, self.Seq)
+			ts = append(ts, s.Seq...)
+		}
+	}
+
+	var q *Quality
+	if self.Quality != nil && s.Quality != nil {
+		if q, err = self.Quality.Join(s.Quality, where); err != nil {
+			return nil, err
+		}
+	}
+
+	if self.Inplace {
+		j = self
+		j.Seq = ts
+		j.Quality = q // self.Quality will become nil if either sequence lacks Quality
+	} else {
+		j = &Seq{
+			ID:      ID,
+			Seq:     ts,
+			Strand:  self.Strand,
+			Moltype: self.Moltype,
+			Quality: q,
+		}
+	}
+	if where == Prepend {
+		j.Offset -= s.Len()
 	}
 
 	return
 }
 
 func (self *Seq) Stitch(f *featgroup.FeatureGroup) (s *Seq, err error) {
+	if !self.Inplace && self.Quality != nil && self.Quality.Inplace {
+		return nil, bio.NewError("Inplace operation on Quality with non-Inplace operation on parent Seq.", 0, self)
+	}
+
 	t := interval.NewTree()
 	var i *interval.Interval
 
@@ -173,14 +267,31 @@ func (self *Seq) Stitch(f *featgroup.FeatureGroup) (s *Seq, err error) {
 		}
 	}
 
+	var q *Quality
 	if self.Quality != nil {
-		self.Quality.Stitch(f)
+		if q, err = self.Quality.Stitch(f); err != nil {
+			return
+		}
 	}
 
-	self.Seq = ts
-	self.Offset = 0
+	if self.Inplace {
+		s = self
+		s.Seq = ts
+		s.Offset = 0
+		s.Circular = false
+	} else {
+		s = &Seq{
+			ID:       self.ID,
+			Seq:      ts,
+			Offset:   0,
+			Strand:   self.Strand,
+			Circular: false,
+			Moltype:  self.Moltype,
+			Quality:  q,
+		}
+	}
 
-	return self, nil
+	return
 }
 
 var defaultStringFunc = func(s *Seq) string { return string(s.Seq) }

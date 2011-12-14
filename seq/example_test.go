@@ -84,7 +84,7 @@ func ExampleSeq_RevComp_1() {
 // #.47435885169773237879795033445-3255530396.)05545553111+0333,#,54331+-7!!!!
 // Reverse:
 // AGAAAGAGAAGGANAGGTAGGTGGAGGGAAAAAAATGGTGAATGGATTAAAAGATGAAAAGGATATAGAAGAAAN
-// !!!!7-+13345,#,3330+11135554550).6930!55523-54433059797873237796158853474.#
+// !!!!7-+13345,#,3330+11135554550).6930355523-54433059797873237796158853474.#
 func ExampleSeq_RevComp_2() {
 	q := &Quality{Qual: []Qsanger{
 		2, 13, 19, 22, 19, 18, 20, 23, 23, 20, 16, 21, 24, 22, 22, 18, 17, 18, 22, 23, 22, 24, 22, 24, 20, 15,
@@ -118,13 +118,13 @@ func ExampleJoin() {
 	s1 = &Seq{Seq: []byte("agctgtgctga")}
 	s2 = &Seq{Seq: []byte("CGTGCAGTCATGAGTGA")}
 	fmt.Println(s1, s2)
-	if err := s1.Join(s2, Append); err == nil {
-		fmt.Println(s1)
+	if t, err := s1.Join(s2, Append); err == nil {
+		fmt.Println(t)
 	}
 	s1 = &Seq{Seq: []byte("agctgtgctga")}
 	s2 = &Seq{Seq: []byte("CGTGCAGTCATGAGTGA")}
-	if err := s1.Join(s2, Prepend); err == nil {
-		fmt.Println(s1)
+	if t, err := s1.Join(s2, Prepend); err == nil {
+		fmt.Println(t)
 	}
 }
 

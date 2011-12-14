@@ -27,6 +27,7 @@ type Quality struct {
 	Offset   int
 	Strand   int8
 	Circular bool
+	Inplace  bool
 }
 
 func NewQuality(id string, q []Qsanger) *Quality {
@@ -36,7 +37,14 @@ func NewQuality(id string, q []Qsanger) *Quality {
 		Offset:   0,
 		Strand:   1,
 		Circular: false,
+		Inplace:  false,
 	}
+}
+
+// Set Inplace and return self for chaining.
+func (self *Quality) WorkInplace(b bool) *Quality {
+	self.Inplace = b
+	return self
 }
 
 func (self *Quality) Len() int {
@@ -52,7 +60,7 @@ func (self *Quality) End() int {
 }
 
 func (self *Quality) Trunc(start, end int) (q *Quality, err error) {
-	var ts []Qsanger
+	var tq []Qsanger
 
 	if start < self.Offset || end < self.Offset ||
 		start > len(self.Qual)+self.Offset || end > len(self.Qual)+self.Offset {
@@ -60,51 +68,109 @@ func (self *Quality) Trunc(start, end int) (q *Quality, err error) {
 	}
 
 	if start <= end {
-		ts = append([]Qsanger{}, self.Qual[start-self.Offset:end-self.Offset]...)
+		if self.Inplace {
+			tq = self.Qual[start-self.Offset : end-self.Offset]
+		} else {
+			tq = append([]Qsanger{}, self.Qual[start-self.Offset:end-self.Offset]...)
+		}
 	} else if self.Circular {
-		ts = make([]Qsanger, len(self.Qual)-start-self.Offset, len(self.Qual)+end-start)
-		copy(ts, self.Qual[start-self.Offset:])
-		ts = append(ts, self.Qual[:end-self.Offset]...)
+		if self.Inplace {
+			tq = append(self.Qual[start-self.Offset:], self.Qual[:end-self.Offset]...) // not quite inplace for this op
+		} else {
+			tq = make([]Qsanger, len(self.Qual)-start-self.Offset, len(self.Qual)+end-start)
+			copy(tq, self.Qual[start-self.Offset:])
+			tq = append(tq, self.Qual[:end-self.Offset]...)
+		}
 	} else {
 		return nil, bio.NewError("Start position greater than end position for non-circular molecule.", 0, self)
 	}
 
-	return &Quality{
-		ID:       self.ID,
-		Qual:     ts,
-		Offset:   start,
-		Strand:   self.Strand,
-		Circular: false,
-	}, nil
-}
-
-func (self *Quality) Reverse() *Quality {
-	rs := make([]Qsanger, len(self.Qual))
-
-	for i, j := 0, len(self.Qual)-1; i < j; i, j = i+1, j-1 {
-		rs[i], rs[j] = self.Qual[j], self.Qual[i]
+	if self.Inplace {
+		q = self
+		q.Qual = tq
+		q.Circular = false
+	} else {
+		q = &Quality{
+			ID:       self.ID,
+			Qual:     tq,
+			Offset:   start,
+			Strand:   self.Strand,
+			Circular: false,
+		}
 	}
 
-	return &Quality{
-		ID:       self.ID,
-		Qual:     rs,
-		Offset:   0,
-		Strand:   -self.Strand,
-		Circular: self.Circular,
-	}
+	return
 }
 
-func (self *Quality) Join(q *Quality, where int) (err error) {
+func (self *Quality) Reverse() (q *Quality) {
+	var rq []Qsanger
+	if self.Inplace {
+		rq = self.Qual
+	} else {
+		rq = make([]Qsanger, len(self.Qual))
+	}
+
+	i, j := 0, len(self.Qual)-1
+	for ; i < j; i, j = i+1, j-1 {
+		rq[i], rq[j] = self.Qual[j], self.Qual[i]
+	}
+	if i == j {
+		rq[i] = self.Qual[i]
+	}
+
+	if self.Inplace {
+		q = self
+	} else {
+		q = &Quality{
+			ID:       self.ID,
+			Qual:     rq,
+			Offset:   self.Offset + len(self.Qual),
+			Strand:   -self.Strand,
+			Circular: self.Circular,
+		}
+	}
+
+	return
+}
+
+func (self *Quality) Join(q *Quality, where int) (j *Quality, err error) {
+	var (
+		tq []Qsanger
+		ID string
+	)
+
 	if self.Circular {
-		return bio.NewError("Cannot join circular molecule.", 0, self)
+		return nil, bio.NewError("Cannot join circular molecule.", 0, self)
 	}
+
 	switch where {
 	case Prepend:
-		ts := make([]Qsanger, len(q.Qual), len(q.Qual)+len(self.Qual))
-		copy(ts, q.Qual)
-		self.Qual = append(ts, self.Qual...)
+		ID = q.ID + "+" + self.ID
+		tq = make([]Qsanger, len(q.Qual), len(q.Qual)+len(self.Qual))
+		copy(tq, q.Qual)
+		tq = append(tq, self.Qual...)
 	case Append:
-		self.Qual = append(self.Qual, q.Qual...)
+		ID = self.ID + "+" + q.ID
+		if self.Inplace {
+			tq = append(self.Qual, q.Qual...)
+		} else {
+			tq = make([]Qsanger, len(self.Qual), len(q.Qual)+len(self.Qual))
+			copy(tq, self.Qual)
+			tq = append(tq, q.Qual...)
+		}
+	}
+
+	if self.Inplace {
+		j = self
+		j.Qual = tq
+	} else {
+		j = &Quality{
+			ID:   ID,
+			Qual: tq,
+		}
+	}
+	if where == Prepend {
+		j.Offset -= j.Len()
 	}
 
 	return
@@ -132,10 +198,22 @@ func (self *Quality) Stitch(f *featgroup.FeatureGroup) (q *Quality, err error) {
 		}
 	}
 
-	self.Qual = tq
-	self.Offset = 0
+	if self.Inplace {
+		q = self
+		q.Qual = tq
+		q.Offset = 0
+		q.Circular = false
+	} else {
+		q = &Quality{
+			ID:       self.ID,
+			Qual:     tq,
+			Offset:   0,
+			Strand:   self.Strand,
+			Circular: false,
+		}
+	}
 
-	return self, nil
+	return
 }
 
 // Return the quality as a Sanger quality string
