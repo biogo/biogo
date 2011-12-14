@@ -257,38 +257,54 @@ func (self *Seq) Stitch(f feat.FeatureSet) (s *Seq, err error) {
 		}
 	}
 
-	ts := []byte{}
-	if span, err := interval.New("", self.Start(), self.End(), 0, nil); err != nil {
+	span, err := interval.New("", self.Start(), self.End(), 0, nil)
+	if err != nil {
 		panic("Seq.End() < Seq.Start()")
-	} else {
-		f, _ := t.Flatten(span, 0, 0)
-		for _, seg := range f {
-			ts = append(ts, self.Seq[util.Max(seg.Start()-self.Offset, 0):util.Min(seg.End()-self.Offset, len(self.Seq))]...)
-		}
 	}
-
-	var q *Quality
-	if self.Quality != nil {
-		if q, err = self.Quality.Stitch(f); err != nil {
-			return
-		}
-	}
+	fs, _ := t.Flatten(span, 0, 0)
 
 	if self.Inplace {
+		self.Seq = self.stitch(fs)
+		self.Offset = 0
+		self.Circular = false
+		if self.Quality != nil {
+			var q *Quality
+			if !self.Quality.Inplace {
+				q = &Quality{ID: self.Quality.ID}
+			}
+			q.Qual = self.Quality.stitch(fs)
+			q.Offset = 0
+			q.Circular = false
+			self.Quality = q
+		}
 		s = self
-		s.Seq = ts
-		s.Offset = 0
-		s.Circular = false
 	} else {
+		var q *Quality
+		if self.Quality != nil {
+			q = &Quality{
+				ID:       self.Quality.ID,
+				Qual:     self.Quality.stitch(fs),
+				Offset:   0,
+				Circular: false,
+			}
+		}
 		s = &Seq{
 			ID:       self.ID,
-			Seq:      ts,
+			Seq:      self.stitch(fs),
 			Offset:   0,
 			Strand:   self.Strand,
 			Circular: false,
 			Moltype:  self.Moltype,
 			Quality:  q,
 		}
+	}
+
+	return
+}
+
+func (self *Seq) stitch(f []*interval.Interval) (ts []byte) {
+	for _, seg := range f {
+		ts = append(ts, self.Seq[util.Max(seg.Start()-self.Offset, 0):util.Min(seg.End()-self.Offset, len(self.Seq))]...)
 	}
 
 	return

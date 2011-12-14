@@ -188,29 +188,33 @@ func (self *Quality) Stitch(f feat.FeatureSet) (q *Quality, err error) {
 		}
 	}
 
-	tq := []Qsanger{}
-	if span, err := interval.New("", self.Start(), self.End(), 0, nil); err != nil {
+	span, err := interval.New("", self.Start(), self.End(), 0, nil)
+	if err != nil {
 		panic("Seq.End() < Seq.Start()")
-	} else {
-		f, _ := t.Flatten(span, 0, 0)
-		for _, seg := range f {
-			tq = append(tq, self.Qual[util.Max(seg.Start()-self.Offset, 0):util.Min(seg.End()-self.Offset, len(self.Qual))]...)
-		}
 	}
 
+	fs, _ := t.Flatten(span, 0, 0)
 	if self.Inplace {
 		q = self
-		q.Qual = tq
+		q.Qual = self.stitch(fs)
 		q.Offset = 0
 		q.Circular = false
 	} else {
 		q = &Quality{
 			ID:       self.ID,
-			Qual:     tq,
+			Qual:     self.stitch(fs),
 			Offset:   0,
 			Strand:   self.Strand,
 			Circular: false,
 		}
+	}
+
+	return
+}
+
+func (self *Quality) stitch(fs []*interval.Interval) (tq []Qsanger) {
+	for _, seg := range fs {
+		tq = append(tq, self.Qual[util.Max(seg.Start()-self.Offset, 0):util.Min(seg.End()-self.Offset, len(self.Qual))]...)
 	}
 
 	return
