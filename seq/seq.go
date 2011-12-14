@@ -17,7 +17,7 @@ package seq
 
 import (
 	"github.com/kortschak/BioGo/bio"
-	"github.com/kortschak/BioGo/featgroup"
+	"github.com/kortschak/BioGo/feat"
 	"github.com/kortschak/BioGo/interval"
 	"github.com/kortschak/BioGo/util"
 )
@@ -241,7 +241,7 @@ func (self *Seq) Join(s *Seq, where int) (j *Seq, err error) {
 	return
 }
 
-func (self *Seq) Stitch(f *featgroup.FeatureGroup) (s *Seq, err error) {
+func (self *Seq) Stitch(f feat.FeatureSet) (s *Seq, err error) {
 	if !self.Inplace && self.Quality != nil && self.Quality.Inplace {
 		return nil, bio.NewError("Inplace operation on Quality with non-Inplace operation on parent Seq.", 0, self)
 	}
@@ -249,7 +249,7 @@ func (self *Seq) Stitch(f *featgroup.FeatureGroup) (s *Seq, err error) {
 	t := interval.NewTree()
 	var i *interval.Interval
 
-	for _, feature := range *f {
+	for _, feature := range f {
 		if i, err = interval.New("", feature.Start, feature.End, 0, nil); err != nil {
 			return nil, err
 		} else {

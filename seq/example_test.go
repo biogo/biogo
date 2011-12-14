@@ -18,7 +18,6 @@ import (
 	"fmt"
 	"github.com/kortschak/BioGo/bio"
 	"github.com/kortschak/BioGo/feat"
-	"github.com/kortschak/BioGo/featgroup"
 	"strings"
 )
 
@@ -132,7 +131,7 @@ func ExampleJoin() {
 // AGTATAATGCTCGTGCGGTTAGTTT
 func ExampleStitch() {
 	s := &Seq{Seq: []byte("aAGTATAAgtcagtgcagtgtctggcagTGCTCGTGCgtagtgaagtagGGTTAGTTTa")}
-	f := &featgroup.FeatureGroup{
+	f := feat.FeatureSet{
 		&feat.Feature{Start: 1, End: 8},
 		&feat.Feature{Start: 28, End: 37},
 		&feat.Feature{Start: 49, End: s.Len() - 1},

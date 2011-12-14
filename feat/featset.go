@@ -1,5 +1,4 @@
-// Feature collection
-package featgroup
+package feat
 // Basic feature group package
 //
 // Copyright ©2011 Dan Kortschak <dan.kortschak@adelaide.edu.au>
@@ -18,12 +17,11 @@ package featgroup
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import (
-	"github.com/kortschak/BioGo/feat"
 )
 
-type FeatureGroup []*feat.Feature
+type FeatureSet []*Feature
 
-func (self *FeatureGroup) Add(f *feat.Feature) (g *FeatureGroup) {
-	*self = append(*self, f)
+func (self FeatureSet) Add(f *Feature) (g FeatureSet) {
+	self = append(self, f)
 	return self
 }

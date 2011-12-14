@@ -16,7 +16,7 @@ package seq
 
 import (
 	"github.com/kortschak/BioGo/bio"
-	"github.com/kortschak/BioGo/featgroup"
+	"github.com/kortschak/BioGo/feat"
 	"github.com/kortschak/BioGo/interval"
 	"github.com/kortschak/BioGo/util"
 )
@@ -176,11 +176,11 @@ func (self *Quality) Join(q *Quality, where int) (j *Quality, err error) {
 	return
 }
 
-func (self *Quality) Stitch(f *featgroup.FeatureGroup) (q *Quality, err error) {
+func (self *Quality) Stitch(f feat.FeatureSet) (q *Quality, err error) {
 	t := interval.NewTree()
 	var i *interval.Interval
 
-	for _, feature := range *f {
+	for _, feature := range f {
 		if i, err = interval.New("", feature.Start, feature.End, 0, nil); err != nil {
 			return nil, err
 		} else {

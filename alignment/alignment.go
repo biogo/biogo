@@ -18,7 +18,7 @@ package alignment
 import (
 	"bytes"
 	"github.com/kortschak/BioGo/bio"
-	"github.com/kortschak/BioGo/featgroup"
+	"github.com/kortschak/BioGo/feat"
 	"github.com/kortschak/BioGo/interval"
 	"github.com/kortschak/BioGo/seq"
 	"github.com/kortschak/BioGo/util"
@@ -168,11 +168,11 @@ func (self *Alignment) Join(a *Alignment, fill byte, where int) (b *Alignment, e
 	return self, nil
 }
 
-func (self *Alignment) Stitch(f *featgroup.FeatureGroup) (a *Alignment, err error) {
+func (self *Alignment) Stitch(f feat.FeatureSet) (a *Alignment, err error) {
 	t := interval.NewTree()
 	var i *interval.Interval
 
-	for _, feature := range *f {
+	for _, feature := range f {
 		if i, err = interval.New("", feature.Start, feature.End, 0, nil); err != nil {
 			return nil, err
 		} else {
