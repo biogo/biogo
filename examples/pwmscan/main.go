@@ -3,7 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/kortschak/BioGo/alignment"
+	"github.com/kortschak/BioGo/seq"
 	"github.com/kortschak/BioGo/bio"
 	"github.com/kortschak/BioGo/io/alignio"
 	"github.com/kortschak/BioGo/io/featio/gff"
@@ -15,7 +15,7 @@ import (
 func main() {
 	var (
 		in, min *fasta.Reader
-		align   *alignment.Alignment
+		align   seq.Alignment
 		out     *gff.Writer
 		e       error
 	)
@@ -68,7 +68,7 @@ func main() {
 	matrix := make([][]float64, align.Len())
 	for i := 0; i < align.Len(); i++ {
 		matrix[i] = make([]float64, 4)
-		if col, err := align.Column(i); err != nil {
+		if col, err := align.Column(i, 0); err != nil {
 			fmt.Fprintf(os.Stderr, "Error: %v.\n", e)
 			os.Exit(0)
 		} else {

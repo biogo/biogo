@@ -16,7 +16,6 @@ package sw
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import (
-	"github.com/kortschak/BioGo/alignment"
 	"github.com/kortschak/BioGo/bio"
 	"github.com/kortschak/BioGo/seq"
 	"github.com/kortschak/BioGo/util"
@@ -40,7 +39,7 @@ type Aligner struct {
 	GapChar byte
 }
 
-func (self *Aligner) Align(reference, query *seq.Seq) (aln *alignment.Alignment) {
+func (self *Aligner) Align(reference, query *seq.Seq) (aln seq.Alignment) {
 	r, c := reference.Len()+1, query.Len()+1
 	table := make([][]int, r)
 	for i := range table {
@@ -107,7 +106,7 @@ func (self *Aligner) Align(reference, query *seq.Seq) (aln *alignment.Alignment)
 		queryAln.Seq[i], queryAln.Seq[j] = queryAln.Seq[j], queryAln.Seq[i]
 	}
 
-	aln = &alignment.Alignment{refAln, queryAln}
+	aln = seq.Alignment{refAln, queryAln}
 
 	return
 }

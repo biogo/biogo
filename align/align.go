@@ -16,14 +16,13 @@ package align
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import (
-	"github.com/kortschak/BioGo/alignment"
 	"github.com/kortschak/BioGo/seq"
 )
 
 type Aligner interface {
-	Align(reference, query *seq.Seq) *alignment.Alignment
+	Align(reference, query *seq.Seq) seq.Alignment
 }
 
 type MultipleAligner interface {
-	Align(sequences []*seq.Seq) *alignment.Alignment
+	Align(sequences []*seq.Seq) seq.Alignment
 }
