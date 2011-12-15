@@ -223,6 +223,7 @@ func (self *Seq) Join(s *Seq, where int) (j *Seq, err error) {
 
 	if self.Inplace {
 		j = self
+		j.ID = ID
 		j.Seq = ts
 		j.Quality = q // self.Quality will become nil if either sequence lacks Quality
 	} else {
