@@ -341,7 +341,7 @@ func (self Alignment) Column(pos int, fill byte) (c []byte, err error) {
 	return
 }
 
-var DefaultStringFunc = func(a Alignment) string {
+var defaultAlignmentStringFunc = func(a Alignment) string {
 	var b string
 	start := a.Start()
 	for _, s := range a {
@@ -350,7 +350,7 @@ var DefaultStringFunc = func(a Alignment) string {
 	return b
 }
 
-var AlignmentStringFunc = DefaultStringFunc
+var AlignmentStringFunc = defaultAlignmentStringFunc
 
 func (self Alignment) String() string {
 	return AlignmentStringFunc(self)
