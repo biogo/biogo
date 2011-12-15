@@ -16,7 +16,6 @@ package alignio
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import (
-	"github.com/kortschak/BioGo/alignment"
 	"github.com/kortschak/BioGo/io/seqio"
 	"github.com/kortschak/BioGo/seq"
 	"io"
@@ -30,12 +29,12 @@ func NewReader(r seqio.Reader) *Reader {
 	return &Reader{r}
 }
 
-func (self *Reader) Read() (a *alignment.Alignment, err error) {
+func (self *Reader) Read() (a seq.Alignment, err error) {
 	var s *seq.Seq
-	a = &alignment.Alignment{}
+	a = seq.Alignment{}
 	for {
 		if s, err = self.Reader.Read(); err == nil {
-			a.Add(s)
+			a = append(a, s)
 		} else {
 			if err == io.EOF {
 				return a, nil
@@ -56,9 +55,9 @@ func NewWriter(w seqio.Writer) *Writer {
 	return &Writer{w}
 }
 
-func (self *Writer) Write(a *alignment.Alignment) (n int, err error) {
+func (self *Writer) Write(a seq.Alignment) (n int, err error) {
 	var c int
-	for _, s := range *a {
+	for _, s := range a {
 		c, err = self.Writer.Write(s)
 		n += c
 		if err != nil {
