@@ -21,7 +21,7 @@ import (
 type Encoding byte
 
 const (
-	Sanger = iota
+	Sanger Encoding = iota
 	Solexa
 	Illumina1_3
 	Illumina1_5
