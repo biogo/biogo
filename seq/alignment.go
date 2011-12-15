@@ -30,11 +30,6 @@ const (
 
 type Alignment []*Seq
 
-func (self Alignment) Add(s *Seq) (a Alignment) {
-	self = append(self, s)
-	return self
-}
-
 func (self Alignment) Len() int {
 	var (
 		min  int = util.MaxInt
@@ -140,25 +135,21 @@ func (self Alignment) Flush(where int, fill byte) (a Alignment) {
 }
 
 func (self Alignment) Trunc(start, end int) (a Alignment, err error) {
-	var t *Seq
-	a = Alignment{}
-	for _, s := range self {
-		if t, err = s.Trunc(start, end); err != nil {
+	a = make(Alignment, len(self))
+	for i, s := range self {
+		if a[i], err = s.Trunc(start, end); err != nil {
 			return nil, err
 		}
-		a.Add(t)
 	}
 	return
 }
 
 func (self Alignment) RevComp() (a Alignment, err error) {
-	var t *Seq
-	a = Alignment{}
-	for _, s := range self {
-		if t, err = s.RevComp(); err != nil {
+	a = make(Alignment, len(self))
+	for i, s := range self {
+		if a[i], err = s.RevComp(); err != nil {
 			return nil, err
 		}
-		a.Add(t)
 	}
 	return
 }
