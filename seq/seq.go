@@ -34,6 +34,8 @@ var (
 		{'a': 'u', 'c': 'g', 'g': 'c', 'u': 'a', 'n': 'n',
 			'A': 'U', 'C': 'G', 'G': 'C', 'U': 'A', 'N': 'N'}, // RNA rules
 	}
+
+	emptyString = ""
 )
 
 type Seq struct {
@@ -251,14 +253,14 @@ func (self *Seq) Stitch(f feat.FeatureSet) (s *Seq, err error) {
 	var i *interval.Interval
 
 	for _, feature := range f {
-		if i, err = interval.New("", feature.Start, feature.End, 0, nil); err != nil {
+		if i, err = interval.New(emptyString, feature.Start, feature.End, 0, nil); err != nil {
 			return nil, err
 		} else {
 			t.Insert(i)
 		}
 	}
 
-	span, err := interval.New("", self.Start(), self.End(), 0, nil)
+	span, err := interval.New(emptyString, self.Start(), self.End(), 0, nil)
 	if err != nil {
 		panic("Seq.End() < Seq.Start()")
 	}
