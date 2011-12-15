@@ -89,26 +89,54 @@ func (self Alignment) IsFlush(where int) bool {
 	return true
 }
 
-func (self Alignment) Flush(where int, fill byte) Alignment {
+func (self Alignment) Flush(where int, fill byte) (a Alignment) {
+	a = make(Alignment, len(self))
+
 	if where&Right != 0 {
 		end := self.End()
-		for _, s := range self {
-			s.Seq = append(s.Seq, bytes.Repeat([]byte{fill}, end-(s.Offset+s.Len()))...)
+		for i, s := range self {
+			if s.Inplace {
+				s.Seq = append(s.Seq, bytes.Repeat([]byte{fill}, end-(s.Offset+s.Len()))...)
+				s.Circular = false
+				a[i] = s
+			} else {
+				a[i] = &Seq{
+					ID:       s.ID,
+					Seq:      append([]byte{}, append(s.Seq, bytes.Repeat([]byte{fill}, end-(s.Offset+s.Len()))...)...),
+					Offset:   s.Offset,
+					Moltype:  s.Moltype,
+					Strand:   s.Strand,
+					Circular: false,
+				}
+			}
 		}
 	}
 	if where&Left != 0 {
+		var diff int
 		start := self.Start()
-		for _, s := range self {
-			if diff := s.Offset - start; diff > 0 {
-				b := make([]byte, diff, diff+s.Len())
-				copy(b, bytes.Repeat([]byte{fill}, diff))
-				s.Seq = append(b, s.Seq...)
+		for i, s := range self {
+			if diff = s.Offset - start; diff < 0 {
+				diff = 0
+			}
+			if s.Inplace {
+				s.Seq = append(bytes.Repeat([]byte{fill}, diff), s.Seq...)
 				s.Offset = start
+				s.Circular = false
+				a[i] = s
+			} else {
+				a[i] = &Seq{
+					ID:       s.ID,
+					Seq:      append(bytes.Repeat([]byte{fill}, diff), s.Seq...),
+					Offset:   start,
+					Moltype:  s.Moltype,
+					Strand:   s.Strand,
+					Circular: false,
+				}
 			}
 		}
 	}
 
-	return self
+	return
 }
 
 func (self Alignment) Trunc(start, end int) (a Alignment, err error) {
@@ -140,31 +168,70 @@ func (self Alignment) Join(a Alignment, fill byte, where int) (b Alignment, err 
 		return nil, bio.NewError("Alignments do not hold the same number of sequences", 0, []Alignment{self, a})
 	}
 
+	var (
+		ID    string
+		ts    []byte
+		shift int
+	)
+
+	b = make(Alignment, len(self))
+
 	switch where {
 	case Prepend:
 		if !a.IsFlush(Right) {
-			a.Flush(Right, fill)
+			a = a.Flush(Right, fill)
 		}
 		if !self.IsFlush(Left) {
-			self.Flush(Left, fill)
+			a = self.Flush(Left, fill)
 		}
-		for i, s := range a {
-			s.Seq = append(s.Seq, self[i].Seq...)
-		}
-		self = a
 	case Append:
 		if !a.IsFlush(Left) {
-			a.Flush(Left, fill)
+			a = a.Flush(Left, fill)
 		}
 		if !self.IsFlush(Right) {
-			self.Flush(Right, fill)
-		}
-		for i, s := range self {
-			s.Seq = append(s.Seq, a[i].Seq...)
+			a = self.Flush(Right, fill)
 		}
 	}
 
-	return self, nil
+	for i, s2 := range self {
+		s1 := self[i]
+		switch where {
+		case Prepend:
+			ID = s2.ID + "+" + s1.ID
+			ts = make([]byte, len(s2.Seq), len(s2.Seq)+len(s1.Seq))
+			copy(ts, s2.Seq)
+			ts = append(ts, s1.Seq...)
+			shift = s2.Len()
+		case Append:
+			ID = s1.ID + "+" + s2.ID
+			if s1.Inplace {
+				ts = append(s1.Seq, s2.Seq...)
+			} else {
+				ts = make([]byte, len(s1.Seq), len(s2.Seq)+len(s1.Seq))
+				copy(ts, s1.Seq)
+				ts = append(ts, s2.Seq...)
+			}
+		}
+
+		if s1.Inplace {
+			b[i] = s1
+			b[i].ID = ID
+			b[i].Seq = ts
+			b[i].Offset -= shift
+			b[i].Quality = nil // TODO Handle Quality
+		} else {
+			b[i] = &Seq{
+				ID:      ID,
+				Seq:     ts,
+				Offset:  s1.Offset - shift,
+				Strand:  s1.Strand,
+				Moltype: s1.Moltype,
+				Quality: nil, // TODO Handle Quality
+			}
+		}
+	}
+
+	return
 }
 
 func (self Alignment) Stitch(f feat.FeatureSet) (a Alignment, err error) {
