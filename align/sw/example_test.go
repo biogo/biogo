@@ -26,17 +26,18 @@ func ExampleAligner_Align() {
 	swsb := &seq.Seq{Seq: []byte("AGCACACA")}
 
 	// w(gap) = -1
-	swgap := -1
 	// w(match) = +2
 	// w(mismatch) = -1
 	swm := [][]int{
-		{2, -1, -1, -1},
-		{-1, 2, -1, -1},
-		{-1, -1, 2, -1},
-		{-1, -1, -1, 2},
+		{2, -1, -1, -1, -1},
+		{-1, 2, -1, -1, -1},
+		{-1, -1, 2, -1, -1},
+		{-1, -1, -1, 2, -1},
+		{-1, -1, -1, -1, 0},
 	}
 
-	smith := &Aligner{Gap: swgap, Matrix: swm, GapChar: '-'}
-	swa := smith.Align(swsa, swsb)
-	fmt.Printf("%s\n%s\n", swa[0].Seq, swa[1].Seq)
+	smith := &Aligner{Matrix: swm, LookUp: LookUpN, GapChar: '-'}
+	if swa, err := smith.Align(swsa, swsb); err == nil {
+		fmt.Printf("%s\n%s\n", swa[0].Seq, swa[1].Seq)
+	}
 }

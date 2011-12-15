@@ -25,21 +25,22 @@ func ExampleAligner_Align() {
 	nwsa := &seq.Seq{Seq: []byte("AGACTAGTTA")}
 	nwsb := &seq.Seq{Seq: []byte("GACAGACG")}
 
-	// w(gap) = -5
-	nwgap := -5
-	//  	 A	 C	 G	 T
-	// A	10	-3	-1	-4
-	// C	-3	 9	-5	 0
-	// G	-1	-5	 7	-3
-	// T	-4	 0	-3	 8
+	//  	 A	 C	 G	 T	 -
+	// A	10	-3	-1	-4	-5
+	// C	-3	 9	-5	 0	-5
+	// G	-1	-5	 7	-3	-5
+	// T	-4	 0	-3	 8	-5
+	// -	-5	-5	-5	-5	 0
 	nwm := [][]int{
-		{10, -3, -1, -4},
-		{-3, 9, -5, 0},
-		{-1, -5, 7, -3},
-		{-4, 0, -3, 8},
+		{10, -3, -1, -4, -5},
+		{-3, 9, -5, 0, -5},
+		{-1, -5, 7, -3, -5},
+		{-4, 0, -3, 8, -5},
+		{-4, -4, -4, -4, 0},
 	}
 
-	needle := &Aligner{Gap: nwgap, Matrix: nwm, GapChar: '-'}
-	nwa := needle.Align(nwsa, nwsb)
-	fmt.Printf("%s\n%s\n", nwa[0].Seq, nwa[1].Seq)
+	needle := &Aligner{Matrix: nwm, LookUp: LookUpN, GapChar: '-'}
+	if nwa, err := needle.Align(nwsa, nwsb); err == nil {
+		fmt.Printf("%s\n%s\n", nwa[0].Seq, nwa[1].Seq)
+	}
 }

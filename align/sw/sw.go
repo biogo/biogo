@@ -21,25 +21,47 @@ import (
 	"github.com/kortschak/BioGo/util"
 )
 
-var LookUp util.CTL
+var LookUpN, LookUpR, LookUpP util.CTL
 
 func init() {
 	m := make(map[int]int)
 
 	for i, v := range bio.N {
-		m[int(v)] = i % 4
+		m[int(v)] = i % (len(bio.N) / 2)
 	}
 
-	LookUp = *util.NewCTL(m)
+	LookUpN = *util.NewCTL(m)
+
+	m = make(map[int]int)
+
+	for i, v := range bio.R {
+		m[int(v)] = i % (len(bio.R) / 2)
+	}
+
+	LookUpR = *util.NewCTL(m)
+
+	m = make(map[int]int)
+
+	for i, v := range bio.P {
+		m[int(v)] = i % (len(bio.P) / 2)
+	}
+
+	LookUpP = *util.NewCTL(m)
 }
 
 type Aligner struct {
-	Gap     int
 	Matrix  [][]int
 	GapChar byte
+	LookUp  util.CTL
 }
 
-func (self *Aligner) Align(reference, query *seq.Seq) (aln seq.Alignment) {
+func (self *Aligner) Align(reference, query *seq.Seq) (aln seq.Alignment, err error) {
+	gap := len(self.Matrix) - 1
+	for _, row := range self.Matrix {
+		if len(row) != gap+1 {
+			return nil, bio.NewError("Scoring matrix is not square.", 0, self.Matrix)
+		}
+	}
 	r, c := reference.Len()+1, query.Len()+1
 	table := make([][]int, r)
 	for i := range table {
@@ -50,12 +72,12 @@ func (self *Aligner) Align(reference, query *seq.Seq) (aln seq.Alignment) {
 
 	for i := 1; i < r; i++ {
 		for j := 1; j < c; j++ {
-			if rVal, qVal := LookUp.ValueToCode[reference.Seq[i-1]], LookUp.ValueToCode[query.Seq[j-1]]; rVal < 0 || qVal < 0 {
+			if rVal, qVal := self.LookUp.ValueToCode[reference.Seq[i-1]], self.LookUp.ValueToCode[query.Seq[j-1]]; rVal < 0 || qVal < 0 {
 				continue
 			} else {
 				match := table[i-1][j-1] + self.Matrix[rVal][qVal]
-				delete := table[i-1][j] + self.Gap
-				insert := table[i][j-1] + self.Gap
+				delete := table[i-1][j] + self.Matrix[rVal][gap]
+				insert := table[i][j-1] + self.Matrix[gap][qVal]
 				table[i][j] = util.Max(0, match, delete, insert)
 				if table[i][j] >= max { // greedy so make farthest down and right
 					max, maxI, maxJ = table[i][j], i, j
@@ -76,7 +98,7 @@ func (self *Aligner) Align(reference, query *seq.Seq) (aln seq.Alignment) {
 		scoreDiag = table[i-1][j-1]
 		scoreUp = table[i][j-1]
 		scoreLeft = table[i-1][j]
-		if rVal, qVal := LookUp.ValueToCode[reference.Seq[i-1]], LookUp.ValueToCode[query.Seq[j-1]]; rVal < 0 || qVal < 0 {
+		if rVal, qVal := self.LookUp.ValueToCode[reference.Seq[i-1]], self.LookUp.ValueToCode[query.Seq[j-1]]; rVal < 0 || qVal < 0 {
 			continue
 		} else {
 			switch {
@@ -85,11 +107,11 @@ func (self *Aligner) Align(reference, query *seq.Seq) (aln seq.Alignment) {
 				queryAln.Seq = append(queryAln.Seq, query.Seq[j-1])
 				i--
 				j--
-			case score == scoreLeft+self.Gap:
+			case score == scoreLeft+self.Matrix[rVal][gap]:
 				refAln.Seq = append(refAln.Seq, reference.Seq[i-1])
 				queryAln.Seq = append(queryAln.Seq, self.GapChar)
 				i--
-			case score == scoreUp+self.Gap:
+			case score == scoreUp+self.Matrix[gap][qVal]:
 				refAln.Seq = append(refAln.Seq, self.GapChar)
 				queryAln.Seq = append(queryAln.Seq, query.Seq[j-1])
 				j--
