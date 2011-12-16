@@ -21,6 +21,7 @@ import (
 	"github.com/kortschak/BioGo/util"
 )
 
+// Default character table lookups.
 var LookUpN, LookUpR, LookUpP util.CTL
 
 func init() {
@@ -49,12 +50,19 @@ func init() {
 	LookUpP = *util.NewCTL(m)
 }
 
+// Needleman-Wunsch aligner type.
+// Matrix is a square scoring matrix with the last column and last row specifying gap penalties.
+// GapChar is the character used to fill gaps. LookUp is used to translate sequance values into
+// positions in the scoring matrix.
+// Currently gap opening is not considered.
 type Aligner struct {
 	Matrix  [][]int
 	GapChar byte
 	LookUp  util.CTL
 }
 
+// Method to align two sequences using the Smith-Waterman algorithm. Returns an alignment or an error
+// if the scoring matrix is not square.
 func (self *Aligner) Align(reference, query *seq.Seq) (aln seq.Alignment, err error) {
 	gap := len(self.Matrix) - 1
 	for _, row := range self.Matrix {

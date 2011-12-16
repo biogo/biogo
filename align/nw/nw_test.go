@@ -15,6 +15,7 @@ package nw
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import (
+	"github.com/kortschak/BioGo/io/seqio/fasta"
 	check "launchpad.net/gocheck"
 	"testing"
 )
@@ -27,4 +28,28 @@ type S struct{}
 var _ = check.Suite(&S{})
 
 func (s *S) TestXXX(c *check.C) {
+}
+
+func BenchmarkAlign(b *testing.B) {
+	b.StopTimer()
+	if r, err := fasta.NewReaderName("../testdata/crsp.fa"); err != nil {
+		return
+	} else {
+		nwsa, _ := r.Read()
+		nwsb, _ := r.Read()
+
+		nwm := [][]int{
+			{10, -3, -1, -4, -5},
+			{-3, 9, -5, 0, -5},
+			{-1, -5, 7, -3, -5},
+			{-4, 0, -3, 8, -5},
+			{-4, -4, -4, -4, 0},
+		}
+
+		needle := &Aligner{Matrix: nwm, LookUp: LookUpN, GapChar: '-'}
+		b.StartTimer()
+		for i := 0; i < b.N; i++ {
+			needle.Align(nwsa, nwsb)
+		}
+	}
 }
