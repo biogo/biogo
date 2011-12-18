@@ -50,15 +50,32 @@ func init() {
 	LookUpP = *util.NewCTL(m)
 }
 
+const (
+	diag = iota
+	up
+	left
+)
+
+func maxIndex(a []int) (d int) {
+	max := util.MinInt
+	for i, v := range a {
+		if v > max {
+			max = v
+			d = i
+		}
+	}
+	return
+}
+
 // Smith-Waterman aligner type.
 // Matrix is a square scoring matrix with the last column and last row specifying gap penalties.
 // GapChar is the character used to fill gaps. LookUp is used to translate sequance values into
 // positions in the scoring matrix.
 // Currently gap opening is not considered.
 type Aligner struct {
-	Matrix  [][]int
-	GapChar byte
-	LookUp  util.CTL
+	Matrix   [][]int
+	GapChar  byte
+	LookUp   util.CTL
 }
 
 // Method to align two sequences using the Smith-Waterman algorithm. Returns an alignment or an error
@@ -77,19 +94,27 @@ func (self *Aligner) Align(reference, query *seq.Seq) (aln seq.Alignment, err er
 	}
 
 	max, maxI, maxJ := 0, 0, 0
+	var (
+		score  int
+		scores [3]int
+	)
 
 	for i := 1; i < r; i++ {
 		for j := 1; j < c; j++ {
 			if rVal, qVal := self.LookUp.ValueToCode[reference.Seq[i-1]], self.LookUp.ValueToCode[query.Seq[j-1]]; rVal < 0 || qVal < 0 {
 				continue
 			} else {
-				match := table[i-1][j-1] + self.Matrix[rVal][qVal]
-				delete := table[i-1][j] + self.Matrix[rVal][gap]
-				insert := table[i][j-1] + self.Matrix[gap][qVal]
-				table[i][j] = util.Max(0, match, delete, insert)
-				if table[i][j] >= max { // greedy so make farthest down and right
-					max, maxI, maxJ = table[i][j], i, j
+				scores[diag] = table[i-1][j-1] + self.Matrix[rVal][qVal]
+				scores[up] = table[i-1][j] + self.Matrix[rVal][gap]
+				scores[left] = table[i][j-1] + self.Matrix[gap][qVal]
+				score = util.Max(scores[:]...)
+				if score < 0 {
+					score = 0
 				}
+				if score >= max { // greedy so make farthest down and right
+					max, maxI, maxJ = score, i, j
+				}
+				table[i][j] = score
 			}
 		}
 	}
@@ -97,34 +122,27 @@ func (self *Aligner) Align(reference, query *seq.Seq) (aln seq.Alignment, err er
 	refAln := &seq.Seq{ID: reference.ID, Seq: make([]byte, 0, reference.Len())}
 	queryAln := &seq.Seq{ID: query.ID, Seq: make([]byte, 0, query.Len())}
 
-	var score, scoreDiag, scoreUp, scoreLeft int
-
-	for i, j := maxI, maxJ; i > 0 && j > 0; {
-		if score = table[i][j]; score == 0 {
-			break
-		}
-		scoreDiag = table[i-1][j-1]
-		scoreUp = table[i][j-1]
-		scoreLeft = table[i-1][j]
+	for i, j := maxI, maxJ; table[i][j] != 0 && i > 0 && j > 0; {
 		if rVal, qVal := self.LookUp.ValueToCode[reference.Seq[i-1]], self.LookUp.ValueToCode[query.Seq[j-1]]; rVal < 0 || qVal < 0 {
 			continue
 		} else {
-			switch {
-			case score == scoreDiag+self.Matrix[rVal][qVal]:
-				refAln.Seq = append(refAln.Seq, reference.Seq[i-1])
-				queryAln.Seq = append(queryAln.Seq, query.Seq[j-1])
+			scores[diag] = table[i-1][j-1] + self.Matrix[rVal][qVal]
+			scores[up] = table[i-1][j] + self.Matrix[gap][qVal]
+			scores[left] = table[i][j-1] + self.Matrix[rVal][gap]
+			switch d := maxIndex(scores[:]); d {
+			case diag:
 				i--
 				j--
-			case score == scoreLeft+self.Matrix[rVal][gap]:
-				refAln.Seq = append(refAln.Seq, reference.Seq[i-1])
+				refAln.Seq = append(refAln.Seq, reference.Seq[i])
+				queryAln.Seq = append(queryAln.Seq, query.Seq[j])
+			case up:
+				i--
+				refAln.Seq = append(refAln.Seq, reference.Seq[i])
 				queryAln.Seq = append(queryAln.Seq, self.GapChar)
-				i--
-			case score == scoreUp+self.Matrix[gap][qVal]:
-				refAln.Seq = append(refAln.Seq, self.GapChar)
-				queryAln.Seq = append(queryAln.Seq, query.Seq[j-1])
+			case left:
 				j--
-			default:
-				panic("lost path")
+				refAln.Seq = append(refAln.Seq, self.GapChar)
+				queryAln.Seq = append(queryAln.Seq, query.Seq[j])
 			}
 		}
 	}
