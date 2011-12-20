@@ -64,7 +64,7 @@ func (self *HSVAColor) RGBA() (r, g, b, a uint32) {
 
 	a = uint32(maxUintF * A)
 
-	if V == 0 || H == math.NaN() {
+	if V == 0 || H != H { // math.IsNan(H)
 		return
 	}
 
