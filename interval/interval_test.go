@@ -1,4 +1,5 @@
 package interval
+
 // Copyright ©2011 Dan Kortschak <dan.kortschak@adelaide.edu.au>
 // Derived from quicksect.py of bx-python ©James Taylor bitbucket.org/james_taylor/bx-python
 //
@@ -75,7 +76,7 @@ func makeTree(desc string) (tree *Interval) {
 		case ';':
 			break
 		default:
-			current.line = b
+			current.line = int(b)
 		}
 	}
 
@@ -561,7 +562,14 @@ func (s *S) TestOtherTree(c *check.C) {
 	ss := fillSliceWith(tree.Intersect(j, 0), 0)
 	c.Check(len(ss), check.Equals, 0)
 
-	tree.Traverse("other")
+	f := func() (pan interface{}) {
+		defer func() {
+			pan = recover()
+		}()
+		tree.Traverse("other")
+		return
+	}
+	c.Check(f(), check.Equals, nil)
 }
 
 // Benchmarks
