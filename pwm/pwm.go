@@ -2,6 +2,7 @@
 //
 // based on algorithm by Deborah Toledo Flores
 package pwm
+
 // Copyright ©2011 Dan Kortschak <dan.kortschak@adelaide.edu.au>
 //
 // This program is free software: you can redistribute it and/or modify
@@ -163,7 +164,7 @@ func (self *PWM) Search(sequence *seq.Seq, start, end int, minScore float64) (sc
 				fmt.Printf("%f\t", e.score)
 				for c, f := range e.freqs {
 					if f > 0 {
-						fmt.Printf("'%c':%d ", byte(c), f)
+						fmt.Printf("'%c':%d ", [4]byte{'A','C','G','T'}[c], f)
 					}
 				}
 				fmt.Printf("%d\n", e.occurrence)
