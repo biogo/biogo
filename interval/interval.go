@@ -245,18 +245,25 @@ func New(chrom string, start, end, line int, meta interface{}) (*Interval, error
 	}, nil
 }
 
+// Return the chromosome identifier for an Interval node.
 func (self *Interval) Chromosome() string { return self.chromosome }
 
+// Return the start position of an Interval node.
 func (self *Interval) Start() int { return self.start }
 
+// Return the end position of an Interval node.
 func (self *Interval) End() int { return self.end }
 
+// Return the line number of an Interval node - not used except for reference to file.
 func (self *Interval) Line() int { return self.line }
 
+// Return a pointer to the parent of an Interval node.
 func (self *Interval) Parent() *Interval { return self.parent }
 
+// Return a pointer to the left child of an Interval node.
 func (self *Interval) Left() *Interval { return self.left }
 
+// Return a pointer to the right child of an Interval node.
 func (self *Interval) Right() *Interval { return self.right }
 
 func (self *Interval) adjustRange() {
