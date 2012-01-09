@@ -1,5 +1,6 @@
 // Package for reading and writing multiple sequence alignment files
 package alignio
+
 // Copyright ©2011 Dan Kortschak <dan.kortschak@adelaide.edu.au>
 //
 // This program is free software: you can redistribute it and/or modify
@@ -21,14 +22,18 @@ import (
 	"io"
 )
 
+// Reader implements multiple sequence reading from a seqio.Reader.
 type Reader struct {
 	seqio.Reader
 }
 
+// Return a new Reader.
 func NewReader(r seqio.Reader) *Reader {
 	return &Reader{r}
 }
 
+// Read the contents of the embedded seqio.Reader into a seq.Alignment.
+// Returns the Alignment, or nil and an error if an error occurs.
 func (self *Reader) Read() (a seq.Alignment, err error) {
 	var s *seq.Seq
 	a = seq.Alignment{}
@@ -47,14 +52,18 @@ func (self *Reader) Read() (a seq.Alignment, err error) {
 	panic("cannot reach")
 }
 
+// Writer implements multiple sequence writing to a seqio.Writer.
 type Writer struct {
 	seqio.Writer
 }
 
+// Return a new Writer.
 func NewWriter(w seqio.Writer) *Writer {
 	return &Writer{w}
 }
 
+// Write a seq.Alignment to the embedded seqio.Reader.
+// Returns the number of bytes written and any error. 
 func (self *Writer) Write(a seq.Alignment) (n int, err error) {
 	var c int
 	for _, s := range a {

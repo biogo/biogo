@@ -88,6 +88,9 @@ func scanForID(l *lex.Lexer) (lex.StateFn, lex.Item) {
 	case err != nil:
 		return l.Errorf("%s", err)
 	default:
+		if _, err = l.Next(); err != nil {
+			return l.Errorf("%s", err)
+		}
 		l.Ignore()
 		return inID, lex.Item{}
 	}

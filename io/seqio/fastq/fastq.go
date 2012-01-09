@@ -1,5 +1,6 @@
 // Package to read and write FASTQ format files
 package fastq
+
 // Copyright ©2011 Dan Kortschak <dan.kortschak@adelaide.edu.au>
 //
 // This program is free software: you can redistribute it and/or modify
@@ -71,6 +72,7 @@ func NewReaderName(name string) (r *Reader, err error) {
 }
 
 // Read a single sequence and return it or an error.
+// TODO: Does not read interleaved fastq.
 func (self *Reader) Read() (sequence *seq.Seq, err error) {
 	var line, label, seqBody, qualBody []byte
 	sequence = &seq.Seq{}
@@ -90,7 +92,7 @@ READ:
 			case !inQual && line[0] == '@':
 				label = line[1:]
 			case !inQual && line[0] == '+':
-				if len(sequence.ID) == 0 {
+				if len(label) == 0 {
 					return nil, bio.NewError("No ID line parsed at +line in fastq format", 0, nil)
 				}
 				if len(line) > 1 && bytes.Compare(label, line[1:]) != 0 {
@@ -142,6 +144,7 @@ func (self *Reader) decodeQuality(q []byte) (qs []seq.Qsanger) {
 
 	return qs
 }
+
 // Rewind the reader.
 func (self *Reader) Rewind() (err error) {
 	if s, ok := self.f.(io.Seeker); ok {
@@ -163,6 +166,7 @@ type Writer struct {
 	w        *bufio.Writer
 	template [][]byte
 	Encoding seq.Encoding
+	QID      bool // Include ID on +lines
 }
 
 // Returns a new fastq format writer using w.
@@ -200,6 +204,11 @@ func (self *Writer) Write(s *seq.Seq) (n int, err error) {
 	if s.Len() == s.Quality.Len() {
 		self.template[1] = []byte(s.ID)
 		self.template[3] = s.Seq
+		if self.QID {
+			self.template[4] = append(append([]byte("\n+"), []byte(s.ID)...), '\n')
+		} else {
+			self.template[4] = []byte("\n+\n")
+		}
 		self.template[5] = self.encodeQuality(s.Quality.Qual)
 		var tn int
 		for _, t := range self.template {
