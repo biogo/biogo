@@ -2,6 +2,7 @@
 //
 // Currently limited to Kmers of 15 nucleotides due to int constraints in Go.
 package kmerindex
+
 // Copyright ©2011 Dan Kortschak <dan.kortschak@adelaide.edu.au>
 //
 // This program is free software: you can redistribute it and/or modify
@@ -25,7 +26,7 @@ import (
 	"math"
 )
 
-var Debug bool
+var Debug = false // Set Debug to true to prevent recovering from panics in ForEachKmer f Eval function.
 
 var MaxKmerLen = 15
 
@@ -70,7 +71,6 @@ func New(k int, sequence *seq.Seq) (i *Index, err error) {
 
 	i = &Index{
 		finger:  make([]Kmer, util.Pow4(k)+1), // Need a Tn+1 finger position so that Tn can be recognised
-		pos:     make([]int, sequence.Len()-k+1),
 		k:       k,
 		kMask:   Kmer(util.Pow4(k) - 1),
 		Seq:     sequence,
@@ -101,6 +101,7 @@ func (self *Index) Build() {
 		index.pos[index.finger[kmer]] = position
 		index.finger[kmer]++
 	}
+	self.pos = make([]int, self.Seq.Len()-self.k+1)
 	self.ForEachKmerOf(self.Seq, 0, self.Seq.Len(), locatePositions)
 
 	self.indexed = true
@@ -146,6 +147,8 @@ func (self *Index) GetPositionsKmer(kmer Kmer) (positions []int, err error) {
 	return
 }
 
+// Return a map containing absolute Kmer frequencies and true if called before Build().
+// If called after Build returns a nil map and false.
 func (self *Index) KmerFrequencies() (map[Kmer]int, bool) {
 	if self.indexed {
 		return nil, false
@@ -153,15 +156,17 @@ func (self *Index) KmerFrequencies() (map[Kmer]int, bool) {
 
 	m := map[Kmer]int{}
 
-	for i := Kmer(0); i < self.kMask; i++ {
-		if self.finger[i] > 0 {
-			m[i] = int(self.finger[i]) // not always safe - perhaps check that Kmer <= MaxInt
+	for i, f := range self.finger {
+		if f > 0 {
+			m[Kmer(i)] = int(f) // not always safe - perhaps check that Kmer <= MaxInt
 		}
 	}
 
 	return m, true
 }
 
+// Return a map containing relative Kmer frequencies and true if called before Build().
+// If called after Build returns a nil map and false.
 func (self *Index) NormalisedKmerFrequencies() (map[Kmer]float64, bool) {
 	if self.indexed {
 		return nil, false
@@ -169,31 +174,18 @@ func (self *Index) NormalisedKmerFrequencies() (map[Kmer]float64, bool) {
 
 	m := map[Kmer]float64{}
 
-	for i := Kmer(0); i <= self.kMask; i++ {
-		if self.finger[i] > 0 {
-			m[i] = float64(self.finger[i]) / float64(self.Seq.Len())
+	l := float64(self.Seq.Len())
+	for i, f := range self.finger {
+		if f > 0 {
+			m[Kmer(i)] = float64(f) / l
 		}
 	}
 
 	return m, true
 }
 
-func (self *Index) StringKmerIndex() (map[string][]int, bool) {
-	if !self.indexed {
-		return nil, false
-	}
-
-	m := make(map[string][]int)
-
-	for i := Kmer(0); i <= self.kMask; i++ {
-		if p, _ := self.GetPositionsKmer(i); len(p) > 0 {
-			m[self.StringOf(i)] = p
-		}
-	}
-
-	return m, true
-}
-
+// Returns a Kmer-keyed map containing slices of kmer positions and true if called after Build,
+// otherwise nil and false.
 func (self *Index) KmerIndex() (map[Kmer][]int, bool) {
 	if !self.indexed {
 		return nil, false
@@ -201,9 +193,27 @@ func (self *Index) KmerIndex() (map[Kmer][]int, bool) {
 
 	m := make(map[Kmer][]int)
 
-	for i := Kmer(0); i <= self.kMask; i++ {
-		if p, _ := self.GetPositionsKmer(i); len(p) > 0 {
-			m[i] = p
+	for i := range self.finger {
+		if p, _ := self.GetPositionsKmer(Kmer(i)); len(p) > 0 {
+			m[Kmer(i)] = p
+		}
+	}
+
+	return m, true
+}
+
+// Returns a string-keyed map containing slices of kmer positions and true if called after Build,
+// otherwise nil and false.
+func (self *Index) StringKmerIndex() (map[string][]int, bool) {
+	if !self.indexed {
+		return nil, false
+	}
+
+	m := make(map[string][]int)
+
+	for i := range self.finger {
+		if p, _ := self.GetPositionsKmer(Kmer(i)); len(p) > 0 {
+			m[self.StringOf(Kmer(i))] = p
 		}
 	}
 
@@ -213,6 +223,7 @@ func (self *Index) KmerIndex() (map[Kmer][]int, bool) {
 // errors should be handled through a panic which will be recovered by ForEachKmerOf
 type Eval func(index *Index, j, kmer int)
 
+// Applies the f Eval func to all kmers in s from start to end. Returns any panic raised by f as an error.
 func (self *Index) ForEachKmerOf(s *seq.Seq, start, end int, f Eval) (err error) {
 	defer func() {
 		if !Debug {
@@ -260,45 +271,67 @@ func (self *Index) ForEachKmerOf(s *seq.Seq, start, end int, f Eval) (err error)
 	return
 }
 
+// Return the Kmer length of the Index.
 func (self *Index) GetK() int {
 	return self.k
 }
 
+// Returns a pointer to the indexed seq.Seq.
 func (self *Index) GetSeq() *seq.Seq {
 	return self.Seq
 }
 
+// Returns the value of the finger slice at p. This signifies the absolute kmer frequency of the Kmer(p)
+// if called before Build() and points to the relevant position lookup if called after.
 func (self *Index) FingerAt(p int) int {
 	return int(self.finger[p])
 }
 
+// Returns the value of the pos slice at p. This signifies the position of the pth kmer if called after Build().
+// Not valid before Build() - will panic.
 func (self *Index) PosAt(p int) int {
 	return self.pos[p]
 }
 
 // Convert a Kmer into a string of bases
 func (self *Index) StringOf(kmer Kmer) string {
-	kmertext := make([]byte, self.k)
+	return StringOf(self.k, kmer)
+}
 
-	for i := self.k - 1; i >= 0; i, kmer = i-1, kmer>>2 {
-		kmertext[i] = bio.N[kmer&3]
+// Convert a string of bases into a len k Kmer, returns an error if string length does not match k
+func KmerOf(k int, kmertext string) (kmer Kmer, err error) {
+	if len(kmertext) != k {
+		return 0, bio.NewError("Sequence length does not match Kmer length", 0, fmt.Sprintf("%d:%s", k, kmertext))
 	}
 
-	return string(kmertext)
+	for _, v := range kmertext {
+		x := lookUp.ValueToCode[v]
+		if x < 0 {
+			return 0, bio.NewError("Kmer contains illegal character", 0, kmertext)
+		}
+		kmer = (kmer << 2) | Kmer(x)
+	}
+
+	return
 }
 
 // Return the GC fraction of a Kmer
-func (self *Index) GCof(kmer Kmer) float32 {
+func (self *Index) GCof(kmer Kmer) float64 {
+	return GCof(self.k, kmer)
+}
+
+// Return the GC fraction of a Kmer of len k
+func GCof(k int, kmer Kmer) float64 {
 	gc := 0
-	for i := self.k - 1; i >= 0; i, kmer = i-1, kmer>>2 {
-		gc += int((kmer & 1) ^ (kmer & 2))
+	for i := k - 1; i >= 0; i, kmer = i-1, kmer>>2 {
+		gc += int((kmer & 1) ^ ((kmer & 2) >> 1))
 	}
 
-	return float32(gc) / float32(self.k)
+	return float64(gc) / float64(k)
 }
 
 // Convert a Kmer into a string of bases
-func StringOfLen(k int, kmer Kmer) string {
+func StringOf(k int, kmer Kmer) string {
 	kmertext := make([]byte, k)
 
 	for i := k - 1; i >= 0; i, kmer = i-1, kmer>>2 {
@@ -308,28 +341,14 @@ func StringOfLen(k int, kmer Kmer) string {
 	return string(kmertext)
 }
 
-// Return the GC fraction of a Kmer
-func GCof(k int, kmer Kmer) float32 {
-	gc := 0
-	for i := k - 1; i >= 0; i, kmer = i-1, kmer>>2 {
-		gc += int((kmer & 1) ^ (kmer & 2))
-	}
-
-	return float32(gc) / float32(k)
-}
-
 // Reverse complement a Kmer
 func (self *Index) ComplementOf(kmer Kmer) (c Kmer) {
-	for i, j := uint(0), uint(self.k-1)*2; i < j; i, j = i+2, j-2 {
-		c |= (^(kmer >> (j - i)) & (3 << i)) | (^(kmer>>i)&3)<<j
-	}
-
-	return
+	return ComplementOf(self.k, kmer)
 }
 
 // Reverse complement a Kmer of len k
-func ComplementOfLen(k int, kmer Kmer) (c Kmer) {
-	for i, j := uint(0), uint(k-1)*2; i < j; i, j = i+2, j-2 {
+func ComplementOf(k int, kmer Kmer) (c Kmer) {
+	for i, j := uint(0), uint(k-1)*2; i <= j; i, j = i+2, j-2 {
 		c |= (^(kmer >> (j - i)) & (3 << i)) | (^(kmer>>i)&3)<<j
 	}
 
@@ -353,7 +372,7 @@ func (self *Index) KmerOf(kmertext string) (kmer Kmer, err error) {
 	return
 }
 
-
+// Return the Euclidian distance between two sequences measured by abolsolute kmer frequencies.
 func Distance(a, b map[Kmer]float64) (dist float64) {
 	c := make(map[Kmer]struct{}, len(a)+len(b))
 	for k := range a {
@@ -369,6 +388,7 @@ func Distance(a, b map[Kmer]float64) (dist float64) {
 	return math.Sqrt(dist)
 }
 
+// Confirm that a Build() is correct. Returns boolean indicating this and the number of kmers indexed.
 func (self *Index) Check() (ok bool, found int) {
 	ok = true
 	f := func(index *Index, position, kmer int) {
@@ -390,17 +410,22 @@ func (self *Index) Check() (ok bool, found int) {
 			ok = false
 		}
 	}
-	self.ForEachKmerOf(self.Seq, 0, self.Seq.Len(), f)
+
+	if err:=self.ForEachKmerOf(self.Seq, 0, self.Seq.Len(), f); err != nil {
+		ok = false
+	}
 
 	return
 }
 
+// Return a copy of the internal finger slice.
 func (self *Index) Finger() (f []Kmer) {
 	f = make([]Kmer, len(self.finger))
 	copy(f, self.finger)
 	return
 }
 
+// Return a copy of the internal pos slice.
 func (self *Index) Pos() (p []int) {
 	p = make([]int, len(self.pos))
 	copy(p, self.pos)

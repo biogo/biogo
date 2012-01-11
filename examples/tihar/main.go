@@ -228,7 +228,7 @@ func printFeature(out, csv *os.File, V, W, H *sparse.Sparse, motifs map[kmerinde
 		name := fmt.Sprint("[")
 		for j := 0; j < len(klist); j++ {
 			if klist[j].weight > 0 {
-				name += fmt.Sprintf(" %s/%.3e ", kmerindex.StringOfLen(k, kmerTable[klist[j].index]), klist[j].weight)
+				name += fmt.Sprintf(" %s/%.3e ", kmerindex.StringOf(k, kmerTable[klist[j].index]), klist[j].weight)
 			}
 		}
 		name += fmt.Sprint("]")
