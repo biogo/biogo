@@ -1,5 +1,6 @@
 // Package implementing functions required for PALS sequence alignment
 package pals
+
 // Copyright ©2011 Dan Kortschak <dan.kortschak@adelaide.edu.au>
 //
 // This program is free software: you can redistribute it and/or modify

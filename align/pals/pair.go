@@ -1,4 +1,5 @@
 package pals
+
 // Copyright ©2011 Dan Kortschak <dan.kortschak@adelaide.edu.au>
 //
 // This program is free software: you can redistribute it and/or modify
@@ -13,7 +14,7 @@ package pals
 //
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
-//
+
 import (
 	"fmt"
 	"github.com/kortschak/BioGo/align/pals/dp"
@@ -22,6 +23,15 @@ import (
 	"github.com/kortschak/BioGo/seq"
 )
 
+// A FeaturePair holds a pair of features with additional information relating the two.
+type FeaturePair struct {
+	A, B   *feat.Feature
+	Score  int     // Score of alignment between features.
+	Error  float64 // Identity difference between feature sequences.
+	Strand int8    // Strand realtionship: positive indicates same strand, negative indicates opposite strand.
+}
+
+// Convert coordinates in a packed sequence into a feat.Feature.
 func FeatureOf(contigs *seq.Seq, from, to int, comp bool) (feature *feat.Feature, err error) {
 	if comp {
 		from, to = contigs.Len()-to, contigs.Len()-from
@@ -52,21 +62,21 @@ func FeatureOf(contigs *seq.Seq, from, to int, comp bool) (feature *feat.Feature
 	contigIndex := contigs.Meta.(SeqMap).binMap[bin]
 
 	if contigIndex < 0 || contigIndex >= len(contigs.Meta.(SeqMap).contigs) {
-		return nil, bio.NewError(fmt.Sprintf("%s: contig index %d our of range 0..%d", contigs.ID, contigIndex, len(contigs.Meta.(SeqMap).contigs)), 0, nil)
+		return nil, bio.NewError(fmt.Sprintf("%s: contig index %d out of range 0..%d", contigs.ID, contigIndex, len(contigs.Meta.(SeqMap).contigs)), 0, nil)
 	}
 
-	length := to - from + 1
+	length := to - from
 
 	if length < 0 {
 		return nil, bio.NewError(fmt.Sprintf("%s: length < 0", contigs.ID), 0, nil)
 	}
 
 	contig := contigs.Meta.(SeqMap).contigs[contigIndex]
-	contigFrom := from - contig.from + 1
-	contigTo := contigFrom + length - 1
+	contigFrom := from - contig.from
+	contigTo := contigFrom + length
 
-	if contigFrom < 1 {
-		contigFrom = 1
+	if contigFrom < 0 {
+		contigFrom = 0
 	}
 
 	if contigTo > contig.seq.Len() {
@@ -80,6 +90,7 @@ func FeatureOf(contigs *seq.Seq, from, to int, comp bool) (feature *feat.Feature
 	}, nil
 }
 
+// Convert a DPHit and two packed sequences into a FeaturePair.
 func FeaturePairOf(target, query *seq.Seq, hit dp.DPHit, comp bool) (pair *FeaturePair, err error) {
 	var (
 		t, q   *feat.Feature

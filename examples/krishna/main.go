@@ -45,15 +45,15 @@ func main() {
 		err          error
 		filterParams *filter.Params
 		//		dpParams     *pals.Params
-		index          *kmerindex.Index
-		filterMorass   *morass.Morass
-		hitFilter      *filter.Filter
-		merger         *filter.Merger
-		hit            filter.FilterHit
-		trapezoids     []*filter.Trapezoid
-		aligner        *dp.Aligner
-		hitCoverage, n int
-		profile        *os.File
+		index                         *kmerindex.Index
+		filterMorass                  *morass.Morass
+		hitFilter                     *filter.Filter
+		merger                        *filter.Merger
+		hit                           filter.FilterHit
+		trapezoids                    filter.Trapezoids
+		aligner                       *dp.Aligner
+		hitCoverageA, hitCoverageB, n int
+		profile                       *os.File
 	)
 
 	queryName := flag.String("query", "", "Filename for query sequence.")
@@ -162,7 +162,7 @@ func main() {
 	if index, err = kmerindex.New(filterParams.WordSize, target); err == nil {
 		index.Build()
 		log.Printf("Indexed in %v ms", timer.Interval()/1e6)
-		hitFilter = filter.New(index, *filterParams)
+		hitFilter = filter.New(index, filterParams)
 	} else {
 		if debug {
 			log.SetFlags(log.LstdFlags | log.Lshortfile)
@@ -254,20 +254,21 @@ func main() {
 			filterMorass.CleanUp()
 
 			trapezoids = merger.FinaliseMerge()
-			log.Printf("Merged %d trapezoids covering %d in %v ms", len(trapezoids), filter.SumTrapLengths(trapezoids), timer.Interval()/1e6)
+			lt, lq := trapezoids.Sum()
+			log.Printf("Merged %d trapezoids covering %dx%d in %v ms", len(trapezoids), lt, lq, timer.Interval()/1e6)
 
 			log.Println("Aligning")
 			timer.Interval()
 
 			aligner = dp.NewAligner(target, workingQuery, filterParams.WordSize, *minHitLen, *minId, *threads)
 			hits := aligner.AlignTraps(trapezoids)
-			if hitCoverage, err = dp.SumDPLengths(hits); err != nil {
+			if hitCoverageA, hitCoverageB, err = hits.Sum(); err != nil {
 				if debug {
 					log.SetFlags(log.LstdFlags | log.Lshortfile)
 				}
 				log.Fatalf("Error: %v.", err)
 			}
-			log.Printf("Aligned %d hits covering %d in %v ms", len(hits), hitCoverage, timer.Interval()/1e6)
+			log.Printf("Aligned %d hits covering %dx%d in %v ms", len(hits), hitCoverageA, hitCoverageB, timer.Interval()/1e6)
 
 			log.Println("Writing results")
 			timer.Interval()

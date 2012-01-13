@@ -1,5 +1,8 @@
 // Package providing PALS sequence hit filter routines
+// Efficient q-gram filters for finding all 𝛜-matches over a given length
+// Kim R. Rasmussen, Jens Stoye, and Eugene W. Myers (2005)
 package filter
+
 // Copyright ©2011 Dan Kortschak <dan.kortschak@adelaide.edu.au>
 //
 // This program is free software: you can redistribute it and/or modify
@@ -22,6 +25,8 @@ import (
 	"github.com/kortschak/BioGo/seq"
 )
 
+// Filter implements a q-gram filter similar to that described in Rassmussen 2005.
+// This implementation is a translation of the C++ code written by Edgar and Myers.
 type Filter struct {
 	target         *seq.Seq
 	index          *kmerindex.Index
@@ -37,7 +42,8 @@ type Filter struct {
 	complement     bool
 }
 
-func New(index *kmerindex.Index, params Params) (f *Filter) {
+// Return a new Filter using index as the target and filter parameters in params.
+func New(index *kmerindex.Index, params *Params) (f *Filter) {
 	f = &Filter{
 		index:      index,
 		target:     index.Seq,
@@ -50,6 +56,9 @@ func New(index *kmerindex.Index, params Params) (f *Filter) {
 	return
 }
 
+// Filter a query sequence against the stored index. If query and the target are the same sequence,
+// selfAlign can be used to avoid double seaching - behavior is undefined if the the sequences are not the same.
+// A morass is used to store and sort individual filter hits.
 func (self *Filter) Filter(query *seq.Seq, selfAlign, complement bool, morass *morass.Morass) (err error) {
 	self.selfAlign = selfAlign
 	self.complement = complement

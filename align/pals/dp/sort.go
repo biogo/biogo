@@ -14,7 +14,8 @@ package dp
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-type starts []DPHit
+// Sort DPHits on start position.
+type starts DPHits
 
 func (self starts) Len() int {
 	return len(self)
@@ -28,8 +29,8 @@ func (self starts) Swap(i, j int) {
 	self[i], self[j] = self[j], self[i]
 }
 
-//
-type ends []DPHit
+// Sort DPHits on end position.
+type ends DPHits
 
 func (self ends) Len() int {
 	return len(self)
