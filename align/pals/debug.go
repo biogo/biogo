@@ -19,15 +19,15 @@ import (
 	"fmt"
 )
 
-type debug bool
+type Debugging bool
 
-func (d debug) Println(args ...interface{}) {
+func (d Debugging) Println(args ...interface{}) {
 	if d {
 		fmt.Println(args...)
 	}
 }
 
-func (d debug) Printf(format string, args ...interface{}) {
+func (d Debugging) Printf(format string, args ...interface{}) {
 	if d {
 		fmt.Printf(format, args...)
 	}

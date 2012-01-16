@@ -26,16 +26,17 @@ import (
 )
 
 const (
-	MaxKmerLen         = 15 // Currently limited to 15 due to 32 bit int limit for indexing slices
 	DefaultLength      = 400
 	DefaultMinIdentity = 0.94
 	MaxAvgIndexListLen = 15
 	TubeOffsetDelta    = 32
 )
 
-var MinWordLength = 4 // For minimum word length, choose k=4 arbitrarily.
-
-var Debug debug
+var (
+	MinWordLength = 4  // For minimum word length, choose k=4 arbitrarily.
+	MaxKmerLen    = 15 // Currently limited to 15 due to 32 bit int limit for indexing slices
+)
+var Debug Debugging
 
 // Return an estimate of the amount of memory required for the filter.
 func FilterMemRequired(target *seq.Seq, filterParams filter.Params) uint64 {
@@ -50,7 +51,7 @@ func FilterMemRequired(target *seq.Seq, filterParams filter.Params) uint64 {
 }
 
 func AvgIndexListLength(target *seq.Seq, filterParams filter.Params) float64 {
-	return float64(target.Len()) / float64(int(1) << (uint64(filterParams.WordSize) * 2))
+	return float64(target.Len()) / float64(int(1)<<(uint64(filterParams.WordSize)*2))
 }
 
 // Return an estimate of the total amount of memory required.
