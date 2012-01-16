@@ -24,6 +24,7 @@ const (
 	high
 )
 
+// A kernel handles the actual dp alignment process.
 type kernel struct {
 	target, query *seq.Seq
 	minLen        int
@@ -33,11 +34,18 @@ type kernel struct {
 	vectors       [2][]int
 	trapezoids    []*filter.Trapezoid
 	covered       []bool
-	segments      []DPHit
+	segments      DPHits
 	slot          int
 	result        chan DPHit
 }
 
+// An offset slice seems to be the easiest way to implement the C idiom used in PALS to implement
+// an offset (by o)  view (v) on an array (a):
+//  int *v, o;
+//  int [n]a;
+//  v = a - o;
+//  // now v[i] is a view on a[i-o]
+// No method is provided (perhaps when inlining is further implemented).
 type offsetSlice struct {
 	offset int
 	slice  []int
@@ -45,6 +53,7 @@ type offsetSlice struct {
 
 var vecBuffering int = 100000
 
+// Handle the recusive search for alignable segments.
 func (self *kernel) alignRecursion(workingTrap *filter.Trapezoid) {
 	mid := (workingTrap.Bottom + workingTrap.Top) / 2
 
@@ -127,14 +136,12 @@ func (self *kernel) allocateVectors(required int) {
 	self.vectors[1] = make([]int, vecMax)
 }
 
-/*** FORWARD AND REVERSE D.P. EXTENSION ROUTINES ***/
-/*      Called at the mid-point of trapezoid -- mid X [low,high], the extension
-        is computed to an end point and the lowest and highest diagonals
-        are recorded.  These are returned in a partially filled DPHit
-        record, that will be merged with that returned for extension in the
-        opposite direction.
-*/
-
+// Forward and Reverse D.P. Extension Routines
+// Called at the mid-point of trapezoid -- mid X [low,high], the extension
+// is computed to an end point and the lowest and highest diagonals
+// are recorded. These are returned in a partially filled DPHit
+// record, that will be merged with that returned for extension in the
+// opposite direction.
 func (self *kernel) traceForward(mid, low, high int) {
 	thisVector := &offsetSlice{}
 	odd := false

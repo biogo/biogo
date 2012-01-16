@@ -71,6 +71,9 @@ func (self *files) Pop() (i interface{}) {
 
 func (self *files) Push(x interface{}) { *self = append(*self, x.(*file)) }
 
+// Type to manage sorting very large data sets.
+// Setting AutoClean to true causes the Morass to delete temporary sort files
+// when they are depleted.
 type Morass struct {
 	mutex       sync.Mutex
 	pos, length int64
@@ -85,6 +88,10 @@ type Morass struct {
 	AutoClean   bool
 }
 
+// Create a new Morass. prefic and dir are passed to ioutil.TempDir. chunkSize specifies
+// the amount of sorting to be done in memory, concurrent specifies that temporary file
+// writing occurs concurrently with sorting.
+// An error is returned if no temporary directory can be created.
 func New(prefix, dir string, chunkSize int, concurrent bool) (*Morass, error) {
 	d, err := ioutil.TempDir(dir, prefix)
 	if err != nil {
@@ -114,6 +121,9 @@ func New(prefix, dir string, chunkSize int, concurrent bool) (*Morass, error) {
 	return m, nil
 }
 
+// Push a value on to the Morass. Note that the underlying gob encoder is given the
+// name ℳ when the type registered to avoid using too much space.
+// Returns any error that occurs.
 func (self *Morass) Push(e LessInterface) (err error) {
 	self.mutex.Lock()
 	defer self.mutex.Unlock()
@@ -138,7 +148,7 @@ func (self *Morass) Push(e LessInterface) (err error) {
 		}
 	}
 
-	gob.Register(e)
+	gob.RegisterName("ℳ", e)
 	self.chunk = append(self.chunk, e)
 	self.pos++
 	self.length++
@@ -180,10 +190,14 @@ func (self *Morass) write(writing sortable) (err error) {
 	return
 }
 
+// Return the corrent position of the cursor in the Morass.
 func (self *Morass) Pos() int64 { return self.pos }
 
+// Return the corrent length of the Morass.
 func (self *Morass) Len() int64 { return self.length }
 
+// Indicate that the last element has been pushed on to the Morass and write out final data.
+// Returns any error that occurs.
 func (self *Morass) Finalise() (err error) {
 	self.mutex.Lock()
 	defer self.mutex.Unlock()
@@ -228,6 +242,8 @@ func (self *Morass) Finalise() (err error) {
 	return nil
 }
 
+// Reset the Morass to an empty state.
+// Returns any error that occurs.
 func (self *Morass) Clear() (err error) {
 	self.mutex.Lock()
 	defer self.mutex.Unlock()
@@ -249,6 +265,8 @@ func (self *Morass) Clear() (err error) {
 	return
 }
 
+// Delete the file system components of the Morass. After this call the Morass is not usable.
+// Returns any error that occurs.
 func (self *Morass) CleanUp() (err error) {
 	self.mutex.Lock()
 	defer self.mutex.Unlock()
@@ -256,6 +274,8 @@ func (self *Morass) CleanUp() (err error) {
 	return os.RemoveAll(self.dir)
 }
 
+// Set the settable value e to the lowest value in the Morass.
+// io.EOF indicate the Morass is empty. Any other error results in no value being set on e.
 func (self *Morass) Pull(e LessInterface) (err error) {
 	self.mutex.Lock()
 	defer self.mutex.Unlock()

@@ -1,4 +1,5 @@
 package pals
+
 // Copyright ©2011 Dan Kortschak <dan.kortschak@adelaide.edu.au>
 //
 // This program is free software: you can redistribute it and/or modify
@@ -21,12 +22,14 @@ import (
 	"github.com/kortschak/BioGo/util"
 )
 
+// A Packer collects a set of sequence into a Packed sequence.
 type Packer struct {
 	Packed  *seq.Seq
 	lastPad int
 	length  int
 }
 
+// Create a new Packer.
 func NewPacker(id string) (p *Packer) {
 	return &Packer{
 		Packed: &seq.Seq{
@@ -37,6 +40,7 @@ func NewPacker(id string) (p *Packer) {
 	}
 }
 
+// Pack a sequence into the Packed sequence. Returns a string giving diagnostic information.
 func (self *Packer) Pack(sequence *seq.Seq) string {
 	m := self.Packed.Meta.(SeqMap)
 
@@ -47,10 +51,9 @@ func (self *Packer) Pack(sequence *seq.Seq) string {
 		padding += binSize
 	}
 
-	//contig.from = self.Packed.Len() + 1
-	contig.from = self.length + 1
-	self.length += self.lastPad + sequence.Len()
-	//self.Packed.Seq = []byte(string(self.Packed.Seq) + strings.Repeat("N", self.lastPad) + string(sequence.Seq))
+	self.length += self.lastPad
+	contig.from = self.length
+	self.length += sequence.Len()
 	self.lastPad = padding
 
 	bins := make([]int, (padding+sequence.Len())/binSize)
@@ -65,6 +68,7 @@ func (self *Packer) Pack(sequence *seq.Seq) string {
 	return fmt.Sprintf("%20s\t%10d\t%7d-%-d", sequence.ID[:util.Min(20, len(sequence.ID))], sequence.Len(), len(m.binMap)-len(bins), len(m.binMap)-1)
 }
 
+// Finalise the sequence packing.
 func (self *Packer) FinalisePack() {
 	lastPad := 0
 	self.Packed.Seq = make([]byte, 0, self.length)
@@ -77,4 +81,18 @@ func (self *Packer) FinalisePack() {
 		self.Packed.Seq = append(self.Packed.Seq, contig.seq.Seq...)
 		lastPad = padding
 	}
+}
+
+// TODO: The following types should be rationalised to make a true Packed sequence type - include in exp/seq.
+
+// A Contig holds a sequence within a SeqMap.
+type Contig struct {
+	seq  *seq.Seq
+	from int
+}
+
+// A SeqMap is a collection of sequences mapped to a Packed sequence.
+type SeqMap struct {
+	contigs []Contig
+	binMap  []int
 }

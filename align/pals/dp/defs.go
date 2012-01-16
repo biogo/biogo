@@ -25,15 +25,17 @@ var (
 	RMatchCost float64 = float64(DiffCost) + 1
 )
 
+// Holds dp alignment parameters.
 type Params struct {
 	MinHitLength int
 	MinId        float64
 }
 
+// DPHit holds details of alignment result. 
 type DPHit struct {
 	Abpos, Bbpos              int     // Start coordinate of local alignment
 	Aepos, Bepos              int     // End coordinate of local alignment
-	LowDiagonal, HighDiagonal int     // Alignment is between (anti)diagonals ldiag & hdiag
-	Score                     int     // Score of alignment where match = 1, difference = -3
+	LowDiagonal, HighDiagonal int     // Alignment is between (anti)diagonals LowDiagonal & HighDiagonal
+	Score                     int     // Score of alignment where match = SameCost, difference = -DiffCost
 	Error                     float64 // Lower bound on error rate of match
 }

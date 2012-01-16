@@ -1,4 +1,5 @@
 package pals
+
 // Copyright ©2011 Dan Kortschak <dan.kortschak@adelaide.edu.au>
 //
 // This program is free software: you can redistribute it and/or modify
@@ -14,10 +15,7 @@ package pals
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import (
-	"github.com/kortschak/BioGo/feat"
-	"github.com/kortschak/BioGo/seq"
-)
+import ()
 
 const (
 	MaxIGap    = 5
@@ -32,20 +30,3 @@ var (
 	binSize    int = 1 << 10
 	minPadding int = 50
 )
-
-type FeaturePair struct {
-	A, B   *feat.Feature
-	Score  int
-	Error  float64
-	Strand int8
-}
-
-type Contig struct {
-	seq  *seq.Seq
-	from int
-}
-
-type SeqMap struct {
-	contigs []Contig
-	binMap  []int
-}

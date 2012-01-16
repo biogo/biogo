@@ -1,5 +1,6 @@
 // Package providing PALS dynamic programming alignment routines.
 package dp
+
 // Copyright ©2011 Dan Kortschak <dan.kortschak@adelaide.edu.au>
 //
 // This program is free software: you can redistribute it and/or modify
@@ -22,15 +23,17 @@ import (
 	"sort"
 )
 
+// An Aligner provides allows local alignment of subsections of long sequences.
 type Aligner struct {
 	target, query *seq.Seq
 	k             int
 	minHitLength  int
 	minId         float64
 	threads       int
-	segments      []DPHit
+	segments      DPHits
 }
 
+// Create a new Aligner based on target and query sequences. 
 func NewAligner(target, query *seq.Seq, k, minLength int, minId float64, threads int) *Aligner {
 	return &Aligner{
 		target:       target,
@@ -42,7 +45,9 @@ func NewAligner(target, query *seq.Seq, k, minLength int, minId float64, threads
 	}
 }
 
-func (self *Aligner) AlignTraps(trapezoids []*filter.Trapezoid) (segments []DPHit) {
+// Align pairs of sequence segments defined by trapezoids.
+// Returns aligning segment pairs satisfying length and identity requirements.
+func (self *Aligner) AlignTraps(trapezoids filter.Trapezoids) (segments DPHits) {
 	covered := make([]bool, len(trapezoids))
 
 	dp := &kernel{
@@ -59,7 +64,7 @@ func (self *Aligner) AlignTraps(trapezoids []*filter.Trapezoid) (segments []DPHi
 			dp.alignRecursion(t)
 		}
 	}
-	segments = make([]DPHit, len(dp.segments))
+	segments = make(DPHits, len(dp.segments))
 	copy(segments, dp.segments)
 
 	/* Remove lower scoring segments that begin or end at
@@ -117,13 +122,17 @@ func (self *Aligner) AlignTraps(trapezoids []*filter.Trapezoid) (segments []DPHi
 	return
 }
 
-func SumDPLengths(hits []DPHit) (sum int, e error) {
-	for _, hit := range hits {
-		length := hit.Aepos - hit.Abpos
-		if length < 0 {
-			return 0, bio.NewError("Length < 0", 0, hit)
+// DPHits is a collection of alignment results.
+type DPHits []DPHit
+
+// Returns the sums of alignment lengths.
+func (self DPHits) Sum() (a, b int, e error) {
+	for _, hit := range self {
+		la, lb := hit.Aepos-hit.Abpos, hit.Bepos-hit.Bbpos
+		if la < 0 || lb < 0 {
+			return 0, 0, bio.NewError("Area < 0", 0, hit)
 		}
-		sum += length
+		a, b = a+la, b+lb
 	}
-	return sum, nil
+	return
 }
