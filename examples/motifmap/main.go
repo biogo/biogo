@@ -114,7 +114,7 @@ func main() {
 				}
 				fmt.Printf("%s\t%d\t%d\t%0.f\t%0.f\t%f\t%f\n",
 					regionLine.Location, regionLine.Start, regionLine.End,
-					n, mean, math.Sqrt(sumOfSquares)/(n-1), sumOfDiffs/n)
+					n, mean, math.Sqrt(sumOfSquares/(n-1)), sumOfDiffs/n)
 			} else {
 				fmt.Fprintf(os.Stderr, "Line: %d: Feature has end < start: %v\n", line, regionLine)
 			}
