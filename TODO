@@ -2,35 +2,18 @@ Components		TODO
 
 align
 	nw
-			tests
 			docs
 	sw
-			tests
 			docs
 	pals
-			tests
-			docs
 		dp
-			tests
-			docs
 		filter
-			tests
-			docs
-alignment
-			tests
-			docs
-bigarray
-			tests
 bio
 			tests
 concurrent
 			tests
 feat
 			tests
-featgroup
-			implementation - various details
-			tests
-			docs
 future
 			tests
 graphics
@@ -42,11 +25,8 @@ graphics
 			docs
 index
 	kmerindex
-			tests
 interval
 			implement GobDecode properly
-			tests
-			docs
 io
 	alignio
 			tests
@@ -54,7 +34,6 @@ io
 	lexbytes
 			tests
 		fastareader
-			tests
 	lexstrings
 			tests
 	featio
@@ -64,9 +43,7 @@ io
 			tests
 	seqio
 		fasta
-			tests
 		fastq
-			tests
 	treeio
 		newick
 			implement
@@ -76,8 +53,6 @@ matrix
 			tests
 			docs
 morass
-			tests
-			docs
 nmf
 			test
 			docs 
