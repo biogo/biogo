@@ -27,11 +27,15 @@ const (
 
 var buffer = make([]byte, bufferLen)
 
+// ReadSeekStater is the interface that add the Stat method to a ReadSeeker.
 type ReadSeekStater interface {
 	io.ReadSeeker
 	Stat() (os.FileInfo, error)
 }
 
+// Hash returns the md5 sum of file ReadSeekStater and any error. The ReadSeekStater is
+// Seek'd to the origin before and after the hash to ensure that the full file is summed and the
+// file is ready for other reads.
 func Hash(file ReadSeekStater) (sum []byte, err error) {
 	var fi os.FileInfo
 	if fi, err = file.Stat(); err != nil || fi.IsDir() {

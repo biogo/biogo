@@ -17,11 +17,23 @@ package util
 
 import (
 	check "launchpad.net/gocheck"
-	"testing"
 )
 
-func Test(t *testing.T) { check.TestingT(t) }
+// Helpers
+func f1(c *check.C) {
+	c.Check(Name(0), check.Equals, &Caller{Package: "github.com/kortschak/BioGo/util", Function: "f1"})
+	c.Check(Name(1), check.Equals, &Caller{Package: "github.com/kortschak/BioGo/util.(*S)", Function: "TestCaller"})
+	f2(c)
+}
 
-type S struct{}
+func f2(c *check.C) {
+	c.Check(Name(0), check.Equals, &Caller{Package: "github.com/kortschak/BioGo/util", Function: "f2"})
+	c.Check(Name(1), check.Equals, &Caller{Package: "github.com/kortschak/BioGo/util", Function: "f1"})
+	c.Check(Name(2), check.Equals, &Caller{Package: "github.com/kortschak/BioGo/util.(*S)", Function: "TestCaller"})
+}
 
-var _ = check.Suite(&S{})
+// Tests
+func (s *S) TestCaller(c *check.C) {
+	c.Check(Name(0), check.Equals, &Caller{Package: "github.com/kortschak/BioGo/util.(*S)", Function: "TestCaller"})
+	f1(c)
+}

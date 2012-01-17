@@ -15,22 +15,15 @@ package util
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-// Return the exp'th power of base.
-func Pow(base int, exp byte) (r int) {
-	r = 1
-	for exp > 0 {
-		if exp&1 != 0 {
-			r *= base
-		}
-		exp >>= 1
-		base *= base
-	}
-
-	return
-}
-
 // Return a deBruijn sequence for a n-words with k letters.
 func DeBruijn(k, n byte) (s []byte) {
+	switch k {
+	case 0:
+		return []byte{}
+	case 1:
+		return make([]byte, n)
+	}
+
 	a := make([]byte, k*n)
 	s = make([]byte, 0, Pow(int(k), n))
 

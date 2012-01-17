@@ -28,8 +28,8 @@ func Name(skip int) *Caller {
 	if pc, _, _, ok := runtime.Caller(skip + 1); ok {
 		caller := strings.Split(runtime.FuncForPC(pc).Name(), ".")
 		return &Caller{
-			Package:  caller[0],
-			Function: caller[1],
+			Package:  strings.Join(caller[0:len(caller)-1],"."),
+			Function: caller[len(caller)-1],
 		}
 	}
 	return nil

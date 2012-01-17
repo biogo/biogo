@@ -16,12 +16,38 @@ package util
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import (
+	"bytes"
+	"fmt"
 	check "launchpad.net/gocheck"
-	"testing"
+	"os"
+	"os/exec"
 )
 
-func Test(t *testing.T) { check.TestingT(t) }
+// Tests
+func (s *S) TestHash(c *check.C) {
+	var (
+		err error
+		f   *os.File
+		md5 []byte
+	)
 
-type S struct{}
+	// FIXME: This will not work with MacOS.
+	if _, err = exec.LookPath("md5sum"); err != nil {
+		c.Skip(err.Error())
+	}
+	md5sum := exec.Command("md5sum", "./files_test.go")
+	b := &bytes.Buffer{}
+	md5sum.Stdout = b
+	if err = md5sum.Run(); err != nil {
+		c.Fatal(err)
+	}
+	if f, err = os.Open("./files_test.go"); err != nil {
+		c.Fatalf("%v %s", md5sum, err)
+	}
+	if md5, err = Hash(f); err != nil {
+		c.Fatal(err)
+	}
+	md5string := fmt.Sprintf("%x .*\n", md5)
 
-var _ = check.Suite(&S{})
+	c.Check(string(b.Bytes()), check.Matches, md5string)
+}
