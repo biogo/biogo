@@ -213,7 +213,7 @@ func (self *Index) StringKmerIndex() (map[string][]int, bool) {
 
 	for i := range self.finger {
 		if p, _ := self.GetPositionsKmer(Kmer(i)); len(p) > 0 {
-			m[self.StringOf(Kmer(i))] = p
+			m[self.Stringify(Kmer(i))] = p
 		}
 	}
 
@@ -294,8 +294,8 @@ func (self *Index) PosAt(p int) int {
 }
 
 // Convert a Kmer into a string of bases
-func (self *Index) StringOf(kmer Kmer) string {
-	return StringOf(self.k, kmer)
+func (self *Index) Stringify(kmer Kmer) string {
+	return Stringify(self.k, kmer)
 }
 
 // Convert a string of bases into a len k Kmer, returns an error if string length does not match k
@@ -331,7 +331,7 @@ func GCof(k int, kmer Kmer) float64 {
 }
 
 // Convert a Kmer into a string of bases
-func StringOf(k int, kmer Kmer) string {
+func Stringify(k int, kmer Kmer) string {
 	kmertext := make([]byte, k)
 
 	for i := k - 1; i >= 0; i, kmer = i-1, kmer>>2 {

@@ -69,11 +69,11 @@ func (s *S) TestKmerFrequencies(c *check.C) {
 				hashFreqs[string(s.Seq.Seq[i:i+k])]++
 			}
 			for key := range freqs {
-				if freqs[key] != hashFreqs[i.StringOf(key)] {
+				if freqs[key] != hashFreqs[i.Stringify(key)] {
 					c.Logf("seq %s\n", s.Seq)
-					c.Logf("key %x, string of %q\n", key, i.StringOf(key))
+					c.Logf("key %x, string of %q\n", key, i.Stringify(key))
 				}
-				c.Check(freqs[key], check.Equals, hashFreqs[i.StringOf(key)])
+				c.Check(freqs[key], check.Equals, hashFreqs[i.Stringify(key)])
 			}
 			for key := range hashFreqs {
 				if keyKmer, err := i.KmerOf(key); err != nil {
@@ -81,7 +81,7 @@ func (s *S) TestKmerFrequencies(c *check.C) {
 				} else {
 					if freqs[keyKmer] != hashFreqs[key] {
 						c.Logf("seq %s\n", s.Seq)
-						c.Logf("keyKmer %x, string of %q, key %q\n", keyKmer, i.StringOf(keyKmer), key)
+						c.Logf("keyKmer %x, string of %q, key %q\n", keyKmer, i.Stringify(keyKmer), key)
 					}
 					c.Check(freqs[keyKmer], check.Equals, hashFreqs[key])
 				}
@@ -103,7 +103,7 @@ func (s *S) TestKmerPositions(c *check.C) {
 			pos, ok := i.KmerIndex()
 			c.Check(ok, check.Equals, true)
 			for p := range pos {
-				c.Check(pos[p], check.Equals, hashPos[i.StringOf(p)])
+				c.Check(pos[p], check.Equals, hashPos[i.Stringify(p)])
 			}
 		}
 	}
@@ -132,7 +132,7 @@ func (s *S) TestKmerKmerUtilities(c *check.C) {
 	for k := MinKmerLen; k <= 8; k++ { // again not testing all exhaustively
 		for kmer := Kmer(0); uint(kmer) <= util.Pow4(k)-1; kmer++ {
 			// Interconversion between string and Kmer
-			if rk, err := KmerOf(k, StringOf(k, kmer)); err != nil {
+			if rk, err := KmerOf(k, Stringify(k, kmer)); err != nil {
 				c.Fatalf("Failed Kmer conversion: %v", err)
 			} else {
 				c.Check(rk, check.Equals, kmer)
@@ -141,12 +141,12 @@ func (s *S) TestKmerKmerUtilities(c *check.C) {
 			// Complementation
 			dc := ComplementOf(k, ComplementOf(k, kmer))
 			if dc != kmer {
-				c.Logf("kmer: %s\ndouble complement: %s\n", StringOf(k, kmer), StringOf(k, dc))
+				c.Logf("kmer: %s\ndouble complement: %s\n", Stringify(k, kmer), Stringify(k, dc))
 			}
 			c.Check(dc, check.Equals, kmer)
 
 			// GC content
-			ks := StringOf(k, kmer)
+			ks := Stringify(k, kmer)
 			gc := 0
 			for _, b := range ks {
 				if b == 'G' || b == 'C' {
