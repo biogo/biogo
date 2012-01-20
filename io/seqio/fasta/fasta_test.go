@@ -107,7 +107,7 @@ func (s *S) TestWriteFasta(c *check.C) {
 	expectSize := 4649
 	var total int
 	if w, err := NewWriterName(o+"/fa", 60); err != nil {
-		c.Fatalf("Failed to open %q for write: %s", o, err)
+		c.Fatalf("Failed to open %q for write: %s", o+"/fa", err)
 	} else {
 		s := &seq.Seq{}
 
@@ -115,7 +115,7 @@ func (s *S) TestWriteFasta(c *check.C) {
 			s.ID = expectN[i]
 			s.Seq = expectS[i]
 			if n, err := w.Write(s); err != nil {
-				c.Fatalf("Failed to write %q: %s", o, err)
+				c.Fatalf("Failed to write %q: %s", o+"/fa", err)
 			} else {
 				total += n
 			}

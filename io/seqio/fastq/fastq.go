@@ -243,6 +243,11 @@ func (self *Writer) encodeQuality(q []seq.Qsanger) (qe []byte) {
 	return qe
 }
 
+// Flush the writer.
+func (self *Writer) Flush() error {
+	return self.w.Flush()
+}
+
 // Close the writer, flushing any unwritten sequence.
 func (self *Writer) Close() (err error) {
 	if err = self.w.Flush(); err != nil {

@@ -1,5 +1,6 @@
 // Package to read and write BED file formats
 package bed
+
 // Copyright ©2011 Dan Kortschak <dan.kortschak@adelaide.edu.au>
 //
 // This program is free software: you can redistribute it and/or modify
@@ -160,17 +161,21 @@ func (self *Reader) Close() (err error) {
 
 // BED format writer type.
 type Writer struct {
-	f       io.WriteCloser
-	w       *bufio.Writer
-	BedType int
+	f           io.WriteCloser
+	w           *bufio.Writer
+	BedType     int
+	FloatFormat byte
+	Precision   int
 }
 
 // Returns a new BED format writer using f.
 func NewWriter(f io.WriteCloser, b int) *Writer {
 	return &Writer{
-		f:       f,
-		w:       bufio.NewWriter(f),
-		BedType: b,
+		f:           f,
+		w:           bufio.NewWriter(f),
+		BedType:     b,
+		FloatFormat: bio.FloatFormat,
+		Precision:   bio.Precision,
 	}
 }
 
@@ -186,26 +191,31 @@ func NewWriterName(name string, b int) (w *Writer, err error) {
 
 // Write a single feature and return the number of bytes written and any error.
 func (self *Writer) Write(f *feat.Feature) (n int, err error) {
-	return self.w.WriteString(self.String(f) + "\n")
+	return self.w.WriteString(self.Stringify(f) + "\n")
 }
 
 // Convert a feature to a string.
-func (self *Writer) String(f *feat.Feature) (line string) {
-	line = string(f.Location) + "\t" + string(f.Start) + "\t" + string(f.End)
-	if self.BedType > 3 {
-		line += string(f.ID) + "\t"
-	}
-	if self.BedType > 4 {
-		line += strconv.FormatFloat(f.Score, 'g', -1, 64) + "\t"
-	}
-	if self.BedType > 5 {
-		line += StrandToChar[f.Strand] + "\t"
-	}
-	if self.BedType > 6 {
-		line += strings.Repeat("\t", 6)
+func (self *Writer) Stringify(f *feat.Feature) string {
+	fields := make([]string, self.BedType)
+	copy(fields, []string{
+		string(f.Location),
+		strconv.Itoa(f.Start),
+		strconv.Itoa(f.End),
+	})
+	switch self.BedType {
+	case 7, 8, 9, 10, 11, 12: // >BED6 not specifically supported
+		fallthrough
+	case 6:
+		fields[strandField] = StrandToChar[f.Strand]
+		fallthrough
+	case 5:
+		fields[scoreField] = strconv.FormatFloat(f.Score, self.FloatFormat, self.Precision, 64)
+		fallthrough
+	case 4:
+		fields[nameField] = f.ID
 	}
 
-	return
+	return strings.Join(fields, "\t")
 }
 
 // Close the writer, flushing any unwritten data.

@@ -1,0 +1,7 @@
+SEQ1	EMBL	atg	103	105	.	+	0
+SEQ1	EMBL	exon	103	172	.	+	0
+SEQ1	EMBL	splice5	172	173	.	+	.
+SEQ1	netgene	splice5	172	173	0.94	+	.
+SEQ1	genie	sp5-20	163	182	2.3	+	.
+SEQ1	genie	sp5-10	168	177	2.1	+	.
+SEQ2	grail	ATG	17	19	2.1	-	0

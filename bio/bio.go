@@ -15,7 +15,7 @@ package bio
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 const (
-	Undefined = iota - 1
+	Undefined Moltype = iota - 1
 	DNA
 	RNA
 	Protein
@@ -26,15 +26,15 @@ var (
 	FloatFormat byte = 'f'
 )
 
-type Moltype byte
+type Moltype int8
 
 var moltypesToString = [...]string{
-	"dna", "rna", "protein",
+	"DNA", "RNA", "Protein",
 }
 
 func (self Moltype) String() string {
 	if self < 0 {
-		return "undefined"
+		return "Undefined"
 	}
 	return moltypesToString[self]
 }

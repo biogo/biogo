@@ -1,5 +1,6 @@
 // Package to read and write GFF format files
 package gff
+
 // Copyright ©2011 Dan Kortschak <dan.kortschak@adelaide.edu.au>
 //
 // This program is free software: you can redistribute it and/or modify
@@ -24,6 +25,7 @@ import (
 	"github.com/kortschak/BioGo/io/seqio/fasta"
 	"github.com/kortschak/BioGo/seq"
 	"io"
+	"math"
 	"os"
 	"strconv"
 	"strings"
@@ -31,16 +33,16 @@ import (
 )
 
 const (
-	seqName = iota
-	source
-	feature
-	start
-	end
-	score
-	strand
-	frame
-	attributes
-	comments
+	nameField = iota
+	sourceField
+	featureField
+	startField
+	endField
+	scoreField
+	strandField
+	frameField
+	attributeField
+	commentField
 )
 
 var (
@@ -56,9 +58,9 @@ type Reader struct {
 	r             *bufio.Reader
 	Version       int
 	OneBased      bool
-	SourceVersion []byte
+	SourceVersion string
 	Date          time.Time
-	TimeFormat    string // required for parsing date fields
+	TimeFormat    string // Required for parsing date fields
 	Type          bio.Moltype
 }
 
@@ -88,21 +90,28 @@ func (self *Reader) commentMetaline(line string) (f *feat.Feature, err error) {
 		if self.Version, err = strconv.Atoi(fields[1]); err != nil {
 			self.Version = DefaultVersion
 		}
+		return self.Read()
 	case "source-version":
 		if len(fields) > 1 {
-			self.SourceVersion = []byte(strings.Join(fields[1:], " "))
+			self.SourceVersion = strings.Join(fields[1:], " ")
+			return self.Read()
 		} else {
 			return nil, bio.NewError("Incomplete source-version metaline", 0, fields)
 		}
 	case "date":
 		if len(fields) > 1 {
 			self.Date, err = time.Parse(self.TimeFormat, strings.Join(fields[1:], " "))
+			return self.Read()
 		} else {
 			return nil, bio.NewError("Incomplete date metaline", 0, fields)
 		}
 	case "Type":
 		if len(fields) > 1 {
-			self.Type = bio.ParseMoltype[fields[1]] // self.Type should be a map[string]byte to allow for extend type defs
+			ok := false
+			if self.Type, ok = bio.ParseMoltype[fields[1]]; !ok {
+				self.Type = bio.Undefined
+			}
+			return self.Read()
 		} else {
 			return nil, bio.NewError("Incomplete Type metaline", 0, fields)
 		}
@@ -111,6 +120,10 @@ func (self *Reader) commentMetaline(line string) (f *feat.Feature, err error) {
 			var start, end int
 			if start, err = strconv.Atoi(fields[2]); err != nil {
 				return nil, err
+			} else {
+				if self.OneBased {
+					start = bio.OneToZero(start)
+				}
 			}
 			if end, err = strconv.Atoi(fields[3]); err != nil {
 				return nil, err
@@ -204,50 +217,52 @@ func (self *Reader) Read() (f *feat.Feature, err error) {
 		}
 	}
 
-	if s, ok = charToStrand[elems[strand]]; !ok {
+	if s, ok = charToStrand[elems[strandField]]; !ok {
 		s = 0
 	}
 
-	startPos, se := strconv.Atoi(elems[start])
+	startPos, se := strconv.Atoi(elems[startField])
 	if se != nil {
 		startPos = 0
-	}
-	if self.OneBased && startPos > 0 {
-		startPos--
+	} else {
+		if self.OneBased {
+			startPos = bio.OneToZero(startPos)
+		}
 	}
 
-	endPos, se := strconv.Atoi(elems[end])
+	endPos, se := strconv.Atoi(elems[endField])
 	if se != nil {
 		endPos = 0
 	}
 
-	fr, se := strconv.Atoi(elems[frame])
+	fr, se := strconv.Atoi(elems[frameField])
 	if se != nil {
 		fr = -1
 	}
 
-	score, se := strconv.ParseFloat(elems[score], 64)
+	score, se := strconv.ParseFloat(elems[scoreField], 64)
 	if se != nil {
-		score = 0
+		score = math.NaN()
 	}
 
 	f = &feat.Feature{
-		Location: elems[seqName],
-		Source:   elems[source],
+		ID:       elems[nameField] + ":" + strconv.Itoa(startPos) + ".." + strconv.Itoa(endPos),
+		Location: elems[nameField],
+		Source:   elems[sourceField],
 		Start:    startPos,
 		End:      endPos,
-		Feature:  elems[feature],
+		Feature:  elems[featureField],
 		Score:    score,
 		Frame:    int8(fr),
 		Strand:   s,
 		Moltype:  self.Type, // currently we default to bio.DNA
 	}
 
-	if len(elems) > attributes {
-		f.Attributes = elems[attributes]
+	if len(elems) > attributeField {
+		f.Attributes = elems[attributeField]
 	}
-	if len(elems) > comments {
-		f.Comments = elems[comments]
+	if len(elems) > commentField {
+		f.Comments = elems[commentField]
 	}
 
 	return
@@ -281,11 +296,11 @@ type Writer struct {
 
 // Returns a new GFF format writer using f.
 // When header is true, a version header will be written to the GFF.
-func NewWriter(f io.WriteCloser, v, width int, header bool) (w *Writer) {
+func NewWriter(f io.WriteCloser, version, width int, header bool) (w *Writer) {
 	w = &Writer{
 		f:           f,
 		w:           bufio.NewWriter(f),
-		Version:     v,
+		Version:     version,
 		OneBased:    DefaultToOneBased,
 		FloatFormat: bio.FloatFormat,
 		Precision:   bio.Precision,
@@ -293,7 +308,7 @@ func NewWriter(f io.WriteCloser, v, width int, header bool) (w *Writer) {
 	}
 
 	if header {
-		w.WriteMetaData(fmt.Sprintf("gff-version %d", v))
+		w.WriteMetaData(fmt.Sprintf("gff-version %d", version))
 	}
 
 	return
@@ -302,49 +317,61 @@ func NewWriter(f io.WriteCloser, v, width int, header bool) (w *Writer) {
 // Returns a new GFF format writer using a filename, truncating any existing file.
 // If appending is required use NewWriter and os.OpenFile.
 // When header is true, a version header will be written to the GFF.
-func NewWriterName(name string, v, width int, header bool) (w *Writer, err error) {
+func NewWriterName(name string, version, width int, header bool) (w *Writer, err error) {
 	var f *os.File
 	if f, err = os.Create(name); err != nil {
 		return
 	}
-	return NewWriter(f, v, width, header), nil
+	return NewWriter(f, version, width, header), nil
 }
 
 // Write a single feature and return the number of bytes written and any error.
 func (self *Writer) Write(f *feat.Feature) (n int, err error) {
-	return self.w.WriteString(self.String(f) + "\n")
+	return self.w.WriteString(self.Stringify(f) + "\n")
 }
 
 // Convert a feature to a string.
-func (self *Writer) String(f *feat.Feature) (line string) {
-	start := f.Start
-	if self.OneBased && start >= 0 {
-		start++
+func (self *Writer) Stringify(f *feat.Feature) string {
+	fields := make([]string, 8, 10)
+
+	var start int
+	if self.OneBased {
+		start = bio.ZeroToOne(f.Start)
 	}
-	line = string(f.Location) + "\t" +
-		string(f.Source) + "\t" +
-		string(f.Feature) + "\t" +
-		strconv.Itoa(start) + "\t" +
-		strconv.Itoa(f.End) + "\t" +
-		strconv.FormatFloat(f.Score, self.FloatFormat, self.Precision, 64) + "\t"
+
+	copy(fields, []string{
+		f.Location,
+		f.Source,
+		f.Feature,
+		strconv.Itoa(start),
+		strconv.Itoa(f.End),
+	})
+
+	if !math.IsNaN(f.Score) {
+		fields[scoreField] = strconv.FormatFloat(f.Score, self.FloatFormat, self.Precision, 64)
+	} else {
+		fields[scoreField] = "."
+	}
 
 	if f.Moltype == bio.DNA {
-		line += strandToChar[f.Strand] + "\t"
+		fields[strandField] = strandToChar[f.Strand]
 	} else {
-		line += ".\t"
+		fields[strandField] = "."
 	}
 
 	if frame := strconv.Itoa(int(f.Frame)); (f.Moltype == bio.DNA || self.Version < 2) && (frame == "0" || frame == "1" || frame == "2") {
-		line += frame + "\t"
+		fields[frameField] = frame
 	} else {
-		line += ".\t"
+		fields[frameField] = "."
 	}
-	line += string(f.Attributes)
-	if len(f.Comments) > 0 {
-		line += " #" + string(f.Comments)
+	if f.Attributes != "" || f.Comments != "" {
+		fields = append(fields, f.Attributes)
+	}
+	if f.Comments != "" {
+		fields = append(fields, "#" + f.Comments)
 	}
 
-	return
+	return strings.Join(fields,"\t")
 }
 
 // Write meta data to a GFF file.
@@ -356,7 +383,20 @@ func (self *Writer) WriteMetaData(d interface{}) (n int, err error) {
 		sw := fasta.NewWriter(self.f, self.Width)
 		sw.IDPrefix = fmt.Sprintf("##%s ", d.(*seq.Seq).Moltype)
 		sw.SeqPrefix = "##"
-		n, err = sw.Write(d.(*seq.Seq))
+		if n, err = sw.Write(d.(*seq.Seq)); err != nil {
+			return
+		}
+		if err = sw.Flush(); err != nil {
+			return
+		}
+		var m int
+		m, err = self.w.WriteString("##end-" + d.(*seq.Seq).Moltype.String() + "\n")
+		n += m
+		if err != nil {
+			return
+		}
+		err = self.w.Flush()
+		return
 	case *feat.Feature:
 		start := d.(*feat.Feature).Start
 		if self.OneBased && start >= 0 {
@@ -365,6 +405,12 @@ func (self *Writer) WriteMetaData(d interface{}) (n int, err error) {
 		n, err = self.w.WriteString("##sequence-region " + string(d.(*feat.Feature).ID) + " " +
 			strconv.Itoa(start) + " " +
 			strconv.Itoa(d.(*feat.Feature).End) + "\n")
+	default:
+		n, err = 0, bio.NewError("Unknown meta data type", 0, d)
+	}
+
+	if err == nil {
+		err = self.w.Flush()
 	}
 
 	return
@@ -375,6 +421,11 @@ func (self *Writer) WriteComment(c string) (n int, err error) {
 	n, err = self.w.WriteString("# " + c + "\n")
 
 	return
+}
+
+// Flush the writer.
+func (self *Writer) Flush() error {
+	return self.w.Flush()
 }
 
 // Close the writer, flushing any unwritten data.

@@ -172,7 +172,7 @@ func (s *S) TestWriteFastq(c *check.C) {
 	var total int
 	for j := 0; j < 2; j++ {
 		if w, err := NewWriterName(o + "/fq"); err != nil {
-			c.Fatalf("Failed to open %q for write: %s", o, err)
+			c.Fatalf("Failed to open %q for write: %s", o+"/fq", err)
 		} else {
 			w.QID = j == 0
 			s := &seq.Seq{Quality: &seq.Quality{}}

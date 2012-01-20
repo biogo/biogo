@@ -10,6 +10,7 @@ align
 		filter
 bio
 			tests
+			split error out to errors
 concurrent
 			tests
 feat
@@ -28,19 +29,17 @@ index
 interval
 			implement GobDecode properly
 io
+			add line diagnostics to readers as in bed reader (int64 rather than int)
+			remove bufio wrapping by all writers/reader
 	alignio
-			tests
-			docs
 	lexbytes
-			tests
+			tests - essentially tested by the fastareader example
 		fastareader
 	lexstrings
 			tests
 	featio
 		bed
-			tests
 		gff
-			tests
 	seqio
 		fasta
 		fastq
