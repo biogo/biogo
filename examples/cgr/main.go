@@ -30,14 +30,15 @@ func main() {
 
 	kmerindex.MinKmerLen = *k
 
-	if *start == 0 {
-		fmt.Fprintln(os.Stderr, "Must specify s > 0")
-		flag.Usage()
-	}
-
 	if *help {
 		flag.Usage()
 		os.Exit(1)
+	}
+
+	if *start == 0 {
+		fmt.Fprintln(os.Stderr, "Must specify s > 0")
+		flag.Usage()
+		os.Exit(0)
 	}
 
 	if *inName == "" {
@@ -59,7 +60,7 @@ func main() {
 			fmt.Println(err)
 			os.Exit(0)
 		} else {
-			base := &color.HSVAColor{0, 1, 1, 1}
+			base := color.HSVAColor{0, 1, 1, 1}
 			cgr := kmercolor.NewCGR(index, base)
 			fmt.Fprintf(os.Stderr, "Painting %s\n", sequence.ID)
 			cgr.Paint(kmercolor.V|kmercolor.H, *desch, *start, *chunk)
