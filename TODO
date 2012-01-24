@@ -9,8 +9,7 @@ align
 		dp
 		filter
 bio
-			tests
-			split error out to errors
+			LATER? split error out to errors
 concurrent
 			tests
 feat
@@ -19,24 +18,21 @@ future
 			tests
 graphics
 	color
-			tests
-			docs
 	kmercolor
-			tests
-			docs
+			LATER: tests
 index
 	kmerindex
 interval
 			implement GobDecode properly
 io
 			add line diagnostics to readers as in bed reader (int64 rather than int)
-			remove bufio wrapping by all writers/reader
+			alter bufio wrapping by all writers/reader to similar to compress/flate/inflate.go?#L685
 	alignio
 	lexbytes
-			tests - essentially tested by the fastareader example
+			LATER: tests - essentially tested by the fastareader example
 		fastareader
 	lexstrings
-			tests
+			LATER: tests
 	featio
 		bed
 		gff
