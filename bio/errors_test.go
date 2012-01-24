@@ -15,4 +15,30 @@ package bio
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-const Version = "alpha"
+import (
+	"fmt"
+	check "launchpad.net/gocheck"
+)
+
+// Helpers
+func f(i int) error {
+	if i == 0 {
+		return NewError("message", 0, nil)
+	}
+
+	i--
+	return f(i)
+}
+
+// Tests
+func (s *S) TestCaller(c *check.C) {
+	err := NewError("message", 0, "item")
+	c.Check(err.Error(), check.Equals, "message")
+	fn, ln := err.FileLine()
+	c.Check(fn, check.Matches, "/.*/BioGo/bio/errors_test.go")
+	c.Check(ln, check.Equals, 35)
+	c.Check(err.Package(), check.Equals, "github.com/kortschak/BioGo/bio.(*S)")
+	c.Check(err.Function(), check.Equals, "TestCaller")
+	err = f(5).(*Error)
+	fmt.Println(err.Tracef(10))
+}

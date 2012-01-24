@@ -1,4 +1,5 @@
 package bio
+
 // Copyright ©2011 Dan Kortschak <dan.kortschak@adelaide.edu.au>
 //
 // This program is free software: you can redistribute it and/or modify
@@ -15,10 +16,14 @@ package bio
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import (
+	"bytes"
+	"fmt"
 	"runtime"
 	"strings"
-	"fmt"
 )
+
+// Trace depth
+var TraceDepth = 10
 
 // Base Error handling for bio packages.
 type Error struct {
@@ -28,24 +33,30 @@ type Error struct {
 	Item    interface{}
 }
 
+// Create a new Error with message, storing information about the caller stack frame skip levels above the caller and any item that may be needed for handling the error.
 func NewError(message string, skip int, item interface{}) (err *Error) {
 	err = &Error{
-		pc:      make([]uintptr, 1),
+		pc:      make([]uintptr, TraceDepth),
 		message: message,
 		Item:    item,
 	}
 
-	if n := runtime.Callers(skip+1, err.pc); n > 0 {
+	var n int
+	if n = runtime.Callers(skip+2, err.pc); n > 0 {
 		err.Func = runtime.FuncForPC(err.pc[0])
 	}
+	err.pc = err.pc[:n]
 
 	return
 }
 
+// Return the file name and line number of caller stored at creation of the Error.
 func (self *Error) FileLine() (file string, line int) {
+
 	return self.Func.FileLine((*self).pc[0])
 }
 
+// Return a slice contining the stack trace stored at creation of the Error.
 func (self *Error) Trace() (stack []*runtime.Func) {
 	stack = make([]*runtime.Func, len(self.pc))
 	for i, pc := range self.pc {
@@ -55,24 +66,39 @@ func (self *Error) Trace() (stack []*runtime.Func) {
 	return
 }
 
+// Return the package name of the stored caller.
 func (self *Error) Package() string {
-	return strings.Split(self.Func.Name(), ".")[0]
+	caller := strings.Split(self.Func.Name(), ".")
+	return strings.Join(caller[0:len(caller)-1], ".")
+}
+
+// Return the function name of the stored caller.
+func (self *Error) Function() string {
+	caller := strings.Split(self.Func.Name(), ".")
+	return caller[len(caller)-1]
 }
 
 // A formatted stack trace of the error extending depth frames into the stack, 0 indicates no limit. 
-func (self *Error) Tracef(depth int) (trace string) {
-	trace = "Trace: " + self.message + ":\n"
+func (self *Error) Tracef(depth int) string {
+	var last, name string
+	b := &bytes.Buffer{}
+	fmt.Fprintf(b, "Trace: %s:\n", self.message)
 	for i, frame := range self.Trace() {
 		if depth > 0 && i >= depth {
 			break
 		}
 		file, line := frame.FileLine(self.pc[i])
-		trace += fmt.Sprintf(" %s%s:%s %d\n", strings.Repeat(" ", i), self.Func.Name(), file, line)
+		if name = frame.Name(); name != last {
+			fmt.Fprintf(b, "\n %s:\n", frame.Name())
+		}
+		last = name
+		fmt.Fprintf(b, "\t%s#L=%d\n", file, line)
 	}
 
-	return
+	return string(b.Bytes())
 }
 
+// Satisfy the error interface.
 func (self *Error) Error() string {
 	return self.message
 }

@@ -1,4 +1,5 @@
 package bio
+
 // Copyright ©2011 Dan Kortschak <dan.kortschak@adelaide.edu.au>
 //
 // This program is free software: you can redistribute it and/or modify
@@ -15,8 +16,12 @@ package bio
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import (
+	check "launchpad.net/gocheck"
 	"testing"
 )
 
-func TestBio(t *testing.T) {
-}
+func Test(t *testing.T) { check.TestingT(t) }
+
+type S struct{}
+
+var _ = check.Suite(&S{})

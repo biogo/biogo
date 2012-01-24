@@ -15,4 +15,8 @@ package bio
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-const Version = "alpha"
+// Output defaults.
+var (
+	Precision        = 4   // BioGo global precision value.
+	FloatFormat byte = 'f' // BioGo global float format.
+)

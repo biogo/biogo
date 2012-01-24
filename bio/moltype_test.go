@@ -15,4 +15,15 @@ package bio
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-const Version = "alpha"
+import (
+	check "launchpad.net/gocheck"
+)
+
+// Tests
+func (s *S) TestMoltype(c *check.C) {
+	for i, s := range moltypeToString {
+		c.Check(Moltype(i).String(), check.Equals, s)
+		c.Check(ParseMoltype(s), check.Equals, Moltype(i))
+		c.Check(ParseMoltype(s+"salt"), check.Equals, Undefined)
+	}
+}

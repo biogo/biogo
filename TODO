@@ -48,17 +48,17 @@ io
 			implement
 			tests
 matrix
-	sparse
+	sparse*
 			tests
 			docs
 morass
-nmf
+nmf*
 			test
 			docs 
-pwm
+pwm*
 			tests
 			docs
-seq
+seq*
 			tests
 			docs
 tree

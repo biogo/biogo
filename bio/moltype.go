@@ -1,4 +1,5 @@
 package bio
+
 // Copyright ©2011 Dan Kortschak <dan.kortschak@adelaide.edu.au>
 //
 // This program is free software: you can redistribute it and/or modify
@@ -14,9 +15,42 @@ package bio
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import (
-	"testing"
+const (
+	Undefined Moltype = iota - 1
+	DNA
+	RNA
+	Protein
 )
 
-func TestValidate(t *testing.T) {
+var (
+	moltypeToString = [...]string{
+		"DNA", "RNA", "Protein",
+	}
+	stringToMoltype map[string]Moltype = map[string]Moltype{}
+)
+
+func init() {
+	for m, s := range moltypeToString {
+		stringToMoltype[s] = Moltype(m)
+	}
+}
+
+// Moltype represents the molecule type of a source of sequence data.
+type Moltype int8
+
+// Return a string representation of a Moltype.
+func (self Moltype) String() string {
+	if self == Undefined {
+		return "Undefined"
+	}
+	return moltypeToString[self]
+}
+
+// ParseMoltype allows conversion from a string to a Moltype.
+func ParseMoltype(s string) Moltype {
+	if m, ok := stringToMoltype[s]; ok {
+		return m
+	}
+
+	return Undefined
 }

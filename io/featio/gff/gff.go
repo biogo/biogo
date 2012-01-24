@@ -107,10 +107,7 @@ func (self *Reader) commentMetaline(line string) (f *feat.Feature, err error) {
 		}
 	case "Type":
 		if len(fields) > 1 {
-			ok := false
-			if self.Type, ok = bio.ParseMoltype[fields[1]]; !ok {
-				self.Type = bio.Undefined
-			}
+			self.Type = bio.ParseMoltype(fields[1])
 			return self.Read()
 		} else {
 			return nil, bio.NewError("Incomplete Type metaline", 0, fields)
@@ -183,7 +180,7 @@ func (self *Reader) metaSequence(moltype, id string) (sequence *seq.Seq, err err
 	}
 
 	sequence = seq.New(id, body, nil)
-	sequence.Moltype = bio.ParseMoltype[moltype]
+	sequence.Moltype = bio.ParseMoltype(moltype)
 
 	return
 }

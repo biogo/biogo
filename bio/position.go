@@ -1,4 +1,5 @@
 package bio
+
 // Copyright ©2011 Dan Kortschak <dan.kortschak@adelaide.edu.au>
 //
 // This program is free software: you can redistribute it and/or modify
@@ -13,33 +14,6 @@ package bio
 //
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-const (
-	Undefined Moltype = iota - 1
-	DNA
-	RNA
-	Protein
-)
-
-var (
-	Precision        = 4
-	FloatFormat byte = 'f'
-)
-
-type Moltype int8
-
-var moltypesToString = [...]string{
-	"DNA", "RNA", "Protein",
-}
-
-func (self Moltype) String() string {
-	if self < 0 {
-		return "Undefined"
-	}
-	return moltypesToString[self]
-}
-
-var ParseMoltype map[string]Moltype = map[string]Moltype{"DNA": DNA, "RNA": RNA, "Protein": Protein}
 
 // Convert from 1-based to 0-based indexing
 func OneToZero(pos int) int {
