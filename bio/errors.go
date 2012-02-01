@@ -53,7 +53,7 @@ func NewError(message string, skip int, item interface{}) (err *Error) {
 // Return the file name and line number of caller stored at creation of the Error.
 func (self *Error) FileLine() (file string, line int) {
 
-	return self.Func.FileLine((*self).pc[0])
+	return self.Func.FileLine(self.pc[0])
 }
 
 // Return a slice contining the stack trace stored at creation of the Error.
