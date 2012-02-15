@@ -16,6 +16,7 @@ package gff
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import (
+	"fmt"
 	"github.com/kortschak/BioGo/bio"
 	"github.com/kortschak/BioGo/feat"
 	"github.com/kortschak/BioGo/seq"
@@ -105,7 +106,7 @@ func (s *S) TestReadGFF(c *check.C) {
 			}
 			if len(obtain) == len(expect) {
 				for j := range obtain {
-					c.Check(*obtain[j], check.Equals, expect[j])
+					c.Check(fmt.Sprintf("%#v", *obtain[j]), check.Equals, fmt.Sprintf("%#v", expect[j]))
 				}
 			} else {
 				c.Check(len(obtain), check.Equals, len(expect))

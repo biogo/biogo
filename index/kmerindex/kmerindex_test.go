@@ -35,6 +35,7 @@ var _ = check.Suite(&S{})
 var testLen = 1000
 
 func (s *S) SetUpSuite(c *check.C) {
+	MaxKmerLen = 14
 	s.Seq = &seq.Seq{}
 	s.Seq.Seq = make([]byte, testLen)
 	for i := range s.Seq.Seq {
