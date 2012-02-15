@@ -21,8 +21,8 @@ import (
 	"strings"
 )
 
-// ACGCTGACTTGGTGCACGT dna
-// ACGCTGACTTGGTGCACGT rna
+// ACGCTGACTTGGTGCACGT DNA
+// ACGCTGACTTGGTGCACGT RNA
 //     ^ first invalid RNA position
 func ExampleSeq_New() {
 	d := New("example sequence", []byte("ACGCTGACTTGGTGCACGT"), nil) // Default to bio.DNA
