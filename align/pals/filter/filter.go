@@ -1,5 +1,5 @@
 // Package providing PALS sequence hit filter routines
-// Efficient q-gram filters for finding all 𝛜-matches over a given length
+// Efficient q-gram filters for finding all 𝛜-matches over a given length.
 // Kim R. Rasmussen, Jens Stoye, and Eugene W. Myers (2005)
 package filter
 
