@@ -1,4 +1,5 @@
 package util
+
 // Copyright ©2011 Dan Kortschak <dan.kortschak@adelaide.edu.au>
 //
 // This program is free software: you can redistribute it and/or modify
@@ -15,8 +16,8 @@ package util
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import (
-	"crypto/md5"
 	"github.com/kortschak/BioGo/bio"
+	"hash"
 	"io"
 	"os"
 )
@@ -27,16 +28,11 @@ const (
 
 var buffer = make([]byte, bufferLen)
 
-// ReadSeekStater is the interface that add the Stat method to a ReadSeeker.
-type ReadSeekStater interface {
-	io.ReadSeeker
-	Stat() (os.FileInfo, error)
-}
-
-// Hash returns the md5 sum of file ReadSeekStater and any error. The ReadSeekStater is
+// Hash returns the h hash sum of file ReadSeekStater and any error. The file is
 // Seek'd to the origin before and after the hash to ensure that the full file is summed and the
-// file is ready for other reads.
-func Hash(file ReadSeekStater) (sum []byte, err error) {
+// file is ready for other reads. The hash is not reset on return, so if individual files are to
+// be hashed with the same h, it should be reset.
+func Hash(h hash.Hash, file *os.File) (sum []byte, err error) {
 	var fi os.FileInfo
 	if fi, err = file.Stat(); err != nil || fi.IsDir() {
 		return nil, bio.NewError("Is a directory", 0, file)
@@ -44,10 +40,7 @@ func Hash(file ReadSeekStater) (sum []byte, err error) {
 
 	file.Seek(0, 0)
 
-	var n int
-	h := md5.New()
-
-	for err == nil || err == io.ErrUnexpectedEOF {
+	for n, buffer := 0, make([]byte, bufferLen); err == nil || err == io.ErrUnexpectedEOF; {
 		n, err = io.ReadAtLeast(file, buffer, bufferLen)
 		h.Write(buffer[:n])
 	}

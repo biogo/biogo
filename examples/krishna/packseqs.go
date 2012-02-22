@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/md5"
 	"fmt"
 	"github.com/kortschak/BioGo/align/pals"
 	"github.com/kortschak/BioGo/io/seqio/fasta"
@@ -38,8 +39,8 @@ func packSequence(fileName string) *seq.Seq {
 	packer := pals.NewPacker(name)
 
 	if file, err := os.Open(fileName); err == nil {
-		md5, _ := util.Hash(file)
-		log.Printf("Reading %s: %s", fileName, fmt.Sprintf("%x", md5))
+		md5hash, _ := util.Hash(md5.New(), file)
+		log.Printf("Reading %s: %s", fileName, fmt.Sprintf("%x", md5hash))
 
 		seqFile := fasta.NewReader(file)
 

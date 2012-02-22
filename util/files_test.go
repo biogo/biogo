@@ -17,6 +17,7 @@ package util
 
 import (
 	"bytes"
+	"crypto/md5"
 	"fmt"
 	check "launchpad.net/gocheck"
 	"os"
@@ -26,9 +27,9 @@ import (
 // Tests
 func (s *S) TestHash(c *check.C) {
 	var (
-		err error
-		f   *os.File
-		md5 []byte
+		err     error
+		f       *os.File
+		md5hash []byte
 	)
 
 	// FIXME: This will not work with MacOS.
@@ -44,10 +45,10 @@ func (s *S) TestHash(c *check.C) {
 	if f, err = os.Open("./files_test.go"); err != nil {
 		c.Fatalf("%v %s", md5sum, err)
 	}
-	if md5, err = Hash(f); err != nil {
+	if md5hash, err = Hash(md5.New(), f); err != nil {
 		c.Fatal(err)
 	}
-	md5string := fmt.Sprintf("%x .*\n", md5)
+	md5string := fmt.Sprintf("%x .*\n", md5hash)
 
 	c.Check(string(b.Bytes()), check.Matches, md5string)
 }
