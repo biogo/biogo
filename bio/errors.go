@@ -30,15 +30,15 @@ type Error struct {
 	*runtime.Func
 	pc      []uintptr
 	message string
-	Item    interface{}
+	Items   []interface{}
 }
 
 // Create a new Error with message, storing information about the caller stack frame skip levels above the caller and any item that may be needed for handling the error.
-func NewError(message string, skip int, item interface{}) (err *Error) {
+func NewError(message string, skip int, items ...interface{}) (err *Error) {
 	err = &Error{
 		pc:      make([]uintptr, TraceDepth),
 		message: message,
-		Item:    item,
+		Items:   items,
 	}
 
 	var n int
