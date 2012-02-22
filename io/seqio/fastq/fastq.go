@@ -93,10 +93,10 @@ READ:
 				label = line[1:]
 			case !inQual && line[0] == '+':
 				if len(label) == 0 {
-					return nil, bio.NewError("No ID line parsed at +line in fastq format", 0, nil)
+					return nil, bio.NewError("No ID line parsed at +line in fastq format", 0)
 				}
 				if len(line) > 1 && bytes.Compare(label, line[1:]) != 0 {
-					return nil, bio.NewError("Quality ID does not match sequence ID", 0, nil)
+					return nil, bio.NewError("Quality ID does not match sequence ID", 0)
 				}
 				inQual = true
 			case !inQual:
@@ -115,7 +115,7 @@ READ:
 	}
 
 	if len(seqBody) != len(qualBody) {
-		return nil, bio.NewError("Quality length does not match sequence length", 0, nil)
+		return nil, bio.NewError("Quality length does not match sequence length", 0)
 	}
 
 	labelString := string(label)

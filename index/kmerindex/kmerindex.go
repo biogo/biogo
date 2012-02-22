@@ -62,11 +62,11 @@ func init() {
 func New(k int, sequence *seq.Seq) (i *Index, err error) {
 	switch {
 	case k > MaxKmerLen:
-		return nil, bio.NewError("k greater than MaxKmerLen", 0, []int{k, MaxKmerLen})
+		return nil, bio.NewError("k greater than MaxKmerLen", 0, k, MaxKmerLen)
 	case k < MinKmerLen:
-		return nil, bio.NewError("k less than MinKmerLen", 0, []int{k, MinKmerLen})
+		return nil, bio.NewError("k less than MinKmerLen", 0, k, MinKmerLen)
 	case k+1 > sequence.Len():
-		return nil, bio.NewError("sequence shorter than k+1-mer length", 0, []int{k + 1, sequence.Len()})
+		return nil, bio.NewError("sequence shorter than k+1-mer length", 0, k+1, sequence.Len())
 	}
 
 	i = &Index{
@@ -111,7 +111,7 @@ func (self *Index) Build() {
 func (self *Index) GetPositionsString(kmertext string) (positions []int, err error) {
 	switch {
 	case len(kmertext) != self.k:
-		return nil, bio.NewError("Sequence length does not match Kmer length", 0, fmt.Sprintf("%d:%s", self.k, kmertext))
+		return nil, bio.NewError("Sequence length does not match Kmer length", 0, self.k, kmertext)
 	case !self.indexed:
 		return nil, bio.NewError("Index not built: call Build()", 0, self)
 	}
@@ -127,7 +127,7 @@ func (self *Index) GetPositionsString(kmertext string) (positions []int, err err
 // Return an array of positions for the Kmer kmer
 func (self *Index) GetPositionsKmer(kmer Kmer) (positions []int, err error) {
 	if kmer > self.kMask {
-		return nil, bio.NewError("Kmer out of range", 0, []Kmer{kmer, self.kMask})
+		return nil, bio.NewError("Kmer out of range", 0, kmer, self.kMask)
 	}
 
 	i := Kmer(0)
@@ -301,7 +301,7 @@ func (self *Index) Stringify(kmer Kmer) string {
 // Convert a string of bases into a len k Kmer, returns an error if string length does not match k
 func KmerOf(k int, kmertext string) (kmer Kmer, err error) {
 	if len(kmertext) != k {
-		return 0, bio.NewError("Sequence length does not match Kmer length", 0, fmt.Sprintf("%d:%s", k, kmertext))
+		return 0, bio.NewError("Sequence length does not match Kmer length", 0, k, kmertext)
 	}
 
 	for _, v := range kmertext {
@@ -358,7 +358,7 @@ func ComplementOf(k int, kmer Kmer) (c Kmer) {
 // Convert a string of bases into a Kmer, returns an error if string length does not match word length
 func (self *Index) KmerOf(kmertext string) (kmer Kmer, err error) {
 	if len(kmertext) != self.k {
-		return 0, bio.NewError("Sequence length does not match Kmer length", 0, fmt.Sprintf("%d:%s", self.k, kmertext))
+		return 0, bio.NewError("Sequence length does not match Kmer length", 0, self.k, kmertext)
 	}
 
 	for _, v := range kmertext {
@@ -411,7 +411,7 @@ func (self *Index) Check() (ok bool, found int) {
 		}
 	}
 
-	if err:=self.ForEachKmerOf(self.Seq, 0, self.Seq.Len(), f); err != nil {
+	if err := self.ForEachKmerOf(self.Seq, 0, self.Seq.Len(), f); err != nil {
 		ok = false
 	}
 

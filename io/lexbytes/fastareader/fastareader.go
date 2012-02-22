@@ -58,7 +58,7 @@ func (self *Reader) Read() (sequence *seq.Seq, err error) {
 	for {
 		switch item := self.l.NextItem(); {
 		case item.Type == lex.ItemError:
-			return nil, bio.NewError(item.String(), 0, nil)
+			return nil, bio.NewError(item.String(), 0)
 		case item.Type == lex.ItemID && expectedType == item.Type:
 			sequence.ID = string(item.Val)
 			expectedType = lex.ItemSeq
@@ -76,7 +76,7 @@ func (self *Reader) Read() (sequence *seq.Seq, err error) {
 		case item.Type == lex.ItemEnd:
 			return
 		default:
-			return nil, bio.NewError(fmt.Sprintf("Unexpected item type at line %d", self.l.LineNumber()), 0, nil)
+			return nil, bio.NewError(fmt.Sprintf("Unexpected item type at line %d", self.l.LineNumber()), 0, item)
 		}
 	}
 

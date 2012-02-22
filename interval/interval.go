@@ -231,7 +231,7 @@ type Interval struct {
 // Create a new Interval.
 func New(chrom string, start, end, line int, meta interface{}) (*Interval, error) {
 	if end < start {
-		return nil, bio.NewError("Interval end < start", 0, []int{start, end})
+		return nil, bio.NewError("Interval end < start", 0, start, end)
 	}
 	return &Interval{
 		chromosome: chrom,

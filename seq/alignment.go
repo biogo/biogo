@@ -327,7 +327,7 @@ func (self Alignment) Consensus(f ConsFunc, fill byte) (c *Seq, err error) {
 
 func (self Alignment) Column(pos int, fill byte) (c []byte, err error) {
 	if pos < self.Start() || pos >= self.End() {
-		return nil, bio.NewError("Column out of range", 0, nil)
+		return nil, bio.NewError("Column out of range", 0, self.Start(), self.End(), pos)
 	}
 	c = make([]byte, len(self))
 	for i, s := range self {
