@@ -26,19 +26,29 @@ import (
 var TraceDepth = 10
 
 // Base Error handling for bio packages.
-type Error struct {
+type Error interface {
+	FileLine() (file string, line int) // Return the file name and line number of caller stored at creation of the Error.
+	Trace() (stack []*runtime.Func)    // Return a slice contining the stack trace stored at creation of the Error.
+	Package() string                   // Return the package name of the stored caller.
+	Function() string                  // Return the function name of the stored caller.
+	Items() []interface{}              // Return any items retained by caller.
+	Tracef(depth int) string           // A formatted stack trace of the error extending depth frames into the stack, 0 indicates no limit. 
+	error
+}
+
+type errorBase struct {
 	*runtime.Func
 	pc      []uintptr
 	message string
-	Item    interface{}
+	items   []interface{}
 }
 
 // Create a new Error with message, storing information about the caller stack frame skip levels above the caller and any item that may be needed for handling the error.
-func NewError(message string, skip int, item interface{}) (err *Error) {
-	err = &Error{
+func NewError(message string, skip int, items ...interface{}) Error {
+	err := &errorBase{
 		pc:      make([]uintptr, TraceDepth),
 		message: message,
-		Item:    item,
+		items:   items,
 	}
 
 	var n int
@@ -47,17 +57,17 @@ func NewError(message string, skip int, item interface{}) (err *Error) {
 	}
 	err.pc = err.pc[:n]
 
-	return
+	return err
 }
 
 // Return the file name and line number of caller stored at creation of the Error.
-func (self *Error) FileLine() (file string, line int) {
+func (self *errorBase) FileLine() (file string, line int) {
 
 	return self.Func.FileLine(self.pc[0])
 }
 
 // Return a slice contining the stack trace stored at creation of the Error.
-func (self *Error) Trace() (stack []*runtime.Func) {
+func (self *errorBase) Trace() (stack []*runtime.Func) {
 	stack = make([]*runtime.Func, len(self.pc))
 	for i, pc := range self.pc {
 		stack[i] = runtime.FuncForPC(pc)
@@ -67,19 +77,22 @@ func (self *Error) Trace() (stack []*runtime.Func) {
 }
 
 // Return the package name of the stored caller.
-func (self *Error) Package() string {
+func (self *errorBase) Package() string {
 	caller := strings.Split(self.Func.Name(), ".")
 	return strings.Join(caller[0:len(caller)-1], ".")
 }
 
 // Return the function name of the stored caller.
-func (self *Error) Function() string {
+func (self *errorBase) Function() string {
 	caller := strings.Split(self.Func.Name(), ".")
 	return caller[len(caller)-1]
 }
 
+// Return any items retained by caller.
+func (self *errorBase) Items() []interface{} { return self.items }
+
 // A formatted stack trace of the error extending depth frames into the stack, 0 indicates no limit. 
-func (self *Error) Tracef(depth int) string {
+func (self *errorBase) Tracef(depth int) string {
 	var last, name string
 	b := &bytes.Buffer{}
 	fmt.Fprintf(b, "Trace: %s:\n", self.message)
@@ -99,6 +112,6 @@ func (self *Error) Tracef(depth int) string {
 }
 
 // Satisfy the error interface.
-func (self *Error) Error() string {
+func (self *errorBase) Error() string {
 	return self.message
 }

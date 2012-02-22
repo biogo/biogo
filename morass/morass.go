@@ -137,7 +137,7 @@ func (self *Morass) Push(e LessInterface) (err error) {
 	}
 
 	if self.finalised {
-		return bio.NewError("Push on finalised morass", 0, nil)
+		return bio.NewError("Push on finalised morass", 0)
 	}
 
 	if c := cap(self.chunk); len(self.chunk) == c {

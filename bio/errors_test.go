@@ -39,6 +39,6 @@ func (s *S) TestCaller(c *check.C) {
 	c.Check(ln, check.Equals, 35)
 	c.Check(err.Package(), check.Equals, "github.com/kortschak/BioGo/bio.(*S)")
 	c.Check(err.Function(), check.Equals, "TestCaller")
-	err = f(5).(*Error)
+	err = f(5).(Error)
 	fmt.Println(err.Tracef(10))
 }

@@ -84,7 +84,7 @@ func (self *Promise) fulfill(value interface{}) (e error) {
 			m.value = value
 			e = nil
 		} else {
-			e = bio.NewError("Tried to fulfill an already set immutable promise", 0, nil)
+			e = bio.NewError("Tried to fulfill an already set immutable promise", 0)
 		}
 	}
 
