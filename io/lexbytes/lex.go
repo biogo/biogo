@@ -2,6 +2,7 @@
 //
 // Derived from template/parse/lex.go Copyright 2011 The Go Authors.
 package lexbytes
+
 // Copyright ©2011 Dan Kortschak <dan.kortschak@adelaide.edu.au>
 //
 // This program is free software: you can redistribute it and/or modify
@@ -18,10 +19,10 @@ package lexbytes
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import (
-	"fmt"
-	"bytes"
-	"unicode"
 	"bufio"
+	"bytes"
+	"fmt"
+	"unicode"
 )
 
 // Item represents a token or text string returned from the scanner.

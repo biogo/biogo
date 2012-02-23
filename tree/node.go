@@ -1,4 +1,5 @@
 package tree
+
 // Copyright ©2011 Dan Kortschak <dan.kortschak@adelaide.edu.au>
 // Derived from PyCogent tree package Copyright ©2007-2011, The Cogent Project, under GPL2 or greater
 //

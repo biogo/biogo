@@ -55,7 +55,7 @@ func (s *S) TestMorass(c *check.C) {
 			}
 			c.Check(m.Len(), check.Equals, int64(testLen))
 		L:
-		for i:= 0; i <= testLen; i++ {
+			for i := 0; i <= testLen; i++ {
 				var v intLesser
 				lv := intLesser(util.MinInt)
 				c.Check(int64(i), check.Equals, m.Pos())

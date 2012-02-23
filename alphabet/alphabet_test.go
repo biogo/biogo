@@ -1,4 +1,5 @@
 package alphabet
+
 // Copyright ©2011 Dan Kortschak <dan.kortschak@adelaide.edu.au>
 //
 // This program is free software: you can redistribute it and/or modify
@@ -154,7 +155,7 @@ func BenchmarkComplementDNA(b *testing.B) {
 func BenchmarkComplementDNADirect(b *testing.B) {
 	complement := DNA.ComplementTable()
 	var c byte
-	for i:= 0; i < b.N; i++ {
+	for i := 0; i < b.N; i++ {
 		if c = complement[byte(i)]; c != 0x80 {
 		}
 	}

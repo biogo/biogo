@@ -1,5 +1,6 @@
 // Package to read and write Newick format files
 package newick
+
 // Copyright ©2011 Dan Kortschak <dan.kortschak@adelaide.edu.au>
 //
 // This program is free software: you can redistribute it and/or modify

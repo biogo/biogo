@@ -1,4 +1,5 @@
 package interval
+
 // Copyright ©2011 Dan Kortschak <dan.kortschak@adelaide.edu.au>
 // 
 // This program is free software: you can redistribute it and/or modify
@@ -74,7 +75,7 @@ func ExampleTree_Remove() {
 	if i, err := New("example", -15, -2, 0, nil); err == nil {
 		for s := range tree.Intersect(i, 0) {
 			r := tree.Remove(s)
-			fmt.Println(r, r.Left(), r.Right(),r.Parent())
+			fmt.Println(r, r.Left(), r.Right(), r.Parent())
 		}
 	}
 

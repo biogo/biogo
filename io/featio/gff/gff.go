@@ -365,10 +365,10 @@ func (self *Writer) Stringify(f *feat.Feature) string {
 		fields = append(fields, f.Attributes)
 	}
 	if f.Comments != "" {
-		fields = append(fields, "#" + f.Comments)
+		fields = append(fields, "#"+f.Comments)
 	}
 
-	return strings.Join(fields,"\t")
+	return strings.Join(fields, "\t")
 }
 
 // Write meta data to a GFF file.

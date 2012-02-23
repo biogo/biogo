@@ -5,6 +5,7 @@
 // chunk size can reduce the impact of divergence in time for processing chunks, but may add
 // to overhead.
 package concurrent
+
 // Copyright ©2011 Dan Kortschak <dan.kortschak@adelaide.edu.au>
 //
 // This program is free software: you can redistribute it and/or modify

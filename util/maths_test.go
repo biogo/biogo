@@ -46,7 +46,7 @@ func (s *S) TestUMax(c *check.C) {
 }
 
 func (s *S) TestPowLog(c *check.C) {
-	for i := 0; i <15; i++ {
+	for i := 0; i < 15; i++ {
 		c.Check(Pow(4, byte(i)), check.Equals, int(Pow4(i)))
 		c.Check(Pow(4, byte(i)), check.Equals, int(math.Pow(4, float64(i))))
 		c.Check(int(Log4(float64(Pow4(i)))), check.Equals, i)

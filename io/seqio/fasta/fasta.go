@@ -1,5 +1,6 @@
 // Package to read and write FASTA format files
 package fasta
+
 // Copyright ©2011 Dan Kortschak <dan.kortschak@adelaide.edu.au>
 //
 // This program is free software: you can redistribute it and/or modify

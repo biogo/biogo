@@ -1,5 +1,6 @@
 // Smith-Waterman sequence alignment package
 package sw
+
 // Copyright ©2011 Dan Kortschak <dan.kortschak@adelaide.edu.au>
 //
 // This program is free software: you can redistribute it and/or modify
@@ -73,9 +74,9 @@ func maxIndex(a []int) (d int) {
 // positions in the scoring matrix.
 // Currently gap opening is not considered.
 type Aligner struct {
-	Matrix   [][]int
-	GapChar  byte
-	LookUp   util.CTL
+	Matrix  [][]int
+	GapChar byte
+	LookUp  util.CTL
 }
 
 // Method to align two sequences using the Smith-Waterman algorithm. Returns an alignment or an error

@@ -1,5 +1,6 @@
 // Packages providing basic linear algebra operations
 package matrix
+
 // Copyright ©2011 Dan Kortschak <dan.kortschak@adelaide.edu.au>
 // Derived from quicksect.py of bx-python ©James Taylor bitbucket.org/james_taylor/bx-python
 //

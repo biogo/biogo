@@ -2,6 +2,7 @@
 //
 // Chih-Jen Lin (2007) Projected Gradient Methods for Nonnegative Matrix Factorization. Neural Computation 19:2756. 
 package nmf
+
 // Copyright ©2011 Dan Kortschak <dan.kortschak@adelaide.edu.au>
 //
 // This program is free software: you can redistribute it and/or modify

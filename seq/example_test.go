@@ -1,4 +1,5 @@
 package seq
+
 // Copyright ©2011 Dan Kortschak <dan.kortschak@adelaide.edu.au>
 // 
 // This program is free software: you can redistribute it and/or modify
@@ -94,7 +95,7 @@ func ExampleSeq_RevComp_2() {
 	fmt.Println(s)
 	fmt.Println(s.Quality)
 	if t, err := s.RevComp(); err == nil {
-	fmt.Println("Reverse:")
+		fmt.Println("Reverse:")
 		fmt.Println(t)
 		fmt.Println(t.Quality)
 	}

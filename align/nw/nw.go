@@ -1,5 +1,6 @@
 // Needleman-Wunsch sequence alignment package
 package nw
+
 // Copyright ©2011 Dan Kortschak <dan.kortschak@adelaide.edu.au>
 //
 // This program is free software: you can redistribute it and/or modify
@@ -157,4 +158,3 @@ func (self *Aligner) Align(reference, query *seq.Seq) (aln seq.Alignment, err er
 
 	return
 }
-

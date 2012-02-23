@@ -16,10 +16,10 @@ package alignio
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import (
-	check "launchpad.net/gocheck"
-	"testing"
 	"github.com/kortschak/BioGo/io/seqio/fasta"
 	"github.com/kortschak/BioGo/io/seqio/fastq"
+	check "launchpad.net/gocheck"
+	"testing"
 )
 
 var (
@@ -36,10 +36,10 @@ var _ = check.Suite(&S{})
 
 func (s *S) TestReadFasta(c *check.C) {
 	if r, err := fasta.NewReaderName(fa); err != nil {
-		c.Fatalf("Failed to open %q: %s", fa , err)
+		c.Fatalf("Failed to open %q: %s", fa, err)
 	} else {
 		if a, err := NewReader(r).Read(); err != nil {
-			c.Fatalf("Failed to read %q: %s", fa , err)
+			c.Fatalf("Failed to read %q: %s", fa, err)
 		} else {
 			c.Check(len(a), check.Equals, 11)
 		}
@@ -48,10 +48,10 @@ func (s *S) TestReadFasta(c *check.C) {
 
 func (s *S) TestReadFastq(c *check.C) {
 	if r, err := fastq.NewReaderName(fq); err != nil {
-		c.Fatalf("Failed to open %q: %s", fq , err)
+		c.Fatalf("Failed to open %q: %s", fq, err)
 	} else {
 		if a, err := NewReader(r).Read(); err != nil {
-			c.Fatalf("Failed to read %q: %s", fq , err)
+			c.Fatalf("Failed to read %q: %s", fq, err)
 		} else {
 			c.Check(len(a), check.Equals, 25)
 		}

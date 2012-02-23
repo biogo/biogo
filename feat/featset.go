@@ -1,4 +1,5 @@
 package feat
+
 // Basic feature group package
 //
 // Copyright ©2011 Dan Kortschak <dan.kortschak@adelaide.edu.au>
@@ -16,8 +17,7 @@ package feat
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import (
-)
+import ()
 
 type FeatureSet []*Feature
 
