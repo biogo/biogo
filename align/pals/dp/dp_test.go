@@ -63,7 +63,7 @@ func (s *S) TestAlignment(c *check.C) {
 	}
 	aligner := NewAligner(a, b, int(k), 50, 0.80, 4)
 	hits := aligner.AlignTraps(T)
-	c.Check(hits, check.Equals, H)
+	c.Check(hits, check.DeepEquals, H)
 	la, lb, err := hits.Sum()
 	c.Check(la, check.Equals, 791)
 	c.Check(lb, check.Equals, 664)

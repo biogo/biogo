@@ -104,7 +104,7 @@ func (s *S) TestKmerPositions(c *check.C) {
 			pos, ok := i.KmerIndex()
 			c.Check(ok, check.Equals, true)
 			for p := range pos {
-				c.Check(pos[p], check.Equals, hashPos[i.Stringify(p)])
+				c.Check(pos[p], check.DeepEquals, hashPos[i.Stringify(p)])
 			}
 		}
 	}
@@ -123,7 +123,7 @@ func (s *S) TestKmerPositionsString(c *check.C) {
 			pos, ok := i.StringKmerIndex()
 			c.Check(ok, check.Equals, true)
 			for p := range pos {
-				c.Check(pos[p], check.Equals, hashPos[p])
+				c.Check(pos[p], check.DeepEquals, hashPos[p])
 			}
 		}
 	}

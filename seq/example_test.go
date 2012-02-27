@@ -22,9 +22,6 @@ import (
 	"strings"
 )
 
-// ACGCTGACTTGGTGCACGT DNA
-// ACGCTGACTTGGTGCACGT RNA
-//     ^ first invalid RNA position
 func ExampleSeq_New() {
 	d := New("example sequence", []byte("ACGCTGACTTGGTGCACGT"), nil) // Default to bio.DNA
 	fmt.Println(d, d.Moltype)
@@ -36,22 +33,23 @@ func ExampleSeq_New() {
 	} else {
 		fmt.Println(strings.Repeat(" ", pos-1), "^ first invalid RNA position")
 	}
+	// Output:
+	// ACGCTGACTTGGTGCACGT DNA
+	// ACGCTGACTTGGTGCACGT RNA
+	//     ^ first invalid RNA position
 }
 
-// ACGCTGACTTGGTGCACGT
-// GACTTGG
 func ExampleSeq_Trunc_1() {
 	s := &Seq{Seq: []byte("ACGCTGACTTGGTGCACGT")}
 	fmt.Println(s)
 	if t, err := s.Trunc(5, 12); err == nil {
 		fmt.Println(t)
 	}
+	// Output:
+	// ACGCTGACTTGGTGCACGT
+	// GACTTGG
 }
 
-// ACGCTGACTTGGTGCACGT Circular = true
-// TGCACGTACGCT Circular = false
-// ACGCTGACTTGGTGCACGT Circular = false
-// Error: Start position greater than end position for non-circular molecule.
 func ExampleSeq_Trunc_2() {
 	s := &Seq{Seq: []byte("ACGCTGACTTGGTGCACGT"), Circular: true}
 	fmt.Println(s, "Circular =", s.Circular)
@@ -67,24 +65,24 @@ func ExampleSeq_Trunc_2() {
 	} else {
 		fmt.Println("Error:", err)
 	}
+	// Output:
+	// ACGCTGACTTGGTGCACGT Circular = true
+	// TGCACGTACGCT Circular = false
+	// ACGCTGACTTGGTGCACGT Circular = false
+	// Error: Start position greater than end position for non-circular molecule.
 }
 
-// ATGCtGACTTGGTGCACGT
-// ACGTGCACCAAGTCaGCAT
 func ExampleSeq_RevComp_1() {
 	s := &Seq{Seq: []byte("ATGCtGACTTGGTGCACGT")}
 	fmt.Println(s)
 	if t, err := s.RevComp(); err == nil {
 		fmt.Println(t)
 	}
+	// Output:
+	// ATGCtGACTTGGTGCACGT
+	// ACGTGCACCAAGTCaGCAT
 }
 
-// Forward:
-// NTTTCTTCTATATCCTTTTCATCTTTTAATCCATTCACCATTTTTTTCCCTCCACCTACCTNTCCTTCTCTTTCT
-// #.47435885169773237879795033445-3255530396.)05545553111+0333,#,54331+-7!!!!
-// Reverse:
-// AGAAAGAGAAGGANAGGTAGGTGGAGGGAAAAAAATGGTGAATGGATTAAAAGATGAAAAGGATATAGAAGAAAN
-// !!!!7-+13345,#,3330+11135554550).6930355523-54433059797873237796158853474.#
 func ExampleSeq_RevComp_2() {
 	q := &Quality{Qual: []Qsanger{
 		2, 13, 19, 22, 19, 18, 20, 23, 23, 20, 16, 21, 24, 22, 22, 18, 17, 18, 22, 23, 22, 24, 22, 24, 20, 15,
@@ -99,20 +97,25 @@ func ExampleSeq_RevComp_2() {
 		fmt.Println(t)
 		fmt.Println(t.Quality)
 	}
+	// Output:
+	// Forward:
+	// NTTTCTTCTATATCCTTTTCATCTTTTAATCCATTCACCATTTTTTTCCCTCCACCTACCTNTCCTTCTCTTTCT
+	// #.47435885169773237879795033445-3255530396.)05545553111+0333,#,54331+-7!!!!
+	// Reverse:
+	// AGAAAGAGAAGGANAGGTAGGTGGAGGGAAAAAAATGGTGAATGGATTAAAAGATGAAAAGGATATAGAAGAAAN
+	// !!!!7-+13345,#,3330+11135554550).6930355523-54433059797873237796158853474.#
 }
 
-// IIIHIEGA6.*!!!
-// !!!*.6AGEIHIII
 func ExampleQuality_Reverse() {
 	q := &Quality{Qual: []Qsanger{40, 40, 40, 39, 40, 36, 38, 32, 21, 13, 9, 0, 0, 0}}
 	fmt.Println(q)
 	t := q.Reverse()
 	fmt.Println(t)
+	// Output:
+	// IIIHIEGA6.*!!!
+	// !!!*.6AGEIHIII
 }
 
-// agctgtgctga CGTGCAGTCATGAGTGA
-// agctgtgctgaCGTGCAGTCATGAGTGA
-// CGTGCAGTCATGAGTGAagctgtgctga
 func ExampleJoin() {
 	var s1, s2 *Seq
 	s1 = &Seq{Seq: []byte("agctgtgctga")}
@@ -126,10 +129,12 @@ func ExampleJoin() {
 	if t, err := s1.Join(s2, Prepend); err == nil {
 		fmt.Println(t)
 	}
+	// Output:
+	// agctgtgctga CGTGCAGTCATGAGTGA
+	// agctgtgctgaCGTGCAGTCATGAGTGA
+	// CGTGCAGTCATGAGTGAagctgtgctga
 }
 
-// aAGTATAAgtcagtgcagtgtctggcagTGCTCGTGCgtagtgaagtagGGTTAGTTTa
-// AGTATAATGCTCGTGCGGTTAGTTT
 func ExampleStitch() {
 	s := &Seq{Seq: []byte("aAGTATAAgtcagtgcagtgtctggcagTGCTCGTGCgtagtgaagtagGGTTAGTTTa")}
 	f := feat.FeatureSet{
@@ -141,4 +146,7 @@ func ExampleStitch() {
 	if t, err := s.Stitch(f); err == nil {
 		fmt.Println(t)
 	}
+	// Output:
+	// aAGTATAAgtcagtgcagtgtctggcagTGCTCGTGCgtagtgaagtagGGTTAGTTTa
+	// AGTATAATGCTCGTGCGGTTAGTTT
 }

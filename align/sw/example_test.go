@@ -20,8 +20,6 @@ import (
 	"github.com/kortschak/BioGo/seq"
 )
 
-// A-CACACTA
-// AGCACAC-A
 func ExampleAligner_Align() {
 	swsa := &seq.Seq{Seq: []byte("ACACACTA")}
 	swsb := &seq.Seq{Seq: []byte("AGCACACA")}
@@ -41,4 +39,7 @@ func ExampleAligner_Align() {
 	if swa, err := smith.Align(swsa, swsb); err == nil {
 		fmt.Printf("%s\n%s\n", swa[0].Seq, swa[1].Seq)
 	}
+	// Output:
+	// A-CACACTA
+	// AGCACAC-A
 }

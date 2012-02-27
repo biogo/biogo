@@ -19,15 +19,12 @@ import (
 	"fmt"
 )
 
-// false 17
 func ExampleGeneric_AllValid() {
 	fmt.Println(DNA.AllValid([]byte("acgatcgatatagctatnagcatgc")))
+	// Output:
+	// false 17
 }
 
-// t true
-// n true
-// u true
-// false
 func ExamplePairing_ComplementOf() {
 	var (
 		c  byte
@@ -42,4 +39,9 @@ func ExamplePairing_ComplementOf() {
 	fmt.Printf("%c %v\n", c, ok)
 	_, ok = RNA.ComplementOf('t')
 	fmt.Printf("%v\n", ok)
+	// Output:
+	// t true
+	// n true
+	// u true
+	// false
 }

@@ -19,7 +19,6 @@ package interval
 import (
 	check "launchpad.net/gocheck"
 	"math/rand"
-	"reflect"
 	"testing"
 )
 
@@ -135,18 +134,6 @@ func (checker *intLessChecker) Check(params []interface{}, names []string) (resu
 	return params[0].(int) < params[1].(int), ""
 }
 
-type deepChecker struct {
-	*check.CheckerInfo
-}
-
-var deepEquals check.Checker = &deepChecker{
-	&check.CheckerInfo{Name: "DeepEquals", Params: []string{"obtained", "expected"}},
-}
-
-func (checker *deepChecker) Check(params []interface{}, names []string) (result bool, error string) {
-	return reflect.DeepEqual(params[0], params[1]), ""
-}
-
 // Tests
 func Test(t *testing.T) { check.TestingT(t) }
 
@@ -158,7 +145,7 @@ func (s *S) TestMakeAndDescribeTree(c *check.C) {
 	desc := "((a,c)b,(e,g)f)d;"
 	tree := makeTree(desc)
 
-	c.Check(describeTree(tree), check.Equals, desc)
+	c.Check(describeTree(tree), check.DeepEquals, desc)
 }
 
 // ((a,c)b,(e,g)f)d -rotL-> (((a,c)b,e)d,g)f
@@ -169,10 +156,10 @@ func (s *S) TestRotateLeft(c *check.C) {
 	tree := makeTree(orig)
 
 	tree = tree.rotateLeft()
-	c.Check(describeTree(tree), check.Equals, rot)
+	c.Check(describeTree(tree), check.DeepEquals, rot)
 
 	rotTree := makeTree(rot)
-	c.Check(tree, deepEquals, rotTree)
+	c.Check(tree, check.DeepEquals, rotTree)
 }
 
 // ((a,c)b,(e,g)f)d -rotR-> (a,(c,(e,g)f)d)b
@@ -183,10 +170,10 @@ func (s *S) TestRotateRight(c *check.C) {
 	tree := makeTree(orig)
 
 	tree = tree.rotateRight()
-	c.Check(describeTree(tree), check.Equals, rot)
+	c.Check(describeTree(tree), check.DeepEquals, rot)
 
 	rotTree := makeTree(rot)
-	c.Check(tree, deepEquals, rotTree)
+	c.Check(tree, check.DeepEquals, rotTree)
 }
 
 func (s *S) TestScan(c *check.C) {
@@ -236,12 +223,12 @@ func (s *S) TestScan(c *check.C) {
 
 	for i := range ss {
 		if i > 0 {
-			c.Check(ss[i].ScanLeft(), deepEquals, ss[i-1])
-			c.Check(ss[i].ScanLeft().ScanRight(), deepEquals, ss[i])
+			c.Check(ss[i].ScanLeft(), check.DeepEquals, ss[i-1])
+			c.Check(ss[i].ScanLeft().ScanRight(), check.DeepEquals, ss[i])
 		}
 		if i < len(ss)-1 {
-			c.Check(ss[i].ScanRight(), deepEquals, ss[i+1])
-			c.Check(ss[i].ScanRight().ScanLeft(), deepEquals, ss[i])
+			c.Check(ss[i].ScanRight(), check.DeepEquals, ss[i+1])
+			c.Check(ss[i].ScanRight().ScanLeft(), check.DeepEquals, ss[i])
 		}
 	}
 }
@@ -334,7 +321,7 @@ func (s *S) TestWithin(c *check.C) {
 }
 
 func (s *S) TestLinearRootDelete(c *check.C) {
-	bug := check.Bug("Bug in *Interval.remove(). Fixed in 8aa60.")
+	bug := check.Commentf("Bug in *Interval.remove(). Fixed in 8aa60.")
 	tree := NewTree()
 	a, err := New("", 0, 1, 0, nil)
 	c.Check(err, check.Equals, nil)
@@ -462,7 +449,7 @@ func (s *S) TestRemoveInsert(c *check.C) {
 	ss1 := fillSliceWith(tree.Traverse(""), n)
 	tree.Insert(tree.Remove(tree[""]))
 	ss2 := fillSliceWith(tree.Traverse(""), n)
-	c.Check(ss1, check.Equals, ss2)
+	c.Check(ss1, check.DeepEquals, ss2)
 }
 
 func (s *S) TestFlatten(c *check.C) {

@@ -20,8 +20,6 @@ import (
 	"github.com/kortschak/BioGo/seq"
 )
 
-// AGACTAGTTA
-// -GAC-AGACG
 func ExampleAligner_Align() {
 	nwsa := &seq.Seq{Seq: []byte("AGACTAGTTA")}
 	nwsb := &seq.Seq{Seq: []byte("GACAGACG")}
@@ -44,4 +42,7 @@ func ExampleAligner_Align() {
 	if nwa, err := needle.Align(nwsa, nwsb); err == nil {
 		fmt.Printf("%s\n%s\n", nwa[0].Seq, nwa[1].Seq)
 	}
+	// Output:
+	// AGACTAGTTA
+	// -GAC-AGACG
 }

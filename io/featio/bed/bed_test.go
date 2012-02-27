@@ -143,7 +143,7 @@ func (s *S) TestWriteBed(c *check.C) {
 			if b.bType < 12 {
 				c.Check(string(gb), check.Equals, string(ob))
 			} else {
-				c.Check(strings.Split(string(gb), "\t")[:6], check.Equals, strings.Split(string(ob), "\t")[:6])
+				c.Check(strings.Split(string(gb), "\t")[:6], check.DeepEquals, strings.Split(string(ob), "\t")[:6])
 			}
 		}
 	}

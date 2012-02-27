@@ -64,7 +64,7 @@ func (s *S) TestFilterAndMerge(c *check.C) {
 			}
 			r = append(r, FilterHit{})
 		}
-		c.Check(r, check.Equals, []FilterHit{
+		c.Check(r, check.DeepEquals, []FilterHit{
 			{QFrom: 0, QTo: 163, DiagIndex: 32},
 			{QFrom: 141, QTo: 247, DiagIndex: 64},
 			{QFrom: 237, QTo: 433, DiagIndex: 1120},
@@ -88,7 +88,7 @@ func (s *S) TestFilterAndMerge(c *check.C) {
 		la, lb := t.Sum()
 		c.Check(la, check.Equals, 1257)
 		c.Check(lb, check.Equals, 402)
-		c.Check(t, check.Equals, Trapezoids{
+		c.Check(t, check.DeepEquals, Trapezoids{
 			{Next: nil, Top: 452, Bottom: 0, Left: -128, Right: 3},
 			{Next: nil, Top: 433, Bottom: 237, Left: -1120, Right: -1085},
 			{Next: nil, Top: 628, Bottom: 447, Left: -1984, Right: -1917},

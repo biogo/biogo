@@ -88,9 +88,9 @@ func (s *S) TestReadFasta(c *check.C) {
 						obtainS = append(obtainS, s.Seq)
 					}
 				}
-				c.Check(obtainN, check.Equals, expectN)
+				c.Check(obtainN, check.DeepEquals, expectN)
 				obtainN = nil
-				c.Check(obtainS, check.Equals, expectS)
+				c.Check(obtainS, check.DeepEquals, expectS)
 				obtainS = nil
 				if err = r.Rewind(); err != nil {
 					c.Fatalf("Failed to rewind %s", err)
@@ -144,6 +144,6 @@ func (s *S) TestWriteFasta(c *check.C) {
 			c.Fatalf("Failed to read %q: %s", o+"/fa", err)
 		}
 
-		c.Check(gb, check.Equals, ob)
+		c.Check(gb, check.DeepEquals, ob)
 	}
 }

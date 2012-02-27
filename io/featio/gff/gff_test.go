@@ -25,7 +25,6 @@ import (
 	check "launchpad.net/gocheck"
 	"math"
 	"os"
-	"reflect"
 	"testing"
 )
 
@@ -35,19 +34,6 @@ var (
 		"../../testdata/metaline.gff",
 	}
 )
-
-// Checkers
-type deepChecker struct {
-	*check.CheckerInfo
-}
-
-var deepEquals check.Checker = &deepChecker{
-	&check.CheckerInfo{Name: "DeepEquals", Params: []string{"obtained", "expected"}},
-}
-
-func (checker *deepChecker) Check(params []interface{}, names []string) (result bool, error string) {
-	return reflect.DeepEqual(params[0], params[1]), ""
-}
 
 // Tests
 func Test(t *testing.T) { check.TestingT(t) }
@@ -140,7 +126,7 @@ func (s *S) TestReadMetaline(c *check.C) {
 			}
 			if len(obtain) == len(expectMeta) {
 				for j := range obtain {
-					c.Check(obtain[j], deepEquals, expectMeta[j])
+					c.Check(obtain[j], check.DeepEquals, expectMeta[j])
 				}
 			} else {
 				c.Check(len(obtain), check.Equals, len(expectMeta))

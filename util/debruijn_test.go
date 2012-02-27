@@ -40,9 +40,9 @@ func (s *S) TestDeBruijn(c *check.C) {
 		for j := range e {
 			e[j] = byte(j)
 		}
-		c.Check(DeBruijn(byte(i), 1), check.Equals, e)
+		c.Check(DeBruijn(byte(i), 1), check.DeepEquals, e)
 	}
 	for _, t := range T {
-		c.Check(DeBruijn(t.k, t.n), check.Equals, t.obtain)
+		c.Check(DeBruijn(t.k, t.n), check.DeepEquals, t.obtain)
 	}
 }
