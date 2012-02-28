@@ -148,7 +148,7 @@ func main() {
 		pals.MaxKmerLen = *maxK
 	}
 	pals.Debug = pals.Debugging(debug)
-	if filterParams, /*dpParams*/ _, err = pals.OptimiseParameters(*minHitLen, *minId, target, query, *tubeOffset, *maxMem); err != nil {
+	if filterParams, _ /*dpParams*/, err = pals.OptimiseParameters(*minHitLen, *minId, target, query, *tubeOffset, *maxMem); err != nil {
 		log.Fatalf("Error: %v.", err)
 	}
 	log.Printf("Using filter parameters:")
