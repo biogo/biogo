@@ -23,15 +23,24 @@ import (
 
 const maxChannelValue = float64(0xFFFF)
 
-// HSVAColor represents a Hue/Saturation/Value/Alpha color.
-// H is valid within [0°, 360°]. S, V and A are valid within [0, 1].
-type HSVAColor struct {
-	H, S, V, A float32
+// HSVAModel converts any color.Color to an HSVA color.
+var HSVAModel color.Model = color.ModelFunc(hsvaModel)
+
+func hsvaModel(c color.Color) color.Color {
+	if _, ok := c.(HSVA); ok {
+		return c
+	}
+	return RGBAtoHSVA(c.RGBA())
 }
 
-// Return an HSVAColor based on a color.Color.
-func HSVA(c color.Color) HSVAColor {
-	r, g, b, a := c.RGBA()
+// HSVAColor represents a Hue/Saturation/Value/Alpha color.
+// H is valid within [0°, 360°]. S, V and A are valid within [0, 1].
+type HSVA struct {
+	H, S, V, A float64
+}
+
+// Convert r, g, b, a to HSVA
+func RGBAtoHSVA(r, g, b, a uint32) HSVA {
 	red := float64(r)
 	blue := float64(b)
 	green := float64(g)
@@ -56,43 +65,39 @@ func HSVA(c color.Color) HSVAColor {
 
 	hue *= 60
 
-	var s float32
+	var s float64
 	if chroma != 0 {
-		s = float32(chroma / max)
+		s = chroma / max
 	}
 
-	return HSVAColor{
-		H: float32(math.Mod(math.Mod(hue, 360)+360, 360)),
+	return HSVA{
+		H: math.Mod(math.Mod(hue, 360)+360, 360),
 		S: s,
-		V: float32(max / maxChannelValue),
-		A: float32(float64(a) / maxChannelValue),
+		V: max / maxChannelValue,
+		A: float64(a) / maxChannelValue,
 	}
 }
 
 // RGBA() allows HSVAColor to satisfy the color.Color interface.
-func (self HSVAColor) RGBA() (r, g, b, a uint32) {
+func (self HSVA) RGBA() (r, g, b, a uint32) {
 	var red, green, blue float64
-	H := float64(self.H)
-	S := float64(self.S)
-	V := float64(self.V)
-	A := float64(self.A)
 
-	a = uint32(maxChannelValue * A)
+	a = uint32(maxChannelValue * self.A)
 
-	if V == 0 {
+	if self.V == 0 {
 		return
 	}
 
-	if S == 0 {
-		r, g, b = uint32(maxChannelValue*V), uint32(maxChannelValue*V), uint32(maxChannelValue*V)
+	if self.S == 0 {
+		r, g, b = uint32(maxChannelValue*self.V), uint32(maxChannelValue*self.V), uint32(maxChannelValue*self.V)
 		return
 	}
 
-	chroma := V * S
-	m := V - chroma
+	chroma := self.V * self.S
+	m := self.V - chroma
 
-	if !math.IsNaN(H) {
-		hue := math.Mod(H, 360) / 60
+	if !math.IsNaN(self.H) {
+		hue := math.Mod(self.H, 360) / 60
 		x := chroma * (1 - math.Abs(math.Mod(hue, 2)-1))
 		switch math.Floor(hue) {
 		case 0:

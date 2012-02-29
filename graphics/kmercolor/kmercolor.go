@@ -31,11 +31,11 @@ const (
 	A
 )
 
-// A KmerColor represents a kmerindex.Kmer as an HSVAColor, mapping the numberical value of the Kmer to a hue.
+// A KmerColor represents a kmerindex.Kmer as an HSVA, mapping the numberical value of the Kmer to a hue.
 type KmerColor struct {
 	kmer, kmask kmerindex.Kmer
-	color.HSVAColor
-	low, high float32
+	color.HSVA
+	low, high float64
 }
 
 // Make a new KmerColor initialising the Kmer length to k.
@@ -53,36 +53,36 @@ func (self *KmerColor) Kmer(kmer kmerindex.Kmer) *KmerColor {
 
 // Define the range of hues used by the KmerColor. imagecolor.Color is an alias to the core library image/color package to avoid a name conflict.
 func (self *KmerColor) ColorRange(low, high imagecolor.Color) {
-	self.low = color.HSVA(low).H
-	self.high = color.HSVA(high).H
+	self.low = color.RGBAtoHSVA(low.RGBA()).H
+	self.high = color.RGBAtoHSVA(high.RGBA()).H
 }
 
-// Set the S value of the underlying HSVAColor and return the reciever.
-func (self *KmerColor) S(s float32) *KmerColor {
-	self.HSVAColor.S = s
+// Set the S value of the underlying HSVA and return the reciever.
+func (self *KmerColor) S(s float64) *KmerColor {
+	self.HSVA.S = s
 	return self
 }
 
-// Set the V value of the underlying HSVAColor and return the reciever.
-func (self *KmerColor) V(v float32) *KmerColor {
-	self.HSVAColor.V = v
+// Set the V value of the underlying HSVA and return the reciever.
+func (self *KmerColor) V(v float64) *KmerColor {
+	self.HSVA.V = v
 	return self
 }
 
-// Set the A value of the underlying HSVAColor and return the reciever.
-func (self *KmerColor) A(a float32) *KmerColor {
-	self.HSVAColor.A = a
+// Set the A value of the underlying HSVA and return the reciever.
+func (self *KmerColor) A(a float64) *KmerColor {
+	self.HSVA.A = a
 	return self
 }
 
 // Satisfy the color.Color interface. RGBA maps the kmer value to a color with the hue between the low and high color values.
 func (self *KmerColor) RGBA() (r, g, b, a uint32) {
 	if self.high >= self.low {
-		self.HSVAColor.H = ((self.high - self.low) * float32(self.kmer) / float32(self.kmask)) + self.low
+		self.HSVA.H = ((self.high - self.low) * float64(self.kmer) / float64(self.kmask)) + self.low
 	} else {
-		self.HSVAColor.H = self.high - ((self.high - self.low) * float32(self.kmer) / float32(self.kmask))
+		self.HSVA.H = self.high - ((self.high - self.low) * float64(self.kmer) / float64(self.kmask))
 	}
-	return self.HSVAColor.RGBA()
+	return self.HSVA.RGBA()
 }
 
 // A KmerRainbow produces an image reflecting the kmer distribution of a sequence.
@@ -90,17 +90,17 @@ type KmerRainbow struct {
 	*image.RGBA
 	Index      *kmerindex.Index
 	Max        int
-	BackGround color.HSVAColor
+	BackGround color.HSVA
 }
 
 // Create a new KmerRainbow defined by the rectangle r, kmerindex index and background color.
-func NewKmerRainbow(r image.Rectangle, index *kmerindex.Index, background color.HSVAColor) *KmerRainbow { // should generalise the BG color
+func NewKmerRainbow(r image.Rectangle, index *kmerindex.Index, background color.HSVA) *KmerRainbow { // should generalise the BG color
 	h := r.Dy()
 	kmers := make([]int, h)
 	kmask := util.Pow4(index.GetK())
-	kmaskf := float32(kmask)
+	kmaskf := float64(kmask)
 	f := func(index *kmerindex.Index, _, kmer int) {
-		kmers[int(float32(kmer)*float32(h)/kmaskf)]++
+		kmers[int(float64(kmer)*float64(h)/kmaskf)]++
 	}
 	index.ForEachKmerOf(index.Seq, 0, index.Seq.Len(), f)
 	max := util.Max(kmers...)
@@ -133,18 +133,18 @@ func (self *KmerRainbow) Paint(vary int, block, size, left, right int) (i *image
 	right = util.Min(right, self.Rect.Dx())
 	kmers := make([]uint32, self.RGBA.Rect.Dy())
 	kmask := util.Pow4(self.Index.GetK())
-	kmaskf := float32(kmask)
+	kmaskf := float64(kmask)
 	f := func(index *kmerindex.Index, _, kmer int) {
-		kmers[int(float32(kmer)*float32(self.RGBA.Rect.Dy())/kmaskf)]++
+		kmers[int(float64(kmer)*float64(self.RGBA.Rect.Dy())/kmaskf)]++
 	}
 	self.Index.ForEachKmerOf(self.Index.Seq, block*size, (block+1)*size-1, f)
-	c := color.HSVAColor{}
-	lf := float32(len(kmers)) / 360
-	var val float32
-	scale := 1 / float32(self.Max)
+	c := color.HSVA{}
+	lf := float64(len(kmers)) / 360
+	var val float64
+	scale := 1 / float64(self.Max)
 	for y, v := range kmers {
-		val = float32(v) / scale
-		c.H = float32(y) / lf
+		val = float64(v) / scale
+		c.H = float64(y) / lf
 		if vary&S != 0 {
 			c.S = val
 		} else {
@@ -179,7 +179,7 @@ func (self *KmerRainbow) Paint(vary int, block, size, left, right int) (i *image
 type CGR KmerRainbow
 
 // Create a new CGR defined by the kmerindex index and background color.
-func NewCGR(index *kmerindex.Index, background color.HSVAColor) *CGR { // should generalise the BG color
+func NewCGR(index *kmerindex.Index, background color.HSVA) *CGR { // should generalise the BG color
 	max := 0
 	f := func(index *kmerindex.Index, _, kmer int) {
 		if freq := index.FingerAt(kmer); freq > max {
@@ -225,9 +225,9 @@ func (self *CGR) Paint(vary int, desch bool, block, size int) (i *image.RGBA, er
 	}
 	self.Index.ForEachKmerOf(self.Index.Seq, block*size, (block+1)*size-1, f)
 
-	c := &color.HSVAColor{}
+	c := &color.HSVA{}
 	max := util.UMax(kmers...)
-	scale := 1 / float32(max)
+	scale := 1 / float64(max)
 
 	for kmer, v := range kmers {
 		x, y := 0, 0
@@ -244,7 +244,7 @@ func (self *CGR) Paint(vary int, desch bool, block, size int) (i *image.RGBA, er
 				y += (((km & 1) ^ ((km & 2) >> 1)) ^ 1) << uint(i)
 			}
 		}
-		val := float32(v) * scale
+		val := float64(v) * scale
 		if vary&H != 0 {
 			c.H = val * 240
 		} else {

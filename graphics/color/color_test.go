@@ -33,7 +33,7 @@ var floatWithinRange check.Checker = &float32WithinRange{
 }
 
 func (checker *float32WithinRange) Check(params []interface{}, names []string) (result bool, error string) {
-	return params[0].(float32) >= params[1].(float32) && params[0].(float32) <= params[2].(float32), ""
+	return params[0].(float64) >= params[1].(float64) && params[0].(float64) <= params[2].(float64), ""
 }
 
 type uint32WithinRange struct {
@@ -77,15 +77,15 @@ func (s *S) TestColor(c *check.C) {
 			for b := 0; b < 256; b += 5 {
 				col := color.RGBA{uint8(r), uint8(g), uint8(b), 0}
 				cDirectR, cDirectG, cDirectB, cDirectA := col.RGBA()
-				hsva := HSVA(col)
-				c.Check(hsva.H, floatWithinRange, float32(0), float32(360))
-				c.Check(hsva.S, floatWithinRange, float32(0), float32(1))
-				c.Check(hsva.V, floatWithinRange, float32(0), float32(1))
+				hsva := RGBAtoHSVA(col.RGBA())
+				c.Check(hsva.H, floatWithinRange, float64(0), float64(360))
+				c.Check(hsva.S, floatWithinRange, float64(0), float64(1))
+				c.Check(hsva.V, floatWithinRange, float64(0), float64(1))
 				cFromHSVR, cFromHSVG, cFromHSVB, cFromHSVA := hsva.RGBA()
 				c.Check(cFromHSVR, uintWithinRange, uint32(0), uint32(0xFFFF))
 				c.Check(cFromHSVG, uintWithinRange, uint32(0), uint32(0xFFFF))
 				c.Check(cFromHSVB, uintWithinRange, uint32(0), uint32(0xFFFF))
-				back := HSVA(color.RGBA{uint8(cFromHSVR >> 8), uint8(cFromHSVG >> 8), uint8(cFromHSVB >> 8), uint8(cFromHSVA)})
+				back := RGBAtoHSVA(color.RGBA{uint8(cFromHSVR >> 8), uint8(cFromHSVG >> 8), uint8(cFromHSVB >> 8), uint8(cFromHSVA)}.RGBA())
 				c.Check(hsva, check.Equals, back)
 				c.Check(cFromHSVR, withinEpsilon, cDirectR, e)
 				c.Check(cFromHSVG, withinEpsilon, cDirectG, e)

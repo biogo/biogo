@@ -60,7 +60,7 @@ func main() {
 			fmt.Println(err)
 			os.Exit(0)
 		} else {
-			base := color.HSVAColor{0, 1, 1, 1}
+			base := color.HSVA{0, 1, 1, 1}
 			cgr := kmercolor.NewCGR(index, base)
 			fmt.Fprintf(os.Stderr, "Painting %s\n", sequence.ID)
 			cgr.Paint(kmercolor.V|kmercolor.H, *desch, *start, *chunk)
