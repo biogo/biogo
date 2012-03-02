@@ -28,11 +28,11 @@ type FeaturePair struct {
 	A, B   *feat.Feature
 	Score  int     // Score of alignment between features.
 	Error  float64 // Identity difference between feature sequences.
-	Strand int8    // Strand realtionship: positive indicates same strand, negative indicates opposite strand.
+	Strand int8    // Strand relationship: positive indicates same strand, negative indicates opposite strand.
 }
 
 // Convert coordinates in a packed sequence into a feat.Feature.
-func FeatureOf(contigs *seq.Seq, from, to int, comp bool) (feature *feat.Feature, err error) {
+func featureOf(contigs *seq.Seq, from, to int, comp bool) (feature *feat.Feature, err error) {
 	if comp {
 		from, to = contigs.Len()-to, contigs.Len()-from
 	}
@@ -59,10 +59,10 @@ func FeatureOf(contigs *seq.Seq, from, to int, comp bool) (feature *feat.Feature
 		return nil, bio.NewError(fmt.Sprintf("%s: bin %d out of range 0..%d", contigs.ID, bin, binCount-1), 0, nil)
 	}
 
-	contigIndex := contigs.Meta.(SeqMap).binMap[bin]
+	contigIndex := contigs.Meta.(seqMap).binMap[bin]
 
-	if contigIndex < 0 || contigIndex >= len(contigs.Meta.(SeqMap).contigs) {
-		return nil, bio.NewError(fmt.Sprintf("%s: contig index %d out of range 0..%d", contigs.ID, contigIndex, len(contigs.Meta.(SeqMap).contigs)), 0, nil)
+	if contigIndex < 0 || contigIndex >= len(contigs.Meta.(seqMap).contigs) {
+		return nil, bio.NewError(fmt.Sprintf("%s: contig index %d out of range 0..%d", contigs.ID, contigIndex, len(contigs.Meta.(seqMap).contigs)), 0, nil)
 	}
 
 	length := to - from
@@ -71,7 +71,7 @@ func FeatureOf(contigs *seq.Seq, from, to int, comp bool) (feature *feat.Feature
 		return nil, bio.NewError(fmt.Sprintf("%s: length < 0", contigs.ID), 0, nil)
 	}
 
-	contig := contigs.Meta.(SeqMap).contigs[contigIndex]
+	contig := contigs.Meta.(seqMap).contigs[contigIndex]
 	contigFrom := from - contig.from
 	contigTo := contigFrom + length
 
@@ -91,16 +91,16 @@ func FeatureOf(contigs *seq.Seq, from, to int, comp bool) (feature *feat.Feature
 }
 
 // Convert a DPHit and two packed sequences into a FeaturePair.
-func FeaturePairOf(target, query *seq.Seq, hit dp.DPHit, comp bool) (pair *FeaturePair, err error) {
+func NewFeaturePair(target, query *seq.Seq, hit dp.DPHit, comp bool) (pair *FeaturePair, err error) {
 	var (
 		t, q   *feat.Feature
 		strand int8
 	)
 
-	if t, err = FeatureOf(target, hit.Abpos, hit.Aepos, false); err != nil {
+	if t, err = featureOf(target, hit.Abpos, hit.Aepos, false); err != nil {
 		return
 	}
-	if q, err = FeatureOf(query, hit.Bbpos, hit.Bepos, comp); err != nil {
+	if q, err = featureOf(query, hit.Bbpos, hit.Bepos, comp); err != nil {
 		return
 	}
 
