@@ -41,7 +41,7 @@ func (i intLesser) Less(j interface{}) bool { return i < j.(intLesser) }
 
 func (s *S) TestMorass(c *check.C) {
 	for _, concurrent := range []bool{false, true} {
-		if m, err := New("", "", chunk, concurrent); err != nil {
+		if m, err := New(intLesser(0), "", "", chunk, concurrent); err != nil {
 			c.Fatalf("New Morass failed: %v", err)
 		} else {
 			for i := 0; i < testLen; i++ {

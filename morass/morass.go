@@ -26,6 +26,7 @@ import (
 	"container/heap"
 	"encoding/gob"
 	"errors"
+	"fmt"
 	"github.com/kortschak/BioGo/bio"
 	"io"
 	"io/ioutil"
@@ -35,6 +36,27 @@ import (
 	"sort"
 	"sync"
 )
+
+var (
+	m          = &sync.Mutex{}
+	registered = make(map[reflect.Type]struct{})
+	nextID     = 0
+)
+
+func register(e interface{}, t reflect.Type) {
+	m.Lock()
+	defer m.Unlock()
+	defer func() {
+		recover()                  // The only panic that we can get is from trying to register a base type.
+		registered[t] = struct{}{} // Remember for next time.
+	}()
+
+	if _, ok := registered[t]; !ok {
+		registered[t] = struct{}{}
+		gob.RegisterName(fmt.Sprintf("ℳ%d", nextID), e)
+		nextID++
+	}
+}
 
 // Is the receiver less than the parameterised interface
 type LessInterface interface {
@@ -77,6 +99,7 @@ func (self *files) Push(x interface{}) { *self = append(*self, x.(*file)) }
 // when they are depleted.
 type Morass struct {
 	mutex       sync.Mutex
+	t           reflect.Type
 	pos, length int64
 	chunk       sortable
 	done        chan sortable
@@ -89,11 +112,11 @@ type Morass struct {
 	AutoClean   bool
 }
 
-// Create a new Morass. prefic and dir are passed to ioutil.TempDir. chunkSize specifies
+// Create a new Morass. prefix and dir are passed to ioutil.TempDir. chunkSize specifies
 // the amount of sorting to be done in memory, concurrent specifies that temporary file
 // writing occurs concurrently with sorting.
 // An error is returned if no temporary directory can be created.
-func New(prefix, dir string, chunkSize int, concurrent bool) (*Morass, error) {
+func New(e interface{}, prefix, dir string, chunkSize int, concurrent bool) (*Morass, error) {
 	d, err := ioutil.TempDir(dir, prefix)
 	if err != nil {
 		return nil, err
@@ -106,6 +129,9 @@ func New(prefix, dir string, chunkSize int, concurrent bool) (*Morass, error) {
 		files:  make(files, 0),
 		err:    make(chan error, 1),
 	}
+
+	m.t = reflect.TypeOf(e)
+	register(e, m.t)
 
 	m.chunk = make(sortable, 0, chunkSize)
 	if concurrent {
@@ -126,6 +152,9 @@ func New(prefix, dir string, chunkSize int, concurrent bool) (*Morass, error) {
 // name ℳ when the type registered to avoid using too much space.
 // Returns any error that occurs.
 func (self *Morass) Push(e LessInterface) (err error) {
+	if t := reflect.TypeOf(e); t != self.t {
+		return bio.NewError(fmt.Sprintf("Type mismatch: %s != %s", t, self.t), 0, e)
+	}
 	self.mutex.Lock()
 	defer self.mutex.Unlock()
 
@@ -149,7 +178,6 @@ func (self *Morass) Push(e LessInterface) (err error) {
 		}
 	}
 
-	gob.RegisterName("ℳ", e)
 	self.chunk = append(self.chunk, e)
 	self.pos++
 	self.length++
