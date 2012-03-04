@@ -1,10 +1,10 @@
-//Use morass when you don't want your data to be a quagmire.
+// Use morass when you don't want your data to be a quagmire.
 //
-//Sort data larger than can fit in memory.
+// Sort data larger than can fit in memory.
 //
 //  morass məˈras/
-//    1. An area of muddy or boggy ground.
-//    2. A complicated or confused situation.
+//  1. An area of muddy or boggy ground.
+//  2. A complicated or confused situation.
 package morass
 
 // Copyright ©2011 Dan Kortschak <dan.kortschak@adelaide.edu.au>
@@ -16,18 +16,17 @@ package morass
 //
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU General Public License for more details.
 //
 // You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 import (
 	"container/heap"
 	"encoding/gob"
 	"errors"
 	"fmt"
-	"github.com/kortschak/BioGo/bio"
 	"io"
 	"io/ioutil"
 	"os"
@@ -51,7 +50,7 @@ func register(e interface{}, t reflect.Type) {
 		registered[t] = struct{}{} // Remember for next time.
 	}()
 
-	if _, ok := registered[t]; !ok {
+	if _, exists := registered[t]; !exists {
 		registered[t] = struct{}{}
 		gob.RegisterName(fmt.Sprintf("ℳ%d", nextID), e)
 		nextID++
@@ -102,13 +101,15 @@ type Morass struct {
 	t           reflect.Type
 	pos, length int64
 	chunk       sortable
-	done        chan sortable
-	err         chan error
+	chunkSize   int
+	pool        chan sortable
+	writable    chan sortable
+	err         error
 	prefix      string
 	dir         string
 	files       files
-	finalised   bool
 	fast        bool
+	AutoClear   bool
 	AutoClean   bool
 }
 
@@ -116,6 +117,11 @@ type Morass struct {
 // the amount of sorting to be done in memory, concurrent specifies that temporary file
 // writing occurs concurrently with sorting.
 // An error is returned if no temporary directory can be created.
+// Note that the type is registered with the underlying gob encoder using the name ℳn, where
+// n is a sequentially assigned integer string, when the type registered. This is done to avoid using
+// too much space and will cause problems when using gob itself on this type. If you intend
+// use gob itself with this the type, preregister with gob and morass will use the existing
+// registration.
 func New(e interface{}, prefix, dir string, chunkSize int, concurrent bool) (*Morass, error) {
 	d, err := ioutil.TempDir(dir, prefix)
 	if err != nil {
@@ -123,11 +129,12 @@ func New(e interface{}, prefix, dir string, chunkSize int, concurrent bool) (*Mo
 	}
 
 	m := &Morass{
-		prefix: prefix,
-		dir:    d,
-		done:   make(chan sortable, 1),
-		files:  make(files, 0),
-		err:    make(chan error, 1),
+		chunkSize: chunkSize,
+		prefix:    prefix,
+		dir:       d,
+		pool:      make(chan sortable, 2),
+		writable:  make(chan sortable, 1),
+		files:     files{},
 	}
 
 	m.t = reflect.TypeOf(e)
@@ -135,7 +142,7 @@ func New(e interface{}, prefix, dir string, chunkSize int, concurrent bool) (*Mo
 
 	m.chunk = make(sortable, 0, chunkSize)
 	if concurrent {
-		m.done <- make(sortable, 0)
+		m.pool <- nil
 	}
 
 	f := func(self *Morass) {
@@ -148,33 +155,31 @@ func New(e interface{}, prefix, dir string, chunkSize int, concurrent bool) (*Mo
 	return m, nil
 }
 
-// Push a value on to the Morass. Note that the underlying gob encoder is given the
-// name ℳ when the type registered to avoid using too much space.
-// Returns any error that occurs.
+// Push a value on to the Morass. Returns any error that occurs.
 func (self *Morass) Push(e LessInterface) (err error) {
 	if t := reflect.TypeOf(e); t != self.t {
-		return bio.NewError(fmt.Sprintf("Type mismatch: %s != %s", t, self.t), 0, e)
+		return errors.New(fmt.Sprintf("Type mismatch: %s != %s", t, self.t))
 	}
 	self.mutex.Lock()
 	defer self.mutex.Unlock()
 
-	select {
-	case err = <-self.err:
-		if err != nil {
-			return
+	if self.err != nil {
+		return self.err
+	}
+
+	if self.chunk == nil {
+		return errors.New("Push on finalised morass")
+	}
+
+	if len(self.chunk) == self.chunkSize {
+		self.writable <- self.chunk
+		go self.write()
+		self.chunk = <-self.pool
+		if self.err != nil {
+			return self.err
 		}
-	default:
-	}
-
-	if self.finalised {
-		return bio.NewError("Push on finalised morass", 0)
-	}
-
-	if c := cap(self.chunk); len(self.chunk) == c {
-		go self.write(self.chunk)
-		self.chunk = <-self.done
 		if cap(self.chunk) == 0 {
-			self.chunk = make(sortable, 0, c)
+			self.chunk = make(sortable, 0, self.chunkSize)
 		}
 	}
 
@@ -185,21 +190,16 @@ func (self *Morass) Push(e LessInterface) (err error) {
 	return
 }
 
-func (self *Morass) write(writing sortable) (err error) {
+func (self *Morass) write() {
+	writing := <-self.writable
 	defer func() {
-		self.err <- err
-		self.done <- writing[:0]
+		self.pool <- writing[:0]
 	}()
-
-	select {
-	case <-self.err:
-	default:
-	}
 
 	sort.Sort(&writing)
 
 	var tf *os.File
-	if tf, err = ioutil.TempFile(self.dir, self.prefix); err != nil {
+	if tf, self.err = ioutil.TempFile(self.dir, self.prefix); self.err != nil {
 		return
 	}
 
@@ -209,14 +209,12 @@ func (self *Morass) write(writing sortable) (err error) {
 	self.files = append(self.files, f)
 
 	for _, e := range writing {
-		if err = enc.Encode(&e); err != nil {
+		if self.err = enc.Encode(&e); self.err != nil {
 			return
 		}
 	}
 
-	err = tf.Sync()
-
-	return
+	self.err = tf.Sync()
 }
 
 // Return the corrent position of the cursor in the Morass.
@@ -231,26 +229,25 @@ func (self *Morass) Finalise() (err error) {
 	self.mutex.Lock()
 	defer self.mutex.Unlock()
 
-	select {
-	case err = <-self.err:
-		if err != nil {
-			return
-		}
-	default:
+	if self.err != nil {
+		return self.err
 	}
 
-	if !self.finalised {
+	if self.chunk != nil {
 		if self.pos < int64(cap(self.chunk)) {
 			self.fast = true
 			sort.Sort(&self.chunk)
 		} else {
 			if len(self.chunk) > 0 {
-				go self.write(self.chunk)
-				err = <-self.err
+				self.writable <- self.chunk
+				self.chunk = nil
+				self.write()
+				if self.err != nil {
+					return self.err
+				}
 			}
 		}
 		self.pos = 0
-		self.finalised = true
 	} else {
 		return nil
 	}
@@ -277,6 +274,10 @@ func (self *Morass) Clear() (err error) {
 	self.mutex.Lock()
 	defer self.mutex.Unlock()
 
+	return self.clear()
+}
+
+func (self *Morass) clear() (err error) {
 	for _, f := range self.files {
 		if err = f.file.Close(); err != nil {
 			return
@@ -284,12 +285,15 @@ func (self *Morass) Clear() (err error) {
 		if err = os.Remove(f.file.Name()); err != nil {
 			return
 		}
-		f = nil
 	}
+	self.err = nil
+	self.files = self.files[:0]
 	self.pos = 0
 	self.length = 0
-	self.finalised = false
-	self.chunk = self.chunk[:0]
+	select {
+	case self.chunk = <-self.pool:
+	default:
+	}
 
 	return
 }
@@ -309,21 +313,24 @@ func (self *Morass) Pull(e LessInterface) (err error) {
 	self.mutex.Lock()
 	defer self.mutex.Unlock()
 
-	if len(self.chunk) == 0 {
-		return io.EOF
-	}
-
 	v := reflect.ValueOf(e)
 	if !reflect.Indirect(v).CanSet() {
 		return errors.New("morass: Cannot set e")
 	}
 
 	if self.fast {
-		if self.pos < int64(len(self.chunk)) {
+		switch {
+		case self.chunk != nil && self.pos < int64(len(self.chunk)):
 			e = self.chunk[self.pos].(LessInterface)
 			self.pos++
-			err = nil
-		} else {
+		case self.chunk != nil:
+			self.pool <- self.chunk[:0]
+			self.chunk = nil
+			fallthrough
+		default:
+			if self.AutoClear {
+				self.clear()
+			}
 			err = io.EOF
 		}
 	} else {
@@ -339,11 +346,14 @@ func (self *Morass) Pull(e LessInterface) (err error) {
 				fallthrough
 			default:
 				low.file.Close()
-				if self.AutoClean {
+				if self.AutoClear {
 					os.Remove(low.file.Name())
 				}
 			}
 		} else {
+			if self.AutoClear {
+				self.clear()
+			}
 			if self.AutoClean {
 				os.RemoveAll(self.dir)
 			}
