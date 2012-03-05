@@ -23,14 +23,20 @@ import (
 type Caller struct {
 	Package  string
 	Function string
+	File     string
+	Line     int
 }
 
-func Name(skip int) *Caller {
+func GetCaller(skip int) *Caller {
 	if pc, _, _, ok := runtime.Caller(skip + 1); ok {
-		caller := strings.Split(runtime.FuncForPC(pc).Name(), ".")
+		function := runtime.FuncForPC(pc)
+		caller := strings.Split(function.Name(), ".")
+		file, line := function.FileLine(pc)
 		return &Caller{
 			Package:  strings.Join(caller[0:len(caller)-1], "."),
 			Function: caller[len(caller)-1],
+			File:     file,
+			Line:     line,
 		}
 	}
 	return nil
