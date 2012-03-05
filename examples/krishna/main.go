@@ -165,7 +165,7 @@ func main() {
 		pals.MaxKmerLen = maxK
 	}
 
-	m, err := morass.New(filter.FilterHit{}, "krishna_"+strconv.Itoa(pid), tmpDir, tmpChunk, tmpConcurrent)
+	m, err := morass.New(filter.FilterHit{}, "krishna_"+strconv.Itoa(pid)+"_", tmpDir, tmpChunk, tmpConcurrent)
 	if err != nil {
 		logger.Fatalf("Error: %v", err)
 	}
@@ -215,4 +215,6 @@ func main() {
 			logger.Printf("Wrote hits (%v bytes)", n)
 		}
 	}
+
+	pa.CleanUp()
 }
