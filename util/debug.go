@@ -17,6 +17,7 @@ package util
 
 import (
 	"fmt"
+	"os"
 )
 
 type Debug bool
@@ -24,15 +25,15 @@ type Debug bool
 func (d Debug) Println(args ...interface{}) {
 	if d {
 		caller := GetCaller(1)
-		fmt.Printf("%s %s#%d:", caller.Package, caller.File, caller.Line)
-		fmt.Println(args...)
+		fmt.Fprintf(os.Stderr, "%s %s#%d:", caller.Package, caller.File, caller.Line)
+		fmt.Fprintln(os.Stderr, args...)
 	}
 }
 
 func (d Debug) Printf(format string, args ...interface{}) {
 	if d {
 		caller := GetCaller(1)
-		fmt.Printf("%s %s#%d:", caller.Package, caller.File, caller.Line)
-		fmt.Printf(format, args...)
+		fmt.Fprintf(os.Stderr, "%s %s#%d:", caller.Package, caller.File, caller.Line)
+		fmt.Fprintf(os.Stderr, format, args...)
 	}
 }
