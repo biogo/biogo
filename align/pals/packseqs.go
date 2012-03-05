@@ -35,16 +35,16 @@ func NewPacker(id string) (p *Packer) {
 		Packed: &seq.Seq{
 			ID:     id,
 			Strand: 1,
-			Meta:   SeqMap{},
+			Meta:   seqMap{},
 		},
 	}
 }
 
 // Pack a sequence into the Packed sequence. Returns a string giving diagnostic information.
 func (self *Packer) Pack(sequence *seq.Seq) string {
-	m := self.Packed.Meta.(SeqMap)
+	m := self.Packed.Meta.(seqMap)
 
-	contig := Contig{seq: sequence}
+	c := contig{seq: sequence}
 
 	padding := binSize - sequence.Len()%binSize
 	if padding < minPadding {
@@ -52,7 +52,7 @@ func (self *Packer) Pack(sequence *seq.Seq) string {
 	}
 
 	self.length += self.lastPad
-	contig.from = self.length
+	c.from = self.length
 	self.length += sequence.Len()
 	self.lastPad = padding
 
@@ -62,7 +62,7 @@ func (self *Packer) Pack(sequence *seq.Seq) string {
 	}
 
 	m.binMap = append(m.binMap, bins...)
-	m.contigs = append(m.contigs, contig)
+	m.contigs = append(m.contigs, c)
 	self.Packed.Meta = m
 
 	return fmt.Sprintf("%20s\t%10d\t%7d-%-d", sequence.ID[:util.Min(20, len(sequence.ID))], sequence.Len(), len(m.binMap)-len(bins), len(m.binMap)-1)
@@ -72,13 +72,13 @@ func (self *Packer) Pack(sequence *seq.Seq) string {
 func (self *Packer) FinalisePack() {
 	lastPad := 0
 	self.Packed.Seq = make([]byte, 0, self.length)
-	for _, contig := range self.Packed.Meta.(SeqMap).contigs {
-		padding := binSize - contig.seq.Len()%binSize
+	for _, c := range self.Packed.Meta.(seqMap).contigs {
+		padding := binSize - c.seq.Len()%binSize
 		if padding < minPadding {
 			padding += binSize
 		}
 		self.Packed.Seq = append(self.Packed.Seq, bytes.Repeat([]byte("N"), lastPad)...)
-		self.Packed.Seq = append(self.Packed.Seq, contig.seq.Seq...)
+		self.Packed.Seq = append(self.Packed.Seq, c.seq.Seq...)
 		lastPad = padding
 	}
 }
@@ -86,13 +86,13 @@ func (self *Packer) FinalisePack() {
 // TODO: The following types should be rationalised to make a true Packed sequence type - include in exp/seq.
 
 // A Contig holds a sequence within a SeqMap.
-type Contig struct {
+type contig struct {
 	seq  *seq.Seq
 	from int
 }
 
 // A SeqMap is a collection of sequences mapped to a Packed sequence.
-type SeqMap struct {
-	contigs []Contig
+type seqMap struct {
+	contigs []contig
 	binMap  []int
 }

@@ -10,7 +10,7 @@ func WriteDPHits(w *pals.Writer, target, query *seq.Seq, hits []dp.DPHit, comp b
 	var pair *pals.FeaturePair
 
 	for _, hit := range hits {
-		if pair, err = pals.FeaturePairOf(target, query, hit, comp); err != nil {
+		if pair, err = pals.NewFeaturePair(target, query, hit, comp); err != nil {
 			return
 		} else {
 			ln, err := w.Write(pair)
