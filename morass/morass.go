@@ -292,6 +292,9 @@ func (self *Morass) clear() (err error) {
 	self.length = 0
 	select {
 	case self.chunk = <-self.pool:
+		if self.chunk == nil {
+			self.chunk = make(sortable, 0, self.chunkSize)
+		}
 	default:
 	}
 
