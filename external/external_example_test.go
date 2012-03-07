@@ -23,7 +23,7 @@ import (
 
 func ExampleBuild_1() {
 	// samtools sort [-n] [-m maxMem] <in.bam> <out.prefix>
-	type SamtoolsSort struct {
+	type SamToolsSort struct {
 		Name      string
 		Comment   string
 		Cmd       string   `buildarg:"{{if .}}{{.}}{{else}}samtools{{end}}"`
@@ -35,7 +35,7 @@ func ExampleBuild_1() {
 		CommandBuilder
 	}
 
-	s := SamtoolsSort{
+	s := SamToolsSort{
 		Name:      "Sort",
 		SortNames: true,
 		MaxMem:    1e8,
@@ -55,7 +55,7 @@ func ExampleBuild_1() {
 
 func ExampleBuild_2() {
 	// samtools merge [-h inh.sam] [-n] <out.bam> <in1.bam> <in2.bam> [...]
-	type SamtoolsMerge struct {
+	type SamToolsMerge struct {
 		Name       string
 		Comment    string
 		Cmd        string   `buildarg:"{{if .}}{{.}}{{else}}samtools{{end}}"`
@@ -67,7 +67,7 @@ func ExampleBuild_2() {
 		CommandBuilder
 	}
 
-	s := &SamtoolsMerge{
+	s := &SamToolsMerge{
 		Name:       "Merge",
 		Cmd:        "samtools",
 		HeaderFile: "header",
@@ -83,4 +83,48 @@ func ExampleBuild_2() {
 	}
 	// Output:
 	// samtools merge -h "header" "outfile" "infile1" "infile2"
+}
+
+func ExampleBuild_3() {
+	// sed [-n] -e <exp> [-e <exp>...] [-f] [-i[suf]] [-l <len>] [--posix] [-r] [-s] [-s] <in>... > <out>
+	type InPlace struct {
+		InPlace bool
+		Suffix  string
+	}
+	type Sed struct {
+		Name          string
+		Comment       string
+		Cmd           string   `buildarg:"{{if .}}{{.}}{{else}}sed{{end}}"`
+		Quiet         bool     `buildarg:"{{if .}}-n{{end}}"`
+		Script        []string `buildarg:"{{mprintf \"-e '%v'\" . | join \" \"}}"`
+		ScriptFile    []string `buildarg:"{{mprintf \"-f %q\" . | join \" \"}}"`
+		FollowSymLink bool     `buildarg:"{{if .}}-f{{end}}"`
+		InPlace       InPlace  `buildarg:"{{if .InPlace}}-i{{with .Suffix}}\"{{.}}\"{{end}}{{end}}"`
+		WrapAt        int      `buildarg:"{{with .}}-l \"{{.}}\"{{end}}"`
+		Posix         bool     `buildarg:"{{if .}}--posix{{end}}"`
+		ExtendRE      bool     `buildarg:"{{if .}}-r{{end}}"`
+		Separate      bool     `buildarg:"{{if .}}-s{{end}}"`
+		Unbuffered    bool     `buildarg:"{{if .}}-u{{end}}"`
+		InFiles       []string `buildarg:"{{quote . | join \" \"}}"`
+		OutFile       string   `buildarg:"{{if .}}>\"{{.}}\"{{end}}"`
+		CommandBuilder
+	}
+
+	s := &Sed{
+		Name:    "Sed",
+		Cmd:     "sed",
+		Script:  []string{`s/\<hi\>/lo/g`, `s/\<left\>/right/g`},
+		InPlace: InPlace{true, "bottomright"},
+		InFiles: []string{"infile"},
+		OutFile: "outfile",
+	}
+
+	args, err := Build(s)
+	if err != nil {
+		fmt.Println(err)
+	} else {
+		fmt.Println(strings.Join(args, " "))
+	}
+	// Output:
+	// sed -e 's/\<hi\>/lo/g' -e 's/\<left\>/right/g' -i"bottomright" "infile" >"outfile"
 }

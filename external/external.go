@@ -28,9 +28,30 @@ import (
 
 // CommandBuilder is an interface that assembles a set of command line arguments, and creates
 // an *exec.Cmd that can run the command. The method BuildCommand is responsible for handling 
-// setp up of redirections and parameter sanity checking if required. 
+// set up of redirections and parameter sanity checking if required. 
 type CommandBuilder interface {
 	BuildCommand() (*exec.Cmd, error)
+}
+
+// Mprintf applies Sprintf with the provided format to each element of slice. It returns an
+// error if slice is not a slice or an array or a pointer to either of these types.
+func Mprintf(format string, slice interface{}) (f []string, err error) {
+	v := reflect.ValueOf(slice)
+	if kind := v.Kind(); kind == reflect.Interface || kind == reflect.Ptr {
+		v = v.Elem()
+	}
+	switch v.Kind() {
+	case reflect.Slice, reflect.Array:
+		l := v.Len()
+		f = make([]string, l)
+		for i := 0; i < l; i++ {
+			f[i] = fmt.Sprintf(format, v.Index(i).Interface())
+		}
+	default:
+		return nil, errors.New("not a slice or array type")
+	}
+
+	return
 }
 
 // Quote wraps in quotes each string of a slice.
@@ -46,11 +67,12 @@ func Quote(s []string) (q []string) {
 // Join calls strings.Join with the parameter order reversed to allow use in a template pipeline.
 func Join(sep string, a []string) string { return strings.Join(a, sep) }
 
-// Build builds a set of command line args from cb, which muct be a struct. cb's fields
+// Build builds a set of command line args from cb, which must be a struct. cb's fields
 // are inspected for struct tags "buildarg" key. The value for buildarg tag should be a valid
 // text template.
-// Template functions can be provided via funcs. Two convenience functions are provided:
+// Template functions can be provided via funcs. Three convenience functions are provided:
 //  quote is a template function that wraps elements of a slice of strings in quotes.
+//  mprintf is a template function that applies fmt.Sprintf to each element of a slice.
 //  join is a template function that calls strings.Join with parameter order reversed.
 func Build(cb CommandBuilder, funcs ...template.FuncMap) (args []string, err error) {
 	v := reflect.ValueOf(cb)
@@ -71,8 +93,9 @@ func Build(cb CommandBuilder, funcs ...template.FuncMap) (args []string, err err
 		if tag != "" {
 			tmpl := template.New(f.Name)
 			tmpl.Funcs(template.FuncMap{
-				"join":  Join,
-				"quote": Quote,
+				"join":    Join,
+				"quote":   Quote,
+				"mprintf": Mprintf,
 			})
 			for _, f := range funcs {
 				tmpl.Funcs(f)
