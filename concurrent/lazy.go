@@ -1,4 +1,4 @@
-package future
+package concurrent
 
 // Copyright ©2011 Dan Kortschak <dan.kortschak@adelaide.edu.au>
 //
@@ -15,9 +15,31 @@ package future
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import (
-	"testing"
-)
+// Evaluator is a function for lazy evaluation.
+type Evaluator func(...interface{}) (interface{}, []interface{})
 
-func TestLazy(t *testing.T) {
+// Lazily is function to generate a lazy evaluator.
+// 
+// Lazy functions are terminated by closing the reaper channel. nil should be passed as
+// a reaper for perpetual lazy functions.
+func Lazily(f Evaluator, rc chan interface{}, reaper <-chan struct{}, init ...interface{}) func() interface{} {
+	go func() {
+		defer close(rc)
+		var state []interface{} = init
+		var result interface{}
+
+		for {
+			result, state = f(state...)
+			select {
+			case rc <- result:
+			case <-reaper:
+				close(rc)
+				return
+			}
+		}
+	}()
+
+	return func() interface{} {
+		return <-rc
+	}
 }

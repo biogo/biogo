@@ -1,4 +1,3 @@
-// Package to apply a function over an array or stream of data.
 package concurrent
 
 // Copyright ©2011 Dan Kortschak <dan.kortschak@adelaide.edu.au>
@@ -16,8 +15,9 @@ package concurrent
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-// The Concurrent interface represents a processor that allows adding jobs and retrieving results
-type Concurrent interface {
-	Process(...interface{})
-	Result() (interface{}, error)
+import (
+	"testing"
+)
+
+func TestPromise(t *testing.T) {
 }

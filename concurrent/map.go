@@ -23,16 +23,14 @@ package concurrent
 
 import (
 	"github.com/kortschak/BioGo/bio"
-	"github.com/kortschak/BioGo/future"
 	"github.com/kortschak/BioGo/util"
 	"math"
 )
 
 // Apply a function to an array slice using a Processor
-func Map(f Eval, slice []interface{}, threads, maxChunkSize int) (error error) {
+func Map(f Process, slice []interface{}, threads, maxChunkSize int) (error error) {
 	queue := make(chan interface{}, 1)
-	buffer := make(chan Result)
-	p := NewProcessor(f, threads, queue, buffer)
+	p := NewProcessor(f, threads, queue, 0)
 	defer p.Stop()
 
 	chunkSize := util.Min(int(math.Ceil(float64(len(slice))/float64(threads))), maxChunkSize)
@@ -53,7 +51,7 @@ func Map(f Eval, slice []interface{}, threads, maxChunkSize int) (error error) {
 
 	for r := 0; r*chunkSize < len(slice); r++ {
 		result := <-p.out
-		if result.Error != nil {
+		if result.Err != nil {
 			error = bio.NewError("Map failed", 0, error)
 			close(quit)
 			break
@@ -63,9 +61,9 @@ func Map(f Eval, slice []interface{}, threads, maxChunkSize int) (error error) {
 	return
 }
 
-// A future Map function - synchronisation is via a bio/future.Promise
-func SpawnMap(f Eval, slice []interface{}, threads, maxChunkSize int) *future.Promise {
-	promise := future.NewPromise(false, false, false)
+// A future Map function - synchronisation is via a Promise
+func SpawnMap(f Process, slice []interface{}, threads, maxChunkSize int) *Promise {
+	promise := NewPromise(false, false, false)
 
 	go func() {
 		e := Map(f, slice, threads, maxChunkSize)

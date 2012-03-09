@@ -1,4 +1,4 @@
-package future
+package concurrent
 
 // Copyright ©2011 Dan Kortschak <dan.kortschak@adelaide.edu.au>
 //
@@ -19,5 +19,14 @@ import (
 	"testing"
 )
 
-func TestPromise(t *testing.T) {
+func TestLazy(t *testing.T) {
+}
+
+func ExampleLazily() {
+	// Wrap Lazily in a function that returns the result as the type you are actually using.
+	LazilyString = func(f Eval, rc chan string, reaper <-chan struct{}, init ...string) func() string {
+		return func() string {
+			return Lazily(f, rc, reaper, init...)().(string)
+		}
+	}
 }

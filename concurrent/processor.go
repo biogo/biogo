@@ -21,7 +21,7 @@ import (
 	"sync"
 )
 
-// Processor type
+// The Processor type manages a number of concurrent Processes.
 type Processor struct {
 	in      chan interface{}
 	out     chan Result
@@ -30,17 +30,20 @@ type Processor struct {
 	*sync.WaitGroup
 }
 
+// A Process is a function type that operates on data under the control of a Processor.
+type Process func(...interface{}) (interface{}, error)
+
 // Return a new Processor to operate the function f over the number of threads specified taking
 // input from queue and placing the result in buffer. Cores is limited by GOMAXPROCS, if threads is greater
 // GOMAXPROCS or less than 1 then threads is set to GOMAXPROCS.
-func NewProcessor(f Eval, threads int, queue chan interface{}, buffer chan Result) (p *Processor) {
+func NewProcessor(f Process, threads int, queue chan interface{}, buffer int) (p *Processor) {
 	if available := runtime.GOMAXPROCS(0); threads > available || threads < 1 {
 		threads = available
 	}
 
 	p = &Processor{
 		in:        queue,
-		out:       buffer,
+		out:       make(chan Result, buffer),
 		stop:      make(chan struct{}),
 		working:   make(chan bool, threads),
 		WaitGroup: &sync.WaitGroup{},
@@ -86,7 +89,7 @@ func (self *Processor) Process(value ...interface{}) {
 // Get the result
 func (self *Processor) Result() (interface{}, error) {
 	r := <-self.out
-	return r.Value, r.Error
+	return r.Value, r.Err
 }
 
 // Close the queue
@@ -102,4 +105,9 @@ func (self *Processor) Working() int {
 // Terminate the goroutines
 func (self *Processor) Stop() {
 	close(self.stop)
+}
+
+type Result struct {
+	Value interface{}
+	Err   error
 }
