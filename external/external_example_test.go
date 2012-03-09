@@ -26,12 +26,12 @@ func ExampleBuild_1() {
 	type SamToolsSort struct {
 		Name      string
 		Comment   string
-		Cmd       string   `buildarg:"{{if .}}{{.}}{{else}}samtools{{end}}"`
-		SubCmd    struct{} `buildarg:"sort"`
-		SortNames bool     `buildarg:"{{if .}}-n{{end}}"`
-		MaxMem    int      `buildarg:"{{with .}}-m {{.}}{{end}}"`
-		InFile    string   `buildarg:"\"{{.}}\""`
-		OutFile   string   `buildarg:"\"{{.}}\""`
+		Cmd       string   `buildarg:"{{if .}}{{.}}{{else}}samtools{{end}}"` // samtools
+		SubCmd    struct{} `buildarg:"sort"`                                 // sort
+		SortNames bool     `buildarg:"{{if .}}-n{{end}}"`                    // [-n]
+		MaxMem    int      `buildarg:"{{with .}}-m {{.}}{{end}}"`            // [-m maxMem]
+		InFile    string   `buildarg:"\"{{.}}\""`                            // "<in.bam>"
+		OutFile   string   `buildarg:"\"{{.}}\""`                            // "<out.prefix>"
 		CommandBuilder
 	}
 
@@ -58,12 +58,12 @@ func ExampleBuild_2() {
 	type SamToolsMerge struct {
 		Name       string
 		Comment    string
-		Cmd        string   `buildarg:"{{if .}}{{.}}{{else}}samtools{{end}}"`
-		SubCmd     struct{} `buildarg:"merge"`
-		HeaderFile string   `buildarg:"{{with .}}-h \"{{.}}\"{{end}}"`
-		SortNames  bool     `buildarg:"{{if .}}-n{{end}}"`
-		OutFile    string   `buildarg:"\"{{.}}\""`
-		InFiles    []string `buildarg:"{{quote . | join \" \"}}"`
+		Cmd        string   `buildarg:"{{if .}}{{.}}{{else}}samtools{{end}}"` // samtools
+		SubCmd     struct{} `buildarg:"merge"`                                // merge
+		HeaderFile string   `buildarg:"{{with .}}-h \"{{.}}\"{{end}}"`        // [-h inh.sam]
+		SortNames  bool     `buildarg:"{{if .}}-n{{end}}"`                    // [-n]
+		OutFile    string   `buildarg:"\"{{.}}\""`                            // "<out.bam>"
+		InFiles    []string `buildarg:"{{quote . | join \" \"}}"`             // "<in.bam>"...
 		CommandBuilder
 	}
 
@@ -86,27 +86,27 @@ func ExampleBuild_2() {
 }
 
 func ExampleBuild_3() {
-	// sed [-n] -e <exp> [-e <exp>...] [-f] [-i[suf]] [-l <len>] [--posix] [-r] [-s] [-s] <in>... > <out>
+	// sed [-n] [-e <exp>]... [-f <file>]... [--follow-symlinks] [-i[suf]] [-l <len>] [--posix] [-r] [-s] [-s] <in>... > <out>
 	type InPlace struct {
-		InPlace bool
-		Suffix  string
+		Yes bool
+		Suf string
 	}
 	type Sed struct {
-		Name          string
-		Comment       string
-		Cmd           string   `buildarg:"{{if .}}{{.}}{{else}}sed{{end}}"`
-		Quiet         bool     `buildarg:"{{if .}}-n{{end}}"`
-		Script        []string `buildarg:"{{mprintf \"-e '%v'\" . | join \" \"}}"`
-		ScriptFile    []string `buildarg:"{{mprintf \"-f %q\" . | join \" \"}}"`
-		FollowSymLink bool     `buildarg:"{{if .}}-f{{end}}"`
-		InPlace       InPlace  `buildarg:"{{if .InPlace}}-i{{with .Suffix}}\"{{.}}\"{{end}}{{end}}"`
-		WrapAt        int      `buildarg:"{{with .}}-l \"{{.}}\"{{end}}"`
-		Posix         bool     `buildarg:"{{if .}}--posix{{end}}"`
-		ExtendRE      bool     `buildarg:"{{if .}}-r{{end}}"`
-		Separate      bool     `buildarg:"{{if .}}-s{{end}}"`
-		Unbuffered    bool     `buildarg:"{{if .}}-u{{end}}"`
-		InFiles       []string `buildarg:"{{quote . | join \" \"}}"`
-		OutFile       string   `buildarg:"{{if .}}>\"{{.}}\"{{end}}"`
+		Name       string
+		Comment    string
+		Cmd        string   `buildarg:"{{if .}}{{.}}{{else}}sed{{end}}"`                   // sed
+		Quiet      bool     `buildarg:"{{if .}}-n{{end}}"`                                 // [-n]
+		Script     []string `buildarg:"{{mprintf \"-e '%v'\" . | join \" \"}}"`            // [-e '<exp>']...
+		ScriptFile []string `buildarg:"{{mprintf \"-f %q\" . | join \" \"}}"`              // [-f "<file>"]...
+		Follow     bool     `buildarg:"{{if .}}--follow-symlinks{{end}}"`                  // [--follow-symlinks]
+		InPlace    InPlace  `buildarg:"{{if .Yes}}-i{{with .Suf}}\"{{.}}\"{{end}}{{end}}"` // [-i[suf]]
+		WrapAt     int      `buildarg:"{{with .}}-l \"{{.}}\"{{end}}"`                     // [-l <len>]
+		Posix      bool     `buildarg:"{{if .}}--posix{{end}}"`                            // [--posix]
+		ExtendRE   bool     `buildarg:"{{if .}}-r{{end}}"`                                 // [-r]
+		Separate   bool     `buildarg:"{{if .}}-s{{end}}"`                                 // [-s]
+		Unbuffered bool     `buildarg:"{{if .}}-u{{end}}"`                                 // [-u]
+		InFiles    []string `buildarg:"{{quote . | join \" \"}}"`                          // "<in>"...
+		OutFile    string   `buildarg:"{{if .}}>\"{{.}}\"{{end}}"`                         // >"<out>"
 		CommandBuilder
 	}
 
