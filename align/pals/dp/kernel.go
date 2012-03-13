@@ -73,6 +73,9 @@ func (self *kernel) alignRecursion(workingTrap *filter.Trapezoid) {
 	if self.highEnd.Bepos-self.highEnd.Bbpos >= self.minLen && self.highEnd.Aepos-self.highEnd.Abpos >= self.minLen {
 		indel := (self.highEnd.Abpos - self.highEnd.Bbpos) - (self.highEnd.Aepos - self.highEnd.Bepos)
 		if indel < 0 {
+			if indel == -indel {
+				panic("dp: weird number overflow")
+			}
 			indel = -indel
 		}
 		identity := ((1 / RMatchCost) - float64(self.highEnd.Score-indel)/(RMatchCost*float64(self.highEnd.Bepos-self.highEnd.Bbpos)))

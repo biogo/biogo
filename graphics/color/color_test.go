@@ -59,6 +59,9 @@ var withinEpsilon check.Checker = &uint32EpsilonChecker{
 func (checker *uint32EpsilonChecker) Check(params []interface{}, names []string) (result bool, error string) {
 	d := int64(params[0].(uint32)) - int64(params[1].(uint32))
 	if d < 0 {
+		if d == -d {
+			panic("color: weird number overflow")
+		}
 		d = -d
 	}
 	return uint32(d) <= params[2].(uint32), ""
