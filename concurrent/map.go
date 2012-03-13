@@ -1,9 +1,3 @@
-// Map routines to iterate a function over an array, potentially splitting the array slice into
-// chunks so that each chunk is processed concurrently. When using concurrent processing the
-// Chunk size is either the nearest even division of the total array over the chosen concurrent
-// processing goroutines or a specified maximum chunk size, whichever is smaller. Reducing
-// chunk size can reduce the impact of divergence in time for processing chunks, but may add
-// to overhead.
 package concurrent
 
 // Copyright ©2011 Dan Kortschak <dan.kortschak@adelaide.edu.au>
@@ -27,50 +21,63 @@ import (
 	"math"
 )
 
-// Apply a function to an array slice using a Processor
-func Map(f Process, slice []interface{}, threads, maxChunkSize int) (error error) {
-	queue := make(chan interface{}, 1)
-	p := NewProcessor(f, threads, queue, 0)
+// A Mapper is an Operator that can subdivide itself.
+type Mapper interface {
+	Operator
+	Slice(i, j int) Mapper
+	Len() int
+}
+
+// Map routines to iterate a function over an array, potentially splitting the array slice into
+// chunks so that each chunk is processed concurrently. When using concurrent processing the
+// Chunk size is either the nearest even division of the total array over the chosen concurrent
+// processing goroutines or a specified maximum chunk size, whichever is smaller. Reducing
+// chunk size can reduce the impact of divergence in time for processing chunks, but may add
+// to overhead.
+func Map(set Mapper, threads, maxChunkSize int) (results []interface{}, err error) {
+	queue := make(chan Operator, 1)
+	p := NewProcessor(queue, 0, threads)
 	defer p.Stop()
 
-	chunkSize := util.Min(int(math.Ceil(float64(len(slice))/float64(threads))), maxChunkSize)
+	chunkSize := util.Min(int(math.Ceil(float64(set.Len())/float64(threads))), maxChunkSize)
 
 	quit := make(chan struct{})
 
 	go func() {
-		for s := 0; s*chunkSize < len(slice); s++ {
+		for s := 0; s*chunkSize < set.Len(); s++ {
 			select {
 			case <-quit:
 				break
 			default:
-				endChunk := util.Min(chunkSize*(s+1)-1, len(slice)-1)
-				p.in <- slice[chunkSize*s : endChunk]
+				endChunk := util.Min(chunkSize*(s+1), set.Len())
+				queue <- set.Slice(chunkSize*s, endChunk)
 			}
 		}
 	}()
 
-	for r := 0; r*chunkSize < len(slice); r++ {
+	for r := 0; r*chunkSize < set.Len(); r++ {
 		result := <-p.out
 		if result.Err != nil {
-			error = bio.NewError("Map failed", 0, error)
+			err = bio.NewError("Map failed", 0, err)
 			close(quit)
 			break
 		}
+		results = append(results, result.Value)
 	}
 
 	return
 }
 
-// A future Map function - synchronisation is via a Promise
-func SpawnMap(f Process, slice []interface{}, threads, maxChunkSize int) *Promise {
+// A future Map function - synchronisation is via a Promise.
+func PromiseMap(set Mapper, threads, maxChunkSize int) *Promise {
 	promise := NewPromise(false, false, false)
 
 	go func() {
-		e := Map(f, slice, threads, maxChunkSize)
-		if e == nil {
-			promise.Fulfill(slice)
+		result, err := Map(set, threads, maxChunkSize)
+		if err == nil {
+			promise.Fulfill(result)
 		} else {
-			promise.Fail(nil, e)
+			promise.Fail(result, err)
 		}
 	}()
 

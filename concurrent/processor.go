@@ -21,36 +21,38 @@ import (
 	"sync"
 )
 
+// Interface is a type that performs an operation on itself, returning any error.
+type Operator interface {
+	Operation() (interface{}, error)
+}
+
 // The Processor type manages a number of concurrent Processes.
 type Processor struct {
-	in      chan interface{}
+	in      chan Operator
 	out     chan Result
 	stop    chan struct{}
 	working chan bool
-	*sync.WaitGroup
+	wg      *sync.WaitGroup
 }
 
-// A Process is a function type that operates on data under the control of a Processor.
-type Process func(...interface{}) (interface{}, error)
-
 // Return a new Processor to operate the function f over the number of threads specified taking
-// input from queue and placing the result in buffer. Cores is limited by GOMAXPROCS, if threads is greater
+// input from queue and placing the result in buffer. Threads is limited by GOMAXPROCS, if threads is greater
 // GOMAXPROCS or less than 1 then threads is set to GOMAXPROCS.
-func NewProcessor(f Process, threads int, queue chan interface{}, buffer int) (p *Processor) {
+func NewProcessor(queue chan Operator, buffer int, threads int) (p *Processor) {
 	if available := runtime.GOMAXPROCS(0); threads > available || threads < 1 {
 		threads = available
 	}
 
 	p = &Processor{
-		in:        queue,
-		out:       make(chan Result, buffer),
-		stop:      make(chan struct{}),
-		working:   make(chan bool, threads),
-		WaitGroup: &sync.WaitGroup{},
+		in:      queue,
+		out:     make(chan Result, buffer),
+		stop:    make(chan struct{}),
+		working: make(chan bool, threads),
+		wg:      &sync.WaitGroup{},
 	}
 
 	for i := 0; i < threads; i++ {
-		p.Add(1)
+		p.wg.Add(1)
 		go func() {
 			p.working <- true
 			defer func() {
@@ -61,11 +63,11 @@ func NewProcessor(f Process, threads int, queue chan interface{}, buffer int) (p
 				if len(p.working) == 0 {
 					close(p.out)
 				}
-				p.Done()
+				p.wg.Done()
 			}()
 
 			for input := range p.in {
-				v, e := f(input.([]interface{})...)
+				v, e := input.Operation()
 				if p.out != nil {
 					p.out <- Result{v, e}
 				}
@@ -81,30 +83,37 @@ func NewProcessor(f Process, threads int, queue chan interface{}, buffer int) (p
 	return
 }
 
-// Submit a value for processing
-func (self *Processor) Process(value ...interface{}) {
-	self.in <- value
+// Submit values for processing.
+func (self *Processor) Process(value ...Operator) {
+	for _, v := range value {
+		self.in <- v
+	}
 }
 
-// Get the result
+// Get the next available result.
 func (self *Processor) Result() (interface{}, error) {
 	r := <-self.out
 	return r.Value, r.Err
 }
 
-// Close the queue
+// Close the queue.
 func (self *Processor) Close() {
 	close(self.in)
 }
 
-// Return the number of working goroutines
+// Return the number of working goroutines.
 func (self *Processor) Working() int {
 	return len(self.working)
 }
 
-// Terminate the goroutines
+// Terminate the goroutines.
 func (self *Processor) Stop() {
 	close(self.stop)
+}
+
+// Wait for all running processes to finish.
+func (self *Processor) Wait() {
+	self.wg.Wait()
 }
 
 type Result struct {

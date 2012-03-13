@@ -16,16 +16,19 @@ package concurrent
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 // Evaluator is a function for lazy evaluation.
-type Evaluator func(...interface{}) (interface{}, []interface{})
+type Evaluator func(...interface{}) (interface{}, State)
+
+type State []interface{}
 
 // Lazily is function to generate a lazy evaluator.
 // 
 // Lazy functions are terminated by closing the reaper channel. nil should be passed as
 // a reaper for perpetual lazy functions.
-func Lazily(f Evaluator, rc chan interface{}, reaper <-chan struct{}, init ...interface{}) func() interface{} {
-	go func() {
+func Lazily(f Evaluator, lookahead int, reaper <-chan struct{}, init ...interface{}) func() interface{} {
+	rc := make(chan interface{}, lookahead)
+	go func(rc chan interface{}) {
 		defer close(rc)
-		var state []interface{} = init
+		var state State = init
 		var result interface{}
 
 		for {
@@ -33,11 +36,10 @@ func Lazily(f Evaluator, rc chan interface{}, reaper <-chan struct{}, init ...in
 			select {
 			case rc <- result:
 			case <-reaper:
-				close(rc)
 				return
 			}
 		}
-	}()
+	}(rc)
 
 	return func() interface{} {
 		return <-rc
