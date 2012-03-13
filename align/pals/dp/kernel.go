@@ -46,11 +46,13 @@ type kernel struct {
 //  int [n]a;
 //  v = a - o;
 //  // now v[i] is a view on a[i-o]
-// No method is provided (perhaps when inlining is further implemented).
 type offsetSlice struct {
 	offset int
 	slice  []int
 }
+
+func (o *offsetSlice) at(i int) (v int) { return o.slice[i-o.offset] } // v return name due to go issue 3315 TODO: Remove when issue is resolved.
+func (o *offsetSlice) set(i, v int)     { o.slice[i-o.offset] = v }
 
 var vecBuffering int = 100000
 
@@ -147,10 +149,13 @@ func (self *kernel) allocateVectors(required int) {
 // record, that will be merged with that returned for extension in the
 // opposite direction.
 func (self *kernel) traceForward(mid, low, high int) {
-	thisVector := &offsetSlice{}
 	odd := false
-	var maxScore, maxLeft, maxRight, maxI, maxJ int
-	var i, j int
+	var (
+		maxScore          int
+		maxLeft, maxRight int
+		maxI, maxJ        int
+		i, j              int
+	)
 
 	/* Set basis from (mid,low) .. (mid,high) */
 	if low < 0 {
@@ -164,11 +169,13 @@ func (self *kernel) traceForward(mid, low, high int) {
 		self.allocateVectors(required)
 	}
 
-	thisVector.slice = self.vectors[0]
-	thisVector.offset = low
+	thisVector := &offsetSlice{
+		slice:  self.vectors[0],
+		offset: low,
+	}
 
 	for j = low; j <= high; j++ {
-		thisVector.slice[j-thisVector.offset] = 0
+		thisVector.set(j, 0)
 	}
 
 	high += MaxIGap
@@ -177,7 +184,7 @@ func (self *kernel) traceForward(mid, low, high int) {
 	}
 
 	for ; j <= high; j++ {
-		thisVector.slice[j-thisVector.offset] = thisVector.slice[j-thisVector.offset-1] - DiffCost
+		thisVector.set(j, thisVector.at(j-1)-DiffCost)
 	}
 
 	maxScore = 0
@@ -187,10 +194,11 @@ func (self *kernel) traceForward(mid, low, high int) {
 	maxJ = low
 
 	/* Advance to next row */
+	thatVector := &offsetSlice{}
 	for i = mid; low <= high && i < self.query.Len(); i++ {
 		var cost, score int
 
-		thatVector := *thisVector
+		*thatVector = *thisVector
 		if !odd {
 			thisVector.slice = self.vectors[1]
 		} else {
@@ -199,16 +207,16 @@ func (self *kernel) traceForward(mid, low, high int) {
 		thisVector.offset = low
 		odd = !odd
 
-		score = thatVector.slice[low-thatVector.offset]
-		thisVector.slice[low-thisVector.offset] = score - DiffCost
-		cost = thisVector.slice[low-thisVector.offset]
+		score = thatVector.at(low)
+		thisVector.set(low, score-DiffCost)
+		cost = thisVector.at(low)
 
 		for j = low + 1; j <= high; j++ {
 			var ratchet, temp int
 
 			temp = cost
 			cost = score
-			score = thatVector.slice[j-thatVector.offset]
+			score = thatVector.at(j)
 			if self.query.Seq[i] == self.target.Seq[j-1] && lookUp.ValueToCode[self.query.Seq[i]] >= 0 {
 				cost += MatchCost
 			}
@@ -222,7 +230,7 @@ func (self *kernel) traceForward(mid, low, high int) {
 			}
 
 			cost = ratchet - DiffCost
-			thisVector.slice[j-thisVector.offset] = cost
+			thisVector.set(j, cost)
 			if cost >= maxScore {
 				maxScore = cost
 				maxI = i + 1
@@ -243,7 +251,7 @@ func (self *kernel) traceForward(mid, low, high int) {
 			}
 
 			score = ratchet - DiffCost
-			thisVector.slice[j-thisVector.offset] = score
+			thisVector.set(j, score)
 			if score > maxScore {
 				maxScore = score
 				maxI = i + 1
@@ -255,16 +263,16 @@ func (self *kernel) traceForward(mid, low, high int) {
 				if score < maxScore-BlockCost {
 					break
 				}
-				thisVector.slice[j-thisVector.offset] = score
+				thisVector.set(j, score)
 			}
 		}
 
 		high = j - 1
 
-		for low <= high && thisVector.slice[low-thisVector.offset] < maxScore-BlockCost {
+		for low <= high && thisVector.at(low) < maxScore-BlockCost {
 			low++
 		}
-		for low <= high && thisVector.slice[high-thisVector.offset] < maxScore-BlockCost {
+		for low <= high && thisVector.at(high) < maxScore-BlockCost {
 			high--
 		}
 
@@ -288,10 +296,13 @@ func (self *kernel) traceForward(mid, low, high int) {
 }
 
 func (self *kernel) traceReverse(top, low, high, bottom, xfactor int) {
-	thisVector := &offsetSlice{}
 	odd := false
-	var maxScore, maxLeft, maxRight, maxI, maxJ int
-	var i, j int
+	var (
+		maxScore          int
+		maxLeft, maxRight int
+		maxI, maxJ        int
+		i, j              int
+	)
 
 	/* Set basis from (top,low) .. (top,high) */
 	if low < 0 {
@@ -305,11 +316,12 @@ func (self *kernel) traceReverse(top, low, high, bottom, xfactor int) {
 		self.allocateVectors(required)
 	}
 
-	thisVector.slice = self.vectors[0]
-	thisVector.offset = ((len(self.vectors[0]) - 1) - high)
-
+	thisVector := &offsetSlice{
+		slice:  self.vectors[0],
+		offset: high - (len(self.vectors[0]) - 1),
+	}
 	for j = high; j >= low; j-- {
-		thisVector.slice[j+thisVector.offset] = 0
+		thisVector.set(j, 0)
 	}
 
 	low -= MaxIGap
@@ -318,7 +330,7 @@ func (self *kernel) traceReverse(top, low, high, bottom, xfactor int) {
 	}
 
 	for ; j >= low; j-- {
-		thisVector.slice[j+thisVector.offset] = thisVector.slice[j+thisVector.offset+1] - DiffCost
+		thisVector.set(j, thisVector.at(j+1)-DiffCost)
 	}
 
 	maxScore = 0
@@ -332,28 +344,29 @@ func (self *kernel) traceReverse(top, low, high, bottom, xfactor int) {
 		xfactor = BlockCost
 	}
 
+	thatVector := &offsetSlice{}
 	for i = top - 1; low <= high && i >= 0; i-- {
 		var cost, score int
 
-		thatVector := *thisVector
+		*thatVector = *thisVector
 		if !odd {
 			thisVector.slice = self.vectors[1]
 		} else {
 			thisVector.slice = self.vectors[0]
 		}
-		thisVector.offset = ((len(self.vectors[0]) - 1) - high)
+		thisVector.offset = high - (len(self.vectors[0]) - 1)
 		odd = !odd
 
-		score = thatVector.slice[high+thatVector.offset]
-		thisVector.slice[high+thisVector.offset] = score - DiffCost
-		cost = thisVector.slice[high+thisVector.offset]
+		score = thatVector.at(high)
+		thisVector.set(high, score-DiffCost)
+		cost = thisVector.at(high)
 
 		for j = high - 1; j >= low; j-- {
 			var ratchet, temp int
 
 			temp = cost
 			cost = score
-			score = thatVector.slice[j+thatVector.offset]
+			score = thatVector.at(j)
 			if self.query.Seq[i] == self.target.Seq[j] && lookUp.ValueToCode[self.query.Seq[i]] >= 0 {
 				cost += MatchCost
 			}
@@ -367,7 +380,7 @@ func (self *kernel) traceReverse(top, low, high, bottom, xfactor int) {
 			}
 
 			cost = ratchet - DiffCost
-			thisVector.slice[j+thisVector.offset] = cost
+			thisVector.set(j, cost)
 			if cost >= maxScore {
 				maxScore = cost
 				maxI = i
@@ -388,7 +401,7 @@ func (self *kernel) traceReverse(top, low, high, bottom, xfactor int) {
 			}
 
 			score = ratchet - DiffCost
-			thisVector.slice[j+thisVector.offset] = score
+			thisVector.set(j, score)
 			if score > maxScore {
 				maxScore = score
 				maxI = i
@@ -400,16 +413,16 @@ func (self *kernel) traceReverse(top, low, high, bottom, xfactor int) {
 				if score < maxScore-xfactor {
 					break
 				}
-				thisVector.slice[j+thisVector.offset] = score
+				thisVector.set(j, score)
 			}
 		}
 
 		low = j + 1
 
-		for low <= high && thisVector.slice[low+thisVector.offset] < maxScore-xfactor {
+		for low <= high && thisVector.at(low) < maxScore-xfactor {
 			low++
 		}
-		for low <= high && thisVector.slice[high+thisVector.offset] < maxScore-xfactor {
+		for low <= high && thisVector.at(high) < maxScore-xfactor {
 			high--
 		}
 
