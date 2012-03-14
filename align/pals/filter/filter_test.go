@@ -51,7 +51,7 @@ func (s *S) TestFilterAndMerge(c *check.C) {
 		p := &Params{WordSize: int(k), MinMatch: 50, MaxError: 4, TubeOffset: 32}
 		f := New(i, p)
 		var sorter *morass.Morass
-		if sorter, err = morass.New("", "", 2<<20, false); err != nil {
+		if sorter, err = morass.New(FilterHit{}, "", "", 2<<20, false); err != nil {
 			c.Fatalf("Failed to create morass: %v", err)
 		}
 		f.Filter(b, false, false, sorter)

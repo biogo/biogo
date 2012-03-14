@@ -21,19 +21,25 @@ import (
 
 // Helpers
 func f1(c *check.C) {
-	c.Check(Name(0), check.DeepEquals, &Caller{Package: "github.com/kortschak/BioGo/util", Function: "f1"})
-	c.Check(Name(1), check.DeepEquals, &Caller{Package: "github.com/kortschak/BioGo/util.(*S)", Function: "TestCaller"})
+	c.Check(GetCaller(0).Package, check.Equals, "github.com/kortschak/BioGo/util")
+	c.Check(GetCaller(0).Function, check.Equals, "f1")
+	c.Check(GetCaller(1).Package, check.Equals, "github.com/kortschak/BioGo/util.(*S)")
+	c.Check(GetCaller(1).Function, check.Equals, "TestCaller")
 	f2(c)
 }
 
 func f2(c *check.C) {
-	c.Check(Name(0), check.DeepEquals, &Caller{Package: "github.com/kortschak/BioGo/util", Function: "f2"})
-	c.Check(Name(1), check.DeepEquals, &Caller{Package: "github.com/kortschak/BioGo/util", Function: "f1"})
-	c.Check(Name(2), check.DeepEquals, &Caller{Package: "github.com/kortschak/BioGo/util.(*S)", Function: "TestCaller"})
+	c.Check(GetCaller(0).Package, check.Equals, "github.com/kortschak/BioGo/util")
+	c.Check(GetCaller(0).Function, check.Equals, "f2")
+	c.Check(GetCaller(1).Package, check.Equals, "github.com/kortschak/BioGo/util")
+	c.Check(GetCaller(1).Function, check.Equals, "f1")
+	c.Check(GetCaller(2).Package, check.Equals, "github.com/kortschak/BioGo/util.(*S)")
+	c.Check(GetCaller(2).Function, check.Equals, "TestCaller")
 }
 
 // Tests
 func (s *S) TestCaller(c *check.C) {
-	c.Check(Name(0), check.DeepEquals, &Caller{Package: "github.com/kortschak/BioGo/util.(*S)", Function: "TestCaller"})
+	c.Check(GetCaller(0).Package, check.Equals, "github.com/kortschak/BioGo/util.(*S)")
+	c.Check(GetCaller(0).Function, check.Equals, "TestCaller")
 	f1(c)
 }

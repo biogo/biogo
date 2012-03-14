@@ -124,10 +124,11 @@ func (s *S) TestOptimise(c *check.C) {
 	// minHitLen int, minId float64, target, query *seq.Seq, tubeOffset int, maxMem uint64
 	t := &seq.Seq{Seq: make([]byte, 29940)}
 	for _, p := range P {
-		if f, d, err := OptimiseParameters(p.l, p.id, t, t, 0, 0); err == nil {
-			c.Check(*f, check.Equals, filter.Params{WordSize: p.k, MinMatch: p.s, MaxError: p.d, TubeOffset: p.t})
-			c.Check(*d, check.Equals, dp.Params{MinHitLength: p.l, MinId: p.id})
-			c.Check(AvgIndexListLength(t, *f), floatApprox, p.list, 0.05)
+		pa := New(t, t, true, nil, 1, 0, nil, nil)
+		if err := pa.Optimise(p.l, p.id); err == nil {
+			c.Check(*pa.FilterParams, check.Equals, filter.Params{WordSize: p.k, MinMatch: p.s, MaxError: p.d, TubeOffset: p.t})
+			c.Check(*pa.DPParams, check.Equals, dp.Params{MinHitLength: p.l, MinId: p.id})
+			c.Check(pa.AvgIndexListLength(pa.FilterParams), floatApprox, p.list, 0.05)
 		}
 	}
 }
@@ -147,7 +148,7 @@ func (s *S) TestPack(c *check.C) {
 
 func (s *S) TestFeaturise(c *check.C) {
 	for _, t := range T {
-		if f, err := FeatureOf(ps, t.start, t.end, false); err != nil {
+		if f, err := featureOf(ps, t.start, t.end, false); err != nil {
 			c.Fatal(err)
 		} else {
 			c.Check(f.String(), check.Equals, t.result)
@@ -159,10 +160,10 @@ func (s *S) TestWrite(c *check.C) {
 	b := &B{&bytes.Buffer{}}
 	w := NewWriter(b, 0, 60, false)
 	for _, t := range T {
-		if f1, err := FeatureOf(ps, t.start, t.end, false); err != nil {
+		if f1, err := featureOf(ps, t.start, t.end, false); err != nil {
 			c.Fatal(err)
 		} else {
-			if f2, err := FeatureOf(ps, t.start, t.end, false); err != nil {
+			if f2, err := featureOf(ps, t.start, t.end, false); err != nil {
 				c.Fatal(err)
 			} else {
 				n, err := w.Write(&FeaturePair{A: f1, B: f2})
