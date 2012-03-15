@@ -28,16 +28,25 @@ const (
 // A kernel handles the actual dp alignment process.
 type kernel struct {
 	target, query *seq.Seq
-	minLen        int
-	maxDiff       float64
-	lowEnd        DPHit
-	highEnd       DPHit
-	vectors       [2][]int
-	trapezoids    []*filter.Trapezoid
-	covered       []bool
-	segments      DPHits
-	slot          int
-	result        chan DPHit
+
+	minLen  int
+	maxDiff float64
+
+	maxIGap    int
+	diffCost   int
+	sameCost   int
+	matchCost  int
+	blockCost  int
+	rMatchCost float64
+
+	lowEnd     DPHit
+	highEnd    DPHit
+	vectors    [2][]int
+	trapezoids []*filter.Trapezoid
+	covered    []bool
+	segments   DPHits
+	slot       int
+	result     chan DPHit
 }
 
 // An offset slice seems to be the easiest way to implement the C idiom used in PALS to implement
@@ -62,15 +71,15 @@ func (self *kernel) alignRecursion(workingTrap *filter.Trapezoid) {
 
 	self.traceForward(mid, mid-workingTrap.Right, mid-workingTrap.Left)
 
-	for x := 1; x == 1 || self.highEnd.Bbpos > mid+x*MaxIGap && self.highEnd.Score < self.lowEnd.Score; x++ {
-		self.traceReverse(self.lowEnd.Bepos, self.lowEnd.Aepos, self.lowEnd.Aepos, mid+MaxIGap, BlockCost+2*x*DiffCost)
+	for x := 1; x == 1 || self.highEnd.Bbpos > mid+x*self.maxIGap && self.highEnd.Score < self.lowEnd.Score; x++ {
+		self.traceReverse(self.lowEnd.Bepos, self.lowEnd.Aepos, self.lowEnd.Aepos, mid+self.maxIGap, self.blockCost+2*x*self.diffCost)
 	}
 
 	self.highEnd.Aepos, self.highEnd.Bepos = self.lowEnd.Aepos, self.lowEnd.Bepos
 
 	lowTrap, highTrap := *workingTrap, *workingTrap
-	lowTrap.Top = self.highEnd.Bbpos - MaxIGap
-	highTrap.Bottom = self.highEnd.Bepos + MaxIGap
+	lowTrap.Top = self.highEnd.Bbpos - self.maxIGap
+	highTrap.Bottom = self.highEnd.Bepos + self.maxIGap
 
 	if self.highEnd.Bepos-self.highEnd.Bbpos >= self.minLen && self.highEnd.Aepos-self.highEnd.Abpos >= self.minLen {
 		indel := (self.highEnd.Abpos - self.highEnd.Bbpos) - (self.highEnd.Aepos - self.highEnd.Bepos)
@@ -80,7 +89,7 @@ func (self *kernel) alignRecursion(workingTrap *filter.Trapezoid) {
 			}
 			indel = -indel
 		}
-		identity := ((1 / RMatchCost) - float64(self.highEnd.Score-indel)/(RMatchCost*float64(self.highEnd.Bepos-self.highEnd.Bbpos)))
+		identity := ((1 / self.rMatchCost) - float64(self.highEnd.Score-indel)/(self.rMatchCost*float64(self.highEnd.Bepos-self.highEnd.Bbpos)))
 
 		if identity <= self.maxDiff {
 			self.highEnd.Error = identity
@@ -128,7 +137,7 @@ func (self *kernel) alignRecursion(workingTrap *filter.Trapezoid) {
 		}
 	}
 
-	if lowTrap.Top-lowTrap.Bottom > self.minLen && lowTrap.Top < workingTrap.Top-MaxIGap {
+	if lowTrap.Top-lowTrap.Bottom > self.minLen && lowTrap.Top < workingTrap.Top-self.maxIGap {
 		self.alignRecursion(&lowTrap)
 	}
 	if highTrap.Top-highTrap.Bottom > self.minLen {
@@ -165,7 +174,7 @@ func (self *kernel) traceForward(mid, low, high int) {
 		high = self.target.Len()
 	}
 
-	if required := (high - low) + MaxIGap; required >= len(self.vectors[0]) {
+	if required := (high - low) + self.maxIGap; required >= len(self.vectors[0]) {
 		self.allocateVectors(required)
 	}
 
@@ -178,13 +187,13 @@ func (self *kernel) traceForward(mid, low, high int) {
 		thisVector.set(j, 0)
 	}
 
-	high += MaxIGap
+	high += self.maxIGap
 	if high > self.target.Len() {
 		high = self.target.Len()
 	}
 
 	for ; j <= high; j++ {
-		thisVector.set(j, thisVector.at(j-1)-DiffCost)
+		thisVector.set(j, thisVector.at(j-1)-self.diffCost)
 	}
 
 	maxScore = 0
@@ -208,7 +217,7 @@ func (self *kernel) traceForward(mid, low, high int) {
 		odd = !odd
 
 		score = thatVector.at(low)
-		thisVector.set(low, score-DiffCost)
+		thisVector.set(low, score-self.diffCost)
 		cost = thisVector.at(low)
 
 		for j = low + 1; j <= high; j++ {
@@ -218,7 +227,7 @@ func (self *kernel) traceForward(mid, low, high int) {
 			cost = score
 			score = thatVector.at(j)
 			if self.query.Seq[i] == self.target.Seq[j-1] && lookUp.ValueToCode[self.query.Seq[i]] >= 0 {
-				cost += MatchCost
+				cost += self.matchCost
 			}
 
 			ratchet = cost
@@ -229,7 +238,7 @@ func (self *kernel) traceForward(mid, low, high int) {
 				ratchet = temp
 			}
 
-			cost = ratchet - DiffCost
+			cost = ratchet - self.diffCost
 			thisVector.set(j, cost)
 			if cost >= maxScore {
 				maxScore = cost
@@ -242,7 +251,7 @@ func (self *kernel) traceForward(mid, low, high int) {
 			var ratchet int
 
 			if self.query.Seq[i] == self.target.Seq[j-1] && lookUp.ValueToCode[self.query.Seq[i]] >= 0 {
-				score += MatchCost
+				score += self.matchCost
 			}
 
 			ratchet = score
@@ -250,7 +259,7 @@ func (self *kernel) traceForward(mid, low, high int) {
 				ratchet = cost
 			}
 
-			score = ratchet - DiffCost
+			score = ratchet - self.diffCost
 			thisVector.set(j, score)
 			if score > maxScore {
 				maxScore = score
@@ -259,8 +268,8 @@ func (self *kernel) traceForward(mid, low, high int) {
 			}
 
 			for j++; j <= self.target.Len(); j++ {
-				score -= DiffCost
-				if score < maxScore-BlockCost {
+				score -= self.diffCost
+				if score < maxScore-self.blockCost {
 					break
 				}
 				thisVector.set(j, score)
@@ -269,10 +278,10 @@ func (self *kernel) traceForward(mid, low, high int) {
 
 		high = j - 1
 
-		for low <= high && thisVector.at(low) < maxScore-BlockCost {
+		for low <= high && thisVector.at(low) < maxScore-self.blockCost {
 			low++
 		}
-		for low <= high && thisVector.at(high) < maxScore-BlockCost {
+		for low <= high && thisVector.at(high) < maxScore-self.blockCost {
 			high--
 		}
 
@@ -312,7 +321,7 @@ func (self *kernel) traceReverse(top, low, high, bottom, xfactor int) {
 		high = self.target.Len()
 	}
 
-	if required := (high - low) + MaxIGap; required >= len(self.vectors[0]) {
+	if required := (high - low) + self.maxIGap; required >= len(self.vectors[0]) {
 		self.allocateVectors(required)
 	}
 
@@ -324,13 +333,13 @@ func (self *kernel) traceReverse(top, low, high, bottom, xfactor int) {
 		thisVector.set(j, 0)
 	}
 
-	low -= MaxIGap
+	low -= self.maxIGap
 	if low < 0 {
 		low = 0
 	}
 
 	for ; j >= low; j-- {
-		thisVector.set(j, thisVector.at(j+1)-DiffCost)
+		thisVector.set(j, thisVector.at(j+1)-self.diffCost)
 	}
 
 	maxScore = 0
@@ -341,7 +350,7 @@ func (self *kernel) traceReverse(top, low, high, bottom, xfactor int) {
 
 	/* Advance to next row */
 	if top-1 <= bottom {
-		xfactor = BlockCost
+		xfactor = self.blockCost
 	}
 
 	thatVector := &offsetSlice{}
@@ -358,7 +367,7 @@ func (self *kernel) traceReverse(top, low, high, bottom, xfactor int) {
 		odd = !odd
 
 		score = thatVector.at(high)
-		thisVector.set(high, score-DiffCost)
+		thisVector.set(high, score-self.diffCost)
 		cost = thisVector.at(high)
 
 		for j = high - 1; j >= low; j-- {
@@ -368,7 +377,7 @@ func (self *kernel) traceReverse(top, low, high, bottom, xfactor int) {
 			cost = score
 			score = thatVector.at(j)
 			if self.query.Seq[i] == self.target.Seq[j] && lookUp.ValueToCode[self.query.Seq[i]] >= 0 {
-				cost += MatchCost
+				cost += self.matchCost
 			}
 
 			ratchet = cost
@@ -379,7 +388,7 @@ func (self *kernel) traceReverse(top, low, high, bottom, xfactor int) {
 				ratchet = temp
 			}
 
-			cost = ratchet - DiffCost
+			cost = ratchet - self.diffCost
 			thisVector.set(j, cost)
 			if cost >= maxScore {
 				maxScore = cost
@@ -392,7 +401,7 @@ func (self *kernel) traceReverse(top, low, high, bottom, xfactor int) {
 			var ratchet int
 
 			if self.query.Seq[i] == self.target.Seq[j] && lookUp.ValueToCode[self.query.Seq[i]] >= 0 {
-				score += MatchCost
+				score += self.matchCost
 			}
 
 			ratchet = score
@@ -400,7 +409,7 @@ func (self *kernel) traceReverse(top, low, high, bottom, xfactor int) {
 				ratchet = cost
 			}
 
-			score = ratchet - DiffCost
+			score = ratchet - self.diffCost
 			thisVector.set(j, score)
 			if score > maxScore {
 				maxScore = score
@@ -409,7 +418,7 @@ func (self *kernel) traceReverse(top, low, high, bottom, xfactor int) {
 			}
 
 			for j--; j >= 0; j-- {
-				score -= DiffCost
+				score -= self.diffCost
 				if score < maxScore-xfactor {
 					break
 				}
@@ -427,7 +436,7 @@ func (self *kernel) traceReverse(top, low, high, bottom, xfactor int) {
 		}
 
 		if i == bottom {
-			xfactor = BlockCost
+			xfactor = self.blockCost
 		}
 
 		if required := (high - low) + 2; required > len(self.vectors[0]) {

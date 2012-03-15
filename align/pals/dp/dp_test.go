@@ -43,6 +43,15 @@ var (
 	}
 )
 
+var (
+	maxIGap    = 5
+	diffCost   = 3
+	sameCost   = 1
+	matchCost  = diffCost + sameCost
+	blockCost  = diffCost * maxIGap
+	rMatchCost = float64(diffCost) + 1
+)
+
 // Tests
 func Test(t *testing.T) { check.TestingT(t) }
 
@@ -62,6 +71,14 @@ func (s *S) TestAlignment(c *check.C) {
 		b.Seq = append(b.Seq, l[i])
 	}
 	aligner := NewAligner(a, b, int(k), 50, 0.80, 4)
+	aligner.Config = &AlignConfig{
+		MaxIGap:    maxIGap,
+		DiffCost:   diffCost,
+		SameCost:   sameCost,
+		MatchCost:  matchCost,
+		BlockCost:  blockCost,
+		RMatchCost: rMatchCost,
+	}
 	hits := aligner.AlignTraps(T)
 	c.Check(hits, check.DeepEquals, H)
 	la, lb, err := hits.Sum()

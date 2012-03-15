@@ -78,7 +78,7 @@ func (s *S) TestFilterAndMerge(c *check.C) {
 			{QFrom: 938, QTo: 997, DiagIndex: 3040},
 			{QFrom: 938, QTo: 1024, DiagIndex: 3072},
 		})
-		m := NewMerger(i, b, p, false)
+		m := NewMerger(i, b, p, 5, false)
 		for _, h := range r {
 			m.MergeFilterHit(&h)
 		}

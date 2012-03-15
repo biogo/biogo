@@ -22,6 +22,11 @@ import (
 	"github.com/kortschak/BioGo/util"
 )
 
+var (
+	binSize    int = 1 << 10
+	minPadding int = 50
+)
+
 // A Packer collects a set of sequence into a Packed sequence.
 type Packer struct {
 	Packed  *seq.Seq

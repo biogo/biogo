@@ -23,6 +23,30 @@ import (
 	"sort"
 )
 
+// Holds dp alignment parameters.
+type Params struct {
+	MinHitLength int
+	MinId        float64
+}
+
+// An AlignConfig specifies dynamic programming behaviour.
+//
+// Sensible default parameters for alignment:
+//	MaxIGap    = 5
+//	DiffCost   = 3
+//	SameCost   = 1
+//	MatchCost  = DiffCost + SameCost
+//	BlockCost  = DiffCost * MaxIGap
+//	RMatchCost = DiffCost + 1
+type AlignConfig struct {
+	MaxIGap    int
+	DiffCost   int
+	SameCost   int
+	MatchCost  int
+	BlockCost  int
+	RMatchCost float64
+}
+
 // An Aligner provides allows local alignment of subsections of long sequences.
 type Aligner struct {
 	target, query *seq.Seq
@@ -31,6 +55,7 @@ type Aligner struct {
 	minId         float64
 	threads       int
 	segments      DPHits
+	Config        *AlignConfig
 }
 
 // Create a new Aligner based on target and query sequences. 
@@ -57,6 +82,13 @@ func (self *Aligner) AlignTraps(trapezoids filter.Trapezoids) (segments DPHits) 
 		covered:    covered,
 		minLen:     self.minHitLength,
 		maxDiff:    1 - self.minId,
+
+		maxIGap:    self.Config.MaxIGap,
+		diffCost:   self.Config.DiffCost,
+		sameCost:   self.Config.SameCost,
+		matchCost:  self.Config.MatchCost,
+		blockCost:  self.Config.BlockCost,
+		rMatchCost: self.Config.RMatchCost,
 	}
 	for i, t := range trapezoids {
 		if !dp.covered[i] && t.Top-t.Bottom >= self.k {
@@ -120,6 +152,15 @@ func (self *Aligner) AlignTraps(trapezoids filter.Trapezoids) (segments DPHits) 
 	}
 
 	return
+}
+
+// DPHit holds details of alignment result. 
+type DPHit struct {
+	Abpos, Bbpos              int     // Start coordinate of local alignment
+	Aepos, Bepos              int     // End coordinate of local alignment
+	LowDiagonal, HighDiagonal int     // Alignment is between (anti)diagonals LowDiagonal & HighDiagonal
+	Score                     int     // Score of alignment where match = SameCost, difference = -DiffCost
+	Error                     float64 // Lower bound on error rate of match
 }
 
 // DPHits is a collection of alignment results.

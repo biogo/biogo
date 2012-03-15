@@ -29,13 +29,25 @@ import (
 	"unsafe"
 )
 
-const (
+// Default values for filter and alignment.
+var (
+	MaxIGap    = 5
+	DiffCost   = 3
+	SameCost   = 1
+	MatchCost  = DiffCost + SameCost
+	BlockCost  = DiffCost * MaxIGap
+	RMatchCost = float64(DiffCost) + 1
+)
+
+// Default thresholds for filter and alignment.
+var (
 	DefaultLength      = 400
 	DefaultMinIdentity = 0.94
-	MaxAvgIndexListLen = 15
+	MaxAvgIndexListLen = 15.0
 	TubeOffsetDelta    = 32
 )
 
+// Default word characteristics.
 var (
 	MinWordLength = 4  // For minimum word length, choose k=4 arbitrarily.
 	MaxKmerLen    = 15 // Currently limited to 15 due to 32 bit int limit for indexing slices
@@ -52,14 +64,21 @@ type PALS struct {
 	index         *kmerindex.Index
 	FilterParams  *filter.Params
 	DPParams      *dp.Params
-	log           Logger
-	timer         *util.Timer
-	tubeOffset    int
-	maxMem        *uintptr
-	hitFilter     *filter.Filter
-	morass        *morass.Morass
-	err           error
-	threads       int
+	MaxIGap       int
+	DiffCost      int
+	SameCost      int
+	MatchCost     int
+	BlockCost     int
+	RMatchCost    float64
+
+	log        Logger
+	timer      *util.Timer
+	tubeOffset int
+	maxMem     *uintptr
+	hitFilter  *filter.Filter
+	morass     *morass.Morass
+	err        error
+	threads    int
 }
 
 // Return a new PALS aligner. Requires
@@ -70,6 +89,12 @@ func New(target, query *seq.Seq, selfComp bool, m *morass.Morass, threads, tubeO
 		selfCompare: selfComp,
 		log:         log,
 		tubeOffset:  tubeOffset,
+		MaxIGap:     MaxIGap,
+		DiffCost:    DiffCost,
+		SameCost:    SameCost,
+		MatchCost:   MatchCost,
+		BlockCost:   BlockCost,
+		RMatchCost:  RMatchCost,
 		maxMem:      mem,
 		morass:      m,
 		threads:     threads,
@@ -203,11 +228,18 @@ func (self *PALS) filterMemRequired(filterParams *filter.Params) uintptr {
 	words := util.Pow4(filterParams.WordSize)
 	tubeWidth := filterParams.TubeOffset + filterParams.MaxError
 	maxActiveTubes := (self.target.Len()+tubeWidth-1)/filterParams.TubeOffset + 1
-	tubes := uintptr(maxActiveTubes) * unsafe.Sizeof(filter.TubeState{})
+	tubes := uintptr(maxActiveTubes) * unsafe.Sizeof(tubeState{})
 	finger := unsafe.Sizeof(uint32(0)) * uintptr(words)
 	pos := unsafe.Sizeof(0) * uintptr(self.target.Len())
 
 	return finger + pos + tubes
+}
+
+// filter.tubeState is repeated here to allow memory calculation without exporting tubeState from filter package.
+type tubeState struct {
+	QLo   int
+	QHi   int
+	Count int
 }
 
 // Return an estimate of the total amount of memory required.
@@ -258,7 +290,7 @@ func (self *PALS) Align(complement bool) (hits dp.DPHits, err error) {
 	self.notifyf("Identified %d filter hits", self.morass.Len())
 
 	self.notify("Merging")
-	merger := filter.NewMerger(self.index, working, self.FilterParams, self.selfCompare)
+	merger := filter.NewMerger(self.index, working, self.FilterParams, self.MaxIGap, self.selfCompare)
 	var hit filter.FilterHit
 	for {
 		if err = self.morass.Pull(&hit); err != nil {
@@ -276,6 +308,14 @@ func (self *PALS) Align(complement bool) (hits dp.DPHits, err error) {
 
 	self.notify("Aligning")
 	aligner := dp.NewAligner(self.target, working, self.FilterParams.WordSize, self.DPParams.MinHitLength, self.DPParams.MinId, self.threads)
+	aligner.Config = &dp.AlignConfig{
+		MaxIGap:    self.MaxIGap,
+		DiffCost:   self.DiffCost,
+		SameCost:   self.SameCost,
+		MatchCost:  self.MatchCost,
+		BlockCost:  self.BlockCost,
+		RMatchCost: self.RMatchCost,
+	}
 	hits = aligner.AlignTraps(trapezoids)
 	hitCoverageA, hitCoverageB, err := hits.Sum()
 	if err != nil {

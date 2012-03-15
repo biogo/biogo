@@ -25,12 +25,25 @@ import (
 	"github.com/kortschak/BioGo/seq"
 )
 
+// Ukonnen's Lemma: U(n, q, 𝛜) := (n + 1) - q(⌊𝛜n⌋ + 1)
+func MinWordsPerFilterHit(hitLength, wordLength, maxErrors int) int {
+	return hitLength + 1 - wordLength*(maxErrors+1)
+}
+
+// Type for passing filter parameters.
+type Params struct {
+	WordSize   int
+	MinMatch   int
+	MaxError   int
+	TubeOffset int
+}
+
 // Filter implements a q-gram filter similar to that described in Rassmussen 2005.
 // This implementation is a translation of the C++ code written by Edgar and Myers.
 type Filter struct {
 	target         *seq.Seq
 	index          *kmerindex.Index
-	tubes          []TubeState
+	tubes          []tubeState
 	morass         *morass.Morass
 	k              int
 	minMatch       int
@@ -80,7 +93,7 @@ func (self *Filter) Filter(query *seq.Seq, selfAlign, complement bool, morass *m
 	}
 
 	maxActiveTubes := (self.target.Len()+tubeWidth-1)/self.tubeOffset + 1
-	self.tubes = make([]TubeState, maxActiveTubes)
+	self.tubes = make([]tubeState, maxActiveTubes)
 
 	// Ticker tracks cycling of circular list of active tubes.
 	ticker := tubeWidth
@@ -130,6 +143,14 @@ func (self *Filter) Filter(query *seq.Seq, selfAlign, complement bool, morass *m
 	self.tubes = nil
 
 	return self.morass.Finalise()
+}
+
+// A tubeState stores active filter bin states.
+// tubeState is repeated in the pals package to allow memory calculation without exporting tubeState from filter package.
+type tubeState struct {
+	QLo   int
+	QHi   int
+	Count int
 }
 
 // Called when q=Qlen - 1 to flush any hits in each tube.

@@ -29,6 +29,7 @@ const (
 type Merger struct {
 	target, query              *seq.Seq
 	filterParams               *Params
+	maxIGap                    int
 	leftPadding, bottomPadding int
 	binWidth                   int
 	selfComparison             bool
@@ -38,9 +39,9 @@ type Merger struct {
 	trapCount                  int
 }
 
-// Create a new Merger using the provided kmerindex, query sequence and filter parameters.
-// If selfCompare is true only the upper diagonal of the comparison matrix is checked to save time.
-func NewMerger(index *kmerindex.Index, query *seq.Seq, filterParams *Params, selfCompare bool) (m *Merger) {
+// Create a new Merger using the provided kmerindex, query sequence, filter parameters and maximum inter-segment gap length.
+// If selfCompare is true only the upper diagonal of the comparison matrix is examined.
+func NewMerger(index *kmerindex.Index, query *seq.Seq, filterParams *Params, maxIGap int, selfCompare bool) (m *Merger) {
 	tubeWidth := filterParams.TubeOffset + filterParams.MaxError
 	binWidth := tubeWidth - 1
 	leftPadding := diagonalPadding + binWidth
@@ -56,6 +57,7 @@ func NewMerger(index *kmerindex.Index, query *seq.Seq, filterParams *Params, sel
 	m = &Merger{
 		target:         index.Seq,
 		filterParams:   filterParams,
+		maxIGap:        maxIGap,
 		query:          query,
 		selfComparison: selfCompare,
 		bottomPadding:  index.GetK() + 2,
@@ -152,11 +154,11 @@ func (self *Merger) MergeFilterHit(hit *FilterHit) {
 
 func (self *Merger) clipVertical() {
 	for base := self.trapList; base != nil; base = base.Next {
-		lagPosition := base.Bottom - MaxIGap + 1
+		lagPosition := base.Bottom - self.maxIGap + 1
 		if lagPosition < 0 {
 			lagPosition = 0
 		}
-		lastPosition := base.Top + MaxIGap
+		lastPosition := base.Top + self.maxIGap
 		if lastPosition > self.query.Len() {
 			lastPosition = self.query.Len()
 		}
@@ -164,7 +166,7 @@ func (self *Merger) clipVertical() {
 		i := 0
 		for i = lagPosition; i < lastPosition; i++ {
 			if lookUp.ValueToCode[self.query.Seq[i]] >= 0 {
-				if i-lagPosition >= MaxIGap {
+				if i-lagPosition >= self.maxIGap {
 					if lagPosition-base.Bottom > 0 {
 						if self.freeTraps == nil {
 							self.freeTraps = &Trapezoid{}
@@ -183,7 +185,7 @@ func (self *Merger) clipVertical() {
 				lagPosition = i + 1
 			}
 		}
-		if i-lagPosition >= MaxIGap {
+		if i-lagPosition >= self.maxIGap {
 			base.Top = lagPosition
 		}
 	}
@@ -198,11 +200,11 @@ func (self *Merger) clipTrapezoids() {
 		aBottom := base.Bottom - base.Right
 		aTop := base.Top - base.Left
 
-		lagPosition := aBottom - MaxIGap + 1
+		lagPosition := aBottom - self.maxIGap + 1
 		if lagPosition < 0 {
 			lagPosition = 0
 		}
-		lastPosition := aTop + MaxIGap
+		lastPosition := aTop + self.maxIGap
 		if lastPosition > self.target.Len() {
 			lastPosition = self.target.Len()
 		}
@@ -211,7 +213,7 @@ func (self *Merger) clipTrapezoids() {
 		i := 0
 		for i = lagPosition; i < lastPosition; i++ {
 			if lookUp.ValueToCode[self.target.Seq[i]] >= 0 {
-				if i-lagPosition >= MaxIGap {
+				if i-lagPosition >= self.maxIGap {
 					if lagPosition > lagClip {
 						if self.freeTraps == nil {
 							self.freeTraps = &Trapezoid{}
@@ -230,7 +232,7 @@ func (self *Merger) clipTrapezoids() {
 			}
 		}
 
-		if i-lagPosition < MaxIGap {
+		if i-lagPosition < self.maxIGap {
 			lagPosition = aTop
 		}
 
