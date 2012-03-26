@@ -18,6 +18,7 @@ package alphabet
 import (
 	"errors"
 	"fmt"
+	"github.com/kortschak/BioGo/bio"
 	"sort"
 	"strings"
 	"unicode"
@@ -28,17 +29,19 @@ const (
 )
 
 var (
-	N        = "acgt"
-	Npairing = [2]string{"acgtnxACGTNX-", "tgcanxTGCANX-"}
-	R        = "acgu"
-	Rpairing = [2]string{"acgunxACGUNX-", "ugcanxUGCANX-"}
-	P        = "abcdefghijklmnpqrstvxyz*"
+	N               = "acgt"
+	Npairing        = [2]string{"acgtnxACGTNX-", "tgcanxTGCANX-"}
+	R               = "acgu"
+	Rpairing        = [2]string{"acgunxACGUNX-", "ugcanxUGCANX-"}
+	Nambiguous byte = 'n'
+	P               = "abcdefghijklmnpqrstvxyz*-"
+	Pambiguous byte = 'x'
+	Gap        byte = '-'
 )
 
 var (
-	DNA     *Deoxyribonucleic
-	RNA     *Ribonucleic
-	Protein *Peptide
+	DNA, RNA *Nucleic
+	Protein  *Peptide
 )
 
 func init() {
@@ -52,17 +55,17 @@ func Init() (err error) {
 	var pairing *Pairing
 	if pairing, err = NewPairing(Npairing[0], Npairing[1]); err != nil {
 		return
-	} else if DNA, err = NewDeoxyribonucleic(N, pairing, !CaseSensitive); err != nil {
+	} else if DNA, err = NewNucleic(N, bio.DNA, pairing, Gap, Nambiguous, !CaseSensitive); err != nil {
 		return
 
 	}
 	if pairing, err = NewPairing(Rpairing[0], Rpairing[1]); err != nil {
 		return
-	} else if RNA, err = NewRibonucleic(R, pairing, !CaseSensitive); err != nil {
+	} else if RNA, err = NewNucleic(R, bio.RNA, pairing, Gap, Nambiguous, !CaseSensitive); err != nil {
 		return
 
 	}
-	if Protein, err = NewPeptide(P, !CaseSensitive); err != nil {
+	if Protein, err = NewPeptide(P, Gap, Pambiguous, !CaseSensitive); err != nil {
 		return
 	}
 
@@ -74,8 +77,13 @@ type Alphabet interface {
 	IsValid(byte) bool
 	AllValid([]byte) (bool, int)
 	Len() int
+	Moltype() bio.Moltype
+	IndexOf(byte) int
+	Letter(int) byte
 	ValidLetters() []bool
 	LetterIndex() []int
+	Gap() byte
+	Ambiguous() byte
 	String() string
 }
 
@@ -88,21 +96,26 @@ type Complementable interface {
 
 // Single letter alphabet type.
 type Generic struct {
-	letters       string
-	valid         [256]bool
-	index         [256]int
-	caseSensitive bool
+	letters        string
+	valid          [256]bool
+	index          [256]int
+	gap, ambiguous byte
+	caseSensitive  bool
+	molType        bio.Moltype
 }
 
 // Return a new alphabet. Index values for letters reflect order of the letters parameter if Generic is case sensitive,
 // otherwise index values will reflect ASCII sort order. Letters must be within the ASCII range.
-func NewGeneric(letters string, caseSensitive bool) (a *Generic, err error) {
+func NewGeneric(letters string, molType bio.Moltype, gap, ambiguous byte, caseSensitive bool) (a *Generic, err error) {
 	if strings.IndexFunc(letters, func(r rune) bool { return r < 0 || r > unicode.MaxASCII }) > -1 {
 		return nil, errors.New("letters contains non-ASCII rune.")
 	}
 
 	a = &Generic{
+		gap:           gap,
+		ambiguous:     ambiguous,
 		caseSensitive: caseSensitive,
+		molType:       molType,
 	}
 
 	if caseSensitive {
@@ -141,11 +154,20 @@ func NewGeneric(letters string, caseSensitive bool) (a *Generic, err error) {
 	return
 }
 
+// Return the molecule type of the alphabet.
+func (self *Generic) Moltype() bio.Moltype { return self.molType }
+
 // Return the number of distinct valid letters in the alphabet.
 func (self *Generic) Len() int { return len(self.letters) }
 
 // Return whether the alphabet is case sensitive.
 func (self *Generic) IsCaseSensitive() bool { return self.caseSensitive }
+
+// Return the gap character.
+func (self *Generic) Gap() byte { return self.gap }
+
+// Return the character representing an ambiguous letter.
+func (self *Generic) Ambiguous() byte { return self.ambiguous }
 
 // Check that a slice of bytes conforms to the alphabet, returning false
 // and the position of the first invalid byte if invalid and true and a negative
@@ -163,6 +185,14 @@ func (self *Generic) AllValid(n []byte) (valid bool, pos int) {
 // Check that a byte conforms to the alphabet.
 func (self *Generic) IsValid(n byte) bool {
 	return self.valid[n]
+}
+
+// Return the letter for and index.
+func (self *Generic) Letter(i int) byte {
+	if !self.caseSensitive {
+		return byte(unicode.ToLower(rune(self.letters[i])))
+	}
+	return self.letters[i]
 }
 
 // Return the index of a letter.
@@ -254,9 +284,9 @@ type Nucleic struct {
 // Create a generalised Nucleic alphabet. The Complement table is checked for validity and an error is returned if an invalid complement pair is found.
 // Pairings that result in no change but would otherwise be invalid are allowed. If invalid pairings are required, the Pairing should be provided after
 // creating the Nucleic struct.
-func NewNucleic(letters string, pairs *Pairing, caseSensitive bool) (n *Nucleic, err error) {
+func NewNucleic(letters string, molType bio.Moltype, pairs *Pairing, gap, ambiguous byte, caseSensitive bool) (n *Nucleic, err error) {
 	var g *Generic
-	if g, err = NewGeneric(letters, caseSensitive); err != nil {
+	if g, err = NewGeneric(letters, molType, gap, ambiguous, caseSensitive); err != nil {
 		return nil, err
 	}
 
@@ -274,39 +304,15 @@ func NewNucleic(letters string, pairs *Pairing, caseSensitive bool) (n *Nucleic,
 	}, nil
 }
 
-// Deoxyribonucleic is an alias to Nucleic to provide type restrictions.
-type Deoxyribonucleic Nucleic
-
-// Return a new Deoxyribonucleic alphabet.
-func NewDeoxyribonucleic(letters string, pairs *Pairing, caseSensitive bool) (d *Deoxyribonucleic, err error) {
-	var n *Nucleic
-	if n, err = NewNucleic(letters, pairs, caseSensitive); err != nil {
-		return nil, err
-	}
-	return (*Deoxyribonucleic)(n), nil
-}
-
-// Ribonucleic is an alias to Nucleic to provide type restrictions.
-type Ribonucleic Nucleic
-
-// Return a new Ribonucleic alphabet.
-func NewRibonucleic(letters string, pairs *Pairing, caseSensitive bool) (r *Ribonucleic, err error) {
-	var n *Nucleic
-	if n, err = NewNucleic(letters, pairs, caseSensitive); err != nil {
-		return nil, err
-	}
-	return (*Ribonucleic)(n), nil
-}
-
 // Peptide wraps Generic to provide type restrictions.
 type Peptide struct {
 	*Generic
 }
 
 // Return a new Peptide alphabet.
-func NewPeptide(letters string, caseSensitive bool) (p *Peptide, err error) {
+func NewPeptide(letters string, gap, ambiguous byte, caseSensitive bool) (p *Peptide, err error) {
 	var g *Generic
-	if g, err = NewGeneric(letters, caseSensitive); err != nil {
+	if g, err = NewGeneric(letters, bio.Protein, gap, ambiguous, caseSensitive); err != nil {
 		return nil, err
 	}
 	return &Peptide{g}, nil

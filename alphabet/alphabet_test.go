@@ -59,6 +59,14 @@ func (s *S) TestIsValid(c *check.C) {
 	}
 }
 
+func (s *S) TestLetter(c *check.C) {
+	for _, t := range []testAlphabets{{N, DNA}, {R, RNA}, {P, Protein}} {
+		for i := 0; i < t.alphabet.Len(); i++ {
+			c.Check(t.alphabet.IndexOf(t.alphabet.Letter(i)), check.Equals, i)
+		}
+	}
+}
+
 func (s *S) TestComplementOf(c *check.C) {
 	for _, t := range []testAlphabets{{N, DNA}, {R, RNA}} {
 		for i := 0; i < 256; i++ {
@@ -87,7 +95,7 @@ func (s *S) TestComplementDirect(c *check.C) {
 }
 
 func (s *S) TestString(c *check.C) {
-	e := [...]string{"acgtACGT", "acguACGU", "*abcdefghijklmnpqrstvxyz*ABCDEFGHIJKLMNPQRSTVXYZ"}
+	e := [...]string{"acgtACGT", "acguACGU", "*-abcdefghijklmnpqrstvxyz*-ABCDEFGHIJKLMNPQRSTVXYZ"}
 	for i, t := range []testAlphabets{{N, DNA}, {R, RNA}, {P, Protein}} {
 		c.Check(t.alphabet.String(), check.Equals, e[i])
 	}
@@ -95,19 +103,19 @@ func (s *S) TestString(c *check.C) {
 
 func (s *S) TestRangeCheck(c *check.C) {
 	var err error
-	_, err = NewGeneric(string([]rune{256}), !CaseSensitive)
+	_, err = NewGeneric(string([]rune{256}), 0, 0, 0, !CaseSensitive)
 	c.Check(err, check.Not(check.IsNil))
-	_, err = NewGeneric(string([]rune{0}), !CaseSensitive)
+	_, err = NewGeneric(string([]rune{0}), 0, 0, 0, !CaseSensitive)
 	c.Check(err, check.IsNil)
-	_, err = NewGeneric(string([]rune{127}), !CaseSensitive)
+	_, err = NewGeneric(string([]rune{127}), 0, 0, 0, !CaseSensitive)
 	c.Check(err, check.IsNil)
-	_, err = NewGeneric(string([]rune{-1}), !CaseSensitive)
+	_, err = NewGeneric(string([]rune{-1}), 0, 0, 0, !CaseSensitive)
 	c.Check(err, check.Not(check.IsNil))
 }
 
 func BenchmarkIsValidGeneric(b *testing.B) {
 	b.StopTimer()
-	g, _ := NewGeneric(P, !CaseSensitive)
+	g, _ := NewGeneric(P, 0, 0, 0, !CaseSensitive)
 	b.StartTimer()
 	for i := 0; i < b.N; i++ {
 		g.IsValid(byte(i))
