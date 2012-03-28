@@ -26,6 +26,11 @@ import (
 	"os"
 )
 
+const (
+	IDPrefix  = ">" // default delimiters
+	SeqPrefix = ""  // default delimiters
+)
+
 // Fasta sequence format reader type.
 type Reader struct {
 	f         io.ReadCloser
@@ -40,8 +45,8 @@ func NewReader(f io.ReadCloser) *Reader {
 	return &Reader{
 		f:         f,
 		r:         bufio.NewReader(f),
-		IDPrefix:  []byte(">"), // default delimiters
-		SeqPrefix: []byte(""),  // default delimiters
+		IDPrefix:  []byte(IDPrefix),
+		SeqPrefix: []byte(SeqPrefix),
 		last:      nil,
 	}
 }
@@ -73,8 +78,7 @@ READ:
 			switch {
 			case bytes.HasPrefix(line, self.IDPrefix):
 				if self.last == nil {
-					label = line[len(self.IDPrefix):]
-					self.last = label
+					self.last = line[len(self.IDPrefix):]
 				} else {
 					label = self.last
 					self.last = line[len(self.IDPrefix):] // entering a new sequence so exit read loop
@@ -105,6 +109,7 @@ func (self *Reader) Rewind() (err error) {
 	if s, ok := self.f.(io.Seeker); ok {
 		self.last = nil
 		_, err = s.Seek(0, 0)
+		self.r = bufio.NewReader(self.f)
 	} else {
 		err = bio.NewError("Not a Seeker", 0, self)
 	}
@@ -120,8 +125,8 @@ func (self *Reader) Close() (err error) {
 type Writer struct {
 	f         io.WriteCloser
 	w         *bufio.Writer
-	IDPrefix  string
-	SeqPrefix string
+	IDPrefix  []byte
+	SeqPrefix []byte
 	Width     int
 }
 
@@ -130,8 +135,8 @@ func NewWriter(f io.WriteCloser, width int) *Writer {
 	return &Writer{
 		f:         f,
 		w:         bufio.NewWriter(f),
-		IDPrefix:  ">", // default delimiters
-		SeqPrefix: "",  // default delimiters
+		IDPrefix:  []byte(IDPrefix),
+		SeqPrefix: []byte(SeqPrefix),
 		Width:     width,
 	}
 }
@@ -149,13 +154,14 @@ func NewWriterName(name string, width int) (w *Writer, err error) {
 // Write a single sequence and return the number of bytes written and any error.
 func (self *Writer) Write(s *seq.Seq) (n int, err error) {
 	var ln int
-	if n, err = self.w.WriteString(self.IDPrefix + s.ID + "\n"); err == nil {
+	if n, err = self.w.WriteString(string(self.IDPrefix) + s.ID + "\n"); err == nil {
 		for i := 0; i*self.Width <= s.Len(); i++ {
 			endLinePos := util.Min(self.Width*(i+1), s.Len())
-			ln, err = self.w.WriteString(self.SeqPrefix + string(s.Seq[self.Width*i:endLinePos]) + "\n")
-			n += ln
-			if err != nil {
-				break
+			for _, elem := range [][]byte{self.SeqPrefix, s.Seq[self.Width*i : endLinePos], {'\n'}} {
+				ln, err = self.w.Write(elem)
+				if n += ln; err != nil {
+					return
+				}
 			}
 		}
 	}
