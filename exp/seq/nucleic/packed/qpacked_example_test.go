@@ -24,7 +24,7 @@ import (
 
 func ExampleNewQSeq_1() {
 	if d, err := NewQSeq("example DNA", nil, alphabet.DNA, alphabet.Sanger); err != nil {
-	} else if err = d.Append([]alphabet.QLetter{{'A', 40}, {'C', 39}, {'G', 40}, {'C', 38}, {'T', 35}, {'G', 20}}...); err == nil {
+	} else if err = d.AppendQLetters([]alphabet.QLetter{{'A', 40}, {'C', 39}, {'G', 40}, {'C', 38}, {'T', 35}, {'G', 20}}...); err == nil {
 		fmt.Println(d, d.Moltype())
 	}
 	// Output:
@@ -58,7 +58,7 @@ func ExampleQSeq_RevComp() {
 		}
 
 		for i := range l {
-			s.Append(alphabet.QLetter{L: l[i], Q: q[i]})
+			s.AppendQLetters(alphabet.QLetter{L: l[i], Q: q[i]})
 		}
 		fmt.Println("Forward:")
 		fmt.Println(s)

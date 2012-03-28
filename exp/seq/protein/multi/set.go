@@ -47,7 +47,7 @@ func (self Set) AppendEach(a [][]alphabet.QLetter) (err error) {
 			i += count
 		} else {
 			if ap, ok := s.(seq.Appender); ok {
-				ap.Append(a[i]...)
+				ap.AppendQLetters(a[i]...)
 			} else {
 				panic("Non-Multiple Sequence type without Append")
 			}

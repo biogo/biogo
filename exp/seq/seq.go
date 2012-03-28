@@ -78,7 +78,8 @@ type Circular interface {
 
 // An Appender can append letters.
 type Appender interface {
-	Append(...alphabet.QLetter) error
+	AppendLetters(...alphabet.Letter) error
+	AppendQLetters(...alphabet.QLetter) error
 }
 
 // A Letterer gets and sets letters.

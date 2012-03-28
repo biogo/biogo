@@ -123,7 +123,7 @@ func (self *Multi) Raw() interface{} { return &self.S }
 
 // Append a to the ith sequence in the reciever.
 func (self *Multi) Append(i int, a ...alphabet.QLetter) (err error) {
-	return self.Get(i).(seq.Appender).Append(a...)
+	return self.Get(i).(seq.Appender).AppendQLetters(a...)
 }
 
 // Append each byte of each a to the appropriate sequence in the reciever.
@@ -157,7 +157,7 @@ func (self *Multi) AppendEach(a [][]alphabet.QLetter) (err error) {
 			}
 			i += count
 		} else {
-			s.(seq.Appender).Append(a[i]...)
+			s.(seq.Appender).AppendQLetters(a[i]...)
 			i++
 		}
 	}
@@ -487,7 +487,7 @@ func (self *Multi) Flush(where int, fill alphabet.Letter) {
 			if end-s.End() < 1 {
 				continue
 			}
-			s.(seq.Appender).Append(alphabet.QLetter{L: fill}.Repeat(end - s.End())...)
+			s.(seq.Appender).AppendQLetters(alphabet.QLetter{L: fill}.Repeat(end - s.End())...)
 		}
 	}
 }

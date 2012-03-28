@@ -61,7 +61,8 @@ func (self QLetter) Repeat(count int) (r []QLetter) {
 type Encoding int8
 
 const (
-	Sanger Encoding = iota
+	None Encoding = iota - 1
+	Sanger
 	Solexa
 	Illumina1_3
 	Illumina1_5

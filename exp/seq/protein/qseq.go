@@ -77,8 +77,22 @@ func (self *QSeq) Location() *string { return &self.Loc }
 // Raw returns a pointer to the underlying []Qphred slice.
 func (self *QSeq) Raw() interface{} { return &self.S }
 
+// Append QLetters to the sequence, the DefaultQphred value is used for quality scores.
+func (self *QSeq) AppendLetters(a ...alphabet.Letter) (err error) {
+	l := self.Len()
+	self.S = append(self.S, make([]alphabet.QLetter, len(a))...)[:l]
+	for _, v := range a {
+		self.S = append(self.S, alphabet.QLetter{L: v, Q: DefaultQphred})
+	}
+
+	return
+}
+
 // Append letters with quality scores to the seq.
-func (self *QSeq) Append(a ...alphabet.QLetter) (err error) { self.S = append(self.S, a...); return }
+func (self *QSeq) AppendQLetters(a ...alphabet.QLetter) (err error) {
+	self.S = append(self.S, a...)
+	return
+}
 
 // Return the Alphabet used by the sequence.
 func (self *QSeq) Alphabet() alphabet.Alphabet { return self.alphabet }

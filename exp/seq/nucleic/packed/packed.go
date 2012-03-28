@@ -92,7 +92,7 @@ func (self *Packing) shiftRight(s []alphabet.Pack, count int8) {
 }
 
 // Pack bytes that conform to a into a slice of alphabet.Pack. Panics if a byte in s does not conform.
-func PackBytes(a alphabet.Nucleic, s ...alphabet.Letter) (p *Packing) {
+func PackLetters(a alphabet.Nucleic, s ...alphabet.Letter) (p *Packing) {
 	p = &Packing{
 		Letters:  make([]alphabet.Pack, (len(s)+3)/4),
 		RightPad: int8(4-len(s)&3) & 3,
@@ -178,7 +178,7 @@ func NewSeq(id string, b []alphabet.Letter, alpha alphabet.Nucleic) (p *Seq, err
 
 	p = &Seq{
 		ID:        id,
-		S:         PackBytes(alpha, b...),
+		S:         PackLetters(alpha, b...),
 		alphabet:  alpha,
 		Strand:    1,
 		Stringify: Stringify,
@@ -210,8 +210,29 @@ func (self *Seq) Location() *string { return &self.Loc }
 // Raw returns the underlying *Packing struct pointer.
 func (self *Seq) Raw() interface{} { return self.S }
 
-// Append letters to the sequence.
-func (self *Seq) Append(a ...alphabet.QLetter) (err error) {
+// Append Letters to the sequence.
+func (self *Seq) AppendLetters(a ...alphabet.Letter) (err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			_, pos := self.alphabet.AllValid(a)
+			err = bio.NewError(fmt.Sprintf("Encoding error: %s %q at position %d.", r, a[pos], pos), 1, a)
+		}
+	}()
+
+	i := 0
+	for ; self.S.RightPad > 0 && i < len(a); i, self.S.RightPad = i+1, self.S.RightPad-1 {
+		if !self.alphabet.IsValid(a[i]) {
+			return bio.NewError(fmt.Sprintf("Invalid letter %q at position %d.", a[i], i), 0, nil)
+		}
+		self.S.Letters[len(self.S.Letters)-1] |= alphabet.Pack(self.alphabet.IndexOf(a[i])) << (4 - byte(self.S.RightPad))
+	}
+	self.S.Letters = append(self.S.Letters, PackLetters(self.alphabet, a[i:]...).Letters...)
+
+	return
+}
+
+// Append QLetters to the sequence.
+func (self *Seq) AppendQLetters(a ...alphabet.QLetter) (err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			_, pos := self.alphabet.AllValidQLetter(a)

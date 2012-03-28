@@ -71,13 +71,20 @@ func (self *Seq) Location() *string { return &self.Loc }
 // Raw returns a pointer to the the underlying []alphabet.Letter slice.
 func (self *Seq) Raw() interface{} { return &self.S }
 
-// Append letters to the sequence.
-func (self *Seq) Append(a ...alphabet.QLetter) (err error) {
+// Append QLetters to the sequence, ignoring Q component.
+func (self *Seq) AppendQLetters(a ...alphabet.QLetter) (err error) {
 	l := self.Len()
 	self.S = append(self.S, make([]alphabet.Letter, len(a))...)[:l]
 	for _, v := range a {
 		self.S = append(self.S, v.L)
 	}
+
+	return
+}
+
+// Append Letters to the sequence.
+func (self *Seq) AppendLetters(a ...alphabet.Letter) (err error) {
+	self.S = append(self.S, a...)
 
 	return
 }

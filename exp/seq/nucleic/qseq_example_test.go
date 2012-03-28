@@ -63,7 +63,7 @@ func ExampleQSeq_Append() {
 	}
 
 	for i := range l {
-		s.Append(alphabet.QLetter{L: l[i], Q: q[i]})
+		s.AppendQLetters(alphabet.QLetter{L: l[i], Q: q[i]})
 	}
 	fmt.Println("Forward:")
 	fmt.Println(s)

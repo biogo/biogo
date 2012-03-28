@@ -88,8 +88,25 @@ func (self *QSeq) Location() *string { return &self.Loc }
 // Raw returns a pointer to the underlying []alphabet.QPack slice.
 func (self *QSeq) Raw() interface{} { return &self.S }
 
-// Append letters to the seq. Qualities are set to the default 0.
-func (self *QSeq) Append(a ...alphabet.QLetter) (err error) {
+// Append QLetters to the sequence, the DefaultQphred value is used for quality scores.
+func (self *QSeq) AppendLetters(a ...alphabet.Letter) (err error) {
+	l := self.Len()
+	self.S = append(self.S, make([]alphabet.QPack, len(a))...)[:l]
+	alpha := self.alphabet
+	var p alphabet.QPack
+	for _, v := range a {
+		if p, err = (alphabet.QLetter{L: v, Q: nucleic.DefaultQphred}.Pack(alpha)); err != nil {
+			self.S = self.S[:l]
+			return
+		}
+		self.S = append(self.S, p)
+	}
+
+	return
+}
+
+// Append QLetters to the seq. Qualities are set to the default 0.
+func (self *QSeq) AppendQLetters(a ...alphabet.QLetter) (err error) {
 	self.S = append(self.S, make([]alphabet.QPack, len(a))...)[:len(self.S)]
 	var qp alphabet.QPack
 	for i, ql := range a {
