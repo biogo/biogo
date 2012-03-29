@@ -38,6 +38,7 @@ type Reader struct {
 	IDPrefix  []byte
 	SeqPrefix []byte
 	last      []byte
+	line      int
 }
 
 // Returns a new fasta format reader using f.
@@ -68,6 +69,7 @@ func (self *Reader) Read() (sequence *seq.Seq, err error) {
 READ:
 	for {
 		if line, err = self.r.ReadBytes('\n'); err == nil {
+			self.line++
 			if len(line) > 0 && line[len(line)-1] == '\r' {
 				line = line[:len(line)-1]
 			}
@@ -99,7 +101,11 @@ READ:
 		}
 	}
 
-	sequence = seq.New(string(label), body, nil)
+	if len(label) > 0 || len(body) > 0 {
+		sequence = seq.New(string(label), body, nil)
+	} else {
+		err = bio.NewError("fasta: empty sequence", 0, self.line)
+	}
 
 	return
 }
