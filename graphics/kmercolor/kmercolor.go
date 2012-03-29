@@ -17,9 +17,9 @@ package kmercolor
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import (
-	"github.com/kortschak/BioGo/graphics/color"
-	"github.com/kortschak/BioGo/index/kmerindex"
-	"github.com/kortschak/BioGo/util"
+	"github.com/kortschak/biogo/graphics/color"
+	"github.com/kortschak/biogo/index/kmerindex"
+	"github.com/kortschak/biogo/util"
 	"image"
 	imagecolor "image/color"
 )

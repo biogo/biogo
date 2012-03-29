@@ -16,8 +16,8 @@ package alignio
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import (
-	"github.com/kortschak/BioGo/io/seqio/fasta"
-	"github.com/kortschak/BioGo/io/seqio/fastq"
+	"github.com/kortschak/biogo/io/seqio/fasta"
+	"github.com/kortschak/biogo/io/seqio/fastq"
 	check "launchpad.net/gocheck"
 	"testing"
 )

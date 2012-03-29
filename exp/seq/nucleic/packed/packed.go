@@ -21,14 +21,14 @@ package packed
 
 import (
 	"fmt"
-	"github.com/kortschak/BioGo/bio"
-	"github.com/kortschak/BioGo/exp/alphabet"
-	"github.com/kortschak/BioGo/exp/seq"
-	"github.com/kortschak/BioGo/exp/seq/nucleic"
-	"github.com/kortschak/BioGo/exp/seq/sequtils"
-	"github.com/kortschak/BioGo/feat"
-	"github.com/kortschak/BioGo/interval"
-	"github.com/kortschak/BioGo/util"
+	"github.com/kortschak/biogo/bio"
+	"github.com/kortschak/biogo/exp/alphabet"
+	"github.com/kortschak/biogo/exp/seq"
+	"github.com/kortschak/biogo/exp/seq/nucleic"
+	"github.com/kortschak/biogo/exp/seq/sequtils"
+	"github.com/kortschak/biogo/feat"
+	"github.com/kortschak/biogo/interval"
+	"github.com/kortschak/biogo/util"
 )
 
 var emptyString = ""

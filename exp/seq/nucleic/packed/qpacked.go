@@ -17,13 +17,13 @@ package packed
 
 import (
 	"fmt"
-	"github.com/kortschak/BioGo/bio"
-	"github.com/kortschak/BioGo/exp/alphabet"
-	"github.com/kortschak/BioGo/exp/seq"
-	"github.com/kortschak/BioGo/exp/seq/nucleic"
-	"github.com/kortschak/BioGo/exp/seq/quality"
-	"github.com/kortschak/BioGo/exp/seq/sequtils"
-	"github.com/kortschak/BioGo/feat"
+	"github.com/kortschak/biogo/bio"
+	"github.com/kortschak/biogo/exp/alphabet"
+	"github.com/kortschak/biogo/exp/seq"
+	"github.com/kortschak/biogo/exp/seq/nucleic"
+	"github.com/kortschak/biogo/exp/seq/quality"
+	"github.com/kortschak/biogo/exp/seq/sequtils"
+	"github.com/kortschak/biogo/feat"
 )
 
 // QSeq is a packed nucleic acid with Phred quality scores allowing one byte per quality base.

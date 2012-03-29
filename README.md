@@ -2,7 +2,7 @@
 
 ##Installation
 
-        $ go get github.com/kortschak/BioGo/...
+        $ go get github.com/kortschak/biogo/...
 
 ##Overview
 

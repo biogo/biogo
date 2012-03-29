@@ -19,7 +19,7 @@ package interval
 import (
 	"bytes"
 	"encoding/gob"
-	"github.com/kortschak/BioGo/bio"
+	"github.com/kortschak/biogo/bio"
 )
 
 const Version int = 1

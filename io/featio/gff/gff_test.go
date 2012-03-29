@@ -17,9 +17,9 @@ package gff
 
 import (
 	"fmt"
-	"github.com/kortschak/BioGo/bio"
-	"github.com/kortschak/BioGo/feat"
-	"github.com/kortschak/BioGo/seq"
+	"github.com/kortschak/biogo/bio"
+	"github.com/kortschak/biogo/feat"
+	"github.com/kortschak/biogo/seq"
 	"io"
 	"io/ioutil"
 	check "launchpad.net/gocheck"

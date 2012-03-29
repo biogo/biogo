@@ -19,8 +19,8 @@ package fastq
 import (
 	"bufio"
 	"bytes"
-	"github.com/kortschak/BioGo/bio"
-	"github.com/kortschak/BioGo/seq"
+	"github.com/kortschak/biogo/bio"
+	"github.com/kortschak/biogo/seq"
 	"io"
 	"os"
 )

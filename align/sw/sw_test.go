@@ -16,7 +16,7 @@ package sw
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import (
-	"github.com/kortschak/BioGo/io/seqio/fasta"
+	"github.com/kortschak/biogo/io/seqio/fasta"
 	check "launchpad.net/gocheck"
 	"testing"
 )

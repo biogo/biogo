@@ -18,8 +18,8 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/kortschak/BioGo/interval"
-	"github.com/kortschak/BioGo/io/featio/bed"
+	"github.com/kortschak/biogo/interval"
+	"github.com/kortschak/biogo/io/featio/bed"
 	"math"
 	"os"
 )

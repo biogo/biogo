@@ -16,8 +16,8 @@ package bed
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import (
-	"github.com/kortschak/BioGo/bio"
-	"github.com/kortschak/BioGo/feat"
+	"github.com/kortschak/biogo/bio"
+	"github.com/kortschak/biogo/feat"
 	"io"
 	"io/ioutil"
 	check "launchpad.net/gocheck"

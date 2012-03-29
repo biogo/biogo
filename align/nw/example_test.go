@@ -17,7 +17,7 @@ package nw
 
 import (
 	"fmt"
-	"github.com/kortschak/BioGo/seq"
+	"github.com/kortschak/biogo/seq"
 )
 
 func ExampleAligner_Align() {

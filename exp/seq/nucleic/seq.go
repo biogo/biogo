@@ -16,11 +16,11 @@ package nucleic
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import (
-	"github.com/kortschak/BioGo/bio"
-	"github.com/kortschak/BioGo/exp/alphabet"
-	"github.com/kortschak/BioGo/exp/seq"
-	"github.com/kortschak/BioGo/exp/seq/sequtils"
-	"github.com/kortschak/BioGo/feat"
+	"github.com/kortschak/biogo/bio"
+	"github.com/kortschak/biogo/exp/alphabet"
+	"github.com/kortschak/biogo/exp/seq"
+	"github.com/kortschak/biogo/exp/seq/sequtils"
+	"github.com/kortschak/biogo/feat"
 )
 
 // Seq is a basic nucleic acid sequence.

@@ -18,8 +18,8 @@ package pals
 import (
 	"bytes"
 	"fmt"
-	"github.com/kortschak/BioGo/seq"
-	"github.com/kortschak/BioGo/util"
+	"github.com/kortschak/biogo/seq"
+	"github.com/kortschak/biogo/util"
 )
 
 var (

@@ -16,7 +16,7 @@ package fasta
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import (
-	"github.com/kortschak/BioGo/seq"
+	"github.com/kortschak/biogo/seq"
 	"io"
 	"io/ioutil"
 	check "launchpad.net/gocheck"

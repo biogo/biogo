@@ -19,10 +19,10 @@ package pwm
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import (
-	"github.com/kortschak/BioGo/bio"
-	"github.com/kortschak/BioGo/feat"
-	"github.com/kortschak/BioGo/seq"
-	"github.com/kortschak/BioGo/util"
+	"github.com/kortschak/biogo/bio"
+	"github.com/kortschak/biogo/feat"
+	"github.com/kortschak/biogo/seq"
+	"github.com/kortschak/biogo/util"
 	"math"
 	"sort"
 	"strconv"

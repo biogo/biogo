@@ -16,7 +16,7 @@ package featio
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import "github.com/kortschak/BioGo/feat"
+import "github.com/kortschak/biogo/feat"
 
 type Reader interface {
 	Read() (*feat.Feature, error)

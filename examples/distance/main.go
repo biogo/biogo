@@ -3,8 +3,8 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/kortschak/BioGo/index/kmerindex"
-	"github.com/kortschak/BioGo/io/seqio/fasta"
+	"github.com/kortschak/biogo/index/kmerindex"
+	"github.com/kortschak/biogo/io/seqio/fasta"
 	"os"
 )
 

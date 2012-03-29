@@ -16,8 +16,8 @@ package kmerindex
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import (
-	"github.com/kortschak/BioGo/seq"
-	"github.com/kortschak/BioGo/util"
+	"github.com/kortschak/biogo/seq"
+	"github.com/kortschak/biogo/util"
 	check "launchpad.net/gocheck"
 	"math/rand"
 	"testing"

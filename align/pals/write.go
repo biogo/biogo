@@ -17,8 +17,8 @@ package pals
 
 import (
 	"fmt"
-	"github.com/kortschak/BioGo/feat"
-	"github.com/kortschak/BioGo/io/featio/gff"
+	"github.com/kortschak/biogo/feat"
+	"github.com/kortschak/biogo/io/featio/gff"
 	"io"
 	"os"
 )

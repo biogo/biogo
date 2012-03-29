@@ -17,8 +17,8 @@ package seq
 
 import (
 	"fmt"
-	"github.com/kortschak/BioGo/bio"
-	"github.com/kortschak/BioGo/feat"
+	"github.com/kortschak/biogo/bio"
+	"github.com/kortschak/biogo/feat"
 	"strings"
 )
 

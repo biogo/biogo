@@ -16,8 +16,8 @@ package filter
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import (
-	"github.com/kortschak/BioGo/index/kmerindex"
-	"github.com/kortschak/BioGo/seq"
+	"github.com/kortschak/biogo/index/kmerindex"
+	"github.com/kortschak/biogo/seq"
 	"sort"
 )
 

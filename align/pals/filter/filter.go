@@ -19,10 +19,10 @@ package filter
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import (
-	"github.com/kortschak/BioGo/bio"
-	"github.com/kortschak/BioGo/index/kmerindex"
-	"github.com/kortschak/BioGo/morass"
-	"github.com/kortschak/BioGo/seq"
+	"github.com/kortschak/biogo/bio"
+	"github.com/kortschak/biogo/index/kmerindex"
+	"github.com/kortschak/biogo/morass"
+	"github.com/kortschak/biogo/seq"
 )
 
 // Ukonnen's Lemma: U(n, q, 𝛜) := (n + 1) - q(⌊𝛜n⌋ + 1)

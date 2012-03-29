@@ -17,11 +17,11 @@ package sequtils
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import (
-	"github.com/kortschak/BioGo/bio"
-	"github.com/kortschak/BioGo/exp/seq"
-	"github.com/kortschak/BioGo/feat"
-	"github.com/kortschak/BioGo/interval"
-	"github.com/kortschak/BioGo/util"
+	"github.com/kortschak/biogo/bio"
+	"github.com/kortschak/biogo/exp/seq"
+	"github.com/kortschak/biogo/feat"
+	"github.com/kortschak/biogo/interval"
+	"github.com/kortschak/biogo/util"
 	"reflect"
 )
 

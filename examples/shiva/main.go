@@ -3,8 +3,8 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/kortschak/BioGo/io/seqio/fasta"
-	"github.com/kortschak/BioGo/seq"
+	"github.com/kortschak/biogo/io/seqio/fasta"
+	"github.com/kortschak/biogo/seq"
 	"os"
 	"runtime/pprof"
 )

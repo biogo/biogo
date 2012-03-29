@@ -25,8 +25,8 @@ package seq
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import (
-	"github.com/kortschak/BioGo/exp/alphabet"
-	"github.com/kortschak/BioGo/feat"
+	"github.com/kortschak/biogo/exp/alphabet"
+	"github.com/kortschak/biogo/feat"
 )
 
 const (

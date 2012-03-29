@@ -17,9 +17,9 @@ package illumina
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import (
-	"github.com/kortschak/BioGo/exp/alphabet"
-	"github.com/kortschak/BioGo/exp/seq"
-	"github.com/kortschak/BioGo/exp/seq/quality"
+	"github.com/kortschak/biogo/exp/alphabet"
+	"github.com/kortschak/biogo/exp/seq"
+	"github.com/kortschak/biogo/exp/seq/quality"
 )
 
 type Illumina1_3 struct {

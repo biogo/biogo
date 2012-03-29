@@ -17,8 +17,8 @@ package protein
 
 import (
 	"fmt"
-	"github.com/kortschak/BioGo/exp/alphabet"
-	"github.com/kortschak/BioGo/exp/seq"
+	"github.com/kortschak/biogo/exp/alphabet"
+	"github.com/kortschak/biogo/exp/seq"
 	"strings"
 )
 

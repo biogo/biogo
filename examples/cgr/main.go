@@ -3,10 +3,10 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/kortschak/BioGo/graphics/color"
-	"github.com/kortschak/BioGo/graphics/kmercolor"
-	"github.com/kortschak/BioGo/index/kmerindex"
-	"github.com/kortschak/BioGo/io/seqio/fasta"
+	"github.com/kortschak/biogo/graphics/color"
+	"github.com/kortschak/biogo/graphics/kmercolor"
+	"github.com/kortschak/biogo/index/kmerindex"
+	"github.com/kortschak/biogo/io/seqio/fasta"
 	"image/png"
 	"os"
 )

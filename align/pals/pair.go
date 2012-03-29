@@ -17,10 +17,10 @@ package pals
 
 import (
 	"fmt"
-	"github.com/kortschak/BioGo/align/pals/dp"
-	"github.com/kortschak/BioGo/bio"
-	"github.com/kortschak/BioGo/feat"
-	"github.com/kortschak/BioGo/seq"
+	"github.com/kortschak/biogo/align/pals/dp"
+	"github.com/kortschak/biogo/bio"
+	"github.com/kortschak/biogo/feat"
+	"github.com/kortschak/biogo/seq"
 )
 
 // A FeaturePair holds a pair of features with additional information relating the two.

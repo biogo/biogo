@@ -3,10 +3,10 @@ package main
 import (
 	"crypto/md5"
 	"fmt"
-	"github.com/kortschak/BioGo/align/pals"
-	"github.com/kortschak/BioGo/io/seqio/fasta"
-	"github.com/kortschak/BioGo/seq"
-	"github.com/kortschak/BioGo/util"
+	"github.com/kortschak/biogo/align/pals"
+	"github.com/kortschak/biogo/io/seqio/fasta"
+	"github.com/kortschak/biogo/seq"
+	"github.com/kortschak/biogo/util"
 	"os"
 	"path/filepath"
 )

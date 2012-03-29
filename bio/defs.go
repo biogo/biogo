@@ -17,6 +17,6 @@ package bio
 
 // Output defaults.
 var (
-	Precision        = 4   // BioGo global precision value.
-	FloatFormat byte = 'f' // BioGo global float format.
+	Precision        = 4   // biogo global precision value.
+	FloatFormat byte = 'f' // biogo global float format.
 )

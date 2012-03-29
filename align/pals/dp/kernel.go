@@ -16,8 +16,8 @@ package dp
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import (
-	"github.com/kortschak/BioGo/align/pals/filter"
-	"github.com/kortschak/BioGo/seq"
+	"github.com/kortschak/biogo/align/pals/filter"
+	"github.com/kortschak/biogo/seq"
 )
 
 const (

@@ -19,9 +19,9 @@ package fastareader
 import (
 	"bufio"
 	"fmt"
-	"github.com/kortschak/BioGo/bio"
-	lex "github.com/kortschak/BioGo/io/lexbytes"
-	"github.com/kortschak/BioGo/seq"
+	"github.com/kortschak/biogo/bio"
+	lex "github.com/kortschak/biogo/io/lexbytes"
+	"github.com/kortschak/biogo/seq"
 	"io"
 	"os"
 )

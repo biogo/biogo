@@ -16,8 +16,8 @@ package filter
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import (
-	"github.com/kortschak/BioGo/bio"
-	"github.com/kortschak/BioGo/util"
+	"github.com/kortschak/biogo/bio"
+	"github.com/kortschak/biogo/util"
 )
 
 var lookUp util.CTL

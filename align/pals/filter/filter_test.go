@@ -16,10 +16,10 @@ package filter
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import (
-	"github.com/kortschak/BioGo/index/kmerindex"
-	"github.com/kortschak/BioGo/morass"
-	"github.com/kortschak/BioGo/seq"
-	"github.com/kortschak/BioGo/util"
+	"github.com/kortschak/biogo/index/kmerindex"
+	"github.com/kortschak/biogo/morass"
+	"github.com/kortschak/biogo/seq"
+	"github.com/kortschak/biogo/util"
 	check "launchpad.net/gocheck"
 	"testing"
 )

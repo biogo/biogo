@@ -19,8 +19,8 @@ package nmf
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import (
-	"github.com/kortschak/BioGo/matrix"
-	"github.com/kortschak/BioGo/matrix/sparse"
+	"github.com/kortschak/biogo/matrix"
+	"github.com/kortschak/biogo/matrix/sparse"
 	"math"
 	"time"
 )

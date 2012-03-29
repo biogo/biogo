@@ -16,7 +16,7 @@ package concurrent
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import (
-	"github.com/kortschak/BioGo/bio"
+	"github.com/kortschak/biogo/bio"
 	"sync"
 )
 

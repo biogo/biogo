@@ -16,8 +16,8 @@ package sequtils
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import (
-	"github.com/kortschak/BioGo/exp/seq"
-	"github.com/kortschak/BioGo/feat"
+	"github.com/kortschak/biogo/exp/seq"
+	"github.com/kortschak/biogo/feat"
 	check "launchpad.net/gocheck"
 	"reflect"
 	"testing"
