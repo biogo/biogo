@@ -1,9 +1,9 @@
 /* 
-biólogo is a bioinformatics library for the Go language. It is a work in progress.
+bíogo is a bioinformatics library for the Go language. It is a work in progress.
 
-The Purpose of biólogo
+The Purpose of bíogo
 
-biólogo stems from the need to address the size and structure of modern
+bíogo stems from the need to address the size and structure of modern
 genomic and metagenomic data sets. These properties enforce requirements on the
 libraries and languages used for analysis:
 
@@ -44,7 +44,7 @@ applications in a pipeline (much of [1-3]) and interacting with external hosts
 friendly syntax [1-4] or providing bioinformatics functions for high
 performance languages [5, 6].
 
-The intended niche for biólogo lies somewhere between the scripting libraries
+The intended niche for bíogo lies somewhere between the scripting libraries
 and high performance language libraries in being easy to use for both small and
 large projects while having reasonable performance with computationally
 intensive tasks.
@@ -73,7 +73,7 @@ research software for computationally intensive tasks.
 
 Library Structure and Coding Style
 
-The biólogo library structure is influenced both by the structure of BioPerl and
+The bíogo library structure is influenced both by the structure of BioPerl and
 the Go core libraries.
 
 The coding style is increasingly aligning itself with the style of Go core
@@ -86,11 +86,11 @@ researchers, many of whom use these libraries.
 
 Position Numbering
 
-Position numbering in the biólogo library conforms to the zero-based indexing
+Position numbering in the bíogo library conforms to the zero-based indexing
 of Go and range indexing conforms to Go's half-open zero-based slice indexing.
 This is at odds with the 'normal' inclusive indexing used by molecular
 biologists. This choice was made to avoid inconsistent indexing spaces being
-used — one-based inclusive for biólogo functions and methods and zero-based for
+used — one-based inclusive for bíogo functions and methods and zero-based for
 native Go slices and arrays — and so avoid errors that this would otherwise
 facilitate.  Note that the GFF package does allow, and defaults to, one-based
 inclusive indexing in its input and output of GFF files.
@@ -183,12 +183,6 @@ and Solexa scoring systems are able to be read from files, however internal
 representation of quality scores is with Phred, so there will be precision loss
 in conversion. A Solexa quality score type is provided for use where this will
 be a problem.
-
-The Name
-
-biólogo is the Spanish for biologist and in the tradition of Go packages
-includes the word Go. It is in no way related to the Logo programming language;
-there are no turtles.
 
 Copyright and License
 

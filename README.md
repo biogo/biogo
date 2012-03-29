@@ -1,4 +1,4 @@
-#BioGo
+#bíogo
 
 ##Installation
 
@@ -6,11 +6,11 @@
 
 ##Overview
 
-BioGo is a bioinformatics library for the Go language. It is a work in progress.
+bíogo is a bioinformatics library for the Go language. It is a work in progress.
 
-##The Purpose of BioGo
+##The Purpose of bíogo
 
-BioGo stems from the need to address the size and structure of modern genomic
+bíogo stems from the need to address the size and structure of modern genomic
 and metagenomic data sets. These properties enforce requirements on the
 libraries and languages used for analysis:
 
@@ -53,7 +53,7 @@ applications in a pipeline (much of [[1], [2], [3]]) and interacting with extern
 friendly syntax [[1], [2], [3], [4]] or providing bioinformatics functions for high
 performance languages [[5], [6]].
 
-The intended niche for BioGo lies somewhere between the scripting libraries and
+The intended niche for bíogo lies somewhere between the scripting libraries and
 high performance language libraries in being easy to use for both small and
 large projects while having reasonable performance with computationally
 intensive tasks.
@@ -89,7 +89,7 @@ research software for computationally intensive tasks.
 
 ##Library Structure and Coding Style
 
-The BioGo library structure is influenced both by the structure of BioPerl and
+The bíogo library structure is influenced both by the structure of BioPerl and
 the Go core libraries.
 
 The coding style is increasingly aligning itself with the style of Go core
