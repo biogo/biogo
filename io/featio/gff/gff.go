@@ -378,8 +378,8 @@ func (self *Writer) WriteMetaData(d interface{}) (n int, err error) {
 		n, err = self.w.WriteString("##" + d.(string) + "\n")
 	case *seq.Seq:
 		sw := fasta.NewWriter(self.f, self.Width)
-		sw.IDPrefix = fmt.Sprintf("##%s ", d.(*seq.Seq).Moltype)
-		sw.SeqPrefix = "##"
+		sw.IDPrefix = []byte(fmt.Sprintf("##%s ", d.(*seq.Seq).Moltype))
+		sw.SeqPrefix = []byte("##")
 		if n, err = sw.Write(d.(*seq.Seq)); err != nil {
 			return
 		}
