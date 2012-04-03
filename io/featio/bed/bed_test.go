@@ -41,6 +41,9 @@ var (
 	}
 )
 
+// Helpers
+func floatPtr(f float64) *float64 { return &f }
+
 // Tests
 func Test(t *testing.T) { check.TestingT(t) }
 
@@ -51,19 +54,19 @@ var _ = check.Suite(&S{})
 var (
 	expect [][]feat.Feature = [][]feat.Feature{
 		{
-			{ID: "chr1:11873..14409", Source: "", Location: "chr1", Start: 11873, End: 14409, Feature: "", Score: 0, Probability: 0, Attributes: "", Comments: "", Frame: 0, Strand: 0, Moltype: 0, Meta: interface{}(nil)},
+			{ID: "chr1:11873..14409", Source: "", Location: "chr1", Start: 11873, End: 14409, Feature: "", Score: nil, Probability: nil, Attributes: "", Comments: "", Frame: 0, Strand: 0, Moltype: 0, Meta: interface{}(nil)},
 		},
 		{
-			{ID: "uc001aaa.3", Source: "", Location: "chr1", Start: 11873, End: 14409, Feature: "", Score: 0, Probability: 0, Attributes: "", Comments: "", Frame: 0, Strand: 0, Moltype: 0, Meta: interface{}(nil)},
+			{ID: "uc001aaa.3", Source: "", Location: "chr1", Start: 11873, End: 14409, Feature: "", Score: nil, Probability: nil, Attributes: "", Comments: "", Frame: 0, Strand: 0, Moltype: 0, Meta: interface{}(nil)},
 		},
 		{
-			{ID: "uc001aaa.3", Source: "", Location: "chr1", Start: 11873, End: 14409, Feature: "", Score: 3, Probability: 0, Attributes: "", Comments: "", Frame: 0, Strand: 0, Moltype: 0, Meta: interface{}(nil)},
+			{ID: "uc001aaa.3", Source: "", Location: "chr1", Start: 11873, End: 14409, Feature: "", Score: floatPtr(3), Probability: nil, Attributes: "", Comments: "", Frame: 0, Strand: 0, Moltype: 0, Meta: interface{}(nil)},
 		},
 		{
-			{ID: "uc001aaa.3", Source: "", Location: "chr1", Start: 11873, End: 14409, Feature: "", Score: 3, Probability: 0, Attributes: "", Comments: "", Frame: 0, Strand: 1, Moltype: 0, Meta: interface{}(nil)},
+			{ID: "uc001aaa.3", Source: "", Location: "chr1", Start: 11873, End: 14409, Feature: "", Score: floatPtr(3), Probability: nil, Attributes: "", Comments: "", Frame: 0, Strand: 1, Moltype: 0, Meta: interface{}(nil)},
 		},
 		{
-			{ID: "uc001aaa.3", Source: "", Location: "chr1", Start: 11873, End: 14409, Feature: "", Score: 3, Probability: 0, Attributes: "", Comments: "", Frame: 0, Strand: 1, Moltype: 0, Meta: interface{}(nil)},
+			{ID: "uc001aaa.3", Source: "", Location: "chr1", Start: 11873, End: 14409, Feature: "", Score: floatPtr(3), Probability: nil, Attributes: "", Comments: "", Frame: 0, Strand: 1, Moltype: 0, Meta: interface{}(nil)},
 		},
 	}
 )
@@ -91,7 +94,7 @@ func (s *S) TestReadBed(c *check.C) {
 				}
 				if len(obtain) == len(expect[k]) {
 					for j := range obtain {
-						c.Check(*obtain[j], check.Equals, expect[k][j])
+						c.Check(*obtain[j], check.DeepEquals, expect[k][j])
 					}
 				} else {
 					c.Log(k, b)

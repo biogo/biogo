@@ -117,8 +117,11 @@ func (self *Reader) Read() (f *feat.Feature, err error) {
 		case nameField:
 			f.ID = elems[i]
 		case scoreField:
-			if f.Score, se = strconv.ParseFloat(elems[i], 64); se != nil {
-				f.Score = 0
+			if f.Score == nil {
+				f.Score = new(float64)
+			}
+			if *f.Score, se = strconv.ParseFloat(elems[i], 64); se != nil {
+				*f.Score = 0
 			}
 		case strandField:
 			if f.Strand, ok = CharToStrand[elems[i]]; !ok {
@@ -209,7 +212,7 @@ func (self *Writer) Stringify(f *feat.Feature) string {
 		fields[strandField] = StrandToChar[f.Strand]
 		fallthrough
 	case 5:
-		fields[scoreField] = strconv.FormatFloat(f.Score, self.FloatFormat, self.Precision, 64)
+		fields[scoreField] = strconv.FormatFloat(*f.Score, self.FloatFormat, self.Precision, 64)
 		fallthrough
 	case 4:
 		fields[nameField] = f.ID

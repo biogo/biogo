@@ -25,7 +25,6 @@ import (
 	"github.com/kortschak/biogo/io/seqio/fasta"
 	"github.com/kortschak/biogo/seq"
 	"io"
-	"math"
 	"os"
 	"strconv"
 	"strings"
@@ -238,8 +237,11 @@ func (self *Reader) Read() (f *feat.Feature, err error) {
 	}
 
 	score, se := strconv.ParseFloat(elems[scoreField], 64)
+	var scorePtr *float64
 	if se != nil {
-		score = math.NaN()
+		scorePtr = nil
+	} else {
+		scorePtr = &score
 	}
 
 	f = &feat.Feature{
@@ -249,7 +251,7 @@ func (self *Reader) Read() (f *feat.Feature, err error) {
 		Start:    startPos,
 		End:      endPos,
 		Feature:  elems[featureField],
-		Score:    score,
+		Score:    scorePtr,
 		Frame:    int8(fr),
 		Strand:   s,
 		Moltype:  self.Type, // currently we default to bio.DNA
@@ -344,8 +346,8 @@ func (self *Writer) Stringify(f *feat.Feature) string {
 		strconv.Itoa(f.End),
 	})
 
-	if !math.IsNaN(f.Score) {
-		fields[scoreField] = strconv.FormatFloat(f.Score, self.FloatFormat, self.Precision, 64)
+	if f.Score != nil {
+		fields[scoreField] = strconv.FormatFloat(*f.Score, self.FloatFormat, self.Precision, 64)
 	} else {
 		fields[scoreField] = "."
 	}

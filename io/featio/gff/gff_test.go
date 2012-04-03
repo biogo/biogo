@@ -16,14 +16,12 @@ package gff
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import (
-	"fmt"
 	"github.com/kortschak/biogo/bio"
 	"github.com/kortschak/biogo/feat"
 	"github.com/kortschak/biogo/seq"
 	"io"
 	"io/ioutil"
 	check "launchpad.net/gocheck"
-	"math"
 	"os"
 	"testing"
 )
@@ -35,6 +33,9 @@ var (
 	}
 )
 
+// Helpers
+func floatPtr(f float64) *float64 { return &f }
+
 // Tests
 func Test(t *testing.T) { check.TestingT(t) }
 
@@ -44,19 +45,19 @@ var _ = check.Suite(&S{})
 
 var (
 	expect []feat.Feature = []feat.Feature{
-		{ID: "SEQ1:102..105", Source: "EMBL", Location: "SEQ1", Start: 102, End: 105, Feature: "atg", Score: math.NaN(), Probability: 0, Attributes: "", Comments: "", Frame: 0, Strand: 1, Moltype: 0x0, Meta: interface{}(nil)},
-		{ID: "SEQ1:102..172", Source: "EMBL", Location: "SEQ1", Start: 102, End: 172, Feature: "exon", Score: math.NaN(), Probability: 0, Attributes: "", Comments: "", Frame: 0, Strand: 1, Moltype: 0x0, Meta: interface{}(nil)},
-		{ID: "SEQ1:171..173", Source: "EMBL", Location: "SEQ1", Start: 171, End: 173, Feature: "splice5", Score: math.NaN(), Probability: 0, Attributes: "", Comments: "", Frame: -1, Strand: 1, Moltype: 0x0, Meta: interface{}(nil)},
-		{ID: "SEQ1:171..173", Source: "netgene", Location: "SEQ1", Start: 171, End: 173, Feature: "splice5", Score: 0.94, Probability: 0, Attributes: "", Comments: "", Frame: -1, Strand: 1, Moltype: 0x0, Meta: interface{}(nil)},
-		{ID: "SEQ1:162..182", Source: "genie", Location: "SEQ1", Start: 162, End: 182, Feature: "sp5-20", Score: 2.3, Probability: 0, Attributes: "", Comments: "", Frame: -1, Strand: 1, Moltype: 0x0, Meta: interface{}(nil)},
-		{ID: "SEQ1:167..177", Source: "genie", Location: "SEQ1", Start: 167, End: 177, Feature: "sp5-10", Score: 2.1, Probability: 0, Attributes: "", Comments: "", Frame: -1, Strand: 1, Moltype: 0x0, Meta: interface{}(nil)},
-		{ID: "SEQ2:16..19", Source: "grail", Location: "SEQ2", Start: 16, End: 19, Feature: "ATG", Score: 2.1, Probability: 0, Attributes: "", Comments: "", Frame: 0, Strand: -1, Moltype: 0x0, Meta: interface{}(nil)},
+		{ID: "SEQ1:102..105", Source: "EMBL", Location: "SEQ1", Start: 102, End: 105, Feature: "atg", Score: nil, Probability: nil, Attributes: "", Comments: "", Frame: 0, Strand: 1, Moltype: 0x0, Meta: interface{}(nil)},
+		{ID: "SEQ1:102..172", Source: "EMBL", Location: "SEQ1", Start: 102, End: 172, Feature: "exon", Score: nil, Probability: nil, Attributes: "", Comments: "", Frame: 0, Strand: 1, Moltype: 0x0, Meta: interface{}(nil)},
+		{ID: "SEQ1:171..173", Source: "EMBL", Location: "SEQ1", Start: 171, End: 173, Feature: "splice5", Score: nil, Probability: nil, Attributes: "", Comments: "", Frame: -1, Strand: 1, Moltype: 0x0, Meta: interface{}(nil)},
+		{ID: "SEQ1:171..173", Source: "netgene", Location: "SEQ1", Start: 171, End: 173, Feature: "splice5", Score: floatPtr(0.94), Probability: nil, Attributes: "", Comments: "", Frame: -1, Strand: 1, Moltype: 0x0, Meta: interface{}(nil)},
+		{ID: "SEQ1:162..182", Source: "genie", Location: "SEQ1", Start: 162, End: 182, Feature: "sp5-20", Score: floatPtr(2.3), Probability: nil, Attributes: "", Comments: "", Frame: -1, Strand: 1, Moltype: 0x0, Meta: interface{}(nil)},
+		{ID: "SEQ1:167..177", Source: "genie", Location: "SEQ1", Start: 167, End: 177, Feature: "sp5-10", Score: floatPtr(2.1), Probability: nil, Attributes: "", Comments: "", Frame: -1, Strand: 1, Moltype: 0x0, Meta: interface{}(nil)},
+		{ID: "SEQ2:16..19", Source: "grail", Location: "SEQ2", Start: 16, End: 19, Feature: "ATG", Score: floatPtr(2.1), Probability: nil, Attributes: "", Comments: "", Frame: 0, Strand: -1, Moltype: 0x0, Meta: interface{}(nil)},
 	}
 	expectMeta []interface{} = []interface{}{
 		&seq.Seq{ID: "<seqname>", Seq: []byte("acggctcggattggcgctggatgatagatcagacgac..."), Offset: 0, Strand: 1, Circular: false, Moltype: 0x0, Quality: (*seq.Quality)(nil), Inplace: false, Meta: interface{}(nil)},
 		&seq.Seq{ID: "<seqname>", Seq: []byte("acggcucggauuggcgcuggaugauagaucagacgac..."), Offset: 0, Strand: 1, Circular: false, Moltype: 0x1, Quality: (*seq.Quality)(nil), Inplace: false, Meta: interface{}(nil)},
 		&seq.Seq{ID: "<seqname>", Seq: []byte("MVLSPADKTNVKAAWGKVGAHAGEYGAEALERMFLSF..."), Offset: 0, Strand: 1, Circular: false, Moltype: 0x2, Quality: (*seq.Quality)(nil), Inplace: false, Meta: interface{}(nil)},
-		&feat.Feature{ID: "<seqname>", Source: "", Location: "", Start: 0, End: 5, Feature: "", Score: 0, Probability: 0, Attributes: "", Comments: "", Frame: 0, Strand: 0, Moltype: 0x0, Meta: interface{}(nil)},
+		&feat.Feature{ID: "<seqname>", Source: "", Location: "", Start: 0, End: 5, Feature: "", Score: nil, Probability: nil, Attributes: "", Comments: "", Frame: 0, Strand: 0, Moltype: 0x0, Meta: interface{}(nil)},
 	}
 	writeMeta []interface{} = []interface{}{
 		"gff-version 2",
@@ -66,7 +67,7 @@ var (
 		&seq.Seq{ID: "<seqname>", Seq: []byte("acggctcggattggcgctggatgatagatcagacgac..."), Offset: 0, Strand: 1, Circular: false, Moltype: 0x0, Quality: (*seq.Quality)(nil), Inplace: false, Meta: interface{}(nil)},
 		&seq.Seq{ID: "<seqname>", Seq: []byte("acggcucggauuggcgcuggaugauagaucagacgac..."), Offset: 0, Strand: 1, Circular: false, Moltype: 0x1, Quality: (*seq.Quality)(nil), Inplace: false, Meta: interface{}(nil)},
 		&seq.Seq{ID: "<seqname>", Seq: []byte("MVLSPADKTNVKAAWGKVGAHAGEYGAEALERMFLSF..."), Offset: 0, Strand: 1, Circular: false, Moltype: 0x2, Quality: (*seq.Quality)(nil), Inplace: false, Meta: interface{}(nil)},
-		&feat.Feature{ID: "<seqname>", Source: "", Location: "", Start: 0, End: 5, Feature: "", Score: 0, Probability: 0, Attributes: "", Comments: "", Frame: 0, Strand: 0, Moltype: 0x0, Meta: interface{}(nil)},
+		&feat.Feature{ID: "<seqname>", Source: "", Location: "", Start: 0, End: 5, Feature: "", Score: floatPtr(0), Probability: floatPtr(0), Attributes: "", Comments: "", Frame: 0, Strand: 0, Moltype: 0x0, Meta: interface{}(nil)},
 	}
 )
 
@@ -92,7 +93,7 @@ func (s *S) TestReadGFF(c *check.C) {
 			}
 			if len(obtain) == len(expect) {
 				for j := range obtain {
-					c.Check(fmt.Sprintf("%#v", *obtain[j]), check.Equals, fmt.Sprintf("%#v", expect[j]))
+					c.Check(*obtain[j], check.DeepEquals, expect[j])
 				}
 			} else {
 				c.Check(len(obtain), check.Equals, len(expect))

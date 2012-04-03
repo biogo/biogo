@@ -34,8 +34,8 @@ type Feature struct {
 	Start       int
 	End         int
 	Feature     string
-	Score       float64
-	Probability float64
+	Score       *float64
+	Probability *float64
 	Attributes  string
 	Comments    string
 	Frame       int8
