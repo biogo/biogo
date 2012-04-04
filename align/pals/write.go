@@ -50,12 +50,14 @@ func (self *Writer) Write(pair *FeaturePair) (n int, err error) {
 	t.Location = pair.B.ID
 	t.Start = pair.B.Start
 	t.End = pair.B.End
-	t.Score = float64(pair.Score)
+	t.Score = floatPtr(float64(pair.Score))
 	t.Strand = pair.Strand
 	t.Frame = -1
 	t.Attributes = fmt.Sprintf("Target %s %d %d; maxe %.2g", pair.A.ID, pair.A.Start+1, pair.A.End, pair.Error) // +1 is kludge for absence of gffwriter
 	return self.w.Write(t)
 }
+
+func floatPtr(f float64) *float64 { return &f }
 
 // Close the writer, flushing any unwritten data.
 func (self *Writer) Close() (err error) {
