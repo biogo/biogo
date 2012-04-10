@@ -106,7 +106,6 @@ func (self *Multi) Location() *string { return &self.Loc }
 // TODO
 // func (self *Multi) Delete(i int) {}
 
-
 func (self *Multi) Add(n ...protein.Sequence) (err error) {
 	for _, s := range n {
 		if s.Alphabet() != self.alphabet {

@@ -24,8 +24,8 @@ import (
 )
 
 var (
-	qm, qn   *QAlignment
-	qaligned = func(a *QAlignment) {
+	qm, qn   *QSeq
+	qaligned = func(a *QSeq) {
 		for i := 0; i < a.Count(); i++ {
 			s := a.Extract(i)
 			fmt.Printf("%v\n", s)
@@ -37,7 +37,7 @@ var (
 
 func init() {
 	var err error
-	qm, err = NewQAlignment("example alignment",
+	qm, err = NewQSeq("example alignment",
 		[]string{"seq 1", "seq 2", "seq 3"},
 		[][]alphabet.QLetter{
 			{{'A', 40}, {'A', 40}, {'A', 40}},
@@ -69,8 +69,8 @@ func init() {
 	}
 }
 
-func ExampleNewQAlignment() {
-	qm, err := NewQAlignment("example alignment",
+func ExampleNewQSeq() {
+	qm, err := NewQSeq("example alignment",
 		[]string{"seq 1", "seq 2", "seq 3"},
 		[][]alphabet.QLetter{
 			{{'A', 40}, {'A', 40}, {'A', 40}},
@@ -109,7 +109,7 @@ func ExampleNewQAlignment() {
 	// acgxtgacxtggcgcxcat
 }
 
-func ExampleQAlignment_Add() {
+func ExampleQSeq_Add() {
 	fmt.Printf("%v %v\n", qm.Count(), qm)
 	qm.Add(protein.NewQSeq("example DNA",
 		[]alphabet.QLetter{{'a', 40}, {'c', 39}, {'g', 40}, {'C', 38}, {'t', 35}, {'g', 20}},
@@ -120,8 +120,8 @@ func ExampleQAlignment_Add() {
 	// 4 acgctgacxtggcgcxcat
 }
 
-func ExampleQAlignment_Copy() {
-	qn = qm.Copy().(*QAlignment)
+func ExampleQSeq_Copy() {
+	qn = qm.Copy().(*QSeq)
 	qn.Set(seq.Position{Pos: 3, Ind: 2}, alphabet.QLetter{L: 't', Q: 40})
 	qaligned(qm)
 	fmt.Println()
@@ -142,13 +142,13 @@ func ExampleQAlignment_Copy() {
 	// acgctgacxtggcgcxcat
 }
 
-func ExampleQAlignment_Count() {
+func ExampleQSeq_Count() {
 	fmt.Println(qm.Count())
 	// Output:
 	// 4
 }
 
-func ExampleQAlignment_Join() {
+func ExampleQSeq_Join() {
 	qaligned(qn)
 	qn.Join(qm, seq.End)
 	fmt.Println()
@@ -175,7 +175,7 @@ func ExampleQAlignment_Len() {
 	// 19
 }
 
-func ExampleQAlignment_Reverse() {
+func ExampleQSeq_Reverse() {
 	qaligned(qm)
 	fmt.Println()
 	qm.Reverse()
@@ -196,7 +196,7 @@ func ExampleQAlignment_Reverse() {
 	// tacxcgcggtxcagtcgca
 }
 
-func ExampleQAlignment_Stitch() {
+func ExampleQSeq_Stitch() {
 	f := feat.FeatureSet{
 		&feat.Feature{Start: -1, End: 4},
 		&feat.Feature{Start: 30, End: 38},
@@ -224,7 +224,7 @@ func ExampleQAlignment_Stitch() {
 	// acgcgcgcxcat
 }
 
-func ExampleQAlignment_Truncate() {
+func ExampleQSeq_Truncate() {
 	qaligned(qm)
 	qm.Truncate(4, 12)
 	fmt.Println()

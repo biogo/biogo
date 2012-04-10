@@ -28,7 +28,7 @@ import (
 )
 
 // Alignment protein sequence.
-type Alignment struct {
+type Seq struct {
 	ID         string
 	Desc       string
 	Loc        string
@@ -42,7 +42,7 @@ type Alignment struct {
 	offset     int
 }
 
-func NewAlignment(id string, subids []string, b [][]alphabet.Letter, alpha alphabet.Peptide, cons protein.Consensifyer) (*Alignment, error) {
+func NewSeq(id string, subids []string, b [][]alphabet.Letter, alpha alphabet.Peptide, cons protein.Consensifyer) (*Seq, error) {
 	switch lids, lseq := len(subids), len(b); {
 	case lids == 0 && len(b) == 0:
 	case lseq != 0 && lids == len(b[0]):
@@ -56,14 +56,14 @@ func NewAlignment(id string, subids []string, b [][]alphabet.Letter, alpha alpha
 		return nil, bio.NewError("alignment: id/seq number mismatch", 0)
 	}
 
-	return &Alignment{
+	return &Seq{
 		ID:         id,
 		SubIDs:     append([]string{}, subids...),
 		S:          append([][]alphabet.Letter{}, b...),
 		alphabet:   alpha,
 		Consensify: cons,
 		Stringify: func(s seq.Polymer) string {
-			t := s.(*Alignment).Consensus(false)
+			t := s.(*Seq).Consensus(false)
 			return t.String()
 		},
 	}, nil
@@ -71,22 +71,22 @@ func NewAlignment(id string, subids []string, b [][]alphabet.Letter, alpha alpha
 
 // Interface guarantees:
 var (
-	_ seq.Polymer       = &Alignment{}
-	_ seq.Sequence      = &Alignment{}
-	_ protein.Sequence  = &Alignment{}
-	_ protein.Extracter = &Alignment{}
-	_ protein.Aligned   = &Alignment{}
-	_ protein.AlignedAppender  = &Alignment{} // TODO
+	_ seq.Polymer             = &Seq{}
+	_ seq.Sequence            = &Seq{}
+	_ protein.Sequence        = &Seq{}
+	_ protein.Extracter       = &Seq{}
+	_ protein.Aligned         = &Seq{}
+	_ protein.AlignedAppender = &Seq{}
 )
 
 // Required to satisfy protein.Sequence interface.
-func (self *Alignment) Protein() {}
+func (self *Seq) Protein() {}
 
 // Raw returns a pointer to the underlying [][]byte slice.
-func (self *Alignment) Raw() interface{} { return &self.S }
+func (self *Seq) Raw() interface{} { return &self.S }
 
 // Append each byte of each a to the appropriate sequence in the reciever.
-func (self *Alignment) AppendColumns(a ...[]alphabet.QLetter) (err error) {
+func (self *Seq) AppendColumns(a ...[]alphabet.QLetter) (err error) {
 	for i, s := range a {
 		if len(s) != self.Count() {
 			return bio.NewError(fmt.Sprintf("Column %d does not match Count(): %d != %d.", i, len(s), self.Count()), 0, a)
@@ -106,7 +106,7 @@ func (self *Alignment) AppendColumns(a ...[]alphabet.QLetter) (err error) {
 }
 
 // Append each []byte in a to the appropriate sequence in the reciever.
-func (self *Alignment) AppendEach(a [][]alphabet.QLetter) (err error) {
+func (self *Seq) AppendEach(a [][]alphabet.QLetter) (err error) {
 	if len(a) != self.Count() {
 		return bio.NewError(fmt.Sprintf("Number of sequences does not match Count(): %d != %d.", len(a), self.Count()), 0, a)
 	}
@@ -132,15 +132,15 @@ func (self *Alignment) AppendEach(a [][]alphabet.QLetter) (err error) {
 }
 
 // Name returns a pointer to the ID string of the sequence.
-func (self *Alignment) Name() *string { return &self.ID }
+func (self *Seq) Name() *string { return &self.ID }
 
 // Description returns a pointer to the Desc string of the sequence.
-func (self *Alignment) Description() *string { return &self.Desc }
+func (self *Seq) Description() *string { return &self.Desc }
 
 // Location returns a pointer to the Loc string of the sequence.
-func (self *Alignment) Location() *string { return &self.Loc }
+func (self *Seq) Location() *string { return &self.Loc }
 
-func (self *Alignment) column(m []protein.Sequence, pos int) (c []alphabet.Letter) {
+func (self *Seq) column(m []protein.Sequence, pos int) (c []alphabet.Letter) {
 	count := 0
 	for _, s := range m {
 		count += s.Count()
@@ -168,11 +168,11 @@ func (self *Alignment) column(m []protein.Sequence, pos int) (c []alphabet.Lette
 }
 
 // TODO
-// func (self *Alignment) Delete(i int) {}
+// func (self *Seq) Delete(i int) {}
 
-// Add sequences n to Alignment. Sequences in n must align start and end with the receiving alignment.
+// Add sequences n to Seq. Sequences in n must align start and end with the receiving alignment.
 // Additional sequence will be clipped.
-func (self *Alignment) Add(n ...protein.Sequence) (err error) {
+func (self *Seq) Add(n ...protein.Sequence) (err error) {
 	for i := self.Start(); i < self.End(); i++ {
 		self.S[i] = append(self.S[i], self.column(n, i)...)
 	}
@@ -183,7 +183,7 @@ func (self *Alignment) Add(n ...protein.Sequence) (err error) {
 	return
 }
 
-func (self *Alignment) Extract(i int) protein.Sequence {
+func (self *Seq) Extract(i int) protein.Sequence {
 	s := make([]alphabet.Letter, 0, self.Len())
 	for _, c := range self.S {
 		s = append(s, c[i])
@@ -192,27 +192,27 @@ func (self *Alignment) Extract(i int) protein.Sequence {
 	return protein.NewSeq(self.SubIDs[i], s, self.alphabet)
 }
 
-func (self *Alignment) Alphabet() alphabet.Alphabet { return self.alphabet }
+func (self *Seq) Alphabet() alphabet.Alphabet { return self.alphabet }
 
-func (self *Alignment) At(pos seq.Position) alphabet.QLetter {
+func (self *Seq) At(pos seq.Position) alphabet.QLetter {
 	return alphabet.QLetter{
 		L: self.S[pos.Pos-self.offset][pos.Ind],
 		Q: protein.DefaultQphred,
 	}
 }
 
-func (self *Alignment) Set(pos seq.Position, l alphabet.QLetter) {
+func (self *Seq) Set(pos seq.Position, l alphabet.QLetter) {
 	self.S[pos.Pos-self.offset][pos.Ind] = l.L
 }
 
-func (self *Alignment) Column(pos int, _ bool) (c []alphabet.Letter) {
+func (self *Seq) Column(pos int, _ bool) (c []alphabet.Letter) {
 	c = make([]alphabet.Letter, self.Count())
 	copy(c, self.S[pos])
 
 	return
 }
 
-func (self *Alignment) ColumnQL(pos int, _ bool) (c []alphabet.QLetter) {
+func (self *Seq) ColumnQL(pos int, _ bool) (c []alphabet.QLetter) {
 	c = make([]alphabet.QLetter, self.Count())
 	for i, l := range self.S[pos] {
 		c[i] = alphabet.QLetter{
@@ -224,17 +224,17 @@ func (self *Alignment) ColumnQL(pos int, _ bool) (c []alphabet.QLetter) {
 	return
 }
 
-func (self *Alignment) Len() int { return len(self.S) }
+func (self *Seq) Len() int { return len(self.S) }
 
-func (self *Alignment) Count() int { return len(self.S[0]) }
+func (self *Seq) Count() int { return len(self.S[0]) }
 
-func (self *Alignment) Offset(o int) { self.offset = o }
+func (self *Seq) Offset(o int) { self.offset = o }
 
-func (self *Alignment) Start() int { return self.offset }
+func (self *Seq) Start() int { return self.offset }
 
-func (self *Alignment) End() int { return self.offset + self.Len() }
+func (self *Seq) End() int { return self.offset + self.Len() }
 
-func (self *Alignment) Copy() seq.Sequence {
+func (self *Seq) Copy() seq.Sequence {
 	c := *self
 	c.S = make([][]alphabet.Letter, len(self.S))
 	for i, s := range self.S {
@@ -245,21 +245,21 @@ func (self *Alignment) Copy() seq.Sequence {
 	return &c
 }
 
-func (self *Alignment) Reverse() { self.S = sequtils.Reverse(self.S).([][]alphabet.Letter) }
+func (self *Seq) Reverse() { self.S = sequtils.Reverse(self.S).([][]alphabet.Letter) }
 
-func (self *Alignment) Circular(c bool) { self.circular = c }
+func (self *Seq) Circular(c bool) { self.circular = c }
 
-func (self *Alignment) IsCircular() bool { return self.circular }
+func (self *Seq) IsCircular() bool { return self.circular }
 
 // Return a subsequence from start to end, wrapping if the sequence is circular.
-func (self *Alignment) Subseq(start int, end int) (sub seq.Sequence, err error) {
+func (self *Seq) Subseq(start int, end int) (sub seq.Sequence, err error) {
 	var (
-		s  *Alignment
+		s  *Seq
 		tt interface{}
 	)
 
 	if tt, err = sequtils.Truncate(self.S, start-self.offset, end-self.offset, self.circular); err == nil {
-		s = &Alignment{}
+		s = &Seq{}
 		*s = *self
 		s.S = tt.([][]alphabet.Letter)
 		s.S = nil
@@ -271,7 +271,7 @@ func (self *Alignment) Subseq(start int, end int) (sub seq.Sequence, err error) 
 	return s, nil
 }
 
-func (self *Alignment) Truncate(start int, end int) (err error) {
+func (self *Seq) Truncate(start int, end int) (err error) {
 	var tt interface{}
 
 	if tt, err = sequtils.Truncate(self.S, start-self.offset, end-self.offset, self.circular); err == nil {
@@ -283,7 +283,7 @@ func (self *Alignment) Truncate(start int, end int) (err error) {
 	return
 }
 
-func (self *Alignment) Join(p *Alignment, where int) (err error) {
+func (self *Seq) Join(p *Seq, where int) (err error) {
 	if self.circular {
 		return bio.NewError("Cannot join circular sequence: receiver.", 1, self)
 	} else if p.circular {
@@ -298,7 +298,7 @@ func (self *Alignment) Join(p *Alignment, where int) (err error) {
 	return
 }
 
-func (self *Alignment) Stitch(f feat.FeatureSet) (err error) {
+func (self *Seq) Stitch(f feat.FeatureSet) (err error) {
 	var tt interface{}
 
 	if tt, err = sequtils.Stitch(self.S, self.offset, f); err == nil {
@@ -310,7 +310,7 @@ func (self *Alignment) Stitch(f feat.FeatureSet) (err error) {
 	return
 }
 
-func (self *Alignment) Compose(f feat.FeatureSet) (err error) {
+func (self *Seq) Compose(f feat.FeatureSet) (err error) {
 	var tt []interface{}
 
 	if tt, err = sequtils.Compose(self.S, self.offset, f); err == nil {
@@ -327,9 +327,9 @@ func (self *Alignment) Compose(f feat.FeatureSet) (err error) {
 	return
 }
 
-func (self *Alignment) String() string { return self.Stringify(self) }
+func (self *Seq) String() string { return self.Stringify(self) }
 
-func (self *Alignment) Consensus(_ bool) (qs *protein.QSeq) {
+func (self *Seq) Consensus(_ bool) (qs *protein.QSeq) {
 	cs := make([]alphabet.QLetter, 0, self.Len())
 	for i := range self.S {
 		cs = append(cs, self.Consensify(self, i, false))

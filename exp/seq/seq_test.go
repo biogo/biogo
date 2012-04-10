@@ -33,21 +33,21 @@ func TestSeq(t *testing.T) {
 		_ seq.Sequence = &nucleic.QSeq{}
 		_ seq.Sequence = &packed.Seq{}
 		_ seq.Sequence = &packed.QSeq{}
-		_ seq.Sequence = &na.Alignment{}
-		_ seq.Sequence = &na.QAlignment{}
+		_ seq.Sequence = &na.Seq{}
+		_ seq.Sequence = &na.QSeq{}
 		_ seq.Sequence = &nm.Multi{}
 		_ seq.Sequence = &protein.Seq{}
 		_ seq.Sequence = &protein.QSeq{}
-		_ seq.Sequence = &pa.Alignment{}
-		_ seq.Sequence = &pa.QAlignment{}
+		_ seq.Sequence = &pa.Seq{}
+		_ seq.Sequence = &pa.QSeq{}
 		_ seq.Sequence = &pm.Multi{}
 
 		_ seq.Scorer = &nucleic.QSeq{}
 		_ seq.Scorer = &packed.QSeq{}
-		_ seq.Scorer = &na.QAlignment{}
+		_ seq.Scorer = &na.QSeq{}
 		_ seq.Scorer = &nm.Multi{}
 		_ seq.Scorer = &protein.QSeq{}
-		_ seq.Scorer = &pa.QAlignment{}
+		_ seq.Scorer = &pa.QSeq{}
 		_ seq.Scorer = &pm.Multi{}
 	)
 }

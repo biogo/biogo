@@ -24,8 +24,8 @@ import (
 )
 
 var (
-	m, n    *Alignment
-	aligned = func(a *Alignment) {
+	m, n    *Seq
+	aligned = func(a *Seq) {
 		for i := 0; i < a.Count(); i++ {
 			s := a.Extract(i)
 			fmt.Printf("%v\n", s)
@@ -37,7 +37,7 @@ var (
 
 func init() {
 	var err error
-	m, err = NewAlignment("example alignment",
+	m, err = NewSeq("example alignment",
 		[]string{"seq 1", "seq 2", "seq 3"},
 		[][]alphabet.Letter{
 			[]alphabet.Letter("AAA"),
@@ -68,8 +68,8 @@ func init() {
 	}
 }
 
-func ExampleNewAlignment() {
-	m, err := NewAlignment("example alignment",
+func ExampleNewSeq() {
+	m, err := NewSeq("example alignment",
 		[]string{"seq 1", "seq 2", "seq 3"},
 		[][]alphabet.Letter{
 			[]alphabet.Letter("AAA"),
@@ -107,7 +107,7 @@ func ExampleNewAlignment() {
 	// acgxtgacxtggcgcxcat
 }
 
-func ExampleAlignment_Add() {
+func ExampleSeq_Add() {
 	fmt.Printf("%v %v\n", m.Count(), m)
 	m.Add(protein.NewQSeq("example Protein",
 		[]alphabet.QLetter{{'a', 40}, {'c', 39}, {'g', 40}, {'C', 38}, {'t', 35}, {'g', 20}},
@@ -118,8 +118,8 @@ func ExampleAlignment_Add() {
 	// 4 acgctgacxtggcgcxcat
 }
 
-func ExampleAlignment_Copy() {
-	n = m.Copy().(*Alignment)
+func ExampleSeq_Copy() {
+	n = m.Copy().(*Seq)
 	n.Set(seq.Position{Pos: 3, Ind: 2}, alphabet.QLetter{L: 't'})
 	aligned(m)
 	fmt.Println()
@@ -140,13 +140,13 @@ func ExampleAlignment_Copy() {
 	// acgctgacxtggcgcxcat
 }
 
-func ExampleAlignment_Count() {
+func ExampleSeq_Count() {
 	fmt.Println(m.Count())
 	// Output:
 	// 4
 }
 
-func ExampleAlignment_Join() {
+func ExampleSeq_Join() {
 	aligned(n)
 	n.Join(m, seq.End)
 	fmt.Println()
@@ -173,7 +173,7 @@ func ExampleAlignment_Len() {
 	// 19
 }
 
-func ExampleAlignment_Reverse() {
+func ExampleSeq_Reverse() {
 	aligned(m)
 	fmt.Println()
 	m.Reverse()
@@ -194,7 +194,7 @@ func ExampleAlignment_Reverse() {
 	// tacxcgcggtxcagtcgca
 }
 
-func ExampleAlignment_Stitch() {
+func ExampleSeq_Stitch() {
 	f := feat.FeatureSet{
 		&feat.Feature{Start: -1, End: 4},
 		&feat.Feature{Start: 30, End: 38},
@@ -222,7 +222,7 @@ func ExampleAlignment_Stitch() {
 	// acgcgcgcxcat
 }
 
-func ExampleAlignment_Truncate() {
+func ExampleSeq_Truncate() {
 	aligned(m)
 	m.Truncate(4, 12)
 	fmt.Println()

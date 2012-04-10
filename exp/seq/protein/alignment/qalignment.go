@@ -27,7 +27,7 @@ import (
 )
 
 // Aligned protein with quality scores.
-type QAlignment struct {
+type QSeq struct {
 	ID         string
 	Desc       string
 	Loc        string
@@ -44,7 +44,7 @@ type QAlignment struct {
 	encoding   alphabet.Encoding
 }
 
-func NewQAlignment(id string, subids []string, ql [][]alphabet.QLetter, alpha alphabet.Peptide, encode alphabet.Encoding, cons protein.Consensifyer) (*QAlignment, error) {
+func NewQSeq(id string, subids []string, ql [][]alphabet.QLetter, alpha alphabet.Peptide, encode alphabet.Encoding, cons protein.Consensifyer) (*QSeq, error) {
 	switch lids, lseq := len(subids), len(ql); {
 	case lids == 0 && len(ql) == 0:
 	case lseq != 0 && lids == len(ql[0]):
@@ -58,7 +58,7 @@ func NewQAlignment(id string, subids []string, ql [][]alphabet.QLetter, alpha al
 		return nil, bio.NewError("alignment: id/seq number mismatch", 0)
 	}
 
-	return &QAlignment{
+	return &QSeq{
 		ID:         id,
 		SubIDs:     append([]string{}, subids...),
 		S:          append([][]alphabet.QLetter{}, ql...),
@@ -68,9 +68,9 @@ func NewQAlignment(id string, subids []string, ql [][]alphabet.QLetter, alpha al
 		Threshold:  2,
 		LowQFilter: func(s seq.Sequence, _ alphabet.Letter) alphabet.Letter { return s.Alphabet().Ambiguous() },
 		Stringify: func(s seq.Polymer) string {
-			t := s.(*QAlignment).Consensus(false)
-			t.Threshold = s.(*QAlignment).Threshold
-			t.LowQFilter = s.(*QAlignment).LowQFilter
+			t := s.(*QSeq).Consensus(false)
+			t.Threshold = s.(*QSeq).Threshold
+			t.LowQFilter = s.(*QSeq).LowQFilter
 			return t.String()
 		},
 	}, nil
@@ -78,33 +78,33 @@ func NewQAlignment(id string, subids []string, ql [][]alphabet.QLetter, alpha al
 
 // Interface guarantees:
 var (
-	_ seq.Polymer             = &QAlignment{}
-	_ seq.Sequence            = &QAlignment{}
-	_ seq.Scorer              = &QAlignment{}
-	_ protein.Sequence        = &QAlignment{}
-	_ protein.Quality         = &QAlignment{}
-	_ protein.Extracter       = &QAlignment{}
-	_ protein.Aligned         = &QAlignment{}
-	_ protein.AlignedAppender = &QAlignment{}
+	_ seq.Polymer             = &QSeq{}
+	_ seq.Sequence            = &QSeq{}
+	_ seq.Scorer              = &QSeq{}
+	_ protein.Sequence        = &QSeq{}
+	_ protein.Quality         = &QSeq{}
+	_ protein.Extracter       = &QSeq{}
+	_ protein.Aligned         = &QSeq{}
+	_ protein.AlignedAppender = &QSeq{}
 )
 
 // Required to satisfy protein.Sequence interface.
-func (self *QAlignment) Protein() {}
+func (self *QSeq) Protein() {}
 
 // Name returns a pointer to the ID string of the sequence.
-func (self *QAlignment) Name() *string { return &self.ID }
+func (self *QSeq) Name() *string { return &self.ID }
 
 // Description returns a pointer to the Desc string of the sequence.
-func (self *QAlignment) Description() *string { return &self.Desc }
+func (self *QSeq) Description() *string { return &self.Desc }
 
 // Location returns a pointer to the Loc string of the sequence.
-func (self *QAlignment) Location() *string { return &self.Loc }
+func (self *QSeq) Location() *string { return &self.Loc }
 
 // Raw returns a pointer to the underlying [][]alphabet.QLetter slice.
-func (self *QAlignment) Raw() interface{} { return &self.S }
+func (self *QSeq) Raw() interface{} { return &self.S }
 
 // Append each byte of each a to the appropriate sequence in the reciever.
-func (self *QAlignment) AppendColumns(a ...[]alphabet.QLetter) (err error) {
+func (self *QSeq) AppendColumns(a ...[]alphabet.QLetter) (err error) {
 	for i, s := range a {
 		if len(s) != self.Count() {
 			return bio.NewError(fmt.Sprintf("Column %d does not match Count(): %d != %d.", i, len(s), self.Count()), 0, a)
@@ -117,7 +117,7 @@ func (self *QAlignment) AppendColumns(a ...[]alphabet.QLetter) (err error) {
 }
 
 // Append each []byte in a to the appropriate sequence in the reciever.
-func (self *QAlignment) AppendEach(a [][]alphabet.QLetter) (err error) {
+func (self *QSeq) AppendEach(a [][]alphabet.QLetter) (err error) {
 	if len(a) != self.Count() {
 		return bio.NewError(fmt.Sprintf("Number of sequences does not match Count(): %d != %d.", len(a), self.Count()), 0, a)
 	}
@@ -142,7 +142,7 @@ func (self *QAlignment) AppendEach(a [][]alphabet.QLetter) (err error) {
 	return
 }
 
-func (self *QAlignment) column(m []protein.Sequence, pos int) (c []alphabet.QLetter) {
+func (self *QSeq) column(m []protein.Sequence, pos int) (c []alphabet.QLetter) {
 	count := 0
 	for _, s := range m {
 		count += s.Count()
@@ -170,11 +170,11 @@ func (self *QAlignment) column(m []protein.Sequence, pos int) (c []alphabet.QLet
 }
 
 // TODO
-// func (self *QAlignment) Delete(i int) {}
+// func (self *QSeq) Delete(i int) {}
 
 // Add sequences n to Alignment. Sequences in n must align start and end with the receiving alignment.
 // Additional sequence will be clipped.
-func (self *QAlignment) Add(n ...protein.Sequence) (err error) {
+func (self *QSeq) Add(n ...protein.Sequence) (err error) {
 	for i := self.Start(); i < self.End(); i++ {
 		self.S[i] = append(self.S[i], self.column(n, i)...)
 	}
@@ -185,7 +185,7 @@ func (self *QAlignment) Add(n ...protein.Sequence) (err error) {
 	return
 }
 
-func (self *QAlignment) Extract(i int) protein.Sequence {
+func (self *QSeq) Extract(i int) protein.Sequence {
 	s := make([]alphabet.QLetter, 0, self.Len())
 	for _, c := range self.S {
 		s = append(s, c[i])
@@ -194,38 +194,38 @@ func (self *QAlignment) Extract(i int) protein.Sequence {
 	return protein.NewQSeq(self.SubIDs[i], s, self.alphabet, self.encoding)
 }
 
-func (self *QAlignment) Alphabet() alphabet.Alphabet { return self.alphabet }
+func (self *QSeq) Alphabet() alphabet.Alphabet { return self.alphabet }
 
-func (self *QAlignment) At(pos seq.Position) alphabet.QLetter {
+func (self *QSeq) At(pos seq.Position) alphabet.QLetter {
 	return self.S[pos.Pos-self.offset][pos.Ind]
 }
 
-func (self *QAlignment) QEncode(pos seq.Position) byte {
+func (self *QSeq) QEncode(pos seq.Position) byte {
 	return self.S[pos.Pos-self.offset][pos.Ind].Q.Encode(self.encoding)
 }
 
-func (self *QAlignment) QDecode(l byte) alphabet.Qphred {
+func (self *QSeq) QDecode(l byte) alphabet.Qphred {
 	return alphabet.DecodeToQphred(l, self.encoding)
 }
 
-func (self *QAlignment) Encoding() alphabet.Encoding { return self.encoding }
+func (self *QSeq) Encoding() alphabet.Encoding { return self.encoding }
 
 // Set the quality encoding type to e.
-func (self *QAlignment) SetEncoding(e alphabet.Encoding) { self.encoding = e }
+func (self *QSeq) SetEncoding(e alphabet.Encoding) { self.encoding = e }
 
-func (self *QAlignment) EAt(pos seq.Position) float64 {
+func (self *QSeq) EAt(pos seq.Position) float64 {
 	return self.S[pos.Pos-self.offset][pos.Ind].Q.ProbE()
 }
 
-func (self *QAlignment) Set(pos seq.Position, l alphabet.QLetter) {
+func (self *QSeq) Set(pos seq.Position, l alphabet.QLetter) {
 	self.S[pos.Pos-self.offset][pos.Ind] = l
 }
 
-func (self *QAlignment) SetE(pos seq.Position, l float64) {
+func (self *QSeq) SetE(pos seq.Position, l float64) {
 	self.S[pos.Pos-self.offset][pos.Ind].Q = alphabet.Ephred(l)
 }
 
-func (self *QAlignment) Column(pos int, _ bool) (c []alphabet.Letter) {
+func (self *QSeq) Column(pos int, _ bool) (c []alphabet.Letter) {
 	c = make([]alphabet.Letter, self.Count())
 	for i, l := range self.S[pos] {
 		if l.Q > self.Threshold {
@@ -238,19 +238,19 @@ func (self *QAlignment) Column(pos int, _ bool) (c []alphabet.Letter) {
 	return
 }
 
-func (self *QAlignment) ColumnQL(pos int, _ bool) []alphabet.QLetter { return self.S[pos] }
+func (self *QSeq) ColumnQL(pos int, _ bool) []alphabet.QLetter { return self.S[pos] }
 
-func (self *QAlignment) Len() int { return len(self.S) }
+func (self *QSeq) Len() int { return len(self.S) }
 
-func (self *QAlignment) Count() int { return len(self.S[0]) }
+func (self *QSeq) Count() int { return len(self.S[0]) }
 
-func (self *QAlignment) Offset(o int) { self.offset = o }
+func (self *QSeq) Offset(o int) { self.offset = o }
 
-func (self *QAlignment) Start() int { return self.offset }
+func (self *QSeq) Start() int { return self.offset }
 
-func (self *QAlignment) End() int { return self.offset + self.Len() }
+func (self *QSeq) End() int { return self.offset + self.Len() }
 
-func (self *QAlignment) Copy() seq.Sequence {
+func (self *QSeq) Copy() seq.Sequence {
 	c := *self
 	c.S = make([][]alphabet.QLetter, len(self.S))
 	for i, s := range self.S {
@@ -261,21 +261,21 @@ func (self *QAlignment) Copy() seq.Sequence {
 	return &c
 }
 
-func (self *QAlignment) Reverse() { self.S = sequtils.Reverse(self.S).([][]alphabet.QLetter) }
+func (self *QSeq) Reverse() { self.S = sequtils.Reverse(self.S).([][]alphabet.QLetter) }
 
-func (self *QAlignment) Circular(c bool) { self.circular = c }
+func (self *QSeq) Circular(c bool) { self.circular = c }
 
-func (self *QAlignment) IsCircular() bool { return self.circular }
+func (self *QSeq) IsCircular() bool { return self.circular }
 
 // Return a subsequence from start to end, wrapping if the sequence is circular.
-func (self *QAlignment) Subseq(start int, end int) (sub seq.Sequence, err error) {
+func (self *QSeq) Subseq(start int, end int) (sub seq.Sequence, err error) {
 	var (
-		s  *QAlignment
+		s  *QSeq
 		tt interface{}
 	)
 
 	if tt, err = sequtils.Truncate(self.S, start-self.offset, end-self.offset, self.circular); err == nil {
-		s = &QAlignment{}
+		s = &QSeq{}
 		*s = *self
 		s.S = tt.([][]alphabet.QLetter)
 		s.S = nil
@@ -287,7 +287,7 @@ func (self *QAlignment) Subseq(start int, end int) (sub seq.Sequence, err error)
 	return s, nil
 }
 
-func (self *QAlignment) Truncate(start int, end int) (err error) {
+func (self *QSeq) Truncate(start int, end int) (err error) {
 	var tt interface{}
 
 	if tt, err = sequtils.Truncate(self.S, start-self.offset, end-self.offset, self.circular); err == nil {
@@ -299,7 +299,7 @@ func (self *QAlignment) Truncate(start int, end int) (err error) {
 	return
 }
 
-func (self *QAlignment) Join(p *QAlignment, where int) (err error) {
+func (self *QSeq) Join(p *QSeq, where int) (err error) {
 	if self.circular {
 		return bio.NewError("Cannot join circular sequence: receiver.", 1, self)
 	} else if p.circular {
@@ -314,7 +314,7 @@ func (self *QAlignment) Join(p *QAlignment, where int) (err error) {
 	return
 }
 
-func (self *QAlignment) Stitch(f feat.FeatureSet) (err error) {
+func (self *QSeq) Stitch(f feat.FeatureSet) (err error) {
 	var tt interface{}
 
 	if tt, err = sequtils.Stitch(self.S, self.offset, f); err == nil {
@@ -326,7 +326,7 @@ func (self *QAlignment) Stitch(f feat.FeatureSet) (err error) {
 	return
 }
 
-func (self *QAlignment) Compose(f feat.FeatureSet) (err error) {
+func (self *QSeq) Compose(f feat.FeatureSet) (err error) {
 	var tt []interface{}
 
 	if tt, err = sequtils.Compose(self.S, self.offset, f); err == nil {
@@ -343,9 +343,9 @@ func (self *QAlignment) Compose(f feat.FeatureSet) (err error) {
 	return
 }
 
-func (self *QAlignment) String() string { return self.Stringify(self) }
+func (self *QSeq) String() string { return self.Stringify(self) }
 
-func (self *QAlignment) Consensus(_ bool) (qs *protein.QSeq) {
+func (self *QSeq) Consensus(_ bool) (qs *protein.QSeq) {
 	cs := make([]alphabet.QLetter, 0, self.Len())
 	for i := range self.S {
 		cs = append(cs, self.Consensify(self, i, false))
