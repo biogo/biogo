@@ -223,7 +223,7 @@ LOOP:
 			Location:   sequence.ID,
 			Start:      position + 1,
 			End:        position + length,
-			Score:      score,
+			Score:      &score,
 			Attributes: string(sequence.Seq[position:position+length]) + " " + strconv.FormatFloat(prob, self.FloatFormat, self.Precision, 64),
 			Strand:     sequence.Strand,
 			Moltype:    sequence.Moltype,
