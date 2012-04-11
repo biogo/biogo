@@ -15,6 +15,7 @@ import (
 	"runtime/pprof"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -165,56 +166,89 @@ func main() {
 		pals.MaxKmerLen = maxK
 	}
 
-	m, err := morass.New(filter.FilterHit{}, "krishna_"+strconv.Itoa(pid)+"_", tmpDir, tmpChunk, tmpConcurrent)
-	if err != nil {
-		logger.Fatalf("Error: %v", err)
+	m := func() *morass.Morass {
+		m, err := morass.New(filter.FilterHit{}, "krishna_"+strconv.Itoa(pid)+"_", tmpDir, tmpChunk, tmpConcurrent)
+		if err != nil {
+			logger.Fatalf("Error: %v", err)
+		}
+		return m
 	}
-	pa := pals.New(target, query, selfCompare, m, threads, tubeOffset, mem, logger)
+	pa := []*pals.PALS{pals.New(target, query, selfCompare, m(), threads, tubeOffset, mem, logger)}
+	if threads > 1 {
+		pa = append(pa, pals.New(target, query, selfCompare, m(), threads, tubeOffset, mem, logger))
+	}
 
-	if err = pa.Optimise(minHitLen, minId); err != nil {
+	if err := pa[0].Optimise(minHitLen, minId); err != nil {
 		logger.Fatalf("Error: %v", err)
 	}
 	if dpMinHitLen != 0 && dpMinId != 0 {
-		pa.DPParams.MinHitLength = minHitLen
-		pa.DPParams.MinId = minId
+		pa[0].DPParams.MinHitLength = minHitLen
+		pa[0].DPParams.MinId = minId
 	}
+
 	logger.Printf("Using filter parameters:")
-	logger.Printf("\tWordSize = %d", pa.FilterParams.WordSize)
-	logger.Printf("\tMinMatch = %d", pa.FilterParams.MinMatch)
-	logger.Printf("\tMaxError = %d", pa.FilterParams.MaxError)
-	logger.Printf("\tTubeOffset = %d", pa.FilterParams.TubeOffset)
-	logger.Printf("\tAvg List Length = %.3f", pa.AvgIndexListLength(pa.FilterParams))
+	logger.Printf("\tWordSize = %d", pa[0].FilterParams.WordSize)
+	logger.Printf("\tMinMatch = %d", pa[0].FilterParams.MinMatch)
+	logger.Printf("\tMaxError = %d", pa[0].FilterParams.MaxError)
+	logger.Printf("\tTubeOffset = %d", pa[0].FilterParams.TubeOffset)
+	logger.Printf("\tAvg List Length = %.3f", pa[0].AvgIndexListLength(pa[0].FilterParams))
 	logger.Printf("Using dynamic programming parameters:")
-	logger.Printf("\tMinLen = %d", pa.DPParams.MinHitLength)
-	logger.Printf("\tMinID = %.1f%%", pa.DPParams.MinId*100)
-	logger.Printf("Estimated minimum memory required = %dMiB", pa.MemRequired(pa.FilterParams)/(1<<20))
+	logger.Printf("\tMinLen = %d", pa[0].DPParams.MinHitLength)
+	logger.Printf("\tMinID = %.1f%%", pa[0].DPParams.MinId*100)
+	logger.Printf("Estimated minimum memory required = %dMiB", pa[0].MemRequired(pa[0].FilterParams)/(1<<20))
 	logger.Printf("Building index for %s", target.ID)
 
-	if err = pa.BuildIndex(); err != nil {
+	if err := pa[0].BuildIndex(); err != nil {
 		logger.Fatalf("Error: %v", err)
+	}
+	if threads > 1 {
+		pa[1].Share(pa[0])
 	}
 
 	both := !sameStrand
-	for _, comp := range [...]bool{false, true} {
-		if comp {
-			logger.Println("Working on complementary strands")
-		} else {
-			logger.Println("Working on self strand")
-		}
-		if both || !comp {
-			hits, err := pa.Align(comp)
-			if err != nil {
-				logger.Fatalf("Error: %v", err)
-			}
+	wg := &sync.WaitGroup{}
+	for i, comp := range [...]bool{false, true} {
+		if threads > 1 && both {
+			wg.Add(1)
+			go func(p *pals.PALS, comp bool) {
+				defer wg.Done()
+				runtime.LockOSThread()
+				hits, err := p.Align(comp)
+				if err != nil {
+					logger.Fatalf("Error: %v", err)
+				}
 
-			logger.Println("Writing results")
-			n, err := WriteDPHits(writer, target, query, hits, comp)
-			if err != nil {
-				logger.Fatalf("Error: %v.", err)
+				logger.Println("Writing results")
+				n, err := WriteDPHits(writer, target, query, hits, comp)
+				if err != nil {
+					logger.Fatalf("Error: %v.", err)
+				}
+				logger.Printf("Wrote hits (%v bytes)", n)
+			}(pa[i], comp)
+		} else {
+			if comp {
+				logger.Println("Working on complementary strands")
+			} else {
+				logger.Println("Working on self strand")
 			}
-			logger.Printf("Wrote hits (%v bytes)", n)
+			if both || !comp {
+				hits, err := pa[0].Align(comp)
+				if err != nil {
+					logger.Fatalf("Error: %v", err)
+				}
+
+				logger.Println("Writing results")
+				n, err := WriteDPHits(writer, target, query, hits, comp)
+				if err != nil {
+					logger.Fatalf("Error: %v.", err)
+				}
+				logger.Printf("Wrote hits (%v bytes)", n)
+			}
 		}
 	}
+	wg.Wait()
 
-	pa.CleanUp()
+	for _, p := range pa {
+		p.CleanUp()
+	}
 }

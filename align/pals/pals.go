@@ -269,6 +269,14 @@ func (self *PALS) BuildIndex() (err error) {
 	return
 }
 
+// Share allows the receiver to use the index and parameters of p.
+func (self *PALS) Share(p *PALS) {
+	(*self).index = p.index
+	(*self).FilterParams = p.FilterParams
+	(*self).DPParams = p.DPParams
+	self.hitFilter = filter.New(self.index, self.FilterParams)
+}
+
 // Perform filtering and alignment for one strand of query.
 func (self *PALS) Align(complement bool) (hits dp.DPHits, err error) {
 	if self.err != nil {
