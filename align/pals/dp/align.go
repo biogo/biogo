@@ -53,20 +53,18 @@ type Aligner struct {
 	k             int
 	minHitLength  int
 	minId         float64
-	threads       int
 	segments      DPHits
 	Config        *AlignConfig
 }
 
 // Create a new Aligner based on target and query sequences. 
-func NewAligner(target, query *seq.Seq, k, minLength int, minId float64, threads int) *Aligner {
+func NewAligner(target, query *seq.Seq, k, minLength int, minId float64) *Aligner {
 	return &Aligner{
 		target:       target,
 		query:        query,
 		k:            k,
 		minHitLength: minLength,
 		minId:        minId,
-		threads:      threads,
 	}
 }
 
@@ -89,15 +87,24 @@ func (self *Aligner) AlignTraps(trapezoids filter.Trapezoids) (segments DPHits) 
 		matchCost:  self.Config.MatchCost,
 		blockCost:  self.Config.BlockCost,
 		rMatchCost: self.Config.RMatchCost,
+
+		result: make(chan DPHit),
 	}
+	w := make(chan struct{})
+	go func() {
+		defer close(w)
+		for h := range dp.result {
+			segments = append(segments, h)
+		}
+	}()
 	for i, t := range trapezoids {
 		if !dp.covered[i] && t.Top-t.Bottom >= self.k {
 			dp.slot = i
 			dp.alignRecursion(t)
 		}
 	}
-	segments = make(DPHits, len(dp.segments))
-	copy(segments, dp.segments)
+	close(dp.result)
+	<-w
 
 	/* Remove lower scoring segments that begin or end at
 	   the same point as a higher scoring segment.       */

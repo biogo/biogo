@@ -44,7 +44,6 @@ type kernel struct {
 	vectors    [2][]int
 	trapezoids []*filter.Trapezoid
 	covered    []bool
-	segments   DPHits
 	slot       int
 	result     chan DPHit
 }
@@ -133,7 +132,7 @@ func (self *kernel) alignRecursion(workingTrap *filter.Trapezoid) {
 			// diagonals to this point are query-target, not target-query.
 			self.highEnd.LowDiagonal, self.highEnd.HighDiagonal = -self.highEnd.HighDiagonal, -self.highEnd.LowDiagonal
 
-			self.segments = append(self.segments, self.highEnd)
+			self.result <- self.highEnd
 		}
 	}
 

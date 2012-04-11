@@ -70,7 +70,7 @@ func (s *S) TestAlignment(c *check.C) {
 	for _, i := range util.DeBruijn(byte(Q), k-1) {
 		b.Seq = append(b.Seq, l[i])
 	}
-	aligner := NewAligner(a, b, int(k), 50, 0.80, 4)
+	aligner := NewAligner(a, b, int(k), 50, 0.80)
 	aligner.Config = &AlignConfig{
 		MaxIGap:    maxIGap,
 		DiffCost:   diffCost,

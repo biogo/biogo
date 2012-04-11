@@ -307,7 +307,7 @@ func (self *PALS) Align(complement bool) (hits dp.DPHits, err error) {
 	self.notifyf("Merged %d trapezoids covering %d x %d", len(trapezoids), lt, lq)
 
 	self.notify("Aligning")
-	aligner := dp.NewAligner(self.target, working, self.FilterParams.WordSize, self.DPParams.MinHitLength, self.DPParams.MinId, self.threads)
+	aligner := dp.NewAligner(self.target, working, self.FilterParams.WordSize, self.DPParams.MinHitLength, self.DPParams.MinId)
 	aligner.Config = &dp.AlignConfig{
 		MaxIGap:    self.MaxIGap,
 		DiffCost:   self.DiffCost,
