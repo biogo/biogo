@@ -53,20 +53,26 @@ func init() {
 
 // Provide default Alphabets.
 func Init() (err error) {
-	var pairing *Pairing
-	if pairing, err = NewPairing(Npairing[0], Npairing[1]); err != nil {
+	pairing, err := NewPairing(Npairing[0], Npairing[1])
+	if err != nil {
 		return
-	} else if DNA, err = NewNucleic(N, bio.DNA, pairing, Gap, Nambiguous, !CaseSensitive); err != nil {
-		return
-
 	}
-	if pairing, err = NewPairing(Rpairing[0], Rpairing[1]); err != nil {
+	DNA, err = NewNucleic(N, bio.DNA, pairing, Gap, Nambiguous, !CaseSensitive)
+	if err != nil {
 		return
-	} else if RNA, err = NewNucleic(R, bio.RNA, pairing, Gap, Nambiguous, !CaseSensitive); err != nil {
-		return
-
 	}
-	if Protein, err = NewPeptide(P, Gap, Pambiguous, !CaseSensitive); err != nil {
+
+	pairing, err = NewPairing(Rpairing[0], Rpairing[1])
+	if err != nil {
+		return
+	}
+	RNA, err = NewNucleic(R, bio.RNA, pairing, Gap, Nambiguous, !CaseSensitive)
+	if err != nil {
+		return
+	}
+
+	Protein, err = NewPeptide(P, Gap, Pambiguous, !CaseSensitive)
+	if err != nil {
 		return
 	}
 
@@ -307,9 +313,9 @@ func (n nucleic) nucleic() {}
 // Pairings that result in no change but would otherwise be invalid are allowed. If invalid pairings are required, the Pairing should be provided after
 // creating the Nucleic struct.
 func NewNucleic(letters string, molType bio.Moltype, pairs *Pairing, gap, ambiguous Letter, caseSensitive bool) (n Nucleic, err error) {
-	var g *Generic
-	if g, err = NewGeneric(letters, molType, gap, ambiguous, caseSensitive); err != nil {
-		return nil, err
+	g, err := NewGeneric(letters, molType, gap, ambiguous, caseSensitive)
+	if err != nil {
+		return
 	}
 
 	if pairs != nil {
@@ -340,9 +346,9 @@ func (p peptide) peptide() {}
 
 // Return a new Peptide alphabet.
 func NewPeptide(letters string, gap, ambiguous Letter, caseSensitive bool) (p Peptide, err error) {
-	var g *Generic
-	if g, err = NewGeneric(letters, bio.Protein, gap, ambiguous, caseSensitive); err != nil {
-		return nil, err
+	g, err := NewGeneric(letters, bio.Protein, gap, ambiguous, caseSensitive)
+	if err != nil {
+		return
 	}
 	return &peptide{g}, nil
 }

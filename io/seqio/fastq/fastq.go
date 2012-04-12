@@ -64,8 +64,8 @@ func NewReader(f io.ReadCloser) *Reader {
 
 // Returns a new fastq format reader using a filename.
 func NewReaderName(name string) (r *Reader, err error) {
-	var f *os.File
-	if f, err = os.Open(name); err != nil {
+	f, err := os.Open(name)
+	if err != nil {
 		return
 	}
 	return NewReader(f), nil
@@ -80,7 +80,8 @@ func (self *Reader) Read() (sequence *seq.Seq, err error) {
 	inQual := false
 READ:
 	for {
-		if line, err = self.r.ReadBytes('\n'); err == nil {
+		line, err = self.r.ReadBytes('\n')
+		if err == nil {
 			if len(line) > 0 && line[len(line)-1] == '\r' {
 				line = line[:len(line)-1]
 			}
@@ -189,8 +190,8 @@ func NewWriter(f io.WriteCloser) *Writer {
 // Returns a new fastq format writer using a filename, truncating any existing file.
 // If appending is required use NewWriter and os.OpenFile.
 func NewWriterName(name string) (w *Writer, err error) {
-	var f *os.File
-	if f, err = os.Create(name); err != nil {
+	f, err := os.Create(name)
+	if err != nil {
 		return
 	}
 	return NewWriter(f), nil
@@ -250,7 +251,8 @@ func (self *Writer) Flush() error {
 
 // Close the writer, flushing any unwritten sequence.
 func (self *Writer) Close() (err error) {
-	if err = self.w.Flush(); err != nil {
+	err = self.w.Flush()
+	if err != nil {
 		return
 	}
 	return self.f.Close()

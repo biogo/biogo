@@ -152,7 +152,7 @@ func (self *Promise) Break() {
 }
 
 // Wait for a promise to be fulfilled, failed or recovered.
-func (self *Promise) Wait() (<-chan Result) {
+func (self *Promise) Wait() <-chan Result {
 	r := <-self.message
 	self.message <- r
 	f := make(chan Result, 1)

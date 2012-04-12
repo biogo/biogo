@@ -56,20 +56,20 @@ func main() {
 			*chunk = sequence.Len() - *start - 1
 		}
 		fmt.Fprintf(os.Stderr, "Indexing %s\n", sequence.ID)
-		if index, err := kmerindex.New(*k, sequence); err != nil {
+		index, err := kmerindex.New(*k, sequence)
+		if err != nil {
 			fmt.Println(err)
 			os.Exit(0)
-		} else {
-			base := color.HSVA{0, 1, 1, 1}
-			cgr := kmercolor.NewCGR(index, base)
-			fmt.Fprintf(os.Stderr, "Painting %s\n", sequence.ID)
-			cgr.Paint(kmercolor.V|kmercolor.H, *desch, *start, *chunk)
-			fmt.Fprintf(os.Stderr, "Writing %s\n", sequence.ID)
-			if out, e = os.Create(fmt.Sprintf("%s.png", *outName)); e != nil {
-				fmt.Fprintf(os.Stderr, "Error: %v.", e)
-			}
-			png.Encode(out, cgr)
-			out.Close()
 		}
+		base := color.HSVA{0, 1, 1, 1}
+		cgr := kmercolor.NewCGR(index, base)
+		fmt.Fprintf(os.Stderr, "Painting %s\n", sequence.ID)
+		cgr.Paint(kmercolor.V|kmercolor.H, *desch, *start, *chunk)
+		fmt.Fprintf(os.Stderr, "Writing %s\n", sequence.ID)
+		if out, e = os.Create(fmt.Sprintf("%s.png", *outName)); e != nil {
+			fmt.Fprintf(os.Stderr, "Error: %v.", e)
+		}
+		png.Encode(out, cgr)
+		out.Close()
 	}
 }

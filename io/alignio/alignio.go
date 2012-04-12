@@ -38,7 +38,8 @@ func (self *Reader) Read() (a seq.Alignment, err error) {
 	var s *seq.Seq
 	a = seq.Alignment{}
 	for {
-		if s, err = self.Reader.Read(); err == nil {
+		s, err = self.Reader.Read()
+		if err == nil {
 			a = append(a, s)
 		} else {
 			if err == io.EOF {

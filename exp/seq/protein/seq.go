@@ -150,12 +150,10 @@ func (self *Seq) IsCircular() bool { return self.circular }
 
 // Return a subsequence from start to end, wrapping if the sequence is circular.
 func (self *Seq) Subseq(start int, end int) (sub seq.Sequence, err error) {
-	var (
-		s  *Seq
-		tt interface{}
-	)
+	var s *Seq
 
-	if tt, err = sequtils.Truncate(self.S, start-self.offset, end-self.offset, self.circular); err == nil {
+	tt, err := sequtils.Truncate(self.S, start-self.offset, end-self.offset, self.circular)
+	if err == nil {
 		s = &Seq{}
 		*s = *self
 		s.S = tt.([]alphabet.Letter)
@@ -170,9 +168,8 @@ func (self *Seq) Subseq(start int, end int) (sub seq.Sequence, err error) {
 
 // Truncate the sequence from start to end, wrapping if the sequence is circular.
 func (self *Seq) Truncate(start int, end int) (err error) {
-	var tt interface{}
-
-	if tt, err = sequtils.Truncate(self.S, start-self.offset, end-self.offset, self.circular); err == nil {
+	tt, err := sequtils.Truncate(self.S, start-self.offset, end-self.offset, self.circular)
+	if err == nil {
 		self.S = tt.([]alphabet.Letter)
 		self.offset = start
 		self.circular = false
@@ -198,9 +195,8 @@ func (self *Seq) Join(p *Seq, where int) (err error) {
 
 // Join sequentially order disjunct segments of the sequence, returning any error.
 func (self *Seq) Stitch(f feat.FeatureSet) (err error) {
-	var tt interface{}
-
-	if tt, err = sequtils.Stitch(self.S, self.offset, f); err == nil {
+	tt, err := sequtils.Stitch(self.S, self.offset, f)
+	if err == nil {
 		self.S = tt.([]alphabet.Letter)
 		self.circular = false
 		self.offset = 0
@@ -211,9 +207,8 @@ func (self *Seq) Stitch(f feat.FeatureSet) (err error) {
 
 // Join segments of the sequence, returning any error.
 func (self *Seq) Compose(f feat.FeatureSet) (err error) {
-	var tt []interface{}
-
-	if tt, err = sequtils.Compose(self.S, self.offset, f); err == nil {
+	tt, err := sequtils.Compose(self.S, self.offset, f)
+	if err == nil {
 		s := []alphabet.Letter{}
 		for _, ts := range tt {
 			s = append(s, ts.([]alphabet.Letter)...)

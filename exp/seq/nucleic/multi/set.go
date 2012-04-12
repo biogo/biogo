@@ -108,12 +108,8 @@ func (self Set) Reverse() {
 	}
 }
 
-func (self Set) RevComp() (err error) {
+func (self Set) RevComp() {
 	for _, s := range self {
-		if s.RevComp(); err != nil {
-			return err
-		}
+		s.RevComp()
 	}
-
-	return
 }

@@ -72,10 +72,9 @@ func ExampleSet_Len() {
 }
 
 func ExampleSet_RevComp() {
-	if err := set.RevComp(); err == nil {
-		for _, s := range set {
-			fmt.Println(s)
-		}
+	set.RevComp()
+	for _, s := range set {
+		fmt.Println(s)
 	}
 }
 

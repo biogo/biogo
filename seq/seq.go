@@ -114,7 +114,8 @@ func (self *Seq) Trunc(start, end int) (s *Seq, err error) {
 
 	var q *Quality
 	if self.Quality != nil {
-		if q, err = self.Quality.Trunc(start, end); err != nil {
+		q, err = self.Quality.Trunc(start, end)
+		if err != nil {
 			err = bio.NewError("Quality.Trunc() returned error", 0, err)
 			return
 		}
@@ -219,8 +220,9 @@ func (self *Seq) Join(s *Seq, where int) (j *Seq, err error) {
 
 	var q *Quality
 	if self.Quality != nil && s.Quality != nil {
-		if q, err = self.Quality.Join(s.Quality, where); err != nil {
-			return nil, err
+		q, err = self.Quality.Join(s.Quality, where)
+		if err != nil {
+			return
 		}
 	}
 
@@ -254,8 +256,9 @@ func (self *Seq) Stitch(f feat.FeatureSet) (s *Seq, err error) {
 	var i *interval.Interval
 
 	for _, feature := range f {
-		if i, err = interval.New(emptyString, feature.Start, feature.End, 0, nil); err != nil {
-			return nil, err
+		i, err = interval.New(emptyString, feature.Start, feature.End, 0, nil)
+		if err != nil {
+			return
 		} else {
 			t.Insert(i)
 		}

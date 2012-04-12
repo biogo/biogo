@@ -92,18 +92,16 @@ func featureOf(contigs *seq.Seq, from, to int, comp bool) (feature *feat.Feature
 
 // Convert a DPHit and two packed sequences into a FeaturePair.
 func NewFeaturePair(target, query *seq.Seq, hit dp.DPHit, comp bool) (pair *FeaturePair, err error) {
-	var (
-		t, q   *feat.Feature
-		strand int8
-	)
-
-	if t, err = featureOf(target, hit.Abpos, hit.Aepos, false); err != nil {
+	t, err := featureOf(target, hit.Abpos, hit.Aepos, false)
+	if err != nil {
 		return
 	}
-	if q, err = featureOf(query, hit.Bbpos, hit.Bepos, comp); err != nil {
+	q, err := featureOf(query, hit.Bbpos, hit.Bepos, comp)
+	if err != nil {
 		return
 	}
 
+	var strand int8
 	if comp {
 		strand = -1
 	} else {

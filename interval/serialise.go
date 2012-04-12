@@ -73,12 +73,12 @@ func (self *Interval) GobDecode(b []byte) (err error) {
 	buffer := bytes.NewBuffer(b)
 	decoder := gob.NewDecoder(buffer)
 
-	if err = decoder.Decode(&version); err == nil {
-		if version != Version {
-			return bio.NewError("Encoding mismatch", 0, version, Version)
-		}
-	} else {
+	err = decoder.Decode(&version)
+	if err != nil {
 		return
+	}
+	if version != Version {
+		return bio.NewError("Encoding mismatch", 0, version, Version)
 	}
 
 	/*		

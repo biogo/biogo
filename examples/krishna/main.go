@@ -99,7 +99,8 @@ func init() {
 func initLog(fileName string) {
 	var w io.Writer = os.Stderr
 	if fileName != "" {
-		if file, err := os.Create(fileName); err == nil {
+		file, err := os.Create(fileName)
+		if err == nil {
 			fmt.Fprintln(file, strings.Join(os.Args, " "))
 			w = io.MultiWriter(os.Stderr, file)
 		} else {

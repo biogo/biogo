@@ -38,22 +38,21 @@ func main() {
 		if sequence, err := in.Read(); err != nil {
 			os.Exit(0)
 		} else {
-			if index, err := kmerindex.New(*k, sequence); err != nil {
+			index, err := kmerindex.New(*k, sequence)
+			if err != nil {
 				fmt.Println(err)
 				os.Exit(0)
-			} else {
-				if baseLine, ok := index.NormalisedKmerFrequencies(); ok {
-					var err error
-					for i := 0; (i+1)**chunk < sequence.Len(); i++ {
-						sub, _ := sequence.Trunc(i**chunk+1, (i+1)**chunk)
-						if index, err = kmerindex.New(*k, sub); err != nil {
-							fmt.Println(err)
-							os.Exit(0)
-						} else {
-							if chunkFreqs, ok := index.NormalisedKmerFrequencies(); ok {
-								fmt.Printf("%s\t%d\t%f\n", sequence.ID, i**chunk, kmerindex.Distance(baseLine, chunkFreqs))
-							}
-						}
+			}
+			if baseLine, ok := index.NormalisedKmerFrequencies(); ok {
+				for i := 0; (i+1)**chunk < sequence.Len(); i++ {
+					sub, _ := sequence.Trunc(i**chunk+1, (i+1)**chunk)
+					index, err = kmerindex.New(*k, sub)
+					if err != nil {
+						fmt.Println(err)
+						os.Exit(0)
+					}
+					if chunkFreqs, ok := index.NormalisedKmerFrequencies(); ok {
+						fmt.Printf("%s\t%d\t%f\n", sequence.ID, i**chunk, kmerindex.Distance(baseLine, chunkFreqs))
 					}
 				}
 			}

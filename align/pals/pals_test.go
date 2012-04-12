@@ -125,7 +125,8 @@ func (s *S) TestOptimise(c *check.C) {
 	t := &seq.Seq{Seq: make([]byte, 29940)}
 	for _, p := range P {
 		pa := New(t, t, true, nil, 1, 0, nil, nil)
-		if err := pa.Optimise(p.l, p.id); err == nil {
+		err := pa.Optimise(p.l, p.id)
+		if err == nil {
 			c.Check(*pa.FilterParams, check.Equals, filter.Params{WordSize: p.k, MinMatch: p.s, MaxError: p.d, TubeOffset: p.t})
 			c.Check(*pa.DPParams, check.Equals, dp.Params{MinHitLength: p.l, MinId: p.id})
 			c.Check(pa.AvgIndexListLength(pa.FilterParams), floatApprox, p.list, 0.05)
@@ -148,11 +149,11 @@ func (s *S) TestPack(c *check.C) {
 
 func (s *S) TestFeaturise(c *check.C) {
 	for _, t := range T {
-		if f, err := featureOf(ps, t.start, t.end, false); err != nil {
+		f, err := featureOf(ps, t.start, t.end, false)
+		if err != nil {
 			c.Fatal(err)
-		} else {
-			c.Check(f.String(), check.Equals, t.result)
 		}
+		c.Check(f.String(), check.Equals, t.result)
 	}
 }
 

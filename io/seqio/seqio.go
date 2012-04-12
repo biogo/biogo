@@ -20,8 +20,8 @@ import "github.com/kortschak/biogo/seq"
 
 type Reader interface {
 	Read() (*seq.Seq, error)
-	Rewind() (error)
-	Close() (error)
+	Rewind() error
+	Close() error
 }
 
 type Writer interface {

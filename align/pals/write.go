@@ -38,8 +38,8 @@ func NewWriter(f io.WriteCloser, v, width int, header bool) (w *Writer) {
 // Returns a new PALS writer using a filename, truncating any existing file.
 // If appending is required use NewWriter and os.OpenFile.
 func NewWriterName(name string, v, width int, header bool) (w *Writer, err error) {
-	var f *os.File
-	if f, err = os.Create(name); err != nil {
+	f, err := os.Create(name)
+	if err != nil {
 		return
 	}
 	return NewWriter(f, v, width, header), nil

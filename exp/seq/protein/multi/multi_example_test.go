@@ -198,10 +198,11 @@ func ExampleMulti_Stitch() {
 	}
 	aligned(n)
 	fmt.Println()
-	if err := n.Stitch(f); err == nil {
-		aligned(n)
-	} else {
+	err := n.Stitch(f)
+	if err != nil {
 		fmt.Println(err)
+	} else {
+		aligned(n)
 	}
 	// Output:
 	// ACGCTGACTTGGTGCACGTACGCTGACTTGGTGCACGT

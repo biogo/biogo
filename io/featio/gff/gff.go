@@ -74,8 +74,8 @@ func NewReader(f io.ReadCloser) *Reader {
 
 // Returns a new GFF reader using a filename.
 func NewReaderName(name string) (r *Reader, err error) {
-	var f *os.File
-	if f, err = os.Open(name); err != nil {
+	f, err := os.Open(name)
+	if err != nil {
 		return
 	}
 	return NewReader(f), nil
@@ -86,7 +86,8 @@ func (self *Reader) commentMetaline(line string) (f *feat.Feature, err error) {
 	fields := strings.Split(string(line), " ")
 	switch fields[0] {
 	case "gff-version":
-		if self.Version, err = strconv.Atoi(fields[1]); err != nil {
+		self.Version, err = strconv.Atoi(fields[1])
+		if err != nil {
 			self.Version = DefaultVersion
 		}
 		return self.Read()
@@ -114,14 +115,16 @@ func (self *Reader) commentMetaline(line string) (f *feat.Feature, err error) {
 	case "sequence-region":
 		if len(fields) > 3 {
 			var start, end int
-			if start, err = strconv.Atoi(fields[2]); err != nil {
+			start, err = strconv.Atoi(fields[2])
+			if err != nil {
 				return nil, err
 			} else {
 				if self.OneBased {
 					start = bio.OneToZero(start)
 				}
 			}
-			if end, err = strconv.Atoi(fields[3]); err != nil {
+			end, err = strconv.Atoi(fields[3])
+			if err != nil {
 				return nil, err
 			}
 			f = &feat.Feature{
@@ -137,7 +140,8 @@ func (self *Reader) commentMetaline(line string) (f *feat.Feature, err error) {
 	case "DNA", "RNA", "Protein":
 		if len(fields) > 1 {
 			var s *seq.Seq
-			if s, err = self.metaSequence(fields[0], fields[1]); err != nil {
+			s, err = self.metaSequence(fields[0], fields[1])
+			if err != nil {
 				return
 			} else {
 				f = &feat.Feature{Meta: s}
@@ -156,25 +160,25 @@ func (self *Reader) metaSequence(moltype, id string) (sequence *seq.Seq, err err
 	var line, body []byte
 
 	for {
-		if line, err = self.r.ReadBytes('\n'); err == nil {
-			if len(line) > 0 && line[len(line)-1] == '\r' {
-				line = line[:len(line)-1]
-			}
-			if len(line) == 0 {
-				continue
-			}
-			if len(line) < 2 || !bytes.HasPrefix(line, []byte("##")) {
-				return nil, bio.NewError("Corrupt metasequence", 0, line)
-			}
-			line = bytes.TrimSpace(line[2:])
-			if string(line) == "end-"+moltype {
-				break
-			} else {
-				line = bytes.Join(bytes.Fields(line), nil)
-				body = append(body, line...)
-			}
-		} else {
+		line, err = self.r.ReadBytes('\n')
+		if err != nil {
 			return nil, err
+		}
+		if len(line) > 0 && line[len(line)-1] == '\r' {
+			line = line[:len(line)-1]
+		}
+		if len(line) == 0 {
+			continue
+		}
+		if len(line) < 2 || !bytes.HasPrefix(line, []byte("##")) {
+			return nil, bio.NewError("Corrupt metasequence", 0, line)
+		}
+		line = bytes.TrimSpace(line[2:])
+		if string(line) == "end-"+moltype {
+			break
+		} else {
+			line = bytes.Join(bytes.Fields(line), nil)
+			body = append(body, line...)
 		}
 	}
 
@@ -194,22 +198,22 @@ func (self *Reader) Read() (f *feat.Feature, err error) {
 	)
 
 	for {
-		if line, err = self.r.ReadString('\n'); err == nil {
-			if len(line) > 0 && line[len(line)-1] == '\r' {
-				line = line[:len(line)-1]
-			}
-			line = strings.TrimSpace(line)
-			if len(line) == 0 { // ignore blank lines
-				continue
-			} else if strings.HasPrefix(line, "##") {
-				f, err = self.commentMetaline(line[2:])
-				return
-			} else if line[0] != '#' { // ignore comments
-				elems = strings.SplitN(line, "\t", 10)
-				break
-			}
-		} else {
+		line, err = self.r.ReadString('\n')
+		if err != nil {
 			return
+		}
+		if len(line) > 0 && line[len(line)-1] == '\r' {
+			line = line[:len(line)-1]
+		}
+		line = strings.TrimSpace(line)
+		if len(line) == 0 { // ignore blank lines
+			continue
+		} else if strings.HasPrefix(line, "##") {
+			f, err = self.commentMetaline(line[2:])
+			return
+		} else if line[0] != '#' { // ignore comments
+			elems = strings.SplitN(line, "\t", 10)
+			break
 		}
 	}
 
@@ -317,8 +321,8 @@ func NewWriter(f io.WriteCloser, version, width int, header bool) (w *Writer) {
 // If appending is required use NewWriter and os.OpenFile.
 // When header is true, a version header will be written to the GFF.
 func NewWriterName(name string, version, width int, header bool) (w *Writer, err error) {
-	var f *os.File
-	if f, err = os.Create(name); err != nil {
+	f, err := os.Create(name)
+	if err != nil {
 		return
 	}
 	return NewWriter(f, version, width, header), nil
@@ -382,10 +386,12 @@ func (self *Writer) WriteMetaData(d interface{}) (n int, err error) {
 		sw := fasta.NewWriter(self.f, self.Width)
 		sw.IDPrefix = []byte(fmt.Sprintf("##%s ", d.(*seq.Seq).Moltype))
 		sw.SeqPrefix = []byte("##")
-		if n, err = sw.Write(d.(*seq.Seq)); err != nil {
+		n, err = sw.Write(d.(*seq.Seq))
+		if err != nil {
 			return
 		}
-		if err = sw.Flush(); err != nil {
+		err = sw.Flush()
+		if err != nil {
 			return
 		}
 		var m int
@@ -429,7 +435,8 @@ func (self *Writer) Flush() error {
 
 // Close the writer, flushing any unwritten data.
 func (self *Writer) Close() (err error) {
-	if err = self.w.Flush(); err != nil {
+	err = self.w.Flush()
+	if err != nil {
 		return
 	}
 	return self.f.Close()

@@ -45,7 +45,8 @@ type QSeq struct {
 
 // Create a new QSeq with the given id, letter sequence, alphabet and quality encoding.
 func NewQSeq(id string, qp []alphabet.QPack, alpha alphabet.Nucleic, encode alphabet.Encoding) (p *QSeq, err error) {
-	if err = checkPackedAlpha(alpha); err != nil {
+	err = checkPackedAlpha(alpha)
+	if err != nil {
 		return
 	}
 
@@ -95,7 +96,8 @@ func (self *QSeq) AppendLetters(a ...alphabet.Letter) (err error) {
 	alpha := self.alphabet
 	var p alphabet.QPack
 	for _, v := range a {
-		if p, err = (alphabet.QLetter{L: v, Q: nucleic.DefaultQphred}.Pack(alpha)); err != nil {
+		p, err = (alphabet.QLetter{L: v, Q: nucleic.DefaultQphred}.Pack(alpha))
+		if err != nil {
 			self.S = self.S[:l]
 			return
 		}
@@ -110,7 +112,8 @@ func (self *QSeq) AppendQLetters(a ...alphabet.QLetter) (err error) {
 	self.S = append(self.S, make([]alphabet.QPack, len(a))...)[:len(self.S)]
 	var qp alphabet.QPack
 	for i, ql := range a {
-		if qp, err = ql.Pack(self.alphabet); err != nil {
+		qp, err = ql.Pack(self.alphabet)
+		if err != nil {
 			if ql.Q > self.Threshold {
 				return bio.NewError(fmt.Sprintf("%s %q at position %d.", err.Error(), err.(bio.Error).Items(), i), 0)
 			}
@@ -244,12 +247,10 @@ func (self *QSeq) IsCircular() bool { return self.circular }
 
 // Return a subsequence from start to end, wrapping if the sequence is circular.
 func (self *QSeq) Subseq(start int, end int) (sub seq.Sequence, err error) {
-	var (
-		s  *QSeq
-		tt interface{}
-	)
+	var s *QSeq
 
-	if tt, err = sequtils.Truncate(self.S, start-self.offset, end-self.offset, self.circular); err == nil {
+	tt, err := sequtils.Truncate(self.S, start-self.offset, end-self.offset, self.circular)
+	if err == nil {
 		s = &QSeq{}
 		*s = *self
 		s.S = tt.([]alphabet.QPack)
@@ -264,9 +265,8 @@ func (self *QSeq) Subseq(start int, end int) (sub seq.Sequence, err error) {
 
 // Truncate the sequenc from start to end, wrapping if the sequence is circular.
 func (self *QSeq) Truncate(start int, end int) (err error) {
-	var tt interface{}
-
-	if tt, err = sequtils.Truncate(self.S, start-self.offset, end-self.offset, self.circular); err == nil {
+	tt, err := sequtils.Truncate(self.S, start-self.offset, end-self.offset, self.circular)
+	if err == nil {
 		self.S = tt.([]alphabet.QPack)
 		self.offset = start
 		self.circular = false
@@ -293,9 +293,8 @@ func (self *QSeq) Join(p *QSeq, where int) (err error) {
 
 // Join sequentially order disjunct segments of the sequence, returning any error.
 func (self *QSeq) Stitch(f feat.FeatureSet) (err error) {
-	var tt interface{}
-
-	if tt, err = sequtils.Stitch(self.S, self.offset, f); err == nil {
+	tt, err := sequtils.Stitch(self.S, self.offset, f)
+	if err == nil {
 		self.S = tt.([]alphabet.QPack)
 		self.circular = false
 		self.offset = 0
@@ -306,9 +305,8 @@ func (self *QSeq) Stitch(f feat.FeatureSet) (err error) {
 
 // Join segments of the sequence, returning any error.
 func (self *QSeq) Compose(f feat.FeatureSet) (err error) {
-	var tt []interface{}
-
-	if tt, err = sequtils.Compose(self.S, self.offset, f); err == nil {
+	tt, err := sequtils.Compose(self.S, self.offset, f)
+	if err == nil {
 		s := []alphabet.QPack{}
 		for i, ts := range tt {
 			if f[i].Strand == -1 {

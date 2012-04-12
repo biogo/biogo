@@ -36,7 +36,8 @@ func ExampleAligner_Align() {
 	}
 
 	smith := &Aligner{Matrix: swm, LookUp: LookUpN, GapChar: '-'}
-	if swa, err := smith.Align(swsa, swsb); err == nil {
+	swa, err := smith.Align(swsa, swsb)
+	if err == nil {
 		fmt.Printf("%s\n%s\n", swa[0].Seq, swa[1].Seq)
 	}
 	// Output:

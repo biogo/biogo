@@ -138,7 +138,8 @@ func (self Alignment) Flush(where int, fill byte) (a Alignment) {
 func (self Alignment) Trunc(start, end int) (a Alignment, err error) {
 	a = make(Alignment, len(self))
 	for i, s := range self {
-		if a[i], err = s.Trunc(start, end); err != nil {
+		a[i], err = s.Trunc(start, end)
+		if err != nil {
 			return nil, err
 		}
 	}
@@ -148,7 +149,8 @@ func (self Alignment) Trunc(start, end int) (a Alignment, err error) {
 func (self Alignment) RevComp() (a Alignment, err error) {
 	a = make(Alignment, len(self))
 	for i, s := range self {
-		if a[i], err = s.RevComp(); err != nil {
+		a[i], err = s.RevComp()
+		if err != nil {
 			return nil, err
 		}
 	}
@@ -237,8 +239,9 @@ func (self Alignment) Stitch(f feat.FeatureSet) (a Alignment, err error) {
 	var i *interval.Interval
 
 	for _, feature := range f {
-		if i, err = interval.New("", feature.Start, feature.End, 0, nil); err != nil {
-			return nil, err
+		i, err = interval.New("", feature.Start, feature.End, 0, nil)
+		if err != nil {
+			return
 		} else {
 			t.Insert(i)
 		}

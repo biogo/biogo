@@ -172,7 +172,8 @@ func NewSeq(id string, b []alphabet.Letter, alpha alphabet.Nucleic) (p *Seq, err
 		}
 	}()
 
-	if err = checkPackedAlpha(alpha); err != nil {
+	err = checkPackedAlpha(alpha)
+	if err != nil {
 		return
 	}
 
@@ -355,7 +356,8 @@ func (self *Seq) Subseq(start int, end int) (sub seq.Sequence, err error) {
 	sl, sr := (self.Len()-start-self.offset+int(self.S.RightPad)+3)/4, (end-self.offset+int(self.S.LeftPad)+3)/4
 
 	if s, e := (start-self.offset+int(self.S.LeftPad))/4, (end-self.offset+int(self.S.LeftPad)+3)/4; s != 0 || e != len(self.S.Letters) {
-		if tt, err = sequtils.Truncate(self.S.Letters, s, e, self.circular); err == nil {
+		tt, err = sequtils.Truncate(self.S.Letters, s, e, self.circular)
+		if err == nil {
 			ps = &Seq{}
 			*ps = *self
 			ps.S = &Packing{}
@@ -392,7 +394,8 @@ func (self *Seq) Truncate(start int, end int) (err error) {
 	sl, sr := (self.Len()-start-self.offset+int(self.S.RightPad)+3)/4, (end-self.offset+int(self.S.LeftPad)+3)/4
 
 	if s, e := (start-self.offset+int(self.S.LeftPad))/4, (end-self.offset+int(self.S.LeftPad)+3)/4; s != 0 || e != len(self.S.Letters) {
-		if tt, err = sequtils.Truncate(self.S.Letters, s, e, self.circular); err == nil {
+		tt, err = sequtils.Truncate(self.S.Letters, s, e, self.circular)
+		if err == nil {
 			self.S.Letters = tt.([]alphabet.Pack)
 		} else {
 			return
@@ -453,7 +456,8 @@ func (self *Seq) Stitch(f feat.FeatureSet) (err error) {
 	var i *interval.Interval
 
 	for _, feature := range f {
-		if i, err = interval.New(emptyString, feature.Start, feature.End, 0, nil); err != nil {
+		i, err = interval.New(emptyString, feature.Start, feature.End, 0, nil)
+		if err != nil {
 			return
 		} else {
 			tr.Insert(i)
@@ -477,7 +481,8 @@ func (self *Seq) Stitch(f feat.FeatureSet) (err error) {
 
 	var tseg seq.Sequence
 	for _, seg := range fs {
-		if tseg, err = self.Subseq(util.Max(seg.Start(), self.Start()), util.Min(seg.End(), self.End())); err != nil {
+		tseg, err = self.Subseq(util.Max(seg.Start(), self.Start()), util.Min(seg.End(), self.End()))
+		if err != nil {
 			return
 		}
 		s := tseg.(*Seq).S
@@ -508,7 +513,8 @@ func (self *Seq) Compose(f feat.FeatureSet) (err error) {
 
 	var tseg seq.Sequence
 	for _, seg := range f {
-		if tseg, err = self.Subseq(util.Max(seg.Start, self.Start()), util.Min(seg.End, self.End())); err != nil {
+		tseg, err = self.Subseq(util.Max(seg.Start, self.Start()), util.Min(seg.End, self.End()))
+		if err != nil {
 			return
 		}
 		tseg := tseg.(*Seq)

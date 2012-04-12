@@ -495,7 +495,8 @@ func (self *Multi) Subseq(start, end int) (sub seq.Sequence, err error) {
 
 func (self *Multi) Truncate(start, end int) (err error) {
 	for _, s := range self.S {
-		if err = s.Truncate(start, end); err != nil {
+		err = s.Truncate(start, end)
+		if err != nil {
 			return err
 		}
 	}
@@ -528,7 +529,8 @@ func (self *Multi) Join(a *Multi, where int) (err error) {
 	for i := 0; i < self.Count(); i++ {
 		s := self.Get(i)
 		as := a.Get(i)
-		if err = joinOne(s, as, where); err != nil {
+		err = joinOne(s, as, where)
+		if err != nil {
 			return
 		}
 	}
@@ -586,7 +588,8 @@ func (self *Multi) Stitch(f feat.FeatureSet) (err error) {
 	var i *interval.Interval
 
 	for _, feature := range f {
-		if i, err = interval.New(emptyString, feature.Start, feature.End, 0, nil); err != nil {
+		i, err = interval.New(emptyString, feature.Start, feature.End, 0, nil)
+		if err != nil {
 			return
 		} else {
 			tr.Insert(i)
@@ -614,7 +617,8 @@ func (self *Multi) Compose(f feat.FeatureSet) (err error) {
 	self.Flush(seq.Start|seq.End, self.alphabet.Gap())
 
 	for _, s := range self.S {
-		if err = s.Compose(f); err != nil {
+		err = s.Compose(f)
+		if err != nil {
 			return err
 		}
 	}

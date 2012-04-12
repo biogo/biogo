@@ -65,8 +65,8 @@ func NewReader(f io.ReadCloser, b int) *Reader {
 
 // Returns a new BED reader using a filename.
 func NewReaderName(name string, b int) (r *Reader, err error) {
-	var f *os.File
-	if f, err = os.Open(name); err != nil {
+	f, err := os.Open(name)
+	if err != nil {
 		return
 	}
 	return NewReader(f, b), nil
@@ -81,7 +81,8 @@ func (self *Reader) Read() (f *feat.Feature, err error) {
 		ok    bool
 	)
 
-	if line, err = self.r.ReadString('\n'); err == nil {
+	line, err = self.r.ReadString('\n')
+	if err == nil {
 		self.line++
 		if len(line) > 0 && line[len(line)-1] == '\r' {
 			line = line[:len(line)-1]
@@ -147,7 +148,8 @@ func (self *Reader) Line() int { return self.line }
 // Rewind the reader.
 func (self *Reader) Rewind() (err error) {
 	if s, ok := self.f.(io.Seeker); ok {
-		if _, err = s.Seek(0, 0); err == nil {
+		_, err = s.Seek(0, 0)
+		if err == nil {
 			self.line = 0
 		}
 	} else {
@@ -185,8 +187,8 @@ func NewWriter(f io.WriteCloser, b int) *Writer {
 // Returns a new BED format writer using a filename, truncating any existing file.
 // If appending is required use NewWriter and os.OpenFile.
 func NewWriterName(name string, b int) (w *Writer, err error) {
-	var f *os.File
-	if f, err = os.Create(name); err != nil {
+	f, err := os.Create(name)
+	if err != nil {
 		return
 	}
 	return NewWriter(f, b), nil
@@ -223,7 +225,8 @@ func (self *Writer) Stringify(f *feat.Feature) string {
 
 // Close the writer, flushing any unwritten data.
 func (self *Writer) Close() (err error) {
-	if err = self.w.Flush(); err != nil {
+	err = self.w.Flush()
+	if err != nil {
 		return
 	}
 	return self.f.Close()

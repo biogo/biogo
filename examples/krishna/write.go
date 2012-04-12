@@ -13,11 +13,10 @@ func WriteDPHits(w *pals.Writer, target, query *seq.Seq, hits []dp.DPHit, comp b
 	wlock.Lock()
 	defer wlock.Unlock()
 
-	var pair *pals.FeaturePair
-
 	for _, hit := range hits {
-		if pair, err = pals.NewFeaturePair(target, query, hit, comp); err != nil {
-			return
+		pair, err := pals.NewFeaturePair(target, query, hit, comp)
+		if err != nil {
+			return n, err
 		} else {
 			ln, err := w.Write(pair)
 			n += ln

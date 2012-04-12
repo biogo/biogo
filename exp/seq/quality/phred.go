@@ -118,12 +118,10 @@ func (self *Phred) IsCircular() bool { return self.circular }
 
 // Return a subsequence from start to end, wrapping if the sequence is circular.
 func (self *Phred) Subseq(start int, end int) (sub seq.Quality, err error) {
-	var (
-		q  *Phred
-		tt interface{}
-	)
+	var q *Phred
 
-	if tt, err = sequtils.Truncate(self.S, start-self.offset, end-self.offset, self.circular); err == nil {
+	tt, err := sequtils.Truncate(self.S, start-self.offset, end-self.offset, self.circular)
+	if err == nil {
 		q = &Phred{}
 		*q = *self
 		q.S = tt.([]alphabet.Qphred)
@@ -137,9 +135,8 @@ func (self *Phred) Subseq(start int, end int) (sub seq.Quality, err error) {
 }
 
 func (self *Phred) Truncate(start int, end int) (err error) {
-	var tt interface{}
-
-	if tt, err = sequtils.Truncate(self.S, start-self.offset, end-self.offset, self.circular); err == nil {
+	tt, err := sequtils.Truncate(self.S, start-self.offset, end-self.offset, self.circular)
+	if err == nil {
 		self.S = tt.([]alphabet.Qphred)
 		self.offset = start
 		self.circular = false
@@ -164,9 +161,8 @@ func (self *Phred) Join(p *Phred, where int) (err error) {
 }
 
 func (self *Phred) Stitch(f feat.FeatureSet) (err error) {
-	var tt interface{}
-
-	if tt, err = sequtils.Stitch(self.S, self.offset, f); err == nil {
+	tt, err := sequtils.Stitch(self.S, self.offset, f)
+	if err == nil {
 		self.S = tt.([]alphabet.Qphred)
 		self.circular = false
 		self.offset = 0
@@ -176,9 +172,8 @@ func (self *Phred) Stitch(f feat.FeatureSet) (err error) {
 }
 
 func (self *Phred) Compose(f feat.FeatureSet) (err error) {
-	var tt []interface{}
-
-	if tt, err = sequtils.Compose(self.S, self.offset, f); err == nil {
+	tt, err := sequtils.Compose(self.S, self.offset, f)
+	if err == nil {
 		s := []alphabet.Qphred{}
 		for i, ts := range tt {
 			if f[i].Strand == -1 {

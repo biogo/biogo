@@ -153,7 +153,8 @@ func (self *Writer) Write(s seqio.Sequence) (n int, err error) {
 		header = append(header, desc...)
 	}
 
-	if n, err = self.w.Write(header); err == nil {
+	n, err = self.w.Write(header)
+	if err == nil {
 		for i := 0; i < s.Len(); i++ {
 			if i%self.Width == 0 {
 				ln, err = self.w.Write(prefix)

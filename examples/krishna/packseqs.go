@@ -15,7 +15,8 @@ func packSequence(fileName string) *seq.Seq {
 	_, name := filepath.Split(fileName)
 	packer := pals.NewPacker(name)
 
-	if file, err := os.Open(fileName); err == nil {
+	file, err := os.Open(fileName)
+	if err == nil {
 		md5hash, _ := util.Hash(md5.New(), file)
 		logger.Printf("Reading %s: %s", fileName, fmt.Sprintf("%x", md5hash))
 
@@ -30,7 +31,8 @@ func packSequence(fileName string) *seq.Seq {
 
 		var sequence *seq.Seq
 		for {
-			if sequence, err = seqFile.Read(); err == nil {
+			sequence, err = seqFile.Read()
+			if err == nil {
 				if s := packer.Pack(sequence); verbose {
 					logger.Println(s)
 				}

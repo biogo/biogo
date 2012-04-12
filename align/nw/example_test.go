@@ -39,7 +39,8 @@ func ExampleAligner_Align() {
 	}
 
 	needle := &Aligner{Matrix: nwm, LookUp: LookUpN, GapChar: '-'}
-	if nwa, err := needle.Align(nwsa, nwsb); err == nil {
+	nwa, err := needle.Align(nwsa, nwsb)
+	if err == nil {
 		fmt.Printf("%s\n%s\n", nwa[0].Seq, nwa[1].Seq)
 	}
 	// Output:

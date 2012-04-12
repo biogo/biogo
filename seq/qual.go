@@ -182,8 +182,9 @@ func (self *Quality) Stitch(f feat.FeatureSet) (q *Quality, err error) {
 	var i *interval.Interval
 
 	for _, feature := range f {
-		if i, err = interval.New(emptyString, feature.Start, feature.End, 0, nil); err != nil {
-			return nil, err
+		i, err = interval.New(emptyString, feature.Start, feature.End, 0, nil)
+		if err != nil {
+			return
 		} else {
 			t.Insert(i)
 		}

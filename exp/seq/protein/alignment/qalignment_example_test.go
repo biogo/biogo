@@ -203,10 +203,11 @@ func ExampleQSeq_Stitch() {
 	}
 	qaligned(qn)
 	fmt.Println()
-	if err := qn.Stitch(f); err == nil {
-		qaligned(qn)
-	} else {
+	err := qn.Stitch(f)
+	if err != nil {
 		fmt.Println(err)
+	} else {
+		qaligned(qn)
 	}
 	// Output:
 	// ACGCTGACTTGGTGCACGTACGCTGACTTGGTGCACGT

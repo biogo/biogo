@@ -54,8 +54,8 @@ func NewReader(f io.ReadCloser) *Reader {
 
 // Returns a new fasta format reader using a filename.
 func NewReaderName(name string) (r *Reader, err error) {
-	var f *os.File
-	if f, err = os.Open(name); err != nil {
+	f, err := os.Open(name)
+	if err != nil {
 		return
 	}
 	return NewReader(f), nil
@@ -68,7 +68,8 @@ func (self *Reader) Read() (sequence *seq.Seq, err error) {
 
 READ:
 	for {
-		if line, err = self.r.ReadBytes('\n'); err == nil {
+		line, err = self.r.ReadBytes('\n')
+		if err == nil {
 			self.line++
 			if len(line) > 0 && line[len(line)-1] == '\r' {
 				line = line[:len(line)-1]
@@ -150,8 +151,8 @@ func NewWriter(f io.WriteCloser, width int) *Writer {
 // Returns a new fasta format writer using a filename, truncating any existing file.
 // If appending is required use NewWriter and os.OpenFile.
 func NewWriterName(name string, width int) (w *Writer, err error) {
-	var f *os.File
-	if f, err = os.Create(name); err != nil {
+	f, err := os.Create(name)
+	if err != nil {
 		return
 	}
 	return NewWriter(f, width), nil
@@ -160,7 +161,8 @@ func NewWriterName(name string, width int) (w *Writer, err error) {
 // Write a single sequence and return the number of bytes written and any error.
 func (self *Writer) Write(s *seq.Seq) (n int, err error) {
 	var ln int
-	if n, err = self.w.WriteString(string(self.IDPrefix) + s.ID + "\n"); err == nil {
+	n, err = self.w.WriteString(string(self.IDPrefix) + s.ID + "\n")
+	if err == nil {
 		for i := 0; i*self.Width <= s.Len(); i++ {
 			endLinePos := util.Min(self.Width*(i+1), s.Len())
 			for _, elem := range [][]byte{self.SeqPrefix, s.Seq[self.Width*i : endLinePos], {'\n'}} {
@@ -182,7 +184,8 @@ func (self *Writer) Flush() error {
 
 // Close the writer, flushing any unwritten sequence.
 func (self *Writer) Close() (err error) {
-	if err = self.w.Flush(); err != nil {
+	err = self.w.Flush()
+	if err != nil {
 		return
 	}
 	return self.f.Close()

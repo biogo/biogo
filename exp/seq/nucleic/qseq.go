@@ -216,12 +216,10 @@ func (self *QSeq) IsCircular() bool { return self.circular }
 
 // Return a subsequence from start to end, wrapping if the sequence is circular.
 func (self *QSeq) Subseq(start int, end int) (sub seq.Sequence, err error) {
-	var (
-		s  *QSeq
-		tt interface{}
-	)
+	var s *QSeq
 
-	if tt, err = sequtils.Truncate(self.S, start-self.offset, end-self.offset, self.circular); err == nil {
+	tt, err := sequtils.Truncate(self.S, start-self.offset, end-self.offset, self.circular)
+	if err == nil {
 		s = &QSeq{}
 		*s = *self
 		s.S = tt.([]alphabet.QLetter)
@@ -236,9 +234,8 @@ func (self *QSeq) Subseq(start int, end int) (sub seq.Sequence, err error) {
 
 // Truncate the sequenc from start to end, wrapping if the sequence is circular.
 func (self *QSeq) Truncate(start int, end int) (err error) {
-	var tt interface{}
-
-	if tt, err = sequtils.Truncate(self.S, start-self.offset, end-self.offset, self.circular); err == nil {
+	tt, err := sequtils.Truncate(self.S, start-self.offset, end-self.offset, self.circular)
+	if err == nil {
 		self.S = tt.([]alphabet.QLetter)
 		self.offset = start
 		self.circular = false
@@ -265,9 +262,8 @@ func (self *QSeq) Join(p *QSeq, where int) (err error) {
 
 // Join sequentially order disjunct segments of the sequence, returning any error.
 func (self *QSeq) Stitch(f feat.FeatureSet) (err error) {
-	var tt interface{}
-
-	if tt, err = sequtils.Stitch(self.S, self.offset, f); err == nil {
+	tt, err := sequtils.Stitch(self.S, self.offset, f)
+	if err == nil {
 		self.S = tt.([]alphabet.QLetter)
 		self.circular = false
 		self.offset = 0
@@ -278,9 +274,8 @@ func (self *QSeq) Stitch(f feat.FeatureSet) (err error) {
 
 // Join segments of the sequence, returning any error.
 func (self *QSeq) Compose(f feat.FeatureSet) (err error) {
-	var tt []interface{}
-
-	if tt, err = sequtils.Compose(self.S, self.offset, f); err == nil {
+	tt, err := sequtils.Compose(self.S, self.offset, f)
+	if err == nil {
 		s := []alphabet.QLetter{}
 		complement := self.alphabet.ComplementTable()
 		for i, ts := range tt {

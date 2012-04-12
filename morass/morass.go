@@ -254,10 +254,12 @@ func (self *Morass) Finalise() (err error) {
 
 	if !self.fast {
 		for _, f := range self.files {
-			if _, err = f.file.Seek(0, 0); err != nil {
+			_, err = f.file.Seek(0, 0)
+			if err != nil {
 				return
 			}
-			if err = f.decoder.Decode(&f.head); err != nil && err != io.EOF {
+			err = f.decoder.Decode(&f.head)
+			if err != nil && err != io.EOF {
 				return
 			}
 		}
@@ -279,10 +281,12 @@ func (self *Morass) Clear() (err error) {
 
 func (self *Morass) clear() (err error) {
 	for _, f := range self.files {
-		if err = f.file.Close(); err != nil {
+		err = f.file.Close()
+		if err != nil {
 			return
 		}
-		if err = os.Remove(f.file.Name()); err != nil {
+		err = os.Remove(f.file.Name())
+		if err != nil {
 			return
 		}
 	}

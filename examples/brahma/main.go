@@ -180,13 +180,15 @@ func main() {
 	intervalTree := interval.NewTree()
 
 	for count := 0; ; count++ {
-		if repeat, err := source.Read(); err != nil {
+		repeat, err := source.Read()
+		if err != nil {
 			break
 		} else {
 			fmt.Fprintf(os.Stderr, "Line: %d\r", count)
 			repData := &RepeatRecord{}
 			repData.Parse(repeat.Attributes)
-			if repInterval, err := interval.New(string(repeat.Location), repeat.Start, repeat.End, 0, *repData); err == nil {
+			repInterval, err := interval.New(string(repeat.Location), repeat.Start, repeat.End, 0, *repData)
+			if err == nil {
 				intervalTree.Insert(repInterval)
 			} else {
 				fmt.Fprintf(os.Stderr, "Feature has end < start: %v\n", repeat)
@@ -217,7 +219,8 @@ func main() {
 	}()
 
 	for {
-		if feature, err := target.Read(); err == nil {
+		feature, err := target.Read()
+		if err == nil {
 			process <- feature
 		} else {
 			close(process)
@@ -227,8 +230,9 @@ func main() {
 
 	if store {
 		enc := gob.NewEncoder(indexFile)
-		if e := enc.Encode(intervalTree); e != nil {
-			fmt.Fprintf(os.Stderr, "Error: %v.\n", e)
+		err := enc.Encode(intervalTree)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error: %v.\n", err)
 			os.Exit(0)
 		}
 	}
@@ -254,7 +258,8 @@ func processServer(index interval.Tree, queue, output chan *feat.Feature, wg *sy
 		heap.Init(&Overlap{&annotations})
 		buffer = buffer[:0]
 		buffer = append(buffer, []byte(blank)...)
-		if query, err := interval.New(string(feature.Location), feature.Start, feature.End, 0, nil); err != nil {
+		query, err := interval.New(string(feature.Location), feature.Start, feature.End, 0, nil)
+		if err != nil {
 			fmt.Fprintf(os.Stderr, "Feature has end < start: %v\n", feature)
 			continue
 		} else {

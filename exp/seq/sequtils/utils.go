@@ -99,8 +99,9 @@ func Stitch(pol interface{}, offset int, f feat.FeatureSet) (s interface{}, err 
 	var i *interval.Interval
 
 	for _, feature := range f {
-		if i, err = interval.New(emptyString, feature.Start, feature.End, 0, nil); err != nil {
-			return nil, err
+		i, err = interval.New(emptyString, feature.Start, feature.End, 0, nil)
+		if err != nil {
+			return
 		} else {
 			t.Insert(i)
 		}

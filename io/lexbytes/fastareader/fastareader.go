@@ -45,8 +45,8 @@ func NewReader(f io.ReadCloser) *Reader {
 
 // Returns a new fasta format reader using a filename.
 func NewReaderName(name string) (r *Reader, err error) {
-	var f *os.File
-	if f, err = os.Open(name); err != nil {
+	f, err := os.Open(name)
+	if err != nil {
 		return
 	}
 	return NewReader(f), nil
@@ -89,7 +89,8 @@ func scanForID(l *lex.Lexer) (lex.StateFn, lex.Item) {
 	case err != nil:
 		return l.Errorf("%s", err)
 	default:
-		if _, err = l.Next(); err != nil {
+		_, err = l.Next()
+		if err != nil {
 			return l.Errorf("%s", err)
 		}
 		l.Ignore()

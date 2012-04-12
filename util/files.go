@@ -33,8 +33,8 @@ var buffer = make([]byte, bufferLen)
 // file is ready for other reads. The hash is not reset on return, so if individual files are to
 // be hashed with the same h, it should be reset.
 func Hash(h hash.Hash, file *os.File) (sum []byte, err error) {
-	var fi os.FileInfo
-	if fi, err = file.Stat(); err != nil || fi.IsDir() {
+	fi, err := file.Stat()
+	if err != nil || fi.IsDir() {
 		return nil, bio.NewError("Is a directory", 0, file)
 	}
 

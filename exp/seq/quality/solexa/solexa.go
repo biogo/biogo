@@ -123,9 +123,8 @@ func (self *Solexa) IsCircular() bool { return self.circular }
 
 // Return a subsequence from start to end, wrapping if the sequence is circular.
 func (self *Solexa) Subseq(start int, end int) (q *Solexa, err error) {
-	var tt interface{}
-
-	if tt, err = sequtils.Truncate(self.S, start-self.offset, end-self.offset, self.circular); err == nil {
+	tt, err := sequtils.Truncate(self.S, start-self.offset, end-self.offset, self.circular)
+	if err == nil {
 		q = &Solexa{}
 		*q = *self
 		q.S = tt.([]alphabet.Qsolexa)
@@ -139,9 +138,8 @@ func (self *Solexa) Subseq(start int, end int) (q *Solexa, err error) {
 }
 
 func (self *Solexa) Truncate(start int, end int) (err error) {
-	var tt interface{}
-
-	if tt, err = sequtils.Truncate(self.S, start-self.offset, end-self.offset, self.circular); err == nil {
+	tt, err := sequtils.Truncate(self.S, start-self.offset, end-self.offset, self.circular)
+	if err == nil {
 		self.S = tt.([]alphabet.Qsolexa)
 		self.offset = start
 		self.circular = false
@@ -166,9 +164,8 @@ func (self *Solexa) Join(p *Solexa, where int) (err error) {
 }
 
 func (self *Solexa) Stitch(f feat.FeatureSet) (err error) {
-	var tt interface{}
-
-	if tt, err = sequtils.Stitch(self.S, self.offset, f); err == nil {
+	tt, err := sequtils.Stitch(self.S, self.offset, f)
+	if err == nil {
 		self.S = tt.([]alphabet.Qsolexa)
 		self.circular = false
 		self.offset = 0
@@ -178,9 +175,8 @@ func (self *Solexa) Stitch(f feat.FeatureSet) (err error) {
 }
 
 func (self *Solexa) Compose(f feat.FeatureSet) (err error) {
-	var tt []interface{}
-
-	if tt, err = sequtils.Compose(self.S, self.offset, f); err == nil {
+	tt, err := sequtils.Compose(self.S, self.offset, f)
+	if err == nil {
 		s := []alphabet.Qsolexa{}
 		for i, ts := range tt {
 			if f[i].Strand == -1 {

@@ -26,26 +26,24 @@ import (
 
 // Tests
 func (s *S) TestHash(c *check.C) {
-	var (
-		err     error
-		f       *os.File
-		md5hash []byte
-	)
-
 	// FIXME: This will not work with MacOS.
-	if _, err = exec.LookPath("md5sum"); err != nil {
+	_, err := exec.LookPath("md5sum")
+	if err != nil {
 		c.Skip(err.Error())
 	}
 	md5sum := exec.Command("md5sum", "./files_test.go")
 	b := &bytes.Buffer{}
 	md5sum.Stdout = b
-	if err = md5sum.Run(); err != nil {
+	err = md5sum.Run()
+	if err != nil {
 		c.Fatal(err)
 	}
-	if f, err = os.Open("./files_test.go"); err != nil {
+	f, err := os.Open("./files_test.go")
+	if err != nil {
 		c.Fatalf("%v %s", md5sum, err)
 	}
-	if md5hash, err = Hash(md5.New(), f); err != nil {
+	md5hash, err := Hash(md5.New(), f)
+	if err != nil {
 		c.Fatal(err)
 	}
 	md5string := fmt.Sprintf("%x .*\n", md5hash)
