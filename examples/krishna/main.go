@@ -213,7 +213,6 @@ func main() {
 			wg.Add(1)
 			go func(p *pals.PALS, comp bool) {
 				defer wg.Done()
-				runtime.LockOSThread()
 				hits, err := p.Align(comp)
 				if err != nil {
 					logger.Fatalf("Error: %v", err)
