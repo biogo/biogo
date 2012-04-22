@@ -1,3 +1,5 @@
+![bíogo](http://github.com/kortschak/biogo/blob/master/biogo.png?raw=true)
+
 #bíogo
 
 ##Installation
