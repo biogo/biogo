@@ -1,4 +1,4 @@
-// Package to find intersections between intervals or sort intervals.
+// Package to find intersections between intervals or to sort intervals.
 package interval
 
 // Copyright ©2011 Dan Kortschak <dan.kortschak@adelaide.edu.au>
@@ -46,16 +46,36 @@ func (self Tree) Insert(i *Interval) {
 }
 
 // Merge an Interval into the Tree.
-func (self Tree) Merge(i *Interval, overlap int) (inserted, replaced []*Interval) {
+func (self Tree) Merge(i *Interval, overlap int) (inserted *Interval, replaced []*Interval) {
 	if root, ok := self[i.chromosome]; ok {
 		inserted, replaced = root.merge(i, overlap)
 		removed := [][]*Interval{replaced}
 		self.replace(inserted, removed)
 	} else {
 		self[i.chromosome] = i
+		inserted = i
+		replaced = []*Interval{}
 	}
 
 	return
+}
+
+func (self Tree) replace(i *Interval, r [][]*Interval) {
+	// Helper function for Merge method.
+	for _, sec := range r {
+		for _, targ := range sec {
+			if targ.chromosome != i.chromosome {
+				panic("interval: attempt to replace across chromosomes")
+			}
+			self.FastRemove(targ)
+		}
+	}
+	if root, ok := self[i.chromosome]; ok {
+		self[i.chromosome] = root.insert(i)
+	} else {
+		self[i.chromosome] = i
+	}
+	self.AdjustRange(i.chromosome)
 }
 
 // Remove an interval, returning the removed interval with all pointers set to nil.
@@ -76,6 +96,7 @@ func (self Tree) Remove(i *Interval) (removed *Interval) {
 }
 
 // Remove an interval, returning the removed interval. Does not adjust ranges within tree.
+// Call AdjustRange on the tree before further use.
 func (self Tree) FastRemove(i *Interval) (removed *Interval) {
 	if root, ok := self[i.chromosome]; ok {
 		var newRoot *Interval
@@ -207,18 +228,6 @@ func (self Tree) FlattenWithin(i *Interval, slop, tolerance int) (flat []*Interv
 	return
 }
 
-func (self Tree) replace(inserted []*Interval, removed [][]*Interval) {
-	// Helper function for Merge method. Unsafe for use when replacement intervals do not cover removed intervals.
-	for _, section := range removed {
-		for _, target := range section {
-			self.FastRemove(target)
-		}
-	}
-	for _, replacement := range inserted {
-		self.Insert(replacement)
-	}
-}
-
 // Interval type stores start and end of interval and meta data in line and Meta (meta may be used to link to a feat.Feature).
 type Interval struct {
 	chromosome          string
@@ -303,6 +312,13 @@ func (self *Interval) adjustRangeParental() {
 
 // Insert an Interval into a tree returning the new root. Receiver should be the root of the tree.
 func (self *Interval) Insert(i *Interval) (root *Interval) {
+	root = self.insert(i)
+	root.adjustRange()
+
+	return
+}
+
+func (self *Interval) insert(i *Interval) (root *Interval) {
 	root = self
 
 	if i.start >= self.start {
@@ -330,8 +346,6 @@ func (self *Interval) Insert(i *Interval) (root *Interval) {
 			root = self.rotateRight()
 		}
 	}
-
-	root.adjustRange()
 
 	return
 }
@@ -362,7 +376,7 @@ func (self *Interval) rotateLeft() (root *Interval) {
 	return
 }
 
-func (self *Interval) merge(i *Interval, overlap int) (inserted, removed []*Interval) {
+func (self *Interval) merge(i *Interval, overlap int) (inserted *Interval, removed []*Interval) {
 	r := make(chan *Interval)
 	removed = []*Interval{}
 	wait := make(chan struct{})
@@ -374,8 +388,8 @@ func (self *Interval) merge(i *Interval, overlap int) (inserted, removed []*Inte
 			min, max = util.Min(min, old.start), util.Max(max, old.end)
 			removed = append(removed, old)
 		}
-		n, _ := New(i.chromosome, util.Min(i.start, min), util.Max(i.end, max), 0, nil)
-		inserted = []*Interval{n}
+		i.start, i.end = util.Min(i.start, min), util.Max(i.end, max)
+		inserted = i
 		// Do something sensible when only one interval is found and the only action is to extend or ignore
 	}()
 	self.intersect(i, overlap, r)

@@ -378,6 +378,8 @@ func (s *S) TestInvariants(c *check.C) {
 	for seg := range tree.Traverse("") {
 		if seg.parent != nil {
 			c.Check(seg.parent.priority, check.Not(lessThan), seg.priority)
+			c.Check(seg.start, check.Not(lessThan), seg.parent.minStart)
+			c.Check(seg.parent.maxEnd, check.Not(lessThan), seg.end)
 		}
 	}
 
@@ -390,6 +392,8 @@ func (s *S) TestInvariants(c *check.C) {
 		}
 		if seg.parent != nil {
 			c.Check(seg.parent.priority, check.Not(lessThan), seg.priority)
+			c.Check(seg.start, check.Not(lessThan), seg.parent.minStart)
+			c.Check(seg.parent.maxEnd, check.Not(lessThan), seg.end)
 		}
 		last = seg
 	}
@@ -410,6 +414,8 @@ func (s *S) TestInvariants(c *check.C) {
 		}
 		if seg.parent != nil {
 			c.Check(seg.parent.priority, check.Not(lessThan), seg.priority)
+			c.Check(seg.start, check.Not(lessThan), seg.parent.minStart)
+			c.Check(seg.parent.maxEnd, check.Not(lessThan), seg.end)
 		}
 		last = seg
 	}
@@ -419,6 +425,8 @@ func (s *S) TestInvariants(c *check.C) {
 	for seg := range tree.Traverse("") {
 		if seg.parent != nil {
 			c.Check(seg.parent.priority, check.Not(lessThan), seg.priority)
+			c.Check(seg.start, check.Not(lessThan), seg.parent.minStart)
+			c.Check(seg.parent.maxEnd, check.Not(lessThan), seg.end)
 		}
 	}
 
@@ -438,6 +446,25 @@ func (s *S) TestInvariants(c *check.C) {
 		}
 		if seg.parent != nil {
 			c.Check(seg.parent.priority, check.Not(lessThan), seg.priority)
+			c.Check(seg.start, check.Not(lessThan), seg.parent.minStart)
+			c.Check(seg.parent.maxEnd, check.Not(lessThan), seg.end)
+		}
+		last = seg
+	}
+
+	// test Merge insertion
+	for i := 0; i < 100; i++ {
+		tree.Merge(randomInterval(1e3, 1e2, 1e5), 0)
+	}
+	last = nil
+	for seg := range tree.Traverse("") {
+		if last != nil {
+			c.Check(seg.start < last.start, check.Equals, false)
+		}
+		if seg.parent != nil {
+			c.Check(seg.parent.priority, check.Not(lessThan), seg.priority)
+			c.Check(seg.start, check.Not(lessThan), seg.parent.minStart)
+			c.Check(seg.parent.maxEnd, check.Not(lessThan), seg.end)
 		}
 		last = seg
 	}
