@@ -42,7 +42,7 @@ func (self *Interval) GobEncode() (b []byte, err error) {
 		}
 	*/
 
-	encoder.Encode(self.chromosome)
+	encoder.Encode(self.seg)
 	encoder.Encode(self.start)
 	encoder.Encode(self.end)
 	encoder.Encode(self.line)
@@ -93,7 +93,7 @@ func (self *Interval) GobDecode(b []byte) (err error) {
 		}
 	*/
 
-	decoder.Decode(self.chromosome)
+	decoder.Decode(self.seg)
 	decoder.Decode(self.start)
 	decoder.Decode(self.end)
 	decoder.Decode(self.line)

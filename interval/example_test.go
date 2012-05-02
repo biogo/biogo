@@ -96,8 +96,8 @@ func ExampleTree_Merge() {
 
 	for _, s := range segments {
 		if i, err := New(chromosome, s[0], s[1], 0, nil); err == nil {
-			n, o := tree.Merge(i, 0)
-			inserted = append(inserted, n)
+			o := tree.Merge(i, 0)
+			inserted = append(inserted, i)
 			replaced = append(replaced, o...)
 		} else {
 			fmt.Println(err)

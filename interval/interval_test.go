@@ -617,6 +617,36 @@ func BenchmarkTreeMillionInsert1e5(b *testing.B) {
 	repeatInsert(b, 1e5)
 }
 
+func repeatMergeInsertion(tree Tree, n, iLen, iLenVar, locRange int, b *testing.B) {
+	for j := 0; j < n; j++ {
+		b.StopTimer()
+		i := randomInterval(iLen, iLenVar, locRange)
+		b.StartTimer()
+		tree.Merge(i, 0)
+	}
+}
+
+func repeatMerge(b *testing.B, n int) {
+	for i := 0; i < b.N; i++ {
+		for j := 0; j < 1e6/n; j++ {
+			tree := NewTree()
+			repeatMergeInsertion(tree, n, 1e3, 1e2, 1e5, b)
+		}
+	}
+}
+
+func BenchmarkTreeMillionMerge1e2(b *testing.B) {
+	repeatMerge(b, 1e2)
+}
+
+func BenchmarkTreeMillionMerge1e3(b *testing.B) {
+	repeatMerge(b, 1e3)
+}
+
+func BenchmarkTreeMillionMerge1e5(b *testing.B) {
+	repeatMerge(b, 1e5)
+}
+
 func repeatIntersect(b *testing.B, n int) {
 	b.StopTimer()
 	tree := testTree(n, 3e2, 1e1, 1e3*n)

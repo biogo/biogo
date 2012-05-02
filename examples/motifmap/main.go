@@ -101,7 +101,7 @@ func main() {
 				for intersector := range intervalTree.Within(regionInterval, 0) {
 					motifMidPoint := float64(intersector.Start()+intersector.End()) / 2
 					if *verbose {
-						fmt.Fprintf(os.Stderr, "\t%s\t%d\t%d\n", intersector.Chromosome(), intersector.Start(), intersector.End())
+						fmt.Fprintf(os.Stderr, "\t%s\t%d\t%d\n", intersector.Segment(), intersector.Start(), intersector.End())
 					}
 
 					// The Method of Provisional Means	

@@ -28,7 +28,7 @@ import (
 const negRecLogHalf = 1.4426950408889634073599246810018921374266459541529859341354 // -1/Log(0.5)
 
 // Tree type will store a collection of intervals. While this is not necessary for interval tree
-// searching, a Tree stores intervals in a hash based on the chromosome name, reducing search time and easing coding.
+// searching, a Tree stores intervals in a hash based on the segment name, reducing search time and easing coding.
 type Tree map[string]*Interval
 
 // Create a new interval Tree.
@@ -38,22 +38,22 @@ func NewTree() Tree {
 
 // Insert an Interval into the Tree.
 func (self Tree) Insert(i *Interval) {
-	if root, ok := self[i.chromosome]; ok {
-		self[i.chromosome] = root.Insert(i)
+	if root, ok := self[i.seg]; ok {
+		self[i.seg] = root.insert(i)
 	} else {
-		self[i.chromosome] = i
+		self[i.seg] = i
 	}
 }
 
 // Merge an Interval into the Tree.
-func (self Tree) Merge(i *Interval, overlap int) (inserted *Interval, replaced []*Interval) {
-	if root, ok := self[i.chromosome]; ok {
-		inserted, replaced = root.merge(i, overlap)
+func (self Tree) Merge(i *Interval, overlap int) (replaced []*Interval) {
+	var ins *Interval
+	if root, ok := self[i.seg]; ok {
+		ins, replaced = root.merge(i, overlap)
 		removed := [][]*Interval{replaced}
-		self.replace(inserted, removed)
+		self.replace(ins, removed)
 	} else {
-		self[i.chromosome] = i
-		inserted = i
+		self[i.seg] = i
 		replaced = []*Interval{}
 	}
 
@@ -64,30 +64,30 @@ func (self Tree) replace(i *Interval, r [][]*Interval) {
 	// Helper function for Merge method.
 	for _, sec := range r {
 		for _, targ := range sec {
-			if targ.chromosome != i.chromosome {
+			if targ.seg != i.seg {
 				panic("interval: attempt to replace across chromosomes")
 			}
 			self.FastRemove(targ)
 		}
 	}
-	if root, ok := self[i.chromosome]; ok {
-		self[i.chromosome] = root.insert(i)
+	if root, ok := self[i.seg]; ok {
+		self[i.seg] = root.insert(i)
 	} else {
-		self[i.chromosome] = i
+		self[i.seg] = i
 	}
-	self.AdjustRange(i.chromosome)
+	self.AdjustRange(i.seg)
 }
 
 // Remove an interval, returning the removed interval with all pointers set to nil.
 func (self Tree) Remove(i *Interval) (removed *Interval) {
-	if root, ok := self[i.chromosome]; ok {
+	if root, ok := self[i.seg]; ok {
 		var newRoot *Interval
-		if newRoot, removed = i.Remove(); i == root {
+		if newRoot, removed = i.remove(); i == root {
 			if newRoot != nil {
 				newRoot.parent = nil
-				self[i.chromosome] = newRoot
+				self[i.seg] = newRoot
 			} else {
-				delete(self, i.chromosome)
+				delete(self, i.seg)
 			}
 		}
 	}
@@ -95,17 +95,17 @@ func (self Tree) Remove(i *Interval) (removed *Interval) {
 	return
 }
 
-// Remove an interval, returning the removed interval. Does not adjust ranges within tree.
-// Call AdjustRange on the tree before further use.
+// Remove an interval, returning the removed interval. Does not adjust ranges within tree;
+// call AdjustRange(i.Segment()) on the tree to restore internal consistency.
 func (self Tree) FastRemove(i *Interval) (removed *Interval) {
-	if root, ok := self[i.chromosome]; ok {
+	if root, ok := self[i.seg]; ok {
 		var newRoot *Interval
 		if newRoot, removed = i.fastRemove(); i == root {
 			if newRoot != nil {
 				newRoot.parent = nil
-				self[i.chromosome] = newRoot
+				self[i.seg] = newRoot
 			} else {
-				delete(self, i.chromosome)
+				delete(self, i.seg)
 			}
 		}
 	}
@@ -113,14 +113,19 @@ func (self Tree) FastRemove(i *Interval) (removed *Interval) {
 	return
 }
 
-func (self Tree) AdjustRange(chromosome string) {
-	self[chromosome].adjustRangeRecursive()
+func (self Tree) AdjustRange(seg string) {
+	self[seg].adjustRangeRecursive()
 }
 
 // Find all intervals in Tree that overlap query. Return a channel that will convey results.
+//
+// The overlap parameter determines how much overlap is required:
+//     overlap < 0 intervals can be up to overlap away
+//     overlap = 0 intervals abut
+//     overlap > 0 intervals must overlap by overlap
 func (self Tree) Intersect(i *Interval, overlap int) (result chan *Interval) {
 	result = make(chan *Interval)
-	if root, ok := self[i.chromosome]; ok {
+	if root, ok := self[i.seg]; ok {
 		go root.Intersect(i, overlap, result)
 	} else {
 		close(result)
@@ -130,9 +135,14 @@ func (self Tree) Intersect(i *Interval, overlap int) (result chan *Interval) {
 }
 
 // Find all intervals in Tree that entirely contain query. Return a channel that will convey results.
+//
+// The slop parameter determines how much slop is allowed:
+//     slop < 0 query must be within interval by slop
+//     slop = 0 intervals may completely coincide
+//     slop > 0 query may extend beyond interval by slop
 func (self Tree) Contain(i *Interval, slop int) (result chan *Interval) {
 	result = make(chan *Interval)
-	if root, ok := self[i.chromosome]; ok {
+	if root, ok := self[i.seg]; ok {
 		go root.Contain(i, slop, result)
 	} else {
 		close(result)
@@ -142,9 +152,14 @@ func (self Tree) Contain(i *Interval, slop int) (result chan *Interval) {
 }
 
 // Find all intervals in Tree that are entirely contained by query. Return a channel that will convey results.
+//
+// The slop parameter determines how much slop is allowed:
+//     slop < 0 intervals must be within query by slop
+//     slop = 0 intervals may completely coincide
+//     slop > 0 intervals may extend beyond query by slop
 func (self Tree) Within(i *Interval, slop int) (result chan *Interval) {
 	result = make(chan *Interval)
-	if root, ok := self[i.chromosome]; ok {
+	if root, ok := self[i.seg]; ok {
 		go root.Within(i, slop, result)
 	} else {
 		close(result)
@@ -153,10 +168,26 @@ func (self Tree) Within(i *Interval, slop int) (result chan *Interval) {
 	return
 }
 
-// Traverse all intervals for a chromosome in Tree in order. Return a channel that will convey results.
-func (self Tree) Traverse(chromosome string) (result chan *Interval) {
+// Return the left most interval in the segment's tree.
+func (self Tree) LeftMost(seg string) *Interval {
+	if t := self[seg]; t != nil {
+		return t.LeftMost()
+	}
+	return nil
+}
+
+// Return the right-most interval in the segment's tree.
+func (self Tree) RightMost(seg string) *Interval {
+	if t := self[seg]; t != nil {
+		return t.RightMost()
+	}
+	return nil
+}
+
+// Traverse all intervals for a segment in Tree in order. Return a channel that will convey results.
+func (self Tree) Traverse(seg string) (result chan *Interval) {
 	result = make(chan *Interval)
-	if t := self[chromosome]; t != nil {
+	if t := self[seg]; t != nil {
 		go func() {
 			t.Traverse(result)
 		}()
@@ -180,8 +211,8 @@ func (self Tree) TraverseAll() (result chan *Interval) {
 }
 
 // Return the range of the tree's span
-func (self Tree) Range(chromosome string) (min, max int) {
-	if root, ok := self[chromosome]; ok {
+func (self Tree) Range(seg string) (min, max int) {
+	if root, ok := self[seg]; ok {
 		min, max = root.minStart, root.maxEnd
 	}
 
@@ -191,12 +222,17 @@ func (self Tree) Range(chromosome string) (min, max int) {
 // Flatten a range of intervals intersecting i so that only one interval covers any given location. Intervals
 // less than tolerance positions apart are merged into a single new flattened interval.
 // Return flattened intervals and all intervals originally in intersected region.
+//
+// The overlap parameter determines how much overlap is required:
+//     overlap < 0 intervals can be up to overlap away
+//     overlap = 0 intervals abut
+//     overlap > 0 intervals must overlap by overlap
 // No metadata is transfered to flattened intervals.
 func (self Tree) Flatten(i *Interval, overlap, tolerance int) (flat []*Interval, rich [][]*Interval) {
-	if root, ok := self[i.chromosome]; ok {
+	if root, ok := self[i.seg]; ok {
 		r := make(chan *Interval)
 		go root.Intersect(i, overlap, r)
-		flat, rich = root.Flatten(r, tolerance)
+		flat, rich = root.flatten(r, tolerance)
 	}
 
 	return
@@ -204,12 +240,17 @@ func (self Tree) Flatten(i *Interval, overlap, tolerance int) (flat []*Interval,
 
 // Flatten a range of intervals containing i so that only one interval covers any given location.
 // Return flattened intervals and all intervals originally in containing region.
+//
+// The slop parameter determines how much slop is allowed:
+//     slop < 0 query must be within interval by slop
+//     slop = 0 intervals may completely coincide
+//     slop > 0 query may extend beyond interval by slop
 // No metadata is transfered to flattened intervals.
 func (self Tree) FlattenContaining(i *Interval, slop, tolerance int) (flat []*Interval, rich [][]*Interval) {
-	if root, ok := self[i.chromosome]; ok {
+	if root, ok := self[i.seg]; ok {
 		r := make(chan *Interval)
 		go root.Contain(i, slop, r)
-		flat, rich = root.Flatten(r, tolerance)
+		flat, rich = root.flatten(r, tolerance)
 	}
 
 	return
@@ -217,12 +258,17 @@ func (self Tree) FlattenContaining(i *Interval, slop, tolerance int) (flat []*In
 
 // Flatten a range of intervals within i so that only one interval covers any given location.
 // Return flattened intervals and all intervals originally in contained region.
+//
+// The slop parameter determines how much slop is allowed:
+//     slop < 0 intervals must be within query by slop
+//     slop = 0 intervals may completely coincide
+//     slop > 0 intervals may extend beyond query by slop
 // No metadata is transfered to flattened intervals.
 func (self Tree) FlattenWithin(i *Interval, slop, tolerance int) (flat []*Interval, rich [][]*Interval) {
-	if root, ok := self[i.chromosome]; ok {
+	if root, ok := self[i.seg]; ok {
 		r := make(chan *Interval)
 		go root.Within(i, slop, r)
-		flat, rich = root.Flatten(r, tolerance)
+		flat, rich = root.flatten(r, tolerance)
 	}
 
 	return
@@ -230,7 +276,7 @@ func (self Tree) FlattenWithin(i *Interval, slop, tolerance int) (flat []*Interv
 
 // Interval type stores start and end of interval and meta data in line and Meta (meta may be used to link to a feat.Feature).
 type Interval struct {
-	chromosome          string
+	seg                 string
 	start, end, line    int
 	minStart, maxEnd    int
 	Meta                interface{}
@@ -239,24 +285,24 @@ type Interval struct {
 }
 
 // Create a new Interval.
-func New(chrom string, start, end, line int, meta interface{}) (*Interval, error) {
+func New(seg string, start, end, line int, meta interface{}) (*Interval, error) {
 	if end < start {
 		return nil, bio.NewError("Interval end < start", 0, start, end)
 	}
 	return &Interval{
-		chromosome: chrom,
-		start:      start,
-		end:        end,
-		line:       line,
-		minStart:   start,
-		maxEnd:     end,
-		priority:   int(negRecLogHalf*math.Log(-1/(rand.Float64()-1))) + 1,
-		Meta:       meta,
+		seg:      seg,
+		start:    start,
+		end:      end,
+		line:     line,
+		minStart: start,
+		maxEnd:   end,
+		priority: int(negRecLogHalf*math.Log(-1/(rand.Float64()-1))) + 1,
+		Meta:     meta,
 	}, nil
 }
 
-// Return the chromosome identifier for an Interval node.
-func (self *Interval) Chromosome() string { return self.chromosome }
+// Return the segment identifier for an Interval node.
+func (self *Interval) Segment() string { return self.seg }
 
 // Return the start position of an Interval node.
 func (self *Interval) Start() int { return self.start }
@@ -311,20 +357,13 @@ func (self *Interval) adjustRangeParental() {
 }
 
 // Insert an Interval into a tree returning the new root. Receiver should be the root of the tree.
-func (self *Interval) Insert(i *Interval) (root *Interval) {
-	root = self.insert(i)
-	root.adjustRange()
-
-	return
-}
-
 func (self *Interval) insert(i *Interval) (root *Interval) {
 	root = self
 
 	if i.start >= self.start {
 		// insert to right tree
 		if self.right != nil {
-			self.right = self.right.Insert(i)
+			self.right = self.right.insert(i)
 		} else {
 			self.right = i
 			i.parent = self
@@ -336,7 +375,7 @@ func (self *Interval) insert(i *Interval) (root *Interval) {
 	} else {
 		// insert to left tree
 		if self.left != nil {
-			self.left = self.left.Insert(i)
+			self.left = self.left.insert(i)
 		} else {
 			self.left = i
 			i.parent = self
@@ -346,6 +385,7 @@ func (self *Interval) insert(i *Interval) (root *Interval) {
 			root = self.rotateRight()
 		}
 	}
+	root.adjustRange()
 
 	return
 }
@@ -390,7 +430,7 @@ func (self *Interval) merge(i *Interval, overlap int) (inserted *Interval, remov
 		}
 		i.start, i.end = util.Min(i.start, min), util.Max(i.end, max)
 		inserted = i
-		// Do something sensible when only one interval is found and the only action is to extend or ignore
+		// TODO: Do something sensible when only one interval is found and the only action is to extend or ignore
 	}()
 	self.intersect(i, overlap, r)
 	close(r)
@@ -400,10 +440,6 @@ func (self *Interval) merge(i *Interval, overlap int) (inserted *Interval, remov
 }
 
 // Find Intervals that intersect with the query (search is recursive inorder), and pass results on provided channel.
-// The overlap parameter determines how much overlap is required:
-//     overlap < 0 intervals can be up to overlap away
-//     overlap = 0 intervals abut
-//     overlap > 0 intervals must overlap by overlap
 func (self *Interval) Intersect(i *Interval, overlap int, r chan<- *Interval) {
 	self.intersect(i, overlap, r)
 	close(r)
@@ -426,10 +462,6 @@ func (self *Interval) intersect(i *Interval, overlap int, r chan<- *Interval) {
 }
 
 // Find Intervals completely containing the query (search is recursive inorder), and pass results on provided channel.
-// The slop parameter determines how much slop is allowed:
-//     slop < 0 query must be within interval by slop
-//     slop = 0 intervals may completely coincide
-//     slop > 0 query may extend beyond interval by slop
 func (self *Interval) Contain(i *Interval, slop int, r chan<- *Interval) {
 	self.contain(i, slop, r)
 	close(r)
@@ -452,10 +484,6 @@ func (self *Interval) contain(i *Interval, slop int, r chan<- *Interval) {
 }
 
 // Find Intervals completely within with the query (search is recursive inorder), and pass results on provided channel.
-// The slop parameter determines how much slop is allowed:
-//     slop < 0 intervals must be within query by slop
-//     slop = 0 intervals may completely coincide
-//     slop > 0 intervals may extend beyond query by slop
 func (self *Interval) Within(i *Interval, slop int, r chan<- *Interval) {
 	self.within(i, slop, r)
 	close(r)
@@ -539,6 +567,7 @@ func (self *Interval) ScanRight() (n *Interval) {
 	return
 }
 
+// Return the left-most interval of the subtree of which the interval is the root.
 func (self *Interval) LeftMost() (n *Interval) {
 	for n = self; n.left != nil; n = n.left {
 	}
@@ -546,6 +575,7 @@ func (self *Interval) LeftMost() (n *Interval) {
 	return
 }
 
+// Return the right-most interval of the subtree of which the interval is the root.
 func (self *Interval) RightMost() (n *Interval) {
 	for n = self; n.right != nil; n = n.right {
 	}
@@ -555,7 +585,7 @@ func (self *Interval) RightMost() (n *Interval) {
 
 // Merge a range of intervals provided by r. Returns merged intervals in a slice and
 // intervals contributing to merged intervals groups in a slice of slices.
-func (self *Interval) Flatten(r chan *Interval, tolerance int) (flat []*Interval, rich [][]*Interval) {
+func (self *Interval) flatten(r chan *Interval, tolerance int) (flat []*Interval, rich [][]*Interval) {
 	flat = []*Interval{}
 	rich = [][]*Interval{{}}
 
@@ -563,7 +593,7 @@ func (self *Interval) Flatten(r chan *Interval, tolerance int) (flat []*Interval
 	var last *Interval
 	for current := range r {
 		if last != nil && current.start-tolerance > max {
-			n, _ := New(current.chromosome, min, max, 0, nil)
+			n, _ := New(current.seg, min, max, 0, nil)
 			flat = append(flat, n)
 			min = current.start
 			max = current.end
@@ -575,14 +605,14 @@ func (self *Interval) Flatten(r chan *Interval, tolerance int) (flat []*Interval
 		rich[len(rich)-1] = append(rich[len(rich)-1], current)
 		last = current
 	}
-	n, _ := New(last.chromosome, min, max, 0, nil)
+	n, _ := New(last.seg, min, max, 0, nil)
 	flat = append(flat, n)
 
 	return
 }
 
 // Remove an interval. Returns the new root of the subtree and the removed interval.
-func (self *Interval) Remove() (root, removed *Interval) {
+func (self *Interval) remove() (root, removed *Interval) {
 	parent := self.parent
 	root, removed = self.fastRemove()
 	if root != nil {
@@ -599,7 +629,7 @@ func (self *Interval) Remove() (root, removed *Interval) {
 func (self *Interval) fastRemove() (root, removed *Interval) {
 	// Remove an interval. Returns the new root of the subtree and the removed interval.
 	// Does not adjust ranges of descendent and parental nodes.
-	root, removed = self.remove()
+	root, removed = self.removeAndBalance()
 	removed.left, removed.right, removed.parent = nil, nil, nil
 	removed.minStart, removed.maxEnd = removed.start, removed.end
 
@@ -634,7 +664,7 @@ func (self *Interval) skip() (replacement *Interval) {
 	return
 }
 
-func (self *Interval) remove() (root, removed *Interval) {
+func (self *Interval) removeAndBalance() (root, removed *Interval) {
 	removed = self
 
 	switch {
@@ -671,19 +701,19 @@ func (self *Interval) remove() (root, removed *Interval) {
 	return
 }
 
-// Return the range of the node's subtree span
+// Return the range of the node's subtree span.
 func (self *Interval) Range() (int, int) {
 	return self.minStart, self.maxEnd
 }
 
-// Default function for String method
+// Default function for String method.
 var StringFunc = defaultStringFunc
 
 func defaultStringFunc(i *Interval) string {
-	return fmt.Sprintf("%q:[%d, %d)", i.chromosome, i.start, i.end)
+	return fmt.Sprintf("%q:[%d, %d)", i.seg, i.start, i.end)
 }
 
-// String method
+// String method.
 func (self *Interval) String() string {
 	return StringFunc(self)
 }
