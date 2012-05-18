@@ -310,7 +310,7 @@ func (self *Seq) Copy() seq.Sequence {
 	*c = *self
 	c.S = &Packing{}
 	*c.S = *self.S
-	c.S.Letters = append([]alphabet.Pack{}, self.S.Letters...)
+	c.S.Letters = append([]alphabet.Pack(nil), self.S.Letters...)
 
 	return c
 }

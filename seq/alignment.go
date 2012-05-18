@@ -98,7 +98,7 @@ func (self Alignment) Flush(where int, fill byte) (a Alignment) {
 			} else {
 				a[i] = &Seq{
 					ID:       s.ID,
-					Seq:      append([]byte{}, append(s.Seq, bytes.Repeat([]byte{fill}, end-(s.Offset+s.Len()))...)...),
+					Seq:      append([]byte(nil), append(s.Seq, bytes.Repeat([]byte{fill}, end-(s.Offset+s.Len()))...)...),
 					Offset:   s.Offset,
 					Moltype:  s.Moltype,
 					Strand:   s.Strand,

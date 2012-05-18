@@ -41,7 +41,7 @@ type Seq struct {
 func NewSeq(id string, b []alphabet.Letter, alpha alphabet.Nucleic) *Seq {
 	return &Seq{
 		ID:        id,
-		S:         append([]alphabet.Letter{}, b...),
+		S:         append([]alphabet.Letter(nil), b...),
 		alphabet:  alpha,
 		Strand:    1,
 		Stringify: Stringify,
@@ -135,7 +135,7 @@ func (self *Seq) Validate() (bool, int) { return self.alphabet.AllValid(self.S) 
 // Return a copy of the sequence.
 func (self *Seq) Copy() seq.Sequence {
 	c := *self
-	c.S = append([]alphabet.Letter{}, self.S...)
+	c.S = append([]alphabet.Letter(nil), self.S...)
 	c.Meta = nil
 
 	return &c

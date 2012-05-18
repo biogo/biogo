@@ -61,8 +61,8 @@ func NewQSeq(id string, subids []string, ql [][]alphabet.QLetter, alpha alphabet
 
 	return &QSeq{
 		ID:         id,
-		SubIDs:     append([]string{}, subids...),
-		S:          append([][]alphabet.QLetter{}, ql...),
+		SubIDs:     append([]string(nil), subids...),
+		S:          append([][]alphabet.QLetter(nil), ql...),
 		alphabet:   alpha,
 		encoding:   encode,
 		Strand:     1,
@@ -256,7 +256,7 @@ func (self *QSeq) Copy() seq.Sequence {
 	c := *self
 	c.S = make([][]alphabet.QLetter, len(self.S))
 	for i, s := range self.S {
-		c.S[i] = append([]alphabet.QLetter{}, s...)
+		c.S[i] = append([]alphabet.QLetter(nil), s...)
 	}
 	c.Meta = nil
 

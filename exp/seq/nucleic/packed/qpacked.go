@@ -52,7 +52,7 @@ func NewQSeq(id string, qp []alphabet.QPack, alpha alphabet.Nucleic, encode alph
 
 	p = &QSeq{
 		ID:         id,
-		S:          append([]alphabet.QPack{}, qp...),
+		S:          append([]alphabet.QPack(nil), qp...),
 		alphabet:   alpha,
 		encoding:   encode,
 		Strand:     1,
@@ -212,7 +212,7 @@ func (self *QSeq) Validate() (bool, int) { return true, -1 }
 // Return a copy of the sequence.
 func (self *QSeq) Copy() seq.Sequence {
 	c := *self
-	c.S = append([]alphabet.QPack{}, self.S...)
+	c.S = append([]alphabet.QPack(nil), self.S...)
 	c.Meta = nil
 
 	return &c

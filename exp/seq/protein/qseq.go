@@ -43,7 +43,7 @@ type QSeq struct {
 func NewQSeq(id string, ql []alphabet.QLetter, alpha alphabet.Peptide, encode alphabet.Encoding) *QSeq {
 	return &QSeq{
 		ID:         id,
-		S:          append([]alphabet.QLetter{}, ql...),
+		S:          append([]alphabet.QLetter(nil), ql...),
 		alphabet:   alpha,
 		encoding:   encode,
 		Threshold:  2,
@@ -178,7 +178,7 @@ func (self *QSeq) Validate() (bool, int) {
 // Return a copy of the sequence.
 func (self *QSeq) Copy() seq.Sequence {
 	c := *self
-	c.S = append([]alphabet.QLetter{}, self.S...)
+	c.S = append([]alphabet.QLetter(nil), self.S...)
 	c.Meta = nil
 
 	return &c

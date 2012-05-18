@@ -72,7 +72,7 @@ func (self *Quality) Trunc(start, end int) (q *Quality, err error) {
 		if self.Inplace {
 			tq = self.Qual[start-self.Offset : end-self.Offset]
 		} else {
-			tq = append([]Qsanger{}, self.Qual[start-self.Offset:end-self.Offset]...)
+			tq = append([]Qsanger(nil), self.Qual[start-self.Offset:end-self.Offset]...)
 		}
 	} else if self.Circular {
 		if self.Inplace {

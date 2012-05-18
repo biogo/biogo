@@ -98,7 +98,7 @@ func (self *Seq) Trunc(start, end int) (s *Seq, err error) {
 		if self.Inplace {
 			ts = self.Seq[start-self.Offset : end-self.Offset]
 		} else {
-			ts = append([]byte{}, self.Seq[start-self.Offset:end-self.Offset]...)
+			ts = append([]byte(nil), self.Seq[start-self.Offset:end-self.Offset]...)
 		}
 	} else if self.Circular {
 		if self.Inplace {

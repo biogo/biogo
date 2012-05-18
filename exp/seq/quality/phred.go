@@ -43,7 +43,7 @@ type Phred struct {
 func NewPhred(id string, q []alphabet.Qphred, encode alphabet.Encoding) *Phred {
 	return &Phred{
 		ID:       id,
-		S:        append([]alphabet.Qphred{}, q...),
+		S:        append([]alphabet.Qphred(nil), q...),
 		encoding: encode,
 		Stringify: func(q seq.Polymer) string {
 			t := q.(*Phred)
@@ -104,7 +104,7 @@ func (self *Phred) End() int { return self.offset + self.Len() }
 
 func (self *Phred) Copy() seq.Quality {
 	c := *self
-	c.S = append([]alphabet.Qphred{}, self.S...)
+	c.S = append([]alphabet.Qphred(nil), self.S...)
 	c.Meta = nil
 
 	return &c

@@ -45,7 +45,7 @@ type Solexa struct {
 func NewSolexa(id string, q []alphabet.Qsolexa) *Solexa {
 	return &Solexa{
 		ID: id,
-		S:  append([]alphabet.Qsolexa{}, q...),
+		S:  append([]alphabet.Qsolexa(nil), q...),
 		Stringify: func(q seq.Polymer) string {
 			t := q.(*Solexa)
 			qs := make([]byte, 0, len(t.S))
@@ -109,7 +109,7 @@ func (self *Solexa) Count() int { return 1 }
 
 func (self *Solexa) Copy() *Solexa {
 	c := *self
-	c.S = append([]alphabet.Qsolexa{}, self.S...)
+	c.S = append([]alphabet.Qsolexa(nil), self.S...)
 	c.Meta = nil
 
 	return &c

@@ -59,8 +59,8 @@ func NewSeq(id string, subids []string, b [][]alphabet.Letter, alpha alphabet.Nu
 
 	return &Seq{
 		ID:         id,
-		SubIDs:     append([]string{}, subids...),
-		S:          append([][]alphabet.Letter{}, b...),
+		SubIDs:     append([]string(nil), subids...),
+		S:          append([][]alphabet.Letter(nil), b...),
 		alphabet:   alpha,
 		Strand:     1,
 		Consensify: cons,
@@ -240,7 +240,7 @@ func (self *Seq) Copy() seq.Sequence {
 	c := *self
 	c.S = make([][]alphabet.Letter, len(self.S))
 	for i, s := range self.S {
-		c.S[i] = append([]alphabet.Letter{}, s...)
+		c.S[i] = append([]alphabet.Letter(nil), s...)
 	}
 	c.Meta = nil
 
