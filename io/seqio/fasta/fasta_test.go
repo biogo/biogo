@@ -25,7 +25,8 @@ import (
 )
 
 var (
-	fas = []string{"../../testdata/testaln.fasta", "../../testdata/testaln2.fasta"}
+	fas    = []string{"../../testdata/testaln.fasta", "../../testdata/testaln2.fasta"}
+	single = "../../testdata/test.fasta"
 )
 
 // Tests
@@ -145,5 +146,25 @@ func (s *S) TestWriteFasta(c *check.C) {
 		}
 
 		c.Check(gb, check.DeepEquals, ob)
+	}
+}
+
+func (s *S) TestReadOneFasta(c *check.C) {
+	if r, err := NewReaderName(single); err != nil {
+		c.Fatalf("Failed to open %q: %s", single, err)
+	} else {
+		defer r.Close()
+		for {
+			if s, err := r.Read(); err != nil {
+				if err == io.EOF {
+					break
+				} else {
+					c.Fatalf("Failed to read %q: %s", single, err)
+				}
+			} else {
+				c.Check(s.ID, check.Equals, "AK1H_ECOLI/114-431 DESCRIPTION HERE")
+				c.Check(s.Len(), check.Equals, 378)
+			}
+		}
 	}
 }
