@@ -93,6 +93,7 @@ READ:
 			}
 		} else {
 			if self.last != nil {
+				label = self.last
 				self.last = nil
 				err = nil
 				break
