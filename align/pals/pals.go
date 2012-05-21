@@ -177,7 +177,7 @@ func (self *PALS) Optimise(minHitLen int, minId float64) (err error) {
 			length := self.AvgIndexListLength(filterParams)
 			if length > MaxAvgIndexListLen {
 				if self.log != nil {
-					self.log.Printf("Parameters n=%d k=%d e=%d, B=%d avgixlen=%d > max = %d\n",
+					self.log.Printf("Parameters n=%d k=%d e=%d, B=%d avgixlen=%.2f > max = %.2f\n",
 						filterParams.MinMatch,
 						filterParams.WordSize,
 						filterParams.MaxError,
