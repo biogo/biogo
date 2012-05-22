@@ -43,7 +43,7 @@ type Stringify func(Polymer) string
 // A Position holds a sequence position for all sequence types.
 type Position struct {
 	Pos int // The index of a letter within a sequence.
-	Ind int // The specific sequence within a multiple sequence. Ignored by single sequence types.
+	Ind int // The specific sequence within a multiple sequence.
 }
 
 // Polymer is the base type for sequences.
@@ -158,7 +158,7 @@ type Stitcher interface {
 	Stitch(f feat.FeatureSet) error // Join segments described by f, returning any error.
 }
 
-// A Compose can join together segments of the polymer in any order, potentially repeatedly.
+// A Composer can join together segments of the polymer in any order, potentially repeatedly.
 type Composer interface {
 	Compose(f feat.FeatureSet) error // Join segments described by f, returning any error.
 }
