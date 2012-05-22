@@ -21,6 +21,8 @@ import (
 	"github.com/kortschak/biogo/bio"
 	"github.com/kortschak/biogo/feat"
 	"github.com/kortschak/biogo/seq"
+	"strconv"
+	"strings"
 )
 
 // A FeaturePair holds a pair of features with additional information relating the two.
@@ -115,4 +117,48 @@ func NewFeaturePair(target, query *seq.Seq, hit dp.DPHit, comp bool) (pair *Feat
 		Error:  hit.Error,
 		Strand: strand,
 	}, nil
+}
+
+// Expand a feat.Feature containing a PALS-type feature attribute into a FeaturePair.
+func ExpandFeature(f *feat.Feature) (pair *FeaturePair, err error) {
+	if len(f.Attributes) < 7 || f.Attributes[:7] != "Target " {
+		return nil, fmt.Errorf("pals: not a feature pair")
+	}
+	fields := strings.Fields(f.Attributes)
+	if len(fields) != 6 {
+		return nil, fmt.Errorf("pals: not a feature pair")
+	}
+
+	s, err := strconv.Atoi(fields[2])
+	if err != nil {
+		return
+	}
+	s--
+	e, err := strconv.Atoi(fields[3][:len(fields[3])-1])
+	if err != nil {
+		return
+	}
+
+	maxe, err := strconv.ParseFloat(fields[5], 64)
+	if err != nil {
+		return
+	}
+
+	pair = &FeaturePair{
+		A:      f,
+		B:      &feat.Feature{
+			ID: fmt.Sprintf("%s:%d..%d", fields[1], s, e),
+			Location: fields[1],
+			Start: s,
+			End: e},
+		Score:  int(*f.Score),
+		Error:  maxe,
+		Strand: f.Strand,
+	}
+	f.Score = nil
+	f.Attributes = ""
+	f.Strand = 0
+
+	return
+
 }
