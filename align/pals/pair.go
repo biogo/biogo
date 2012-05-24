@@ -145,12 +145,12 @@ func ExpandFeature(f *feat.Feature) (pair *FeaturePair, err error) {
 	}
 
 	pair = &FeaturePair{
-		A:      f,
-		B:      &feat.Feature{
-			ID: fmt.Sprintf("%s:%d..%d", fields[1], s, e),
+		A: f,
+		B: &feat.Feature{
+			ID:       fmt.Sprintf("%s:%d..%d", fields[1], s, e),
 			Location: fields[1],
-			Start: s,
-			End: e},
+			Start:    s,
+			End:      e},
 		Score:  int(*f.Score),
 		Error:  maxe,
 		Strand: f.Strand,
@@ -161,4 +161,15 @@ func ExpandFeature(f *feat.Feature) (pair *FeaturePair, err error) {
 
 	return
 
+}
+
+// Invert returns a reversed copy of the feature pair such that A', B' = B, A.
+func (self *FeaturePair) Invert() *FeaturePair {
+	return &FeaturePair{
+		A:      self.B,
+		B:      self.A,
+		Score:  self.Score,
+		Error:  self.Error,
+		Strand: self.Strand,
+	}
 }
