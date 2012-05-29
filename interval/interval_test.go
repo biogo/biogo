@@ -1,6 +1,4 @@
-package interval
-
-// Copyright ©2011 Dan Kortschak <dan.kortschak@adelaide.edu.au>
+// Copyright ©2011-2012 Dan Kortschak <dan.kortschak@adelaide.edu.au>
 // Derived from quicksect.py of bx-python ©James Taylor bitbucket.org/james_taylor/bx-python
 //
 // This program is free software: you can redistribute it and/or modify
@@ -15,6 +13,8 @@ package interval
 //
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+package interval
 
 import (
 	check "launchpad.net/gocheck"

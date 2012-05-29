@@ -1,9 +1,3 @@
-// Package cluster provides limited data clustering support.
-//
-// The cluster package is intended to become a more extensive clustering package.
-// At this stage only Lloyd's k-means clustering for ℝ² data is supported.
-package cluster
-
 // Copyright ©2012 Dan Kortschak <dan.kortschak@adelaide.edu.au>
 //
 // This program is free software: you can redistribute it and/or modify
@@ -18,6 +12,12 @@ package cluster
 //
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+// Package cluster provides limited data clustering support.
+//
+// The cluster package is intended to become a more extensive clustering package.
+// At this stage only Lloyd's k-means clustering for ℝ² data is supported.
+package cluster
 
 import (
 	"math"

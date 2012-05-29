@@ -1,11 +1,4 @@
-// Package protein provides support for manipulation of single protein
-// sequences with and without quality data.
-//
-// Two basic protein sequence types are provided, Seq and QSeq. Interfaces
-// for more complex sequence types are also defined.
-package protein
-
-// Copyright ©2011 Dan Kortschak <dan.kortschak@adelaide.edu.au>
+// Copyright ©2011-2012 Dan Kortschak <dan.kortschak@adelaide.edu.au>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -19,6 +12,13 @@ package protein
 //
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+// Package protein provides support for manipulation of single protein
+// sequences with and without quality data.
+//
+// Two basic protein sequence types are provided, Seq and QSeq. Interfaces
+// for more complex sequence types are also defined.
+package protein
 
 import (
 	"github.com/kortschak/biogo/exp/alphabet"

@@ -1,9 +1,4 @@
-// Kmer indexing package based on Bob Edgar and Gene Meyers' approach used in PALS.
-//
-// Currently limited to Kmers of 15 nucleotides due to int constraints in Go.
-package kmerindex
-
-// Copyright ©2011 Dan Kortschak <dan.kortschak@adelaide.edu.au>
+// Copyright ©2011-2012 Dan Kortschak <dan.kortschak@adelaide.edu.au>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,6 +12,11 @@ package kmerindex
 //
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+// Kmer indexing package based on Bob Edgar and Gene Meyers' approach used in PALS.
+//
+// Currently limited to Kmers of 15 nucleotides due to int constraints in Go.
+package kmerindex
 
 import (
 	"fmt"

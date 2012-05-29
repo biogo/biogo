@@ -1,13 +1,4 @@
-// Use morass when you don't want your data to be a quagmire.
-//
-// Sort data larger than can fit in memory.
-//
-//  morass məˈras/
-//  1. An area of muddy or boggy ground.
-//  2. A complicated or confused situation.
-package morass
-
-// Copyright ©2011 Dan Kortschak <dan.kortschak@adelaide.edu.au>
+// Copyright ©2011-2012 Dan Kortschak <dan.kortschak@adelaide.edu.au>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -21,6 +12,15 @@ package morass
 //
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <http://www.gnu.org/licenses/>.
+
+// Use morass when you don't want your data to be a quagmire.
+//
+// Sort data larger than can fit in memory.
+//
+//  morass məˈras/
+//  1. An area of muddy or boggy ground.
+//  2. A complicated or confused situation.
+package morass
 
 import (
 	"container/heap"

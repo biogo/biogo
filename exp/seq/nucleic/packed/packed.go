@@ -1,10 +1,4 @@
-// Package packed provides support for manipulation of single nucleic acid
-// sequences with and without quality data.
-//
-// Two basic nucleic acid sequence types are provided, Seq and QSeq.
-package packed
-
-// Copyright ©2011 Dan Kortschak <dan.kortschak@adelaide.edu.au>
+// Copyright ©2011-2012 Dan Kortschak <dan.kortschak@adelaide.edu.au>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -18,6 +12,12 @@ package packed
 //
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+// Package packed provides support for manipulation of single nucleic acid
+// sequences with and without quality data.
+//
+// Two basic nucleic acid sequence types are provided, Seq and QSeq.
+package packed
 
 import (
 	"fmt"

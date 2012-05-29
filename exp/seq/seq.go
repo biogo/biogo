@@ -1,15 +1,4 @@
-/*
-Package seq provides the base for storage and manipulation of biological sequence information.
-
-A variety of sequence types are provided by derived packages including nucleic and protein sequence
-with and without quality scores. Multiple sequence data is also supported as unaligned sets and aligned sequences.
-
-Quality scoring is based on Phred scores, although there is the capacity to interconvert between Phred and
-Solexa scores and a Solexa quality package is provide, though not integrated.
-*/
-package seq
-
-// Copyright ©2011 Dan Kortschak <dan.kortschak@adelaide.edu.au>
+// Copyright ©2011-2012 Dan Kortschak <dan.kortschak@adelaide.edu.au>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -23,6 +12,15 @@ package seq
 //
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+// Package seq provides the base for storage and manipulation of biological sequence information.
+// 
+// A variety of sequence types are provided by derived packages including nucleic and protein sequence
+// with and without quality scores. Multiple sequence data is also supported as unaligned sets and aligned sequences.
+// 
+// Quality scoring is based on Phred scores, although there is the capacity to interconvert between Phred and
+// Solexa scores and a Solexa quality package is provide, though not integrated.
+package seq
 
 import (
 	"github.com/kortschak/biogo/exp/alphabet"

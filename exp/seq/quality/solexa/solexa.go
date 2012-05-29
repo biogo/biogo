@@ -1,9 +1,4 @@
-// Package solexa provides support for manipulation of quality data in Solexa format.
-//
-// This package is not used directly by any other quality containing sequence types.
-package quality
-
-// Copyright ©2011 Dan Kortschak <dan.kortschak@adelaide.edu.au>
+// Copyright ©2011-2012 Dan Kortschak <dan.kortschak@adelaide.edu.au>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,6 +12,11 @@ package quality
 //
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+// Package solexa provides support for manipulation of quality data in Solexa format.
+//
+// This package is not used directly by any other quality containing sequence types.
+package quality
 
 import (
 	"github.com/kortschak/biogo/bio"

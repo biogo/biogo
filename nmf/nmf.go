@@ -1,9 +1,4 @@
-// Implementation of NMF by alternative non-negative least squares using projected gradients
-//
-// Chih-Jen Lin (2007) Projected Gradient Methods for Nonnegative Matrix Factorization. Neural Computation 19:2756. 
-package nmf
-
-// Copyright ©2011 Dan Kortschak <dan.kortschak@adelaide.edu.au>
+// Copyright ©2011-2012 Dan Kortschak <dan.kortschak@adelaide.edu.au>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,6 +12,11 @@ package nmf
 //
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+// Implementation of NMF by alternative non-negative least squares using projected gradients
+//
+// Chih-Jen Lin (2007) Projected Gradient Methods for Nonnegative Matrix Factorization. Neural Computation 19:2756. 
+package nmf
 
 import (
 	"github.com/kortschak/biogo/matrix"

@@ -1,7 +1,4 @@
-// Package for reading and writing multiple sequence alignment files
-package alignio
-
-// Copyright ©2011 Dan Kortschak <dan.kortschak@adelaide.edu.au>
+// Copyright ©2011-2012 Dan Kortschak <dan.kortschak@adelaide.edu.au>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -15,6 +12,9 @@ package alignio
 //
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+// Package for reading and writing multiple sequence alignment files
+package alignio
 
 import (
 	"github.com/kortschak/biogo/io/seqio"

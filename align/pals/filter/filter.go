@@ -1,9 +1,4 @@
-// Package providing PALS sequence hit filter routines based on 
-// 'Efficient q-gram filters for finding all 𝛜-matches over a given length.'
-//   Kim R. Rasmussen, Jens Stoye, and Eugene W. Myers. J. of Computational Biology 13:296–308 (2006).
-package filter
-
-// Copyright ©2011 Dan Kortschak <dan.kortschak@adelaide.edu.au>
+// Copyright ©2011-2012 Dan Kortschak <dan.kortschak@adelaide.edu.au>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,6 +12,11 @@ package filter
 //
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+// Package providing PALS sequence hit filter routines based on 
+// 'Efficient q-gram filters for finding all 𝛜-matches over a given length.'
+//   Kim R. Rasmussen, Jens Stoye, and Eugene W. Myers. J. of Computational Biology 13:296–308 (2006).
+package filter
 
 import (
 	"github.com/kortschak/biogo/bio"

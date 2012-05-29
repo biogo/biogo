@@ -1,7 +1,4 @@
-// Phylogenetic tree package
-package tree
-
-// Copyright ©2011 Dan Kortschak
+// Copyright ©2011-2012 Dan Kortschak
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -15,6 +12,9 @@ package tree
 //
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+// Phylogenetic tree package
+package tree
 
 import (
 	"errors"

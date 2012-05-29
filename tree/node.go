@@ -1,6 +1,4 @@
-package tree
-
-// Copyright ©2011 Dan Kortschak <dan.kortschak@adelaide.edu.au>
+// Copyright ©2011-2012 Dan Kortschak <dan.kortschak@adelaide.edu.au>
 // Derived from PyCogent tree package Copyright ©2007-2011, The Cogent Project, under GPL2 or greater
 //
 // This program is free software: you can redistribute it and/or modify
@@ -15,6 +13,8 @@ package tree
 //
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+package tree
 
 const (
 	PreOrder = iota

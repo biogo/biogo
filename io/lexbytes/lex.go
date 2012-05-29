@@ -1,9 +1,4 @@
-// Byte stream lexer package
-//
-// Derived from template/parse/lex.go Copyright 2011 The Go Authors.
-package lexbytes
-
-// Copyright ©2011 Dan Kortschak <dan.kortschak@adelaide.edu.au>
+// Copyright ©2011-2012 Dan Kortschak <dan.kortschak@adelaide.edu.au>
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -17,6 +12,11 @@ package lexbytes
 //
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+// Byte stream lexer package
+//
+// Derived from template/parse/lex.go Copyright 2011 The Go Authors.
+package lexbytes
 
 import (
 	"bufio"
