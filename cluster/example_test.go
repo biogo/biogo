@@ -41,10 +41,41 @@ var feats = []*feat.Feature{
 	{ID: "10", Start: 1000, End: 1650},
 }
 
+// Cluster feat.Features on the basis of location where:
+//  epsilon is allowable error, and
+//  effort is number of attempts to achieve error < epsilon for any k.
+func ClusterFeatures(f []*feat.Feature, epsilon float64, effort int) (km *cluster.Kmeans) {
+	km = cluster.NewKmeans(Features(f))
+
+	values := km.Values()
+	cut := make([]float64, len(values))
+	for i, v := range values {
+		l := epsilon * (v.Y() - v.X())
+		cut[i] = l * l
+	}
+
+	for k := 1; k <= len(f); k++ {
+	ATTEMPT:
+		for attempt := 0; attempt < effort; attempt++ {
+			km.Seed(k)
+			km.Cluster()
+			centers := km.Means()
+			for i, v := range values {
+				dx, dy := centers[v.Cluster()].X()-v.X(), centers[v.Cluster()].Y()-v.Y()
+				ok := dx*dx+dy*dy < cut[i]
+				if !ok {
+					continue ATTEMPT
+				}
+			}
+			return
+		}
+	}
+
+	return
+}
+
 func ExampleInterface() {
-	km := cluster.NewKmeans(Features(feats))
-	km.Seed(4)
-	km.Cluster()
+	km := ClusterFeatures(feats, 0.15, 5)
 	for ci, c := range km.Clusters() {
 		fmt.Printf("Cluster %d:\n", ci)
 		for _, i := range c {
@@ -58,7 +89,7 @@ func ExampleInterface() {
 	}
 
 	var within float64
-	for _, ss := range km.Within(){
+	for _, ss := range km.Within() {
 		within += ss
 	}
 	fmt.Printf("betweenSS / totalSS = %.6f\n", 1-(within/km.Total()))
@@ -69,19 +100,19 @@ func ExampleInterface() {
 	//  ------------------------------------------------------------------------------------
 	//
 	// Cluster 1:
-	//                                                    -----------------------------------
-	//                                                 --------------------------------------
-	//                                                    --------------------------------
+	//  ------------------------------
+	//  ------------------------------
+	//  -----------------------------
+	//  -------------------------------------
 	//
 	// Cluster 2:
 	//                                  ------------
 	//                                     ------------
 	//
 	// Cluster 3:
-	//  ------------------------------
-	//  ------------------------------
-	//  -----------------------------
-	//  -------------------------------------
+	//                                                    -----------------------------------
+	//                                                 --------------------------------------
+	//                                                    --------------------------------
 	//
 	// betweenSS / totalSS = 0.995335
 }
