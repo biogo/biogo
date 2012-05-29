@@ -31,14 +31,12 @@ func NewTimer() (t *Timer) {
 	return
 }
 
-// Start starts timing.  This function is called automatically
-// when a timer is created, but it can also used to resume timing after
-// a call to StopTimer.
-func (self *Timer) Start() { self.start = time.Now() }
+// Start starts timing. This function is called automatically when a timer is created,
+// but it can also used to resume timing after a call to StopTimer.
+func (self *Timer) Start() { self.start = time.Now(); self.interval = self.start }
 
-// Stop stops timing.  This can be used to pause the timer
-// while performing complex initialization that you don't
-// want to measure.
+// Stop stops timing. This can be used to pause the timer while performing complex
+// initialization that you don't want to measure.
 func (self *Timer) Stop() time.Duration {
 	if self.start.After(time.Time{}) {
 		self.nanoseconds += time.Now().Sub(self.start)
