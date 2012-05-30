@@ -23,12 +23,16 @@ import (
 
 var duplicatePair = fmt.Errorf("pals: attempt to add duplicate feature pair to pile")
 
+// A Piler performs the aggregation of feature pairs according to the description in section 2.3
+// of Edgar and Myers (2005) using an interval tree, giving O(nlogn) time but better space complexity
+// and flexibility with feature overlap.
 type Piler struct {
 	intervals interval.Tree
 	seen      map[string]struct{}
 	overlap   int
 }
 
+// NewPiler creates a Piler object ready for piling feature pairs.
 func NewPiler(overlap int) *Piler {
 	return &Piler{
 		intervals: interval.NewTree(),
@@ -37,6 +41,7 @@ func NewPiler(overlap int) *Piler {
 	}
 }
 
+// Add adds a feature pair to the piler incorporating the features into piles where appropriate.
 func (self *Piler) Add(p *FeaturePair) (err error) {
 	a := fmt.Sprintf("%q:[%d,%d)", p.A.Location, p.A.Start, p.A.End)
 	b := fmt.Sprintf("%q:[%d,%d)", p.B.Location, p.B.Start, p.B.End)
@@ -75,6 +80,8 @@ func (self *Piler) merge(i *interval.Interval) {
 	i.Meta = m
 }
 
+// A Pile is a collection of features covering a maximal (potentially contiguous, depending on
+// the value of overlap used for creation of the Piler) region of copy count > 0.
 type Pile struct {
 	Pile   *feat.Feature
 	Images []*FeaturePair
@@ -135,16 +142,14 @@ func (self *Piler) Piles(f PileFilter) (piles []*Pile, err error) {
 	return
 }
 
+// Pile returns the interval representation of the pile containing i.
+// An error is returned if more than one pile would be returned.
 func (self *Piler) Pile(i *interval.Interval) (p *interval.Interval, err error) {
 	c := 0
-	for p = range self.intervals.Intersect(i, 0) {
-		// first sanity check: no interval described in the features should extend beyond the interval
-		if i.Start() < p.Start() || i.End() > p.End() {
-			return nil, fmt.Errorf("pals: internal inconsistency - escaped bounds: %s is outside %s", i, p)
-		}
+	for p = range self.intervals.Contain(i, self.overlap) {
 		c++
 	}
-	// second sanity check: no interval should overlap any other interval
+	// Sanity check: no pile should overlap any other pile within overlap constraints
 	if c > 1 {
 		return nil, fmt.Errorf("pals: internal inconsistency - too many results:", c)
 	}
