@@ -13,11 +13,12 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package cluster_test
+package kmeans_test
 
 import (
 	"fmt"
 	"github.com/kortschak/biogo/cluster"
+	"github.com/kortschak/biogo/cluster/kmeans"
 	"github.com/kortschak/biogo/feat"
 	"strings"
 )
@@ -44,8 +45,8 @@ var feats = []*feat.Feature{
 // Cluster feat.Features on the basis of location where:
 //  epsilon is allowable error, and
 //  effort is number of attempts to achieve error < epsilon for any k.
-func ClusterFeatures(f []*feat.Feature, epsilon float64, effort int) (km *cluster.Kmeans) {
-	km = cluster.NewKmeans(Features(f))
+func ClusterFeatures(f []*feat.Feature, epsilon float64, effort int) cluster.Clusterer {
+	km := kmeans.NewKmeans(Features(f))
 
 	values := km.Values()
 	cut := make([]float64, len(values))
@@ -67,7 +68,7 @@ func ClusterFeatures(f []*feat.Feature, epsilon float64, effort int) (km *cluste
 					continue ATTEMPT
 				}
 			}
-			return
+			return km
 		}
 	}
 

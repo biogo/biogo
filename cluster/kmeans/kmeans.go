@@ -13,70 +13,50 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-// Package cluster provides limited data clustering support.
-//
-// The cluster package is intended to become a more extensive clustering package.
-// At this stage only Lloyd's k-means clustering for ℝ² data is supported.
-package cluster
+// Package kmeans provides Lloyd's k-means clustering for ℝ² data.
+package kmeans
 
 import (
+	"github.com/kortschak/biogo/cluster"
 	"math"
 	"math/rand"
+	"unsafe"
 )
 
-// A type, typically a collection, that satisfies cluster.Interface can be clustered by a Kmeans.
-// The Kmeans Cluster method requires that the elements of the collection be enumerated by an integer index. 
-type Interface interface {
-	Len() int                    // Return the length of the data slice.
-	Values(i int) (x, y float64) // Return the data values for element i as float64.
-}
-
-type val struct {
-	x, y float64
-}
-
-// X returns the x-coordinate of the point.
-func (self val) X() float64 { return self.x }
-
-// Y returns the y-coordinate of the point.
-func (self val) Y() float64 { return self.y }
-
-// A Value is the representation of a data point within the clustering object.
-type Value struct {
-	val
-	cluster int
-}
-
-// Cluster returns the cluster membership of the Value.
-func (self Value) Cluster() int { return self.cluster }
-
-type Center struct {
-	val
-	count int
-}
-
-// Count returns the number of members of the Center's cluster.
-func (self Center) Count() int { return self.count }
+// These types mirror the definitions in cluster.
+type (
+	val struct {
+		x, y float64
+	}
+	value struct {
+		val
+		cluster int
+	}
+	center struct {
+		val
+		count int
+	}
+)
 
 // A Kmeans clusters ℝ² data according to the Lloyd k-means algorithm.
 type Kmeans struct {
-	values []Value
-	means  []Center
+	values []value
+	means  []center
 }
 
-// NewKmeans creates a new Kmeans object populated with data from an Interface value, data.
-func NewKmeans(data Interface) *Kmeans {
+// NewKmeans creates a new k-means Clusterer object populated with data from an Interface value, data.
+func NewKmeans(data cluster.Interface) *Kmeans {
 	return &Kmeans{
 		values: convert(data),
 	}
 }
 
 // Convert the data to the internal float64 representation.
-func convert(data Interface) []Value {
-	va := make([]Value, data.Len())
+func convert(data cluster.Interface) []value {
+	va := make([]value, data.Len())
 	for i := 0; i < data.Len(); i++ {
 		x, y := data.Values(i)
-		va[i] = Value{val: val{x: x, y: y}}
+		va[i] = value{val: val{x: x, y: y}}
 	}
 
 	return va
@@ -84,7 +64,7 @@ func convert(data Interface) []Value {
 
 // Seed generates the initial means for the k-means algorithm.
 func (self *Kmeans) Seed(k int) {
-	self.means = make([]Center, k)
+	self.means = make([]center, k)
 
 	self.means[0].val = self.values[rand.Intn(len(self.values))].val
 	d := make([]float64, len(self.values))
@@ -129,7 +109,7 @@ func (self *Kmeans) Cluster() {
 
 	for {
 		for i := range self.means {
-			self.means[i] = Center{}
+			self.means[i] = center{}
 		}
 		for _, v := range self.values {
 			self.means[v.cluster].x += v.x
@@ -192,10 +172,14 @@ func (self *Kmeans) Within() (ss []float64) {
 }
 
 // Means returns the k-means.
-func (self *Kmeans) Means() (c []Center) { return self.means }
+func (self *Kmeans) Means() (c []cluster.Center) {
+	return *(*[]cluster.Center)(unsafe.Pointer(&self.means))
+}
 
 // Features returns a slice of the values in the Kmeans.
-func (self *Kmeans) Values() (v []Value) { return self.values }
+func (self *Kmeans) Values() (v []cluster.Value) {
+	return *(*[]cluster.Value)(unsafe.Pointer(&self.values))
+}
 
 // Clusters returns the k clusters.
 // Returns nil if Cluster has not been called.

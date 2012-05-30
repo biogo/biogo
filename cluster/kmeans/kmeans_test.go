@@ -13,7 +13,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package cluster_test
+package kmeans_test
 
 import (
 	"github.com/kortschak/biogo/feat"
