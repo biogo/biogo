@@ -203,8 +203,9 @@ func (self Tree) TraverseAll() (result chan *Interval) {
 	result = make(chan *Interval)
 	go func() {
 		for _, c := range self {
-			c.Traverse(result)
+			c.traverse(result) // We must use the private method as this does not close the result chan.
 		}
+		close(result)
 	}()
 
 	return result
