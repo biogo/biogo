@@ -28,28 +28,40 @@ var duplicatePair = fmt.Errorf("pals: attempt to add duplicate feature pair to p
 // and flexibility with feature overlap.
 type Piler struct {
 	intervals interval.Tree
-	seen      map[string]struct{}
+	seen      map[sp]struct{}
 	overlap   int
 }
+
+type (
+	sf struct {
+		loc  string
+		s, e int
+	}
+
+	sp struct {
+		a, b sf
+	}
+)
 
 // NewPiler creates a Piler object ready for piling feature pairs.
 func NewPiler(overlap int) *Piler {
 	return &Piler{
 		intervals: interval.NewTree(),
-		seen:      make(map[string]struct{}),
+		seen:      make(map[sp]struct{}),
 		overlap:   overlap,
 	}
 }
 
 // Add adds a feature pair to the piler incorporating the features into piles where appropriate.
 func (self *Piler) Add(p *FeaturePair) (err error) {
-	a := fmt.Sprintf("%q:[%d,%d)", p.A.Location, p.A.Start, p.A.End)
-	b := fmt.Sprintf("%q:[%d,%d)", p.B.Location, p.B.Start, p.B.End)
+	a := sf{p.A.Location, p.A.Start, p.A.End}
+	b := sf{p.B.Location, p.B.Start, p.B.End}
+	ab, ba := sp{a, b}, sp{b, a}
 
-	if _, ok := self.seen[a+b]; ok {
+	if _, ok := self.seen[ab]; ok {
 		return duplicatePair
 	}
-	if _, ok := self.seen[b+a]; ok {
+	if _, ok := self.seen[ba]; ok {
 		return duplicatePair
 	}
 
@@ -64,8 +76,8 @@ func (self *Piler) Add(p *FeaturePair) (err error) {
 
 	self.merge(ai)
 	self.merge(bi)
-	self.seen[a+b] = struct{}{}
-	self.seen[b+a] = struct{}{}
+	self.seen[ab] = struct{}{}
+	self.seen[ba] = struct{}{}
 
 	return
 }
