@@ -17,9 +17,9 @@ package pals
 
 import (
 	"bytes"
-	"fmt"
 	"code.google.com/p/biogo/seq"
 	"code.google.com/p/biogo/util"
+	"fmt"
 )
 
 var (

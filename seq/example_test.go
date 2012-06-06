@@ -16,9 +16,9 @@
 package seq
 
 import (
-	"fmt"
 	"code.google.com/p/biogo/bio"
 	"code.google.com/p/biogo/feat"
+	"fmt"
 	"strings"
 )
 

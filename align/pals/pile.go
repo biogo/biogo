@@ -16,9 +16,9 @@
 package pals
 
 import (
-	"fmt"
 	"code.google.com/p/biogo/feat"
 	"code.google.com/p/biogo/interval"
+	"fmt"
 )
 
 var duplicatePair = fmt.Errorf("pals: attempt to add duplicate feature pair to pile")

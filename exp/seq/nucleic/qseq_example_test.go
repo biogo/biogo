@@ -16,9 +16,9 @@
 package nucleic
 
 import (
-	"fmt"
 	"code.google.com/p/biogo/exp/alphabet"
 	"code.google.com/p/biogo/exp/seq"
+	"fmt"
 	"strings"
 )
 

@@ -18,9 +18,9 @@ package bed
 
 import (
 	"bufio"
-	"fmt"
 	"code.google.com/p/biogo/bio"
 	"code.google.com/p/biogo/feat"
+	"fmt"
 	"io"
 	"os"
 	"strconv"

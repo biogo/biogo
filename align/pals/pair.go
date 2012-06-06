@@ -16,11 +16,11 @@
 package pals
 
 import (
-	"fmt"
 	"code.google.com/p/biogo/align/pals/dp"
 	"code.google.com/p/biogo/bio"
 	"code.google.com/p/biogo/feat"
 	"code.google.com/p/biogo/seq"
+	"fmt"
 	"strconv"
 	"strings"
 )

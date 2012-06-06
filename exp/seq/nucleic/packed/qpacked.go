@@ -16,7 +16,6 @@
 package packed
 
 import (
-	"fmt"
 	"code.google.com/p/biogo/bio"
 	"code.google.com/p/biogo/exp/alphabet"
 	"code.google.com/p/biogo/exp/seq"
@@ -24,6 +23,7 @@ import (
 	"code.google.com/p/biogo/exp/seq/quality"
 	"code.google.com/p/biogo/exp/seq/sequtils"
 	"code.google.com/p/biogo/feat"
+	"fmt"
 )
 
 // QSeq is a packed nucleic acid with Phred quality scores allowing one byte per quality base.

@@ -20,7 +20,6 @@
 package packed
 
 import (
-	"fmt"
 	"code.google.com/p/biogo/bio"
 	"code.google.com/p/biogo/exp/alphabet"
 	"code.google.com/p/biogo/exp/seq"
@@ -29,6 +28,7 @@ import (
 	"code.google.com/p/biogo/feat"
 	"code.google.com/p/biogo/interval"
 	"code.google.com/p/biogo/util"
+	"fmt"
 )
 
 var emptyString = ""

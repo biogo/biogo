@@ -16,9 +16,9 @@
 package pals
 
 import (
-	"fmt"
 	"code.google.com/p/biogo/feat"
 	"code.google.com/p/biogo/io/featio/gff"
+	"fmt"
 	"io"
 	"os"
 )

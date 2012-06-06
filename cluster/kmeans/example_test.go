@@ -16,10 +16,10 @@
 package kmeans_test
 
 import (
-	"fmt"
 	"code.google.com/p/biogo/cluster"
 	"code.google.com/p/biogo/cluster/kmeans"
 	"code.google.com/p/biogo/feat"
+	"fmt"
 	"strings"
 )
 

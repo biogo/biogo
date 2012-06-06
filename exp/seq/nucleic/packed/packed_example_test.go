@@ -16,11 +16,11 @@
 package packed
 
 import (
-	"fmt"
 	"code.google.com/p/biogo/bio"
 	"code.google.com/p/biogo/exp/alphabet"
 	"code.google.com/p/biogo/exp/seq"
 	"code.google.com/p/biogo/feat"
+	"fmt"
 )
 
 func ExampleNewSeq_1() {

@@ -18,10 +18,10 @@ package fastareader
 
 import (
 	"bufio"
-	"fmt"
 	"code.google.com/p/biogo/bio"
 	lex "code.google.com/p/biogo/io/lexbytes"
 	"code.google.com/p/biogo/seq"
+	"fmt"
 	"io"
 	"os"
 )

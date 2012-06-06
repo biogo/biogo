@@ -19,11 +19,11 @@ package gff
 import (
 	"bufio"
 	"bytes"
-	"fmt"
 	"code.google.com/p/biogo/bio"
 	"code.google.com/p/biogo/feat"
 	"code.google.com/p/biogo/io/seqio/fasta"
 	"code.google.com/p/biogo/seq"
+	"fmt"
 	"io"
 	"os"
 	"strconv"

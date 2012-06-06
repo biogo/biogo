@@ -17,7 +17,6 @@
 package alignment
 
 import (
-	"fmt"
 	"code.google.com/p/biogo/bio"
 	"code.google.com/p/biogo/exp/alphabet"
 	"code.google.com/p/biogo/exp/seq"
@@ -25,6 +24,7 @@ import (
 	"code.google.com/p/biogo/exp/seq/sequtils"
 	"code.google.com/p/biogo/feat"
 	"code.google.com/p/biogo/util"
+	"fmt"
 )
 
 // Alignment nucleic acid.

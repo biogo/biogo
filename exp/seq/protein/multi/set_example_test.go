@@ -16,9 +16,9 @@
 package multi
 
 import (
-	"fmt"
 	"code.google.com/p/biogo/exp/alphabet"
 	"code.google.com/p/biogo/exp/seq/protein"
+	"fmt"
 )
 
 var set Set

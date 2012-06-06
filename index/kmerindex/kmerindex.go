@@ -19,10 +19,10 @@
 package kmerindex
 
 import (
-	"fmt"
 	"code.google.com/p/biogo/bio"
 	"code.google.com/p/biogo/seq"
 	"code.google.com/p/biogo/util"
+	"fmt"
 	"math"
 )
 

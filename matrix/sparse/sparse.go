@@ -19,9 +19,9 @@
 package sparse
 
 import (
+	"code.google.com/p/biogo/matrix"
 	"errors"
 	"fmt"
-	"code.google.com/p/biogo/matrix"
 	"math"
 	"math/rand"
 	"runtime"

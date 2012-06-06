@@ -16,11 +16,11 @@
 package alignment
 
 import (
-	"fmt"
 	"code.google.com/p/biogo/exp/alphabet"
 	"code.google.com/p/biogo/exp/seq"
 	"code.google.com/p/biogo/exp/seq/protein"
 	"code.google.com/p/biogo/feat"
+	"fmt"
 )
 
 var (

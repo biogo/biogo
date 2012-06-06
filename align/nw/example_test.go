@@ -16,8 +16,8 @@
 package nw
 
 import (
-	"fmt"
 	"code.google.com/p/biogo/seq"
+	"fmt"
 )
 
 func ExampleAligner_Align() {

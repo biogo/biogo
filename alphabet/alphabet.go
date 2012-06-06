@@ -16,9 +16,9 @@
 package alphabet
 
 import (
+	"code.google.com/p/biogo/bio"
 	"errors"
 	"fmt"
-	"code.google.com/p/biogo/bio"
 	"sort"
 	"strings"
 	"unicode"

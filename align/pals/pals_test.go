@@ -17,11 +17,11 @@ package pals
 
 import (
 	"bytes"
-	"fmt"
 	"code.google.com/p/biogo/align/pals/dp"
 	"code.google.com/p/biogo/align/pals/filter"
 	"code.google.com/p/biogo/seq"
 	"code.google.com/p/biogo/util"
+	"fmt"
 	check "launchpad.net/gocheck"
 	"math"
 	"testing"
