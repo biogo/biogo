@@ -19,8 +19,8 @@ package interval
 
 import (
 	"fmt"
-	"github.com/kortschak/biogo/bio"
-	"github.com/kortschak/biogo/util"
+	"code.google.com/p/biogo/bio"
+	"code.google.com/p/biogo/util"
 	"math"
 	"math/rand"
 )

@@ -16,8 +16,8 @@
 package pals
 
 import (
-	"github.com/kortschak/biogo/feat"
-	"github.com/kortschak/biogo/interval"
+	"code.google.com/p/biogo/feat"
+	"code.google.com/p/biogo/interval"
 	check "launchpad.net/gocheck"
 )
 

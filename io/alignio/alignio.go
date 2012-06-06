@@ -17,8 +17,8 @@
 package alignio
 
 import (
-	"github.com/kortschak/biogo/io/seqio"
-	"github.com/kortschak/biogo/seq"
+	"code.google.com/p/biogo/io/seqio"
+	"code.google.com/p/biogo/seq"
 	"io"
 )
 

@@ -16,14 +16,14 @@
 package seq_test
 
 import (
-	"github.com/kortschak/biogo/exp/seq"
-	"github.com/kortschak/biogo/exp/seq/nucleic"
-	na "github.com/kortschak/biogo/exp/seq/nucleic/alignment"
-	pm "github.com/kortschak/biogo/exp/seq/nucleic/multi"
-	"github.com/kortschak/biogo/exp/seq/nucleic/packed"
-	"github.com/kortschak/biogo/exp/seq/protein"
-	pa "github.com/kortschak/biogo/exp/seq/protein/alignment"
-	nm "github.com/kortschak/biogo/exp/seq/protein/multi"
+	"code.google.com/p/biogo/exp/seq"
+	"code.google.com/p/biogo/exp/seq/nucleic"
+	na "code.google.com/p/biogo/exp/seq/nucleic/alignment"
+	pm "code.google.com/p/biogo/exp/seq/nucleic/multi"
+	"code.google.com/p/biogo/exp/seq/nucleic/packed"
+	"code.google.com/p/biogo/exp/seq/protein"
+	pa "code.google.com/p/biogo/exp/seq/protein/alignment"
+	nm "code.google.com/p/biogo/exp/seq/protein/multi"
 	"testing"
 )
 

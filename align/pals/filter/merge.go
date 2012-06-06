@@ -16,8 +16,8 @@
 package filter
 
 import (
-	"github.com/kortschak/biogo/index/kmerindex"
-	"github.com/kortschak/biogo/seq"
+	"code.google.com/p/biogo/index/kmerindex"
+	"code.google.com/p/biogo/seq"
 	"sort"
 )
 

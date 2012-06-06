@@ -19,9 +19,9 @@ package fasta
 import (
 	"bufio"
 	"bytes"
-	"github.com/kortschak/biogo/bio"
-	"github.com/kortschak/biogo/seq"
-	"github.com/kortschak/biogo/util"
+	"code.google.com/p/biogo/bio"
+	"code.google.com/p/biogo/seq"
+	"code.google.com/p/biogo/util"
 	"io"
 	"os"
 )

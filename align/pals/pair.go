@@ -17,10 +17,10 @@ package pals
 
 import (
 	"fmt"
-	"github.com/kortschak/biogo/align/pals/dp"
-	"github.com/kortschak/biogo/bio"
-	"github.com/kortschak/biogo/feat"
-	"github.com/kortschak/biogo/seq"
+	"code.google.com/p/biogo/align/pals/dp"
+	"code.google.com/p/biogo/bio"
+	"code.google.com/p/biogo/feat"
+	"code.google.com/p/biogo/seq"
 	"strconv"
 	"strings"
 )

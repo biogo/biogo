@@ -21,7 +21,7 @@ package sparse
 import (
 	"errors"
 	"fmt"
-	"github.com/kortschak/biogo/matrix"
+	"code.google.com/p/biogo/matrix"
 	"math"
 	"math/rand"
 	"runtime"

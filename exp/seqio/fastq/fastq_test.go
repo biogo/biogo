@@ -17,8 +17,8 @@ package fastq
 
 import (
 	"bytes"
-	"github.com/kortschak/biogo/exp/alphabet"
-	"github.com/kortschak/biogo/exp/seq/nucleic"
+	"code.google.com/p/biogo/exp/alphabet"
+	"code.google.com/p/biogo/exp/seq/nucleic"
 	"io"
 	check "launchpad.net/gocheck"
 	"testing"

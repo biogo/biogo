@@ -17,9 +17,9 @@
 package dp
 
 import (
-	"github.com/kortschak/biogo/align/pals/filter"
-	"github.com/kortschak/biogo/bio"
-	"github.com/kortschak/biogo/seq"
+	"code.google.com/p/biogo/align/pals/filter"
+	"code.google.com/p/biogo/bio"
+	"code.google.com/p/biogo/seq"
 	"sort"
 )
 

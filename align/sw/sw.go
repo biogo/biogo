@@ -17,9 +17,9 @@
 package sw
 
 import (
-	"github.com/kortschak/biogo/bio"
-	"github.com/kortschak/biogo/seq"
-	"github.com/kortschak/biogo/util"
+	"code.google.com/p/biogo/bio"
+	"code.google.com/p/biogo/seq"
+	"code.google.com/p/biogo/util"
 )
 
 // Default character table lookups.

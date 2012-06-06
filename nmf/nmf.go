@@ -19,8 +19,8 @@
 package nmf
 
 import (
-	"github.com/kortschak/biogo/matrix"
-	"github.com/kortschak/biogo/matrix/sparse"
+	"code.google.com/p/biogo/matrix"
+	"code.google.com/p/biogo/matrix/sparse"
 	"math"
 	"time"
 )

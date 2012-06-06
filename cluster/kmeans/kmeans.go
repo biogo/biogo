@@ -17,7 +17,7 @@
 package kmeans
 
 import (
-	"github.com/kortschak/biogo/cluster"
+	"code.google.com/p/biogo/cluster"
 	"math"
 	"math/rand"
 	"unsafe"

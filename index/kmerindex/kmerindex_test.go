@@ -16,8 +16,8 @@
 package kmerindex
 
 import (
-	"github.com/kortschak/biogo/seq"
-	"github.com/kortschak/biogo/util"
+	"code.google.com/p/biogo/seq"
+	"code.google.com/p/biogo/util"
 	check "launchpad.net/gocheck"
 	"math/rand"
 	"testing"

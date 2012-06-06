@@ -16,7 +16,7 @@
 // Packages for reading and writing features
 package featio
 
-import "github.com/kortschak/biogo/feat"
+import "code.google.com/p/biogo/feat"
 
 type Reader interface {
 	Read() (*feat.Feature, error)

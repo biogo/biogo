@@ -18,9 +18,9 @@ package fasta
 import (
 	"bytes"
 	"fmt"
-	"github.com/kortschak/biogo/exp/alphabet"
-	"github.com/kortschak/biogo/exp/seq/nucleic/packed"
-	"github.com/kortschak/biogo/exp/seq/protein"
+	"code.google.com/p/biogo/exp/alphabet"
+	"code.google.com/p/biogo/exp/seq/nucleic/packed"
+	"code.google.com/p/biogo/exp/seq/protein"
 	"io"
 	check "launchpad.net/gocheck"
 	"testing"

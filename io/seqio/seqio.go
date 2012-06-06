@@ -16,7 +16,7 @@
 // Packages for reading and writing sequence files
 package seqio
 
-import "github.com/kortschak/biogo/seq"
+import "code.google.com/p/biogo/seq"
 
 type Reader interface {
 	Read() (*seq.Seq, error)

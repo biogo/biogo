@@ -17,7 +17,7 @@ package concurrent_test
 
 import (
 	"fmt"
-	"github.com/kortschak/biogo/concurrent"
+	"code.google.com/p/biogo/concurrent"
 	"time"
 )
 

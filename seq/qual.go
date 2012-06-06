@@ -16,10 +16,10 @@
 package seq
 
 import (
-	"github.com/kortschak/biogo/bio"
-	"github.com/kortschak/biogo/feat"
-	"github.com/kortschak/biogo/interval"
-	"github.com/kortschak/biogo/util"
+	"code.google.com/p/biogo/bio"
+	"code.google.com/p/biogo/feat"
+	"code.google.com/p/biogo/interval"
+	"code.google.com/p/biogo/util"
 )
 
 type Quality struct {

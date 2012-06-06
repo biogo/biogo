@@ -17,9 +17,9 @@
 package sanger
 
 import (
-	"github.com/kortschak/biogo/exp/alphabet"
-	"github.com/kortschak/biogo/exp/seq"
-	"github.com/kortschak/biogo/exp/seq/quality"
+	"code.google.com/p/biogo/exp/alphabet"
+	"code.google.com/p/biogo/exp/seq"
+	"code.google.com/p/biogo/exp/seq/quality"
 )
 
 type Sanger struct {

@@ -17,7 +17,7 @@ package sw
 
 import (
 	"fmt"
-	"github.com/kortschak/biogo/seq"
+	"code.google.com/p/biogo/seq"
 )
 
 func ExampleAligner_Align() {

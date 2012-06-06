@@ -17,7 +17,7 @@
 package feat
 
 import (
-	"github.com/kortschak/biogo/bio"
+	"code.google.com/p/biogo/bio"
 	"strconv"
 )
 

@@ -19,10 +19,10 @@ package fasta
 import (
 	"bufio"
 	"bytes"
-	"github.com/kortschak/biogo/bio"
-	"github.com/kortschak/biogo/exp/alphabet"
-	"github.com/kortschak/biogo/exp/seq"
-	"github.com/kortschak/biogo/exp/seqio"
+	"code.google.com/p/biogo/bio"
+	"code.google.com/p/biogo/exp/alphabet"
+	"code.google.com/p/biogo/exp/seq"
+	"code.google.com/p/biogo/exp/seqio"
 	"io"
 )
 

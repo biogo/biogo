@@ -23,8 +23,8 @@
 package seq
 
 import (
-	"github.com/kortschak/biogo/exp/alphabet"
-	"github.com/kortschak/biogo/feat"
+	"code.google.com/p/biogo/exp/alphabet"
+	"code.google.com/p/biogo/feat"
 )
 
 const (

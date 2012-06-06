@@ -16,9 +16,9 @@
 package seqio_test
 
 import (
-	"github.com/kortschak/biogo/exp/seqio"
-	"github.com/kortschak/biogo/exp/seqio/fasta"
-	"github.com/kortschak/biogo/exp/seqio/fastq"
+	"code.google.com/p/biogo/exp/seqio"
+	"code.google.com/p/biogo/exp/seqio/fasta"
+	"code.google.com/p/biogo/exp/seqio/fastq"
 	"testing"
 )
 

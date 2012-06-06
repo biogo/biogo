@@ -16,10 +16,10 @@
 package dp
 
 import (
-	"github.com/kortschak/biogo/align/pals/filter"
-	"github.com/kortschak/biogo/align/sw"
-	"github.com/kortschak/biogo/seq"
-	"github.com/kortschak/biogo/util"
+	"code.google.com/p/biogo/align/pals/filter"
+	"code.google.com/p/biogo/align/sw"
+	"code.google.com/p/biogo/seq"
+	"code.google.com/p/biogo/util"
 	check "launchpad.net/gocheck"
 	"testing"
 )

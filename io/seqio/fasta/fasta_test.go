@@ -16,7 +16,7 @@
 package fasta
 
 import (
-	"github.com/kortschak/biogo/seq"
+	"code.google.com/p/biogo/seq"
 	"io"
 	"io/ioutil"
 	check "launchpad.net/gocheck"

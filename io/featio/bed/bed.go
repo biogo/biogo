@@ -19,8 +19,8 @@ package bed
 import (
 	"bufio"
 	"fmt"
-	"github.com/kortschak/biogo/bio"
-	"github.com/kortschak/biogo/feat"
+	"code.google.com/p/biogo/bio"
+	"code.google.com/p/biogo/feat"
 	"io"
 	"os"
 	"strconv"

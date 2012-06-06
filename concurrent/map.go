@@ -16,8 +16,8 @@
 package concurrent
 
 import (
-	"github.com/kortschak/biogo/bio"
-	"github.com/kortschak/biogo/util"
+	"code.google.com/p/biogo/bio"
+	"code.google.com/p/biogo/util"
 	"math"
 )
 

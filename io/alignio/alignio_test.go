@@ -16,8 +16,8 @@
 package alignio
 
 import (
-	"github.com/kortschak/biogo/io/seqio/fasta"
-	"github.com/kortschak/biogo/io/seqio/fastq"
+	"code.google.com/p/biogo/io/seqio/fasta"
+	"code.google.com/p/biogo/io/seqio/fastq"
 	check "launchpad.net/gocheck"
 	"testing"
 )

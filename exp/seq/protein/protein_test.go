@@ -16,7 +16,7 @@
 package protein
 
 import (
-	//"github.com/kortschak/biogo/feat"
+	//"code.google.com/p/biogo/feat"
 	check "launchpad.net/gocheck"
 	//"reflect"
 	"testing"

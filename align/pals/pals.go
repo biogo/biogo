@@ -17,13 +17,13 @@
 package pals
 
 import (
-	"github.com/kortschak/biogo/align/pals/dp"
-	"github.com/kortschak/biogo/align/pals/filter"
-	"github.com/kortschak/biogo/bio"
-	"github.com/kortschak/biogo/index/kmerindex"
-	"github.com/kortschak/biogo/morass"
-	"github.com/kortschak/biogo/seq"
-	"github.com/kortschak/biogo/util"
+	"code.google.com/p/biogo/align/pals/dp"
+	"code.google.com/p/biogo/align/pals/filter"
+	"code.google.com/p/biogo/bio"
+	"code.google.com/p/biogo/index/kmerindex"
+	"code.google.com/p/biogo/morass"
+	"code.google.com/p/biogo/seq"
+	"code.google.com/p/biogo/util"
 	"io"
 	"os"
 	"unsafe"

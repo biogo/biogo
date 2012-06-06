@@ -21,8 +21,8 @@
 package protein
 
 import (
-	"github.com/kortschak/biogo/exp/alphabet"
-	"github.com/kortschak/biogo/exp/seq"
+	"code.google.com/p/biogo/exp/alphabet"
+	"code.google.com/p/biogo/exp/seq"
 	"math"
 )
 

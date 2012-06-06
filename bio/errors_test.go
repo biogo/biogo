@@ -37,7 +37,7 @@ func (s *S) TestCaller(c *check.C) {
 	fn, ln := err.FileLine()
 	c.Check(fn, check.Matches, "/.*/biogo/bio/errors_test.go")
 	c.Check(ln, check.Equals, 35)
-	c.Check(err.Package(), check.Equals, "github.com/kortschak/biogo/bio.(*S)")
+	c.Check(err.Package(), check.Equals, "code.google.com/p/biogo/bio.(*S)")
 	c.Check(err.Function(), check.Equals, "TestCaller")
 	err = f(5).(Error)
 	fmt.Println(err.Tracef(10))

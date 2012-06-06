@@ -18,13 +18,13 @@ package multi
 
 import (
 	"fmt"
-	"github.com/kortschak/biogo/bio"
-	"github.com/kortschak/biogo/exp/alphabet"
-	"github.com/kortschak/biogo/exp/seq"
-	"github.com/kortschak/biogo/exp/seq/protein"
-	"github.com/kortschak/biogo/feat"
-	"github.com/kortschak/biogo/interval"
-	"github.com/kortschak/biogo/util"
+	"code.google.com/p/biogo/bio"
+	"code.google.com/p/biogo/exp/alphabet"
+	"code.google.com/p/biogo/exp/seq"
+	"code.google.com/p/biogo/exp/seq/protein"
+	"code.google.com/p/biogo/feat"
+	"code.google.com/p/biogo/interval"
+	"code.google.com/p/biogo/util"
 	"reflect"
 	"sync"
 )

@@ -16,8 +16,8 @@
 package bed
 
 import (
-	"github.com/kortschak/biogo/bio"
-	"github.com/kortschak/biogo/feat"
+	"code.google.com/p/biogo/bio"
+	"code.google.com/p/biogo/feat"
 	"io"
 	"io/ioutil"
 	check "launchpad.net/gocheck"

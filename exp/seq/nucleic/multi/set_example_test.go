@@ -17,8 +17,8 @@ package multi
 
 import (
 	"fmt"
-	"github.com/kortschak/biogo/exp/alphabet"
-	"github.com/kortschak/biogo/exp/seq/nucleic"
+	"code.google.com/p/biogo/exp/alphabet"
+	"code.google.com/p/biogo/exp/seq/nucleic"
 )
 
 var set Set

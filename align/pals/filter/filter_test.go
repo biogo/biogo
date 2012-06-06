@@ -16,10 +16,10 @@
 package filter
 
 import (
-	"github.com/kortschak/biogo/index/kmerindex"
-	"github.com/kortschak/biogo/morass"
-	"github.com/kortschak/biogo/seq"
-	"github.com/kortschak/biogo/util"
+	"code.google.com/p/biogo/index/kmerindex"
+	"code.google.com/p/biogo/morass"
+	"code.google.com/p/biogo/seq"
+	"code.google.com/p/biogo/util"
 	check "launchpad.net/gocheck"
 	"testing"
 )

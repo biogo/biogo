@@ -18,7 +18,7 @@ package alphabet
 import (
 	"errors"
 	"fmt"
-	"github.com/kortschak/biogo/bio"
+	"code.google.com/p/biogo/bio"
 	"sort"
 	"strings"
 	"unicode"

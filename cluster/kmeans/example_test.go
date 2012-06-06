@@ -17,9 +17,9 @@ package kmeans_test
 
 import (
 	"fmt"
-	"github.com/kortschak/biogo/cluster"
-	"github.com/kortschak/biogo/cluster/kmeans"
-	"github.com/kortschak/biogo/feat"
+	"code.google.com/p/biogo/cluster"
+	"code.google.com/p/biogo/cluster/kmeans"
+	"code.google.com/p/biogo/feat"
 	"strings"
 )
 

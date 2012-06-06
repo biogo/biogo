@@ -16,7 +16,7 @@
 // Packages for reading and writing sequence files
 package seqio
 
-import "github.com/kortschak/biogo/exp/seq"
+import "code.google.com/p/biogo/exp/seq"
 
 // A Sequence is a generic sequence type.
 type Sequence interface {

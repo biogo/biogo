@@ -17,9 +17,9 @@
 package kmercolor
 
 import (
-	"github.com/kortschak/biogo/graphics/color"
-	"github.com/kortschak/biogo/index/kmerindex"
-	"github.com/kortschak/biogo/util"
+	"code.google.com/p/biogo/graphics/color"
+	"code.google.com/p/biogo/index/kmerindex"
+	"code.google.com/p/biogo/util"
 	"image"
 	imagecolor "image/color"
 )

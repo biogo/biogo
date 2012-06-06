@@ -16,7 +16,7 @@
 package sw
 
 import (
-	"github.com/kortschak/biogo/io/seqio/fasta"
+	"code.google.com/p/biogo/io/seqio/fasta"
 	check "launchpad.net/gocheck"
 	"testing"
 )
