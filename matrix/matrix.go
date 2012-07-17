@@ -1,5 +1,4 @@
 // Copyright ©2011-2012 Dan Kortschak <dan.kortschak@adelaide.edu.au>
-// Derived from quicksect.py of bx-python ©James Taylor bitbucket.org/james_taylor/bx-python
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
