@@ -191,4 +191,25 @@ func (self *Phred) Compose(f feat.FeatureSet) (err error) {
 	return
 }
 
+type QualityFeature interface {
+	EAt(seq.Position) float64
+	Start() int
+	End() int
+}
+
+// Trim uses the modified-Mott trimming function to determine the start and end positions of good sequence.
+func Trim(q QualityFeature, limit float64) (start, end int) {
+	var sum, max float64
+	for i := q.Start(); i < q.End(); i++ {
+		sum += limit - q.EAt(seq.Position{Pos: i})
+		if sum < 0 {
+			sum, start = 0, i+1
+		}
+		if sum >= max {
+			max, end = sum, i+1
+		}
+	}
+	return
+}
+
 func (self *Phred) String() string { return self.Stringify(self) }
