@@ -325,7 +325,7 @@ func (self *Interval) Right() *Interval { return self.right }
 
 func (self *Interval) adjustRange() {
 	if self.left != nil && self.right != nil {
-		self.minStart = util.Min(self.start, self.left.minStart, self.right.minStart)
+		self.minStart = util.Min(self.start, self.left.minStart)
 		self.maxEnd = util.Max(self.end, self.left.maxEnd, self.right.maxEnd)
 	} else if self.left != nil {
 		self.minStart = util.Min(self.start, self.left.minStart)
