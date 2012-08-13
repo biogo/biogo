@@ -769,3 +769,99 @@ func BenchmarkTreeFastRemove1e3(b *testing.B) {
 func BenchmarkTreeFastRemove1e4(b *testing.B) {
 	repeatFastRemove(b, 1e4)
 }
+
+// Benchmarks to compare with llrb
+
+func BenchmarkInsertCf(b *testing.B) {
+	var (
+		t      = NewTree()
+		length = 10
+	)
+	for i := 0; i < b.N; i++ {
+		s := b.N - i
+		iv, _ := New("", s, s+length, 0, nil)
+		t.Insert(iv)
+	}
+}
+
+func BenchmarkGetCf(b *testing.B) {
+	b.StopTimer()
+	var (
+		t      = NewTree()
+		length = 10
+	)
+	for i := 0; i < b.N; i++ {
+		s := b.N - i
+		iv, _ := New("", s, s+length, 0, nil)
+		t.Insert(iv)
+	}
+	b.StartTimer()
+	for i := 0; i < b.N; i++ {
+		s := b.N - i
+		iv, _ := New("", s, s+length, 0, nil)
+		var m *Interval
+		for r := range t.Intersect(iv, 0) {
+			m = r
+		}
+		_ = m
+	}
+}
+
+func BenchmarkMinCf(b *testing.B) {
+	b.StopTimer()
+	var (
+		t      = NewTree()
+		length = 10
+	)
+	for i := 0; i < b.N; i++ {
+		s := b.N - i
+		iv, _ := New("", s, s+length, 0, nil)
+		t.Insert(iv)
+	}
+	b.StartTimer()
+	var m *Interval
+	for i := 0; i < b.N; i++ {
+		m = t.LeftMost("")
+	}
+	_ = m
+}
+
+func BenchmarkMaxCf(b *testing.B) {
+	b.StopTimer()
+	var (
+		t      = NewTree()
+		length = 10
+	)
+	for i := 0; i < b.N; i++ {
+		s := b.N - i
+		iv, _ := New("", s, s+length, 0, nil)
+		t.Insert(iv)
+	}
+	b.StartTimer()
+	var m *Interval
+	for i := 0; i < b.N; i++ {
+		m = t.RightMost("")
+	}
+	_ = m
+}
+
+func BenchmarkDeleteCf(b *testing.B) {
+	b.StopTimer()
+	var (
+		t      = NewTree()
+		length = 1
+	)
+	for i := 0; i < b.N; i++ {
+		s := b.N - i
+		iv, _ := New("", s, s+length, 0, nil)
+		t.Insert(iv)
+	}
+	b.StartTimer()
+	for i := 0; i < b.N; i++ {
+		s := b.N - i
+		iv, _ := New("", s, s+length, 0, nil)
+		for r := range t.Intersect(iv, 1) {
+			t.Remove(r)
+		}
+	}
+}
