@@ -16,9 +16,10 @@
 package pals
 
 import (
+	"code.google.com/p/biogo.interval"
 	"code.google.com/p/biogo/feat"
-	"code.google.com/p/biogo/interval"
 	"fmt"
+	"unsafe"
 )
 
 var duplicatePair = fmt.Errorf("pals: attempt to add duplicate feature pair to pile")
@@ -27,7 +28,7 @@ var duplicatePair = fmt.Errorf("pals: attempt to add duplicate feature pair to p
 // of Edgar and Myers (2005) using an interval tree, giving O(nlogn) time but better space complexity
 // and flexibility with feature overlap.
 type Piler struct {
-	intervals interval.Tree
+	intervals map[string]*interval.IntTree
 	seen      map[sp]struct{}
 	overlap   int
 }
@@ -43,10 +44,35 @@ type (
 	}
 )
 
+type PileInterval struct {
+	Start, End int
+	Location   string
+	Pairs      []*FeaturePair
+	overlap    int
+}
+
+func (i *PileInterval) Overlap(b interval.IntRange) bool {
+	return i.End-i.overlap >= b.Start && i.Start <= b.End-i.overlap
+}
+func (i *PileInterval) ID() uintptr              { return uintptr(unsafe.Pointer(i)) }
+func (i *PileInterval) Range() interval.IntRange { return interval.IntRange{i.Start, i.End} }
+
+type ContainQuery struct {
+	Start, End int
+	Slop       int
+	Location   string
+}
+
+func (i *ContainQuery) Overlap(b interval.IntRange) bool {
+	return b.Start <= i.Start+i.Slop && b.End >= i.End-i.Slop
+}
+func (i *ContainQuery) ID() uintptr              { return 0 }
+func (i *ContainQuery) Range() interval.IntRange { return interval.IntRange{i.Start, i.End} }
+
 // NewPiler creates a Piler object ready for piling feature pairs.
 func NewPiler(overlap int) *Piler {
 	return &Piler{
-		intervals: interval.NewTree(),
+		intervals: make(map[string]*interval.IntTree),
 		seen:      make(map[sp]struct{}),
 		overlap:   overlap,
 	}
@@ -65,31 +91,58 @@ func (self *Piler) Add(p *FeaturePair) (err error) {
 		return duplicatePair
 	}
 
-	ai, err := interval.New(string(p.A.Location), p.A.Start, p.A.End, 0, []*FeaturePair{p})
-	if err != nil {
-		return
-	}
-	bi, err := interval.New(string(p.B.Location), p.B.Start, p.B.End, 0, []*FeaturePair(nil))
-	if err != nil {
-		return
-	}
-
-	self.merge(ai)
-	self.merge(bi)
+	self.merge(&PileInterval{p.A.Start, p.A.End, string(p.A.Location), []*FeaturePair{p}, self.overlap})
+	self.merge(&PileInterval{p.B.Start, p.B.End, string(p.B.Location), nil, self.overlap})
 	self.seen[ab] = struct{}{}
 	self.seen[ba] = struct{}{}
 
 	return
 }
 
-// merge an interval into the tree adding meta data from the replaced intervals into the new interval
-func (self *Piler) merge(i *interval.Interval) {
-	rc := self.intervals.Merge(i, self.overlap)
-	m := i.Meta.([]*FeaturePair)
-	for _, ri := range rc {
-		m = append(m, ri.Meta.([]*FeaturePair)...)
+func min(a, b int) int {
+	if a < b {
+		return a
 	}
-	i.Meta = m
+	return b
+}
+
+func max(a, b int) int {
+	if a > b {
+		return a
+	}
+	return b
+}
+
+// merge an interval into the tree adding meta data from the replaced intervals into the new interval
+func (self *Piler) merge(pi *PileInterval) {
+	var (
+		f  = true
+		r  []interval.IntInterface
+		qi = &PileInterval{Start: pi.Start, End: pi.End}
+	)
+	t, ok := self.intervals[pi.Location]
+	if !ok {
+		t = &interval.IntTree{}
+		self.intervals[pi.Location] = t
+	}
+	t.DoMatching(
+		func(e interval.IntInterface) (done bool) {
+			iv := e.(*PileInterval)
+			r = append(r, e)
+			pi.Pairs = append(pi.Pairs, iv.Pairs...)
+			if f {
+				pi.Start = min(iv.Start, pi.Start)
+				f = false
+			}
+			pi.End = max(iv.End, pi.End)
+			return
+		},
+		qi,
+	)
+	for _, d := range r {
+		t.Delete(d, false)
+	}
+	t.Insert(pi, false)
 }
 
 // A Pile is a collection of features covering a maximal (potentially contiguous, depending on
@@ -100,50 +153,61 @@ type Pile struct {
 }
 
 // A PileFilter is used to determine whether a FeaturePair is included in a Pile
-type PileFilter func(a, b *feat.Feature, pa, pb *interval.Interval) bool
+type PileFilter func(a, b *feat.Feature, pa, pb *PileInterval) bool
 
 // We use the Features' Meta field to point back to the containing Pile, so Meta cannot be used for other things here.
 func (self *Piler) Piles(f PileFilter) (piles []*Pile, err error) {
-	pm := make(map[*interval.Interval]*Pile)
+	pm := make(map[*PileInterval]*Pile)
 
-	for pa := range self.intervals.TraverseAll() {
-		var bi, pb *interval.Interval
-		for _, p := range pa.Meta.([]*FeaturePair) {
-			bi, err = interval.New(p.B.Location, p.B.Start, p.B.End, 0, nil)
-			if err != nil {
-				return
-			}
-			pb, err = self.Pile(bi)
-			if err != nil {
-				return
-			}
+	for _, t := range self.intervals {
+		t.Do(
+			func(e interval.IntInterface) (done bool) {
+				var (
+					pa = e.(*PileInterval)
+					pb *PileInterval
+				)
+				for _, p := range pa.Pairs {
+					pb, err = self.Pile(
+						&ContainQuery{
+							Start:    p.B.Start,
+							End:      p.B.End,
+							Location: p.B.Location,
+							Slop:     self.overlap,
+						},
+					)
+					if err != nil {
+						return
+					}
 
-			if f != nil && !f(p.A, p.B, pa, pb) {
-				continue
-			}
-			if wp, ok := pm[pa]; !ok {
-				tp := &Pile{
-					Pile:   &feat.Feature{Location: pa.Segment(), Start: pa.Start(), End: pa.End()},
-					Images: []*FeaturePair{p},
+					if f != nil && !f(p.A, p.B, pa, pb) {
+						continue
+					}
+					if wp, ok := pm[pa]; !ok {
+						tp := &Pile{
+							Pile:   &feat.Feature{Location: pa.Location, Start: pa.Start, End: pa.End},
+							Images: []*FeaturePair{p},
+						}
+						p.A.Meta = tp
+						pm[pa] = tp
+					} else {
+						p.A.Meta = wp
+						wp.Images = append(wp.Images, p)
+					}
+					if wp, ok := pm[pb]; !ok {
+						tp := &Pile{
+							Pile:   &feat.Feature{Location: pb.Location, Start: pb.Start, End: pb.End},
+							Images: []*FeaturePair{p.Invert()},
+						}
+						p.B.Meta = tp
+						pm[pb] = tp
+					} else {
+						p.B.Meta = wp
+						wp.Images = append(wp.Images, p.Invert())
+					}
 				}
-				p.A.Meta = tp
-				pm[pa] = tp
-			} else {
-				p.A.Meta = wp
-				wp.Images = append(wp.Images, p)
-			}
-			if wp, ok := pm[pb]; !ok {
-				tp := &Pile{
-					Pile:   &feat.Feature{Location: pb.Segment(), Start: pb.Start(), End: pb.End()},
-					Images: []*FeaturePair{p.Invert()},
-				}
-				p.B.Meta = tp
-				pm[pb] = tp
-			} else {
-				p.B.Meta = wp
-				wp.Images = append(wp.Images, p.Invert())
-			}
-		}
+				return
+			},
+		)
 	}
 
 	piles = make([]*Pile, 0, len(pm))
@@ -156,15 +220,27 @@ func (self *Piler) Piles(f PileFilter) (piles []*Pile, err error) {
 
 // Pile returns the interval representation of the pile containing i.
 // An error is returned if more than one pile would be returned.
-func (self *Piler) Pile(i *interval.Interval) (p *interval.Interval, err error) {
-	c := 0
-	for p = range self.intervals.Contain(i, self.overlap) {
-		c++
-	}
+func (self *Piler) Pile(qi *ContainQuery) (p *PileInterval, err error) {
+	var (
+		t  = self.intervals[qi.Location]
+		c  = 0
+		pt interval.IntInterface
+	)
+
+	t.DoMatching(
+		func(e interval.IntInterface) (done bool) {
+			c++
+			pt = e
+			return
+		},
+		qi,
+	)
+
 	// Sanity check: no pile should overlap any other pile within overlap constraints
 	if c > 1 {
 		return nil, fmt.Errorf("pals: internal inconsistency - too many results:", c)
 	}
+	p = pt.(*PileInterval)
 
 	return
 }
