@@ -107,7 +107,9 @@ type Qscore interface {
 	String() string
 }
 
-type Qphred int8
+var nan = math.NaN()
+
+type Qphred byte
 
 func DecodeToQphred(q byte, encoding Encoding) (p Qphred) {
 	switch encoding {
@@ -124,32 +126,43 @@ func DecodeToQphred(q byte, encoding Encoding) (p Qphred) {
 
 func Ephred(p float64) Qphred {
 	if p == 0 {
-		return 127
+		return 254
+	}
+	if math.IsNaN(p) {
+		return 255
 	}
 	Q := -10 * math.Log10(p)
-	if Q > 127 {
-		Q = 127
+	if Q > 254 {
+		Q = 254
 	}
 	return Qphred(Q)
 }
 
 func (self Qphred) ProbE() float64 {
-	if self == 127 {
+	if self == 254 {
 		return 0
+	} else if self == 255 {
+		return nan
 	}
 	return math.Pow(10, -(float64(self) / 10))
 }
 
 func (self Qphred) Qsolexa() Qsolexa {
-	if self == 127 {
+	if self == 254 {
 		return 127
+	}
+	if self == 255 {
+		return -128
 	}
 	return Qsolexa(10 * math.Log10(math.Pow(10, float64(self)/10)-1))
 }
 
 func (self Qphred) Encode(encoding Encoding) (q byte) {
-	if self == 127 {
-		return 126
+	if self == 254 {
+		return '~'
+	}
+	if self == 255 {
+		return ' '
 	}
 	switch encoding {
 	case Sanger, Illumina1_8, Illumina1_9:
@@ -182,8 +195,10 @@ func (self Qphred) Encode(encoding Encoding) (q byte) {
 }
 
 func (self Qphred) String() string {
-	if self < 127 {
+	if self < 254 {
 		return string([]byte{byte(self)})
+	} else if self == 255 {
+		return " "
 	}
 	return "\u221e"
 }
@@ -207,6 +222,9 @@ func Esolexa(p float64) Qsolexa {
 	if p == 0 {
 		return 127
 	}
+	if math.IsNaN(p) {
+		return -128
+	}
 	return Qsolexa(-10 * math.Log10(p/(1-p)))
 }
 
@@ -214,20 +232,29 @@ func (self Qsolexa) ProbE() float64 {
 	if self == 127 {
 		return 0
 	}
+	if self == -128 {
+		return nan
+	}
 	pq := math.Pow(10, -(float64(self) / 10))
 	return pq / (1 + pq)
 }
 
 func (self Qsolexa) Qphred() Qphred {
 	if self == 127 {
-		return 127
+		return 254
+	}
+	if self == -128 {
+		return 255
 	}
 	return Qphred(10 * math.Log10(math.Pow(10, float64(self)/10)+1))
 }
 
 func (self Qsolexa) Encode(encoding Encoding) (q byte) {
 	if self == 127 {
-		return 126
+		return '~'
+	}
+	if self == -128 {
+		return ' '
 	}
 	switch encoding {
 	case Sanger, Illumina1_8:
@@ -259,8 +286,10 @@ func (self Qsolexa) Encode(encoding Encoding) (q byte) {
 }
 
 func (self Qsolexa) String() string {
-	if self < 127 {
+	if self < 127 && self != -128 {
 		return string([]byte{byte(self)})
+	} else if self == -128 {
+		return " "
 	}
 	return "\u221e"
 }
