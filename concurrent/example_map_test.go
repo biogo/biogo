@@ -38,17 +38,23 @@ func ExampleMap() {
 	c := CountConsumer{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
 	fmt.Println(c)
 
-	result, err := concurrent.Map(c, 1, 2)
-	if err != nil {
-		fmt.Println(err)
-	} else {
-		fmt.Println(result)
+	for c.Len() > 1 {
+		result, err := concurrent.Map(c, 1, 2)
+		if err != nil {
+			fmt.Println(err)
+		} else {
+			fmt.Println(result)
+			c = c[:0]
+			for _, r := range result {
+				c = append(c, r.(int))
+			}
+		}
 	}
-
-	fmt.Println(c)
 
 	// Output:
 	// [1 2 3 4 5 6 7 8 9 10]
 	// [3 7 11 15 19]
-	// [0 0 0 0 0 0 0 0 0 0]
+	// [10 26 19]
+	// [36 19]
+	// [55]
 }
