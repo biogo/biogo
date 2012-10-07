@@ -24,38 +24,38 @@ type Trapezoid struct {
 
 // Move the receiver from the head of the current list to follow element.
 // Returns the subsequent Trapezoid of the current list.
-func (self *Trapezoid) shunt(element *Trapezoid) (head *Trapezoid) {
-	head = self.Next
-	*self = *element
-	element.join(self)
+func (tr *Trapezoid) shunt(element *Trapezoid) (head *Trapezoid) {
+	head = tr.Next
+	*tr = *element
+	element.join(tr)
 	return
 }
 
 // Joing list to the receiver, returning the reciever.
-func (self *Trapezoid) join(list *Trapezoid) *Trapezoid {
-	self.Next = list
-	return self
+func (tr *Trapezoid) join(list *Trapezoid) *Trapezoid {
+	tr.Next = list
+	return tr
 }
 
 // Return the receiver and the subsequent Trapezoid in the list.
-func (self *Trapezoid) decapitate() (*Trapezoid, *Trapezoid) {
-	return self, self.Next
+func (tr *Trapezoid) decapitate() (*Trapezoid, *Trapezoid) {
+	return tr, tr.Next
 }
 
 // Trapezoid timming method used during merge.
-func (self *Trapezoid) clip(lagPosition, lagClip int) {
-	if bottom := lagClip + self.Left; self.Bottom < bottom {
-		self.Bottom = bottom
+func (tr *Trapezoid) clip(lagPosition, lagClip int) {
+	if bottom := lagClip + tr.Left; tr.Bottom < bottom {
+		tr.Bottom = bottom
 	}
-	if top := lagPosition + self.Right; self.Top > top {
-		self.Top = top
+	if top := lagPosition + tr.Right; tr.Top > top {
+		tr.Top = top
 	}
-	midPosition := (self.Bottom + self.Top) / 2
-	if left := midPosition - lagPosition; self.Left < left {
-		self.Left = left
+	midPosition := (tr.Bottom + tr.Top) / 2
+	if left := midPosition - lagPosition; tr.Left < left {
+		tr.Left = left
 	}
-	if right := midPosition - lagClip; self.Right > right {
-		self.Right = right
+	if right := midPosition - lagClip; tr.Right > right {
+		tr.Right = right
 	}
 }
 
@@ -63,8 +63,8 @@ func (self *Trapezoid) clip(lagPosition, lagClip int) {
 type Trapezoids []*Trapezoid
 
 // Return the sum of all Trapezoids in the slice.
-func (self Trapezoids) Sum() (a, b int) {
-	for _, t := range self {
+func (tr Trapezoids) Sum() (a, b int) {
+	for _, t := range tr {
 		la, lb := t.Top-t.Bottom, t.Right-t.Left
 		a, b = a+la, b+lb
 	}
@@ -72,16 +72,16 @@ func (self Trapezoids) Sum() (a, b int) {
 }
 
 // Required for sort.Interface
-func (self Trapezoids) Len() int {
-	return len(self)
+func (tr Trapezoids) Len() int {
+	return len(tr)
 }
 
 // Required for sort.Interface
-func (self Trapezoids) Less(i, j int) bool {
-	return self[i].Bottom < self[j].Bottom
+func (tr Trapezoids) Less(i, j int) bool {
+	return tr[i].Bottom < tr[j].Bottom
 }
 
 // Required for sort.Interface
-func (self Trapezoids) Swap(i, j int) {
-	self[i], self[j] = self[j], self[i]
+func (tr Trapezoids) Swap(i, j int) {
+	tr[i], tr[j] = tr[j], tr[i]
 }

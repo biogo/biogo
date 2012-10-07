@@ -63,15 +63,15 @@ func convert(data cluster.Interface) []value {
 }
 
 // Seed generates the initial means for the k-means algorithm.
-func (self *Kmeans) Seed(k int) {
-	self.means = make([]center, k)
+func (km *Kmeans) Seed(k int) {
+	km.means = make([]center, k)
 
-	self.means[0].val = self.values[rand.Intn(len(self.values))].val
-	d := make([]float64, len(self.values))
+	km.means[0].val = km.values[rand.Intn(len(km.values))].val
+	d := make([]float64, len(km.values))
 	for i := 1; i < k; i++ {
 		sum := 0.
-		for j, v := range self.values {
-			_, min := self.nearest(v.val)
+		for j, v := range km.values {
+			_, min := km.nearest(v.val)
 			d[j] = min * min
 			sum += d[j]
 		}
@@ -80,17 +80,17 @@ func (self *Kmeans) Seed(k int) {
 		for sum = d[0]; sum < target; sum += d[j] {
 			j++
 		}
-		self.means[i].val = self.values[j].val
+		km.means[i].val = km.values[j].val
 	}
 }
 
 // Find the nearest center to the point v. Returns c, the index of the nearest center
 // and min, the distance from v to that center.
-func (self *Kmeans) nearest(v val) (c int, min float64) {
-	min = math.Hypot(v.x-self.means[0].x, v.y-self.means[0].y)
+func (km *Kmeans) nearest(v val) (c int, min float64) {
+	min = math.Hypot(v.x-km.means[0].x, v.y-km.means[0].y)
 
-	for i := 1; i < len(self.means); i++ {
-		d := math.Hypot(v.x-self.means[i].x, v.y-self.means[i].y)
+	for i := 1; i < len(km.means); i++ {
+		d := math.Hypot(v.x-km.means[i].x, v.y-km.means[i].y)
 		if d < min {
 			min = d
 			c = i
@@ -101,32 +101,32 @@ func (self *Kmeans) nearest(v val) (c int, min float64) {
 }
 
 // Cluster the data using the standard k-means algorithm.
-func (self *Kmeans) Cluster() {
-	for i, v := range self.values {
-		n, _ := self.nearest(v.val)
-		self.values[i].cluster = n
+func (km *Kmeans) Cluster() {
+	for i, v := range km.values {
+		n, _ := km.nearest(v.val)
+		km.values[i].cluster = n
 	}
 
 	for {
-		for i := range self.means {
-			self.means[i] = center{}
+		for i := range km.means {
+			km.means[i] = center{}
 		}
-		for _, v := range self.values {
-			self.means[v.cluster].x += v.x
-			self.means[v.cluster].y += v.y
-			self.means[v.cluster].count++
+		for _, v := range km.values {
+			km.means[v.cluster].x += v.x
+			km.means[v.cluster].y += v.y
+			km.means[v.cluster].count++
 		}
-		for i := range self.means {
-			inv := 1 / float64(self.means[i].count)
-			self.means[i].x *= inv
-			self.means[i].y *= inv
+		for i := range km.means {
+			inv := 1 / float64(km.means[i].count)
+			km.means[i].x *= inv
+			km.means[i].y *= inv
 		}
 
 		deltas := 0
-		for i, v := range self.values {
-			if n, _ := self.nearest(v.val); n != v.cluster {
+		for i, v := range km.values {
+			if n, _ := km.nearest(v.val); n != v.cluster {
 				deltas++
-				self.values[i].cluster = n
+				km.values[i].cluster = n
 			}
 		}
 		if deltas == 0 {
@@ -136,18 +136,18 @@ func (self *Kmeans) Cluster() {
 }
 
 // Within calculates the total sum of squares for the data relative to the data mean.
-func (self *Kmeans) Total() (ss float64) {
+func (km *Kmeans) Total() (ss float64) {
 	var x, y float64
 
-	for _, v := range self.values {
+	for _, v := range km.values {
 		x += v.x
 		y += v.y
 	}
-	inv := 1 / float64(len(self.values))
+	inv := 1 / float64(len(km.values))
 	x *= inv
 	y *= inv
 
-	for _, v := range self.values {
+	for _, v := range km.values {
 		dx, dy := x-v.x, y-v.y
 		ss += dx*dx + dy*dy
 	}
@@ -157,14 +157,14 @@ func (self *Kmeans) Total() (ss float64) {
 
 // Within calculates the sum of squares within each cluster.
 // Returns nil if Cluster has not been called.
-func (self *Kmeans) Within() (ss []float64) {
-	if self.means == nil {
+func (km *Kmeans) Within() (ss []float64) {
+	if km.means == nil {
 		return
 	}
-	ss = make([]float64, len(self.means))
+	ss = make([]float64, len(km.means))
 
-	for _, v := range self.values {
-		dx, dy := self.means[v.cluster].x-v.x, self.means[v.cluster].y-v.y
+	for _, v := range km.values {
+		dx, dy := km.means[v.cluster].x-v.x, km.means[v.cluster].y-v.y
 		ss[v.cluster] += dx*dx + dy*dy
 	}
 
@@ -172,27 +172,27 @@ func (self *Kmeans) Within() (ss []float64) {
 }
 
 // Means returns the k-means.
-func (self *Kmeans) Means() (c []cluster.Center) {
-	return *(*[]cluster.Center)(unsafe.Pointer(&self.means))
+func (km *Kmeans) Means() (c []cluster.Center) {
+	return *(*[]cluster.Center)(unsafe.Pointer(&km.means))
 }
 
 // Features returns a slice of the values in the Kmeans.
-func (self *Kmeans) Values() (v []cluster.Value) {
-	return *(*[]cluster.Value)(unsafe.Pointer(&self.values))
+func (km *Kmeans) Values() (v []cluster.Value) {
+	return *(*[]cluster.Value)(unsafe.Pointer(&km.values))
 }
 
 // Clusters returns the k clusters.
 // Returns nil if Cluster has not been called.
-func (self *Kmeans) Clusters() (c [][]int) {
-	if self.means == nil {
+func (km *Kmeans) Clusters() (c [][]int) {
+	if km.means == nil {
 		return
 	}
-	c = make([][]int, len(self.means))
+	c = make([][]int, len(km.means))
 
 	for i := range c {
-		c[i] = make([]int, 0, self.means[i].count)
+		c[i] = make([]int, 0, km.means[i].count)
 	}
-	for i, v := range self.values {
+	for i, v := range km.values {
 		c[v.cluster] = append(c[v.cluster], i)
 	}
 

@@ -18,29 +18,29 @@ package dp
 // Sort DPHits on start position.
 type starts DPHits
 
-func (self starts) Len() int {
-	return len(self)
+func (s starts) Len() int {
+	return len(s)
 }
 
-func (self starts) Less(i, j int) bool {
-	return self[i].Abpos < self[j].Abpos
+func (s starts) Less(i, j int) bool {
+	return s[i].Abpos < s[j].Abpos
 }
 
-func (self starts) Swap(i, j int) {
-	self[i], self[j] = self[j], self[i]
+func (s starts) Swap(i, j int) {
+	s[i], s[j] = s[j], s[i]
 }
 
 // Sort DPHits on end position.
 type ends DPHits
 
-func (self ends) Len() int {
-	return len(self)
+func (e ends) Len() int {
+	return len(e)
 }
 
-func (self ends) Less(i, j int) bool {
-	return self[i].Aepos < self[j].Aepos
+func (e ends) Less(i, j int) bool {
+	return e[i].Aepos < e[j].Aepos
 }
 
-func (self ends) Swap(i, j int) {
-	self[i], self[j] = self[j], self[i]
+func (e ends) Swap(i, j int) {
+	e[i], e[j] = e[j], e[i]
 }

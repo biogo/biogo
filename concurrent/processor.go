@@ -84,36 +84,36 @@ func NewProcessor(queue chan Operator, buffer int, threads int) (p *Processor) {
 }
 
 // Submit values for processing.
-func (self *Processor) Process(value ...Operator) {
+func (p *Processor) Process(value ...Operator) {
 	for _, v := range value {
-		self.in <- v
+		p.in <- v
 	}
 }
 
 // Get the next available result.
-func (self *Processor) Result() (interface{}, error) {
-	r := <-self.out
+func (p *Processor) Result() (interface{}, error) {
+	r := <-p.out
 	return r.Value, r.Err
 }
 
 // Close the queue.
-func (self *Processor) Close() {
-	close(self.in)
+func (p *Processor) Close() {
+	close(p.in)
 }
 
 // Return the number of working goroutines.
-func (self *Processor) Working() int {
-	return len(self.working)
+func (p *Processor) Working() int {
+	return len(p.working)
 }
 
 // Terminate the goroutines.
-func (self *Processor) Stop() {
-	close(self.stop)
+func (p *Processor) Stop() {
+	close(p.stop)
 }
 
 // Wait for all running processes to finish.
-func (self *Processor) Wait() {
-	self.wg.Wait()
+func (p *Processor) Wait() {
+	p.wg.Wait()
 }
 
 type Result struct {

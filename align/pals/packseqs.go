@@ -35,7 +35,7 @@ type Packer struct {
 }
 
 // Create a new Packer.
-func NewPacker(id string) (p *Packer) {
+func NewPacker(id string) *Packer {
 	return &Packer{
 		Packed: &seq.Seq{
 			ID:     id,
@@ -46,8 +46,8 @@ func NewPacker(id string) (p *Packer) {
 }
 
 // Pack a sequence into the Packed sequence. Returns a string giving diagnostic information.
-func (self *Packer) Pack(sequence *seq.Seq) string {
-	m := self.Packed.Meta.(seqMap)
+func (pa *Packer) Pack(sequence *seq.Seq) string {
+	m := pa.Packed.Meta.(seqMap)
 
 	c := contig{seq: sequence}
 
@@ -56,10 +56,10 @@ func (self *Packer) Pack(sequence *seq.Seq) string {
 		padding += binSize
 	}
 
-	self.length += self.lastPad
-	c.from = self.length
-	self.length += sequence.Len()
-	self.lastPad = padding
+	pa.length += pa.lastPad
+	c.from = pa.length
+	pa.length += sequence.Len()
+	pa.lastPad = padding
 
 	bins := make([]int, (padding+sequence.Len())/binSize)
 	for i := 0; i < len(bins); i++ {
@@ -68,22 +68,22 @@ func (self *Packer) Pack(sequence *seq.Seq) string {
 
 	m.binMap = append(m.binMap, bins...)
 	m.contigs = append(m.contigs, c)
-	self.Packed.Meta = m
+	pa.Packed.Meta = m
 
 	return fmt.Sprintf("%20s\t%10d\t%7d-%-d", sequence.ID[:util.Min(20, len(sequence.ID))], sequence.Len(), len(m.binMap)-len(bins), len(m.binMap)-1)
 }
 
 // Finalise the sequence packing.
-func (self *Packer) FinalisePack() {
+func (pa *Packer) FinalisePack() {
 	lastPad := 0
-	self.Packed.Seq = make([]byte, 0, self.length)
-	for _, c := range self.Packed.Meta.(seqMap).contigs {
+	pa.Packed.Seq = make([]byte, 0, pa.length)
+	for _, c := range pa.Packed.Meta.(seqMap).contigs {
 		padding := binSize - c.seq.Len()%binSize
 		if padding < minPadding {
 			padding += binSize
 		}
-		self.Packed.Seq = append(self.Packed.Seq, bytes.Repeat([]byte("N"), lastPad)...)
-		self.Packed.Seq = append(self.Packed.Seq, c.seq.Seq...)
+		pa.Packed.Seq = append(pa.Packed.Seq, bytes.Repeat([]byte("N"), lastPad)...)
+		pa.Packed.Seq = append(pa.Packed.Seq, c.seq.Seq...)
 		lastPad = padding
 	}
 }

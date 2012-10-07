@@ -72,80 +72,79 @@ func New(index *kmerindex.Index, params *Params) (f *Filter) {
 // Filter a query sequence against the stored index. If query and the target are the same sequence,
 // selfAlign can be used to avoid double seaching - behavior is undefined if the the sequences are not the same.
 // A morass is used to store and sort individual filter hits.
-func (self *Filter) Filter(query *seq.Seq, selfAlign, complement bool, morass *morass.Morass) (err error) {
-	self.selfAlign = selfAlign
-	self.complement = complement
-	self.morass = morass
-	self.k = self.index.GetK()
+func (f *Filter) Filter(query *seq.Seq, selfAlign, complement bool, morass *morass.Morass) error {
+	f.selfAlign = selfAlign
+	f.complement = complement
+	f.morass = morass
+	f.k = f.index.GetK()
 
 	// Ukonnen's Lemma
-	self.minKmersPerHit = MinWordsPerFilterHit(self.minMatch, self.k, self.maxError)
+	f.minKmersPerHit = MinWordsPerFilterHit(f.minMatch, f.k, f.maxError)
 
 	// Maximum distance between SeqQ positions of two k-mers in a match
 	// (More stringent bounds may be possible, but not a big problem
 	// if two adjacent matches get merged).
-	self.maxKmerDist = self.minMatch - self.k
+	f.maxKmerDist = f.minMatch - f.k
 
-	tubeWidth := self.tubeOffset + self.maxError
+	tubeWidth := f.tubeOffset + f.maxError
 
-	if self.tubeOffset < self.maxError {
-		return bio.NewError("TubeOffset < MaxError", 0, []int{self.tubeOffset, self.maxError})
+	if f.tubeOffset < f.maxError {
+		return bio.NewError("TubeOffset < MaxError", 0, []int{f.tubeOffset, f.maxError})
 	}
 
-	maxActiveTubes := (self.target.Len()+tubeWidth-1)/self.tubeOffset + 1
-	self.tubes = make([]tubeState, maxActiveTubes)
+	maxActiveTubes := (f.target.Len()+tubeWidth-1)/f.tubeOffset + 1
+	f.tubes = make([]tubeState, maxActiveTubes)
 
 	// Ticker tracks cycling of circular list of active tubes.
 	ticker := tubeWidth
 
-	f := func(index *kmerindex.Index, position, kmer int) {
+	var err error
+	err = f.index.ForEachKmerOf(query, 0, query.Len(), func(index *kmerindex.Index, position, kmer int) {
 		from := 0
 		if kmer > 0 {
 			from = index.FingerAt(kmer - 1)
 		}
 		to := index.FingerAt(kmer)
 		for i := from; i < to; i++ {
-			self.commonKmer(index.PosAt(i), position)
+			f.commonKmer(index.PosAt(i), position)
 		}
 
 		if ticker--; ticker == 0 {
-			if e := self.tubeEnd(position); e != nil {
+			if e := f.tubeEnd(position); e != nil {
 				panic(e) // Caught by fastkmerindex.ForEachKmerOf and returned
 			}
-			ticker = self.tubeOffset
+			ticker = f.tubeOffset
 		}
-	}
-
-	err = self.index.ForEachKmerOf(query, 0, query.Len(), f)
+	})
 	if err != nil {
-		return
+		return err
 	}
 
-	err = self.tubeEnd(query.Len() - 1)
+	err = f.tubeEnd(query.Len() - 1)
 	if err != nil {
-		return
+		return err
 	}
 
-	diagFrom := self.diagIndex(self.target.Len()-1, query.Len()-1) - tubeWidth
-	diagTo := self.diagIndex(0, query.Len()-1) + tubeWidth
+	diagFrom := f.diagIndex(f.target.Len()-1, query.Len()-1) - tubeWidth
+	diagTo := f.diagIndex(0, query.Len()-1) + tubeWidth
 
-	tubeFrom := self.tubeIndex(diagFrom)
+	tubeFrom := f.tubeIndex(diagFrom)
 	if tubeFrom < 0 {
 		tubeFrom = 0
 	}
 
-	tubeTo := self.tubeIndex(diagTo)
+	tubeTo := f.tubeIndex(diagTo)
 
 	for tubeIndex := tubeFrom; tubeIndex <= tubeTo; tubeIndex++ {
-		err = self.tubeFlush(tubeIndex)
+		err = f.tubeFlush(tubeIndex)
 		if err != nil {
-			return
+			return err
 		}
 	}
 
-	self.tubes = nil
+	f.tubes = nil
 
-	return self.morass.Finalise()
+	return f.morass.Finalise()
 }
 
 // A tubeState stores active filter bin states.
@@ -157,112 +156,112 @@ type tubeState struct {
 }
 
 // Called when q=Qlen - 1 to flush any hits in each tube.
-func (self *Filter) tubeFlush(tubeIndex int) (err error) {
-	tube := &self.tubes[tubeIndex%cap(self.tubes)]
+func (f *Filter) tubeFlush(tubeIndex int) error {
+	tube := &f.tubes[tubeIndex%cap(f.tubes)]
 
-	if tube.Count < self.minKmersPerHit {
-		return
+	if tube.Count < f.minKmersPerHit {
+		return nil
 	}
 
-	err = self.addHit(tubeIndex, tube.QLo, tube.QHi)
+	err := f.addHit(tubeIndex, tube.QLo, tube.QHi)
 	if err != nil {
-		return
+		return err
 	}
 	tube.Count = 0
 
-	return
+	return nil
 }
 
-func (self *Filter) diagIndex(t, q int) int {
-	return self.target.Len() - t + q
+func (f *Filter) diagIndex(t, q int) int {
+	return f.target.Len() - t + q
 }
 
-func (self *Filter) tubeIndex(d int) int {
-	return d / self.tubeOffset
+func (f *Filter) tubeIndex(d int) int {
+	return d / f.tubeOffset
 }
 
 // Found a common k-mer SeqT[t] and SeqQ[q].
-func (self *Filter) commonKmer(t, q int) (err error) {
-	if self.selfAlign && ((self.complement && (q < self.target.Len()-t)) || (!self.complement && (q <= t))) {
-		return
+func (f *Filter) commonKmer(t, q int) error {
+	if f.selfAlign && ((f.complement && (q < f.target.Len()-t)) || (!f.complement && (q <= t))) {
+		return nil
 	}
 
-	diagIndex := self.diagIndex(t, q)
-	tubeIndex := self.tubeIndex(diagIndex)
+	diagIndex := f.diagIndex(t, q)
+	tubeIndex := f.tubeIndex(diagIndex)
 
-	err = self.hitTube(tubeIndex, q)
+	err := f.hitTube(tubeIndex, q)
 	if err != nil {
-		return
+		return err
 	}
 
 	// Hit in overlapping tube preceding this one?
-	if diagIndex%self.tubeOffset < self.maxError {
+	if diagIndex%f.tubeOffset < f.maxError {
 		if tubeIndex == 0 {
-			tubeIndex = cap(self.tubes) - 1
+			tubeIndex = cap(f.tubes) - 1
 		} else {
 			tubeIndex--
 		}
-		err = self.hitTube(tubeIndex, q)
+		err = f.hitTube(tubeIndex, q)
 	}
 
-	return
+	return err
 }
 
-func (self *Filter) hitTube(tubeIndex, q int) (err error) {
-	tube := &self.tubes[tubeIndex%cap(self.tubes)]
+func (f *Filter) hitTube(tubeIndex, q int) error {
+	tube := &f.tubes[tubeIndex%cap(f.tubes)]
 
 	if tube.Count == 0 {
 		tube.Count = 1
 		tube.QLo = q
 		tube.QHi = q
-		return
+		return nil
 	}
 
-	if q-tube.QHi > self.maxKmerDist {
-		if tube.Count >= self.minKmersPerHit {
-			err = self.addHit(tubeIndex, tube.QLo, tube.QHi)
+	if q-tube.QHi > f.maxKmerDist {
+		if tube.Count >= f.minKmersPerHit {
+			err := f.addHit(tubeIndex, tube.QLo, tube.QHi)
 			if err != nil {
-				return
+				return err
 			}
 		}
 
 		tube.Count = 1
 		tube.QLo = q
 		tube.QHi = q
-		return
+		return nil
 	}
 
 	tube.Count++
 	tube.QHi = q
 
-	return
+	return nil
 }
 
 // Called when end of a tube is reached
 // A point in the tube -- the point with maximal q -- is (Tlen-1,q-1).
-func (self *Filter) tubeEnd(q int) (err error) {
-	diagIndex := self.diagIndex(self.target.Len()-1, q-1)
-	tubeIndex := self.tubeIndex(diagIndex)
-	tube := &self.tubes[tubeIndex%cap(self.tubes)]
+func (f *Filter) tubeEnd(q int) error {
+	diagIndex := f.diagIndex(f.target.Len()-1, q-1)
+	tubeIndex := f.tubeIndex(diagIndex)
+	tube := &f.tubes[tubeIndex%cap(f.tubes)]
 
-	if tube.Count >= self.minKmersPerHit {
-		err = self.addHit(tubeIndex, tube.QLo, tube.QHi)
+	if tube.Count >= f.minKmersPerHit {
+		err := f.addHit(tubeIndex, tube.QLo, tube.QHi)
 		if err != nil {
-			return
+			return err
 		}
 	}
 
 	tube.Count = 0
 
-	return
+	return nil
 }
 
-func (self *Filter) addHit(tubeIndex, QLo, QHi int) (err error) {
+func (f *Filter) addHit(tubeIndex, QLo, QHi int) error {
 	fh := FilterHit{
 		QFrom:     QLo,
-		QTo:       QHi + self.k,
-		DiagIndex: self.target.Len() - tubeIndex*self.tubeOffset,
+		QTo:       QHi + f.k,
+		DiagIndex: f.target.Len() - tubeIndex*f.tubeOffset,
 	}
 
-	return self.morass.Push(fh)
+	return f.morass.Push(fh)
 }

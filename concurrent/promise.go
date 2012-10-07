@@ -52,9 +52,9 @@ func NewPromise(mutable, recoverable, relay bool) *Promise {
 
 }
 
-func (self *Promise) messageState() (message Result, set bool) {
+func (p *Promise) messageState() (message Result, set bool) {
 	select {
-	case message = <-self.message:
+	case message = <-p.message:
 		set = true
 	default:
 	}
@@ -63,20 +63,20 @@ func (self *Promise) messageState() (message Result, set bool) {
 }
 
 // Fulfill a promise, allowing listeners to unblock.
-func (self *Promise) Fulfill(value interface{}) error {
-	self.m.Lock()
-	defer self.m.Unlock()
+func (p *Promise) Fulfill(value interface{}) error {
+	p.m.Lock()
+	defer p.m.Unlock()
 
-	return self.fulfill(value)
+	return p.fulfill(value)
 }
 
-func (self *Promise) fulfill(value interface{}) (err error) {
-	r, set := self.messageState()
+func (p *Promise) fulfill(value interface{}) (err error) {
+	r, set := p.messageState()
 
 	if r.Err != nil {
 		err = bio.NewError("Tried to fulfill a failed promise", 0, r.Err)
 	} else {
-		if !set || self.mutable {
+		if !set || p.mutable {
 			r.Value = value
 			err = nil
 		} else {
@@ -84,7 +84,7 @@ func (self *Promise) fulfill(value interface{}) (err error) {
 		}
 	}
 
-	if err != nil && self.relay {
+	if err != nil && p.relay {
 		if r.Err != nil {
 			err = bio.NewError("Promise already failed - cannot relay", 0, r.Err)
 		} else {
@@ -92,21 +92,21 @@ func (self *Promise) fulfill(value interface{}) (err error) {
 		}
 	}
 
-	self.message <- r
+	p.message <- r
 
 	return
 }
 
 // Fail a promise allowing listeners to unblock, but sending an error state.
-func (self *Promise) Fail(value interface{}, err error) (ok bool) {
-	self.m.Lock()
-	defer self.m.Unlock()
+func (p *Promise) Fail(value interface{}, err error) (ok bool) {
+	p.m.Lock()
+	defer p.m.Unlock()
 
-	return self.fail(value, err)
+	return p.fail(value, err)
 }
 
-func (self *Promise) fail(value interface{}, err error) (f bool) {
-	r, _ := self.messageState()
+func (p *Promise) fail(value interface{}, err error) (f bool) {
+	r, _ := p.messageState()
 
 	if r.Err == nil && r.Value == nil {
 		if value != nil {
@@ -118,22 +118,22 @@ func (self *Promise) fail(value interface{}, err error) (f bool) {
 		f = false
 	}
 
-	self.message <- r
+	p.message <- r
 
 	return
 }
 
 // Recover a failed promise, setting the error state to nil. Promise must be recoverable.
-func (self *Promise) Recover(value interface{}) (ok bool) {
-	self.m.Lock()
-	defer self.m.Unlock()
+func (p *Promise) Recover(value interface{}) (ok bool) {
+	p.m.Lock()
+	defer p.m.Unlock()
 
-	r, _ := self.messageState()
+	r, _ := p.messageState()
 
-	if self.recoverable {
+	if p.recoverable {
 		r.Err = nil
 		if value != nil {
-			self.fulfill(value)
+			p.fulfill(value)
 		}
 		ok = true
 	} else {
@@ -144,17 +144,17 @@ func (self *Promise) Recover(value interface{}) (ok bool) {
 }
 
 // Break an already fulfilled or failed promise, blocking all listeners.
-func (self *Promise) Break() {
-	self.m.Lock()
-	defer self.m.Unlock()
+func (p *Promise) Break() {
+	p.m.Lock()
+	defer p.m.Unlock()
 
-	self.messageState()
+	p.messageState()
 }
 
 // Wait for a promise to be fulfilled, failed or recovered.
-func (self *Promise) Wait() <-chan Result {
-	r := <-self.message
-	self.message <- r
+func (p *Promise) Wait() <-chan Result {
+	r := <-p.message
+	p.message <- r
 	f := make(chan Result, 1)
 	f <- r
 	close(f)

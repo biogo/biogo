@@ -37,16 +37,16 @@ func NewWriter(f io.WriteCloser, v, width int, header bool) (w *Writer) {
 
 // Returns a new PALS writer using a filename, truncating any existing file.
 // If appending is required use NewWriter and os.OpenFile.
-func NewWriterName(name string, v, width int, header bool) (w *Writer, err error) {
+func NewWriterName(name string, v, width int, header bool) (*Writer, error) {
 	f, err := os.Create(name)
 	if err != nil {
-		return
+		return nil, err
 	}
 	return NewWriter(f, v, width, header), nil
 }
 
 // Write a single feature and return the number of bytes written and any error.
-func (self *Writer) Write(pair *FeaturePair) (n int, err error) {
+func (w *Writer) Write(pair *FeaturePair) (n int, err error) {
 	t.Location = pair.B.ID
 	t.Start = pair.B.Start
 	t.End = pair.B.End
@@ -54,12 +54,12 @@ func (self *Writer) Write(pair *FeaturePair) (n int, err error) {
 	t.Strand = pair.Strand
 	t.Frame = -1
 	t.Attributes = fmt.Sprintf("Target %s %d %d; maxe %.2g", pair.A.ID, pair.A.Start+1, pair.A.End, pair.Error) // +1 is kludge for absence of gffwriter
-	return self.w.Write(t)
+	return w.w.Write(t)
 }
 
 func floatPtr(f float64) *float64 { return &f }
 
 // Close the writer, flushing any unwritten data.
-func (self *Writer) Close() (err error) {
-	return self.w.Close()
+func (w *Writer) Close() (err error) {
+	return w.w.Close()
 }

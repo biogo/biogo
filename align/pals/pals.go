@@ -103,7 +103,7 @@ func New(target, query *seq.Seq, selfComp bool, m *morass.Morass, threads, tubeO
 
 // Optimise the PALS parameters for given memory, kmer length, hit length and sequence identity.
 // An error is returned if no satisfactory parameters can be found.
-func (self *PALS) Optimise(minHitLen int, minId float64) (err error) {
+func (p *PALS) Optimise(minHitLen int, minId float64) error {
 	if minId < 0 || minId > 1.0 {
 		return bio.NewError("bad minId", 0, minId)
 	}
@@ -111,8 +111,8 @@ func (self *PALS) Optimise(minHitLen int, minId float64) (err error) {
 		return bio.NewError("bad minHitLength", 0, minHitLen)
 	}
 
-	if self.log != nil {
-		self.log.Print("Optimising filter parameters")
+	if p.log != nil {
+		p.log.Print("Optimising filter parameters")
 	}
 
 	filterParams := &filter.Params{}
@@ -122,7 +122,7 @@ func (self *PALS) Optimise(minHitLen int, minId float64) (err error) {
 	// Hence average number of index entries is i = N/(4^k) for random
 	// string of length N.
 	// Require i <= I, then k > log_4(N/i).
-	minWordSize := int(util.Log4(float64(self.target.Len())) - util.Log4(MaxAvgIndexListLen) + 0.5)
+	minWordSize := int(util.Log4(float64(p.target.Len())) - util.Log4(MaxAvgIndexListLen) + 0.5)
 
 	// First choice is that filter criteria are same as DP criteria,
 	// but this may not be possible.
@@ -133,29 +133,29 @@ func (self *PALS) Optimise(minHitLen int, minId float64) (err error) {
 	for {
 		minWords := -1
 		if MaxKmerLen < minWordSize {
-			if self.log != nil {
-				self.log.Printf("Word size too small: %d < %d\n", MaxKmerLen, minWordSize)
+			if p.log != nil {
+				p.log.Printf("Word size too small: %d < %d\n", MaxKmerLen, minWordSize)
 			}
 		}
 		for wordSize := MaxKmerLen; wordSize >= minWordSize; wordSize-- {
 			filterParams.WordSize = wordSize
 			filterParams.MinMatch = seedLength
 			filterParams.MaxError = seedDiffs
-			if self.tubeOffset > 0 {
-				filterParams.TubeOffset = self.tubeOffset
+			if p.tubeOffset > 0 {
+				filterParams.TubeOffset = p.tubeOffset
 			} else {
 				filterParams.TubeOffset = filterParams.MaxError + TubeOffsetDelta
 			}
 
-			mem := self.MemRequired(filterParams)
-			if self.maxMem != nil && mem > *self.maxMem {
-				if self.log != nil {
-					self.log.Printf("Parameters n=%d k=%d e=%d, mem=%d MB > maxmem=%d MB\n",
+			mem := p.MemRequired(filterParams)
+			if p.maxMem != nil && mem > *p.maxMem {
+				if p.log != nil {
+					p.log.Printf("Parameters n=%d k=%d e=%d, mem=%d MB > maxmem=%d MB\n",
 						filterParams.MinMatch,
 						filterParams.WordSize,
 						filterParams.MaxError,
 						mem/1e6,
-						*self.maxMem/1e6)
+						*p.maxMem/1e6)
 				}
 				minWords = -1
 				continue
@@ -163,8 +163,8 @@ func (self *PALS) Optimise(minHitLen int, minId float64) (err error) {
 
 			minWords = filter.MinWordsPerFilterHit(seedLength, wordSize, seedDiffs)
 			if minWords <= 0 {
-				if self.log != nil {
-					self.log.Printf("Parameters n=%d k=%d e=%d, B=%d\n",
+				if p.log != nil {
+					p.log.Printf("Parameters n=%d k=%d e=%d, B=%d\n",
 						filterParams.MinMatch,
 						filterParams.WordSize,
 						filterParams.MaxError,
@@ -174,10 +174,10 @@ func (self *PALS) Optimise(minHitLen int, minId float64) (err error) {
 				continue
 			}
 
-			length := self.AvgIndexListLength(filterParams)
+			length := p.AvgIndexListLength(filterParams)
 			if length > MaxAvgIndexListLen {
-				if self.log != nil {
-					self.log.Printf("Parameters n=%d k=%d e=%d, B=%d avgixlen=%.2f > max = %.2f\n",
+				if p.log != nil {
+					p.log.Printf("Parameters n=%d k=%d e=%d, B=%d avgixlen=%.2f > max = %.2f\n",
 						filterParams.MinMatch,
 						filterParams.WordSize,
 						filterParams.MaxError,
@@ -208,29 +208,29 @@ func (self *PALS) Optimise(minHitLen int, minId float64) (err error) {
 		return bio.NewError("failed to find filter parameters", 0)
 	}
 
-	self.FilterParams = filterParams
+	p.FilterParams = filterParams
 
-	self.DPParams = &dp.Params{
+	p.DPParams = &dp.Params{
 		MinHitLength: minHitLen,
 		MinId:        minId,
 	}
 
-	return
+	return nil
 }
 
 // Return an estimate of the average number of hits for any given kmer.
-func (self *PALS) AvgIndexListLength(filterParams *filter.Params) float64 {
-	return float64(self.target.Len()) / float64(int(1)<<(uint(filterParams.WordSize)*2))
+func (p *PALS) AvgIndexListLength(filterParams *filter.Params) float64 {
+	return float64(p.target.Len()) / float64(int(1)<<(uint(filterParams.WordSize)*2))
 }
 
 // Return an estimate of the amount of memory required for the filter.
-func (self *PALS) filterMemRequired(filterParams *filter.Params) uintptr {
+func (p *PALS) filterMemRequired(filterParams *filter.Params) uintptr {
 	words := util.Pow4(filterParams.WordSize)
 	tubeWidth := filterParams.TubeOffset + filterParams.MaxError
-	maxActiveTubes := (self.target.Len()+tubeWidth-1)/filterParams.TubeOffset + 1
+	maxActiveTubes := (p.target.Len()+tubeWidth-1)/filterParams.TubeOffset + 1
 	tubes := uintptr(maxActiveTubes) * unsafe.Sizeof(tubeState{})
 	finger := unsafe.Sizeof(uint32(0)) * uintptr(words)
-	pos := unsafe.Sizeof(0) * uintptr(self.target.Len())
+	pos := unsafe.Sizeof(0) * uintptr(p.target.Len())
 
 	return finger + pos + tubes
 }
@@ -243,99 +243,103 @@ type tubeState struct {
 }
 
 // Return an estimate of the total amount of memory required.
-func (self *PALS) MemRequired(filterParams *filter.Params) uintptr {
-	filter := self.filterMemRequired(filterParams)
-	sequence := uintptr(self.target.Len()) + unsafe.Sizeof(self.target)
-	if self.target != self.query {
-		sequence += uintptr(self.query.Len()) + unsafe.Sizeof(self.query)
+func (p *PALS) MemRequired(filterParams *filter.Params) uintptr {
+	filter := p.filterMemRequired(filterParams)
+	sequence := uintptr(p.target.Len()) + unsafe.Sizeof(p.target)
+	if p.target != p.query {
+		sequence += uintptr(p.query.Len()) + unsafe.Sizeof(p.query)
 	}
 
 	return filter + sequence
 }
 
 // Build the kmerindex for filtering.
-func (self *PALS) BuildIndex() (err error) {
-	self.notify("Indexing")
-	index, err := kmerindex.New(self.FilterParams.WordSize, self.target)
+func (p *PALS) BuildIndex() error {
+	p.notify("Indexing")
+	index, err := kmerindex.New(p.FilterParams.WordSize, p.target)
 	if err != nil {
-		return
+		return err
 	} else {
 		index.Build()
-		self.notify("Indexed")
+		p.notify("Indexed")
 	}
-	self.index = index
-	self.hitFilter = filter.New(self.index, self.FilterParams)
+	p.index = index
+	p.hitFilter = filter.New(p.index, p.FilterParams)
 
-	return
+	return nil
 }
 
-// Share allows the receiver to use the index and parameters of p.
-func (self *PALS) Share(p *PALS) {
-	(*self).index = p.index
-	(*self).FilterParams = p.FilterParams
-	(*self).DPParams = p.DPParams
-	self.hitFilter = filter.New(self.index, self.FilterParams)
+// Share allows the receiver to use the index and parameters of m.
+func (p *PALS) Share(m *PALS) {
+	p.index = m.index
+	p.FilterParams = m.FilterParams
+	p.DPParams = m.DPParams
+	p.hitFilter = filter.New(p.index, p.FilterParams)
 }
 
 // Perform filtering and alignment for one strand of query.
-func (self *PALS) Align(complement bool) (hits dp.DPHits, err error) {
-	if self.err != nil {
-		return nil, self.err
+func (p *PALS) Align(complement bool) (dp.DPHits, error) {
+	if p.err != nil {
+		return nil, p.err
 	}
-	var working *seq.Seq
+	var (
+		working *seq.Seq
+		err     error
+	)
 	if complement {
-		self.notify("Complementing query")
-		working, _ = self.query.RevComp()
-		self.notify("Complemented query")
+		p.notify("Complementing query")
+		working, _ = p.query.RevComp()
+		p.notify("Complemented query")
 	} else {
-		working = self.query
+		working = p.query
 	}
 
-	self.notify("Filtering")
-	if err = self.hitFilter.Filter(working, self.selfCompare, complement, self.morass); err != nil {
-		return
+	p.notify("Filtering")
+	err = p.hitFilter.Filter(working, p.selfCompare, complement, p.morass)
+	if err != nil {
+		return nil, err
 	}
-	self.notifyf("Identified %d filter hits", self.morass.Len())
+	p.notifyf("Identified %d filter hits", p.morass.Len())
 
-	self.notify("Merging")
-	merger := filter.NewMerger(self.index, working, self.FilterParams, self.MaxIGap, self.selfCompare)
+	p.notify("Merging")
+	merger := filter.NewMerger(p.index, working, p.FilterParams, p.MaxIGap, p.selfCompare)
 	var hit filter.FilterHit
 	for {
-		if err = self.morass.Pull(&hit); err != nil {
+		if err = p.morass.Pull(&hit); err != nil {
 			break
 		}
 		merger.MergeFilterHit(&hit)
 	}
 	if err != nil && err != io.EOF {
-		return
+		return nil, err
 	}
-	self.err = self.morass.Clear()
+	p.err = p.morass.Clear()
 	trapezoids := merger.FinaliseMerge()
 	lt, lq := trapezoids.Sum()
-	self.notifyf("Merged %d trapezoids covering %d x %d", len(trapezoids), lt, lq)
+	p.notifyf("Merged %d trapezoids covering %d x %d", len(trapezoids), lt, lq)
 
-	self.notify("Aligning")
-	aligner := dp.NewAligner(self.target, working, self.FilterParams.WordSize, self.DPParams.MinHitLength, self.DPParams.MinId)
+	p.notify("Aligning")
+	aligner := dp.NewAligner(p.target, working, p.FilterParams.WordSize, p.DPParams.MinHitLength, p.DPParams.MinId)
 	aligner.Config = &dp.AlignConfig{
-		MaxIGap:    self.MaxIGap,
-		DiffCost:   self.DiffCost,
-		SameCost:   self.SameCost,
-		MatchCost:  self.MatchCost,
-		BlockCost:  self.BlockCost,
-		RMatchCost: self.RMatchCost,
+		MaxIGap:    p.MaxIGap,
+		DiffCost:   p.DiffCost,
+		SameCost:   p.SameCost,
+		MatchCost:  p.MatchCost,
+		BlockCost:  p.BlockCost,
+		RMatchCost: p.RMatchCost,
 	}
-	hits = aligner.AlignTraps(trapezoids)
+	hits := aligner.AlignTraps(trapezoids)
 	hitCoverageA, hitCoverageB, err := hits.Sum()
 	if err != nil {
 		return nil, err
 	}
-	self.notifyf("Aligned %d hits covering %d x %d", len(hits), hitCoverageA, hitCoverageB)
+	p.notifyf("Aligned %d hits covering %d x %d", len(hits), hitCoverageA, hitCoverageB)
 
-	return
+	return hits, nil
 }
 
 // Remove filesystem components of filter. This should be called after the last use of the aligner.
-func (self *PALS) CleanUp() error { return self.morass.CleanUp() }
+func (p *PALS) CleanUp() error { return p.morass.CleanUp() }
 
 // Interface for logger used by PALS.
 type Logger interface {
@@ -347,28 +351,28 @@ type Logger interface {
 	Fatalln(v ...interface{})
 }
 
-func (self *PALS) notify(n string) {
-	if self.log != nil {
-		self.log.Print(n)
+func (p *PALS) notify(n string) {
+	if p.log != nil {
+		p.log.Print(n)
 	}
 }
 
-func (self *PALS) notifyf(f string, n ...interface{}) {
-	if self.log != nil {
-		self.log.Printf(f, n...)
+func (p *PALS) notifyf(f string, n ...interface{}) {
+	if p.log != nil {
+		p.log.Printf(f, n...)
 	}
 }
 
-func (self *PALS) fatal(n string) {
-	if self.log != nil {
-		self.log.Fatal(n)
+func (p *PALS) fatal(n string) {
+	if p.log != nil {
+		p.log.Fatal(n)
 	}
 	os.Exit(1)
 }
 
-func (self *PALS) fatalf(f string, n ...interface{}) {
-	if self.log != nil {
-		self.log.Fatalf(f, n...)
+func (p *PALS) fatalf(f string, n ...interface{}) {
+	if p.log != nil {
+		p.log.Fatalf(f, n...)
 	}
 	os.Exit(1)
 }

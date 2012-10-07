@@ -53,7 +53,7 @@ type Aligner struct {
 	k             int
 	minHitLength  int
 	minId         float64
-	segments      DPHits
+	segs          DPHits
 	Config        *AlignConfig
 }
 
@@ -70,35 +70,36 @@ func NewAligner(target, query *seq.Seq, k, minLength int, minId float64) *Aligne
 
 // Align pairs of sequence segments defined by trapezoids.
 // Returns aligning segment pairs satisfying length and identity requirements.
-func (self *Aligner) AlignTraps(trapezoids filter.Trapezoids) (segments DPHits) {
+func (a *Aligner) AlignTraps(trapezoids filter.Trapezoids) DPHits {
 	covered := make([]bool, len(trapezoids))
 
 	dp := &kernel{
-		target:     self.target,
-		query:      self.query,
+		target:     a.target,
+		query:      a.query,
 		trapezoids: trapezoids,
 		covered:    covered,
-		minLen:     self.minHitLength,
-		maxDiff:    1 - self.minId,
+		minLen:     a.minHitLength,
+		maxDiff:    1 - a.minId,
 
-		maxIGap:    self.Config.MaxIGap,
-		diffCost:   self.Config.DiffCost,
-		sameCost:   self.Config.SameCost,
-		matchCost:  self.Config.MatchCost,
-		blockCost:  self.Config.BlockCost,
-		rMatchCost: self.Config.RMatchCost,
+		maxIGap:    a.Config.MaxIGap,
+		diffCost:   a.Config.DiffCost,
+		sameCost:   a.Config.SameCost,
+		matchCost:  a.Config.MatchCost,
+		blockCost:  a.Config.BlockCost,
+		rMatchCost: a.Config.RMatchCost,
 
 		result: make(chan DPHit),
 	}
 	w := make(chan struct{})
+	var segs DPHits
 	go func() {
 		defer close(w)
 		for h := range dp.result {
-			segments = append(segments, h)
+			segs = append(segs, h)
 		}
 	}()
 	for i, t := range trapezoids {
-		if !dp.covered[i] && t.Top-t.Bottom >= self.k {
+		if !dp.covered[i] && t.Top-t.Bottom >= a.k {
 			dp.slot = i
 			dp.alignRecursion(t)
 		}
@@ -109,56 +110,56 @@ func (self *Aligner) AlignTraps(trapezoids filter.Trapezoids) (segments DPHits) 
 	/* Remove lower scoring segments that begin or end at
 	   the same point as a higher scoring segment.       */
 
-	if len(segments) > 0 {
+	if len(segs) > 0 {
 		var i, j int
 
-		sort.Sort(starts(segments))
-		for i = 0; i < len(segments); i = j {
-			for j = i + 1; j < len(segments); j++ {
-				if segments[j].Abpos != segments[i].Abpos {
+		sort.Sort(starts(segs))
+		for i = 0; i < len(segs); i = j {
+			for j = i + 1; j < len(segs); j++ {
+				if segs[j].Abpos != segs[i].Abpos {
 					break
 				}
-				if segments[j].Bbpos != segments[i].Bbpos {
+				if segs[j].Bbpos != segs[i].Bbpos {
 					break
 				}
-				if segments[j].Score > segments[i].Score {
-					segments[i].Score = -1
+				if segs[j].Score > segs[i].Score {
+					segs[i].Score = -1
 					i = j
 				} else {
-					segments[j].Score = -1
+					segs[j].Score = -1
 				}
 			}
 		}
 
-		sort.Sort(ends(segments))
-		for i = 0; i < len(segments); i = j {
-			for j = i + 1; j < len(segments); j++ {
-				if segments[j].Aepos != segments[i].Aepos {
+		sort.Sort(ends(segs))
+		for i = 0; i < len(segs); i = j {
+			for j = i + 1; j < len(segs); j++ {
+				if segs[j].Aepos != segs[i].Aepos {
 					break
 				}
-				if segments[j].Bepos != segments[i].Bepos {
+				if segs[j].Bepos != segs[i].Bepos {
 					break
 				}
-				if segments[j].Score > segments[i].Score {
-					segments[i].Score = -1
+				if segs[j].Score > segs[i].Score {
+					segs[i].Score = -1
 					i = j
 				} else {
-					segments[j].Score = -1
+					segs[j].Score = -1
 				}
 			}
 		}
 
 		found := 0
-		for i = 0; i < len(segments); i++ {
-			if segments[i].Score >= 0 {
-				segments[found] = segments[i]
+		for i = 0; i < len(segs); i++ {
+			if segs[i].Score >= 0 {
+				segs[found] = segs[i]
 				found++
 			}
 		}
-		segments = segments[:found]
+		segs = segs[:found]
 	}
 
-	return
+	return segs
 }
 
 // DPHit holds details of alignment result. 
@@ -174,8 +175,8 @@ type DPHit struct {
 type DPHits []DPHit
 
 // Returns the sums of alignment lengths.
-func (self DPHits) Sum() (a, b int, e error) {
-	for _, hit := range self {
+func (h DPHits) Sum() (a, b int, err error) {
+	for _, hit := range h {
 		la, lb := hit.Aepos-hit.Abpos, hit.Bepos-hit.Bbpos
 		if la < 0 || lb < 0 {
 			return 0, 0, bio.NewError("Area < 0", 0, hit)

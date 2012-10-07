@@ -93,14 +93,14 @@ func featureOf(contigs *seq.Seq, from, to int, comp bool) (feature *feat.Feature
 }
 
 // Convert a DPHit and two packed sequences into a FeaturePair.
-func NewFeaturePair(target, query *seq.Seq, hit dp.DPHit, comp bool) (pair *FeaturePair, err error) {
+func NewFeaturePair(target, query *seq.Seq, hit dp.DPHit, comp bool) (*FeaturePair, error) {
 	t, err := featureOf(target, hit.Abpos, hit.Aepos, false)
 	if err != nil {
-		return
+		return nil, err
 	}
 	q, err := featureOf(query, hit.Bbpos, hit.Bepos, comp)
 	if err != nil {
-		return
+		return nil, err
 	}
 
 	var strand int8
@@ -120,7 +120,7 @@ func NewFeaturePair(target, query *seq.Seq, hit dp.DPHit, comp bool) (pair *Feat
 }
 
 // Expand a feat.Feature containing a PALS-type feature attribute into a FeaturePair.
-func ExpandFeature(f *feat.Feature) (pair *FeaturePair, err error) {
+func ExpandFeature(f *feat.Feature) (*FeaturePair, error) {
 	if len(f.Attributes) < 7 || f.Attributes[:7] != "Target " {
 		return nil, fmt.Errorf("pals: not a feature pair")
 	}
@@ -131,20 +131,20 @@ func ExpandFeature(f *feat.Feature) (pair *FeaturePair, err error) {
 
 	s, err := strconv.Atoi(fields[2])
 	if err != nil {
-		return
+		return nil, err
 	}
 	s--
 	e, err := strconv.Atoi(fields[3][:len(fields[3])-1])
 	if err != nil {
-		return
+		return nil, err
 	}
 
 	maxe, err := strconv.ParseFloat(fields[5], 64)
 	if err != nil {
-		return
+		return nil, err
 	}
 
-	pair = &FeaturePair{
+	fp := &FeaturePair{
 		A: f,
 		B: &feat.Feature{
 			ID:       fmt.Sprintf("%s:%d..%d", fields[1], s, e),
@@ -159,17 +159,16 @@ func ExpandFeature(f *feat.Feature) (pair *FeaturePair, err error) {
 	f.Attributes = ""
 	f.Strand = 0
 
-	return
-
+	return fp, nil
 }
 
 // Invert returns a reversed copy of the feature pair such that A', B' = B, A.
-func (self *FeaturePair) Invert() *FeaturePair {
+func (fp *FeaturePair) Invert() *FeaturePair {
 	return &FeaturePair{
-		A:      self.B,
-		B:      self.A,
-		Score:  self.Score,
-		Error:  self.Error,
-		Strand: self.Strand,
+		A:      fp.B,
+		B:      fp.A,
+		Score:  fp.Score,
+		Error:  fp.Error,
+		Strand: fp.Strand,
 	}
 }

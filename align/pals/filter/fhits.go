@@ -27,6 +27,6 @@ type FilterHit struct {
 // fields) for FilterHits because of differences in the underlying sort
 // algorithms and their respective sort stability.
 // This appears to have some impact on FilterHit merging.
-func (self FilterHit) Less(y interface{}) bool {
-	return self.QFrom < y.(FilterHit).QFrom
+func (fh FilterHit) Less(y interface{}) bool {
+	return fh.QFrom < y.(FilterHit).QFrom
 }

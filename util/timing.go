@@ -33,35 +33,35 @@ func NewTimer() (t *Timer) {
 
 // Start starts timing. This function is called automatically when a timer is created,
 // but it can also used to resume timing after a call to StopTimer.
-func (self *Timer) Start() { self.start = time.Now(); self.interval = self.start }
+func (t *Timer) Start() { t.start = time.Now(); t.interval = t.start }
 
 // Stop stops timing. This can be used to pause the timer while performing complex
 // initialization that you don't want to measure.
-func (self *Timer) Stop() time.Duration {
-	if self.start.After(time.Time{}) {
-		self.nanoseconds += time.Now().Sub(self.start)
+func (t *Timer) Stop() time.Duration {
+	if t.start.After(time.Time{}) {
+		t.nanoseconds += time.Now().Sub(t.start)
 	}
-	self.start = time.Time{}
+	t.start = time.Time{}
 
-	return self.nanoseconds
+	return t.nanoseconds
 }
 
 // Reset stops the timer and sets the elapsed time to zero.
-func (self *Timer) Reset() {
-	self.start = time.Time{}
-	self.nanoseconds = 0
+func (t *Timer) Reset() {
+	t.start = time.Time{}
+	t.nanoseconds = 0
 }
 
 // Time returns the measured time.
-func (self *Timer) Time() time.Duration {
-	return self.nanoseconds
+func (t *Timer) Time() time.Duration {
+	return t.nanoseconds
 }
 
 // Start and return a time interval.
-func (self *Timer) Interval() (l time.Duration) {
-	if self.start.After(time.Time{}) {
-		l = time.Now().Sub(self.interval)
-		self.interval = time.Now()
+func (t *Timer) Interval() (l time.Duration) {
+	if t.start.After(time.Time{}) {
+		l = time.Now().Sub(t.interval)
+		t.interval = time.Now()
 	}
 
 	return

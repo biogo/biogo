@@ -81,11 +81,11 @@ type Aligner struct {
 
 // Method to align two sequences using the Smith-Waterman algorithm. Returns an alignment or an error
 // if the scoring matrix is not square.
-func (self *Aligner) Align(reference, query *seq.Seq) (aln seq.Alignment, err error) {
-	gap := len(self.Matrix) - 1
-	for _, row := range self.Matrix {
+func (a *Aligner) Align(reference, query *seq.Seq) (aln seq.Alignment, err error) {
+	gap := len(a.Matrix) - 1
+	for _, row := range a.Matrix {
 		if len(row) != gap+1 {
-			return nil, bio.NewError("Scoring matrix is not square.", 0, self.Matrix)
+			return nil, bio.NewError("Scoring matrix is not square.", 0, a.Matrix)
 		}
 	}
 	r, c := reference.Len()+1, query.Len()+1
@@ -98,12 +98,12 @@ func (self *Aligner) Align(reference, query *seq.Seq) (aln seq.Alignment, err er
 
 	for i := 1; i < r; i++ {
 		for j := 1; j < c; j++ {
-			if rVal, qVal := self.LookUp.ValueToCode[reference.Seq[i-1]], self.LookUp.ValueToCode[query.Seq[j-1]]; rVal < 0 || qVal < 0 {
+			if rVal, qVal := a.LookUp.ValueToCode[reference.Seq[i-1]], a.LookUp.ValueToCode[query.Seq[j-1]]; rVal < 0 || qVal < 0 {
 				continue
 			} else {
-				scores[diag] = table[i-1][j-1] + self.Matrix[rVal][qVal]
-				scores[up] = table[i-1][j] + self.Matrix[rVal][gap]
-				scores[left] = table[i][j-1] + self.Matrix[gap][qVal]
+				scores[diag] = table[i-1][j-1] + a.Matrix[rVal][qVal]
+				scores[up] = table[i-1][j] + a.Matrix[rVal][gap]
+				scores[left] = table[i][j-1] + a.Matrix[gap][qVal]
 				table[i][j] = util.Max(scores[:]...)
 			}
 		}
@@ -114,12 +114,12 @@ func (self *Aligner) Align(reference, query *seq.Seq) (aln seq.Alignment, err er
 
 	i, j := r-1, c-1
 	for i > 0 && j > 0 {
-		if rVal, qVal := self.LookUp.ValueToCode[reference.Seq[i-1]], self.LookUp.ValueToCode[query.Seq[j-1]]; rVal < 0 || qVal < 0 {
+		if rVal, qVal := a.LookUp.ValueToCode[reference.Seq[i-1]], a.LookUp.ValueToCode[query.Seq[j-1]]; rVal < 0 || qVal < 0 {
 			continue
 		} else {
-			scores[diag] = table[i-1][j-1] + self.Matrix[rVal][qVal]
-			scores[up] = table[i-1][j] + self.Matrix[gap][qVal]
-			scores[left] = table[i][j-1] + self.Matrix[rVal][gap]
+			scores[diag] = table[i-1][j-1] + a.Matrix[rVal][qVal]
+			scores[up] = table[i-1][j] + a.Matrix[gap][qVal]
+			scores[left] = table[i][j-1] + a.Matrix[rVal][gap]
 			switch d := maxIndex(scores[:]); d {
 			case diag:
 				i--
@@ -129,21 +129,21 @@ func (self *Aligner) Align(reference, query *seq.Seq) (aln seq.Alignment, err er
 			case up:
 				i--
 				refAln.Seq = append(refAln.Seq, reference.Seq[i])
-				queryAln.Seq = append(queryAln.Seq, self.GapChar)
+				queryAln.Seq = append(queryAln.Seq, a.GapChar)
 			case left:
 				j--
 				queryAln.Seq = append(queryAln.Seq, query.Seq[j])
-				refAln.Seq = append(refAln.Seq, self.GapChar)
+				refAln.Seq = append(refAln.Seq, a.GapChar)
 			}
 		}
 	}
 
 	for ; i > 0; i-- {
 		refAln.Seq = append(refAln.Seq, reference.Seq[i-1])
-		queryAln.Seq = append(queryAln.Seq, self.GapChar)
+		queryAln.Seq = append(queryAln.Seq, a.GapChar)
 	}
 	for ; j > 0; j-- {
-		refAln.Seq = append(refAln.Seq, self.GapChar)
+		refAln.Seq = append(refAln.Seq, a.GapChar)
 		queryAln.Seq = append(queryAln.Seq, query.Seq[j-1])
 	}
 
