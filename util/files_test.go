@@ -19,6 +19,7 @@ import (
 	"bytes"
 	"crypto/md5"
 	"fmt"
+	"io/ioutil"
 	check "launchpad.net/gocheck"
 	"os"
 	"os/exec"
@@ -42,6 +43,12 @@ func (s *S) TestHash(c *check.C) {
 	if err != nil {
 		c.Fatalf("%v %s", md5sum, err)
 	}
+	x, err := ioutil.ReadAll(f)
+	if err != nil {
+		c.Fatal(err)
+	}
+	f.Seek(0, 0)
+
 	md5hash, err := Hash(md5.New(), f)
 	if err != nil {
 		c.Fatal(err)
@@ -49,4 +56,10 @@ func (s *S) TestHash(c *check.C) {
 	md5string := fmt.Sprintf("%x .*\n", md5hash)
 
 	c.Check(string(b.Bytes()), check.Matches, md5string)
+
+	y, err := ioutil.ReadAll(f)
+	if err != nil {
+		c.Fatal(err)
+	}
+	c.Check(x, check.DeepEquals, y)
 }

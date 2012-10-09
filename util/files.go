@@ -28,28 +28,24 @@ const (
 
 var buffer = make([]byte, bufferLen)
 
-// Hash returns the h hash sum of file ReadSeekStater and any error. The file is
-// Seek'd to the origin before and after the hash to ensure that the full file is summed and the
-// file is ready for other reads. The hash is not reset on return, so if individual files are to
-// be hashed with the same h, it should be reset.
-func Hash(h hash.Hash, file *os.File) (sum []byte, err error) {
-	fi, err := file.Stat()
+// Hash returns the h hash sum of file f and any error. The hash is not reset on return,
+// so if individual files are to be hashed with the same h, it should be reset.
+func Hash(h hash.Hash, f *os.File) (sum []byte, err error) {
+	fi, err := f.Stat()
 	if err != nil || fi.IsDir() {
-		return nil, bio.NewError("Is a directory", 0, file)
+		return nil, bio.NewError("Is a directory", 0, f)
 	}
 
-	file.Seek(0, 0)
+	s := io.NewSectionReader(f, 0, fi.Size())
 
-	for n, buffer := 0, make([]byte, bufferLen); err == nil || err == io.ErrUnexpectedEOF; {
-		n, err = io.ReadAtLeast(file, buffer, bufferLen)
+	for n, buffer := 0, make([]byte, bufferLen); err == nil; {
+		n, err = s.Read(buffer)
 		h.Write(buffer[:n])
 	}
-
-	if err == io.EOF || err == io.ErrUnexpectedEOF {
+	if err == io.EOF {
 		err = nil
 	}
 
-	file.Seek(0, 0)
 	sum = h.Sum(nil)
 
 	return
