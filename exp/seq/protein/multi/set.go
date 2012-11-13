@@ -26,27 +26,27 @@ import (
 
 type Set []protein.Sequence
 
-// Interface guarantees:
+// Interface guarantees
 var (
-	_ protein.Getter         = &Multi{}
-	_ protein.GetterAppender = &Multi{}
+	_ protein.Getter         = &Set{}
+	_ protein.GetterAppender = &Set{}
 )
 
-// Append each []byte in a to the appropriate sequence in the reciever.
-func (self Set) AppendEach(a [][]alphabet.QLetter) (err error) {
-	if len(a) != self.Count() {
-		return bio.NewError(fmt.Sprintf("Number of sequences does not match Count(): %d != %d.", len(a), self.Count()), 0, a)
+// Append each []QLetter in a to the appropriate sequence in the receiver.
+func (s Set) AppendEach(a [][]alphabet.QLetter) (err error) {
+	if len(a) != s.Rows() {
+		return bio.NewError(fmt.Sprintf("Number of sequences does not match Rows(): %d != %d.", len(a), s.Rows()), 0, a)
 	}
 	var i int
-	for _, s := range self {
-		if m, ok := s.(protein.GetterAppender); ok {
-			count := m.Count()
-			if m.AppendEach(a[i:i+count]) != nil {
+	for _, r := range s {
+		if m, ok := r.(protein.GetterAppender); ok {
+			row := m.Rows()
+			if m.AppendEach(a[i:i+row]) != nil {
 				panic("internal size mismatch")
 			}
-			i += count
+			i += row
 		} else {
-			if ap, ok := s.(seq.Appender); ok {
+			if ap, ok := r.(seq.Appender); ok {
 				ap.AppendQLetters(a[i]...)
 			} else {
 				panic("Non-Multiple Sequence type without Append")
@@ -58,31 +58,31 @@ func (self Set) AppendEach(a [][]alphabet.QLetter) (err error) {
 	return
 }
 
-func (self Set) Get(i int) protein.Sequence {
-	var count int
-	for _, s := range self {
-		if m, ok := s.(protein.Getter); ok {
-			count = m.Count()
-			if i < count {
+func (s Set) Get(i int) protein.Sequence {
+	var row int
+	for _, r := range s {
+		if m, ok := r.(protein.Getter); ok {
+			row = m.Rows()
+			if i < row {
 				return m.Get(i)
 			}
 		} else {
-			count = 1
+			row = 1
 			if i == 0 {
-				return s
+				return r
 			}
 		}
-		i -= count
+		i -= row
 	}
 
 	panic("index out of range")
 }
 
-func (self Set) Len() int {
+func (s Set) Len() int {
 	max := util.MinInt
 
-	for _, s := range self {
-		if l := s.Len(); l > max {
+	for _, r := range s {
+		if l := r.Len(); l > max {
 			max = l
 		}
 	}
@@ -90,10 +90,10 @@ func (self Set) Len() int {
 	return max
 }
 
-func (self Set) Count() (c int) {
-	for _, s := range self {
-		if m, ok := s.(protein.Getter); ok {
-			c += m.Count()
+func (s Set) Rows() (c int) {
+	for _, r := range s {
+		if m, ok := r.(rowCounter); ok {
+			c += m.Rows()
 		} else {
 			c++
 		}
@@ -102,8 +102,8 @@ func (self Set) Count() (c int) {
 	return
 }
 
-func (self Set) Reverse() {
-	for _, s := range self {
-		s.Reverse()
+func (s Set) Reverse() {
+	for _, r := range s {
+		r.Reverse()
 	}
 }

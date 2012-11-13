@@ -16,91 +16,259 @@
 package alphabet
 
 import (
-	"code.google.com/p/biogo/bio"
 	"math"
 	"unsafe"
 )
 
-type QLetter struct {
-	L Letter
-	Q Qphred
+// The Slice interface reflects the builtin slice type behaviour.
+type Slice interface {
+	// Make makes a Slice with the same concrete type as the receiver. Make will
+	// panic if len or cap are less than zero or cap is less than len.
+	Make(len, cap int) Slice
+
+	// Len returns the length of the Slice.
+	Len() int
+
+	// Cap returns the capacity of the Slice.
+	Cap() int
+
+	// Slice returns a slice of the Slice. The returned slice may be backed by
+	// the same array as the receiver.
+	Slice(start, end int) Slice
+
+	// Append appends src... to the receiver and returns the resulting slice. If the append
+	// results in a grow slice the reciever will not reflect the appended slice, so the
+	// returned Slice should always be stored. Append should panic if src and the receiver
+	// are not the same concrete type.
+	Append(src Slice) Slice
+
+	// Copy copies elements from src into the receiver, returning the number of elements
+	// copied. Copy should panic if src and the receiver are not the same concrete type.
+	Copy(src Slice) int
 }
 
-// Pack a QLetter into a QPack. a.Len() == 4.
-func (self QLetter) Pack(a Nucleic) (QPack, error) {
-	if a.Len() != 4 {
-		return 0, bio.NewError("Invalid alphabet", 0, self)
-	}
-	if !a.IsValid(self.L) {
-		return QPack(byte(self.Q) << 2), bio.NewError("Invalid letter", 0, self)
-	}
-	return QPack(byte(self.Q)<<2 | byte(a.IndexOf(self.L)&0x3)), nil
-}
-
-const logThreshQL = 1e2 // Approximate count where range loop becomes slower than copy
-
-// Repeat a QLetter count times.
-func (self QLetter) Repeat(count int) (r []QLetter) {
-	r = make([]QLetter, count)
-	switch {
-	case count == 0:
-	case count < logThreshQL:
-		for i := range r {
-			r[i] = self
-		}
-	default:
-		r[0] = self
-		for i := 1; i < len(r); {
-			i += copy(r[i:], r[:i])
-		}
-	}
-
-	return
-}
-
+// An Encoding represents a quality score encoding scheme.
+//                                                                                             Q-range
+//
+//  Sanger         !"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHI···                                 0 - 40
+//  Solexa                                 ··;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdefgh··· -5 - 40
+//  Illumina 1.3+                                 @ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdefgh···  0 - 40
+//  Illumina 1.5+                                 xxḆCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdefgh···  3 - 40
+//  Illumina 1.8+  !"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJ···                                0 - 40
+//
+//                 !"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdefgh··· ···{|}~
+//                 |                         |    |        |                              |          |
+//                33                        59   64       73                            104        126
+//
+//  Q-range for typical raw reads
 type Encoding int8
 
 const (
-	None Encoding = iota - 1
-	Sanger
-	Solexa
-	Illumina1_3
-	Illumina1_5
-	Illumina1_8
-	Illumina1_9
+	None        Encoding = iota - 1
+	Sanger               // Phred+33
+	Solexa               // Solexa+64
+	Illumina1_3          // Phred+64
+	Illumina1_5          // Phred+64 0,1=unused, 2=Read Segment Quality Control Indicator (Ḇ)
+	Illumina1_8          // Phred+33
+	Illumina1_9          // Phred+33
 )
 
+// DecodeToPhred interpets the byte q as an e encoded quality and returns the corresponding Phred score.
+func (e Encoding) DecodeToQphred(q byte) Qphred {
+	switch e {
+	case Sanger, Illumina1_8, Illumina1_9:
+		return Qphred(q) - 33
+	case Illumina1_3, Illumina1_5:
+		return Qphred(q) - 64
+	case Solexa:
+		return (Qsolexa(q) - 64).Qphred()
+	case None:
+		panic("alphabet: no encoding defined")
+	default:
+		panic("alphabet: illegal encoding")
+	}
+
+	panic("cannot reach")
+}
+
+// DecodeToPhred interpets the byte q as an e encoded quality and returns the corresponding Solexa score.
+func (e Encoding) DecodeToQsolexa(q byte) Qsolexa {
+	switch e {
+	case Sanger, Illumina1_8, Illumina1_9:
+		return (Qphred(q) - 33).Qsolexa()
+	case Illumina1_3, Illumina1_5:
+		return (Qphred(q) - 64).Qsolexa()
+	case Solexa:
+		return Qsolexa(q) - 64
+	case None:
+		panic("alphabet: no encoding defined")
+	default:
+		panic("alphabet: illegal encoding")
+	}
+
+	panic("cannot reach")
+}
+
+// A Letter represents a sequence letter.
 type Letter byte
 
 const logThreshL = 2e2 // Approximate count where range loop becomes slower than copy
 
 // Repeat a Letter count times.
-func (self Letter) Repeat(count int) (r []Letter) {
-	r = make([]Letter, count)
+func (l Letter) Repeat(count int) []Letter {
+	r := make([]Letter, count)
 	switch {
 	case count == 0:
 	case count < logThreshL:
 		for i := range r {
-			r[i] = self
+			r[i] = l
 		}
 	default:
-		r[0] = self
+		r[0] = l
 		for i := 1; i < len(r); {
 			i += copy(r[i:], r[:i])
 		}
 	}
 
-	return
+	return r
 }
 
+// BytesToLetters converts a []byte to a []Letter.
 func BytesToLetters(b []byte) []Letter { return *(*[]Letter)(unsafe.Pointer(&b)) }
 
+// LettersToBytes converts a []Letter to a []byte.
 func LettersToBytes(l []Letter) []byte { return *(*[]byte)(unsafe.Pointer(&l)) }
 
+// A Letters is a slice of Letter that satisfies the Slice interface.
 type Letters []Letter
 
-func (self Letters) String() string { return string(LettersToBytes(self)) }
+func (l Letters) Make(len, cap int) Slice    { return make(Letters, len, cap) }
+func (l Letters) Len() int                   { return len(l) }
+func (l Letters) Cap() int                   { return cap(l) }
+func (l Letters) Slice(start, end int) Slice { return l[start:end] }
+func (l Letters) Append(src Slice) Slice     { return append(l, src.(Letters)...) }
+func (l Letters) Copy(src Slice) int         { return copy(l, src.(Letters)) }
+func (l Letters) String() string             { return string(LettersToBytes(l)) }
 
+// A Columns is a slice of []Letter that satisfies the alphabet.Slice interface.
+type Columns [][]Letter
+
+// Make makes a QColumns with the cap and len for each column set to the number of rows of the
+// receiver.
+func (lc Columns) Make(len, cap int) Slice {
+	r := lc.Rows()
+	return make(Columns, len, cap).MakeRows(r, r)
+}
+
+// MakeRows makes a column with len and cap for each column of the receiver and returns the receiver.
+func (lc Columns) MakeRows(len, cap int) Slice {
+	for i := range lc {
+		lc[i] = make([]Letter, len, cap)
+	}
+	return lc
+}
+
+// Rows returns the number of positions in each column.
+func (lc Columns) Rows() int { return len(lc[0]) }
+
+func (lc Columns) Len() int                   { return len(lc) }
+func (lc Columns) Cap() int                   { return cap(lc) }
+func (lc Columns) Slice(start, end int) Slice { return lc[start:end] }
+func (lc Columns) Append(a Slice) Slice {
+	// TODO deep copy the columns.
+	return append(lc, a.(Columns)...)
+}
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
+}
+func (lc Columns) Copy(a Slice) int {
+	ac := a.(Columns)
+	var n int
+	for i, src := range ac[:min(len(lc), len(ac))] {
+		n += copy(lc[i], src)
+	}
+	return n
+}
+
+// A QLetter represents a sequence letter with an associated quality score.
+type QLetter struct {
+	L Letter
+	Q Qphred
+}
+
+const logThreshQL = 1e2 // Approximate count where range loop becomes slower than copy
+
+// Repeat a QLetter count times.
+func (ql QLetter) Repeat(count int) []QLetter {
+	r := make([]QLetter, count)
+	switch {
+	case count == 0:
+	case count < logThreshQL:
+		for i := range r {
+			r[i] = ql
+		}
+	default:
+		r[0] = ql
+		for i := 1; i < len(r); {
+			i += copy(r[i:], r[:i])
+		}
+	}
+
+	return r
+}
+
+// A QLetters is a slice of QLetter that satisfies the Slice interface.
+type QLetters []QLetter
+
+func (ql QLetters) Make(len, cap int) Slice    { return make(QLetters, len, cap) }
+func (ql QLetters) Len() int                   { return len(ql) }
+func (ql QLetters) Cap() int                   { return cap(ql) }
+func (ql QLetters) Slice(start, end int) Slice { return ql[start:end] }
+func (ql QLetters) Append(src Slice) Slice     { return append(ql, src.(QLetters)...) }
+func (ql QLetters) Copy(src Slice) int         { return copy(ql, src.(QLetters)) }
+
+// A QColumns is a slice of []QLetter that satisfies the Slice interface.
+type QColumns [][]QLetter
+
+// Make makes a QColumns with the cap and len for each column set to the number of rows of the
+// receiver.
+func (qc QColumns) Make(len, cap int) Slice {
+	r := qc.Rows()
+	return make(QColumns, len, cap).MakeRows(r, r)
+}
+
+// MakeRows makes a column with len and cap for each column of the receiver and returns the receiver.
+func (qc QColumns) MakeRows(len, cap int) Slice {
+	for i := range qc {
+		qc[i] = make([]QLetter, len, cap)
+	}
+	return qc
+}
+
+// Rows returns the number of positions in each column.
+func (qc QColumns) Rows() int { return len(qc[0]) }
+
+func (qc QColumns) Len() int                   { return len(qc) }
+func (qc QColumns) Cap() int                   { return cap(qc) }
+func (qc QColumns) Slice(start, end int) Slice { return qc[start:end] }
+func (qc QColumns) Append(a Slice) Slice {
+	// TODO deep copy the columns.
+	return append(qc, a.(QColumns)...)
+}
+
+func (qc QColumns) Copy(a Slice) int {
+	ac := a.(QColumns)
+	var n int
+	for i, src := range ac[:min(len(qc), len(ac))] {
+		n += copy(qc[i], src)
+	}
+	return n
+}
+
+// A Qscore represents a quality score.
 type Qscore interface {
 	ProbE() float64
 	Encode(Encoding) byte
@@ -109,21 +277,10 @@ type Qscore interface {
 
 var nan = math.NaN()
 
+// A Qphred represents a Phred quality score.
 type Qphred byte
 
-func DecodeToQphred(q byte, encoding Encoding) (p Qphred) {
-	switch encoding {
-	case Sanger, Illumina1_8, Illumina1_9:
-		return Qphred(q) - 33
-	case Illumina1_3, Illumina1_5:
-		return Qphred(q) - 64
-	case Solexa:
-		return (Qsolexa(q) - 64).Qphred()
-	}
-
-	panic("cannot reach")
-}
-
+// Ephred returns the Qphred for a error probability p.
 func Ephred(p float64) Qphred {
 	if p == 0 {
 		return 254
@@ -138,45 +295,48 @@ func Ephred(p float64) Qphred {
 	return Qphred(Q)
 }
 
-func (self Qphred) ProbE() float64 {
-	if self == 254 {
+// ProbE returns the error probability for the receiver's Phred value.
+func (qp Qphred) ProbE() float64 {
+	if qp == 254 {
 		return 0
-	} else if self == 255 {
+	} else if qp == 255 {
 		return nan
 	}
-	return math.Pow(10, -(float64(self) / 10))
+	return math.Pow(10, -(float64(qp) / 10))
 }
 
-func (self Qphred) Qsolexa() Qsolexa {
-	if self == 254 {
+// Qsolexa converts the quality value from Phred to Solexa. This conversion is lossy.
+func (qp Qphred) Qsolexa() Qsolexa {
+	if qp == 254 {
 		return 127
 	}
-	if self == 255 {
+	if qp == 255 {
 		return -128
 	}
-	return Qsolexa(10 * math.Log10(math.Pow(10, float64(self)/10)-1))
+	return Qsolexa(10 * math.Log10(math.Pow(10, float64(qp)/10)-1))
 }
 
-func (self Qphred) Encode(encoding Encoding) (q byte) {
-	if self == 254 {
+// Encode encodes the reciever's Phred score to a byte based on the specified encoding.
+func (qp Qphred) Encode(e Encoding) (q byte) {
+	if qp == 254 {
 		return '~'
 	}
-	if self == 255 {
+	if qp == 255 {
 		return ' '
 	}
-	switch encoding {
+	switch e {
 	case Sanger, Illumina1_8, Illumina1_9:
-		q = byte(self)
+		q = byte(qp)
 		if q <= 93 {
 			q += 33
 		}
 	case Illumina1_3:
-		q = byte(self)
+		q = byte(qp)
 		if q <= 62 {
 			q += 64
 		}
 	case Illumina1_5:
-		q = byte(self)
+		q = byte(qp)
 		if q <= 62 {
 			q += 64
 		}
@@ -185,7 +345,7 @@ func (self Qphred) Encode(encoding Encoding) (q byte) {
 		}
 		return q
 	case Solexa:
-		q = byte(self.Qsolexa())
+		q = byte(qp.Qsolexa())
 		if q <= 62 {
 			q += 64
 		}
@@ -194,30 +354,19 @@ func (self Qphred) Encode(encoding Encoding) (q byte) {
 	return
 }
 
-func (self Qphred) String() string {
-	if self < 254 {
-		return string([]byte{byte(self)})
-	} else if self == 255 {
+func (qp Qphred) String() string {
+	if qp < 254 {
+		return string([]byte{byte(qp)})
+	} else if qp == 255 {
 		return " "
 	}
 	return "\u221e"
 }
 
+// A Qsolexa represents a Solexa quality score.
 type Qsolexa int8
 
-func DecodeToQsolexa(q byte, encoding Encoding) (p Qsolexa) {
-	switch encoding {
-	case Sanger, Illumina1_8, Illumina1_9:
-		return (Qphred(q) - 33).Qsolexa()
-	case Illumina1_3, Illumina1_5:
-		return (Qphred(q) - 64).Qsolexa()
-	case Solexa:
-		return Qsolexa(q) - 64
-	}
-
-	panic("cannot reach")
-}
-
+// Esolexa returns the Qsolexa for a error probability p.
 func Esolexa(p float64) Qsolexa {
 	if p == 0 {
 		return 127
@@ -228,47 +377,50 @@ func Esolexa(p float64) Qsolexa {
 	return Qsolexa(-10 * math.Log10(p/(1-p)))
 }
 
-func (self Qsolexa) ProbE() float64 {
-	if self == 127 {
+// ProbE returns the error probability for the receiver's Phred value.
+func (qs Qsolexa) ProbE() float64 {
+	if qs == 127 {
 		return 0
 	}
-	if self == -128 {
+	if qs == -128 {
 		return nan
 	}
-	pq := math.Pow(10, -(float64(self) / 10))
+	pq := math.Pow(10, -(float64(qs) / 10))
 	return pq / (1 + pq)
 }
 
-func (self Qsolexa) Qphred() Qphred {
-	if self == 127 {
+// Qphred converts the quality value from Solexa to Phred. This conversion is lossy.
+func (qs Qsolexa) Qphred() Qphred {
+	if qs == 127 {
 		return 254
 	}
-	if self == -128 {
+	if qs == -128 {
 		return 255
 	}
-	return Qphred(10 * math.Log10(math.Pow(10, float64(self)/10)+1))
+	return Qphred(10 * math.Log10(math.Pow(10, float64(qs)/10)+1))
 }
 
-func (self Qsolexa) Encode(encoding Encoding) (q byte) {
-	if self == 127 {
+// Encode encodes the reciever's Solexa score to a byte based on the specified encoding.
+func (qs Qsolexa) Encode(e Encoding) (q byte) {
+	if qs == 127 {
 		return '~'
 	}
-	if self == -128 {
+	if qs == -128 {
 		return ' '
 	}
-	switch encoding {
+	switch e {
 	case Sanger, Illumina1_8:
-		q = byte(self.Qphred())
+		q = byte(qs.Qphred())
 		if q <= 93 {
 			q += 33
 		}
 	case Illumina1_3:
-		q = byte(self.Qphred())
+		q = byte(qs.Qphred())
 		if q <= 62 {
 			q += 64
 		}
 	case Illumina1_5:
-		q = byte(self.Qphred())
+		q = byte(qs.Qphred())
 		if q <= 62 {
 			q += 64
 		}
@@ -276,7 +428,7 @@ func (self Qsolexa) Encode(encoding Encoding) (q byte) {
 			q = 'B'
 		}
 	case Solexa:
-		q = byte(self)
+		q = byte(qs)
 		if q <= 62 {
 			q += 64
 		}
@@ -285,26 +437,11 @@ func (self Qsolexa) Encode(encoding Encoding) (q byte) {
 	return
 }
 
-func (self Qsolexa) String() string {
-	if self < 127 && self != -128 {
-		return string([]byte{byte(self)})
-	} else if self == -128 {
+func (qs Qsolexa) String() string {
+	if qs < 127 && qs != -128 {
+		return string([]byte{byte(qs)})
+	} else if qs == -128 {
 		return " "
 	}
 	return "\u221e"
-}
-
-// Bitpacked sequence. 2 bits per base.
-type Pack byte
-
-// Bitpacked quality base. Bits 0 and 1 encode base, 2-7 encode quality.
-// Behaviour is undefined if alphabet used does not satisfy Len() == 4.
-type QPack byte
-
-// Upack a QPack to a QLetter.
-func (self QPack) Unpack(a Nucleic) QLetter {
-	return QLetter{
-		L: a.Letter(int(self & 0x3)),
-		Q: Qphred(self >> 2),
-	}
 }

@@ -17,16 +17,16 @@
 package multi
 
 import (
-	"code.google.com/p/biogo/bio"
 	"code.google.com/p/biogo/exp/alphabet"
+	"code.google.com/p/biogo/exp/feat"
 	"code.google.com/p/biogo/exp/seq"
 	"code.google.com/p/biogo/exp/seq/nucleic"
-	"code.google.com/p/biogo/exp/seq/nucleic/packed"
-	"code.google.com/p/biogo/feat"
-	"code.google.com/p/biogo/interval"
+	"code.google.com/p/biogo/exp/seq/sequtils"
 	"code.google.com/p/biogo/util"
+	"errors"
 	"fmt"
 	"reflect"
+	"sort"
 	"sync"
 )
 
@@ -36,317 +36,139 @@ func init() {
 }
 
 var (
-	emptyString        = ""
 	joinerRegistryLock *sync.RWMutex
 	joinerRegistry     map[reflect.Type]JoinFunc
 )
 
-type Multi struct {
-	ID         string
-	Desc       string
-	Loc        string
-	S          []nucleic.Sequence
-	Consensify nucleic.Consensifyer
-	Stringify  seq.Stringify
-	Meta       interface{} // No operation implicitly copies or changes the contents of Meta.
-	alphabet   alphabet.Nucleic
-	offset     int
-	circular   bool
-	encoding   alphabet.Encoding
+type rowCounter interface {
+	Rows() int
 }
 
-// Create a new Multi sequence. Including Alignment or QAlignment types in n will result in undefined behaviour.
-func NewMulti(id string, n []nucleic.Sequence, cons nucleic.Consensifyer) (m *Multi, err error) {
+func rows(s nucleic.Sequence) int {
+	row := 1
+	if m, ok := s.(rowCounter); ok {
+		row = m.Rows()
+	}
+	return row
+}
+
+type Multi struct {
+	nucleic.Annotation
+	Seq        []nucleic.Sequence
+	Consensify seq.ConsenseFunc
+	Encode     alphabet.Encoding
+}
+
+// Create a new Multi sequence.
+func NewMulti(id string, n []nucleic.Sequence, cons seq.ConsenseFunc) (*Multi, error) {
 	var alpha alphabet.Nucleic
 	for _, s := range n {
 		if alpha != nil && s.Alphabet() != alpha {
-			return nil, bio.NewError("Inconsistent alphabets", 0, n)
+			return nil, errors.New("multi: inconsistent alphabets")
 		} else if alpha == nil {
 			alpha = s.Alphabet().(alphabet.Nucleic)
 		}
 	}
-	m = &Multi{
-		ID:         id,
-		S:          n,
-		alphabet:   alpha,
-		Consensify: cons,
-		Stringify: func(s seq.Polymer) string {
-			t := s.(*Multi).Consensus(false)
-			return t.String()
+	return &Multi{
+		Annotation: nucleic.Annotation{
+			ID:    id,
+			Alpha: alpha,
 		},
-	}
-
-	return
+		Seq:        n,
+		Consensify: cons,
+	}, nil
 }
 
-// Interface guarantees:
-var (
-	_ seq.Polymer             = &Multi{}
-	_ seq.Sequence            = &Multi{}
-	_ seq.Scorer              = &Multi{}
-	_ nucleic.Sequence        = &Multi{}
-	_ nucleic.Quality         = &Multi{}
-	_ nucleic.Getter          = &Multi{}
-	_ nucleic.GetterAppender  = &Multi{}
-	_ nucleic.Aligned         = &Multi{}
-	_ nucleic.AlignedAppender = &Multi{}
-)
-
-// Required to satisfy nucleic Sequence interface.
-func (self *Multi) Nucleic() {}
-
-// Name returns a pointer to the ID string of the sequence.
-func (self *Multi) Name() *string { return &self.ID }
-
-// Description returns a pointer to the Desc string of the sequence.
-func (self *Multi) Description() *string { return &self.Desc }
-
-// Location returns a pointer to the Loc string of the sequence.
-func (self *Multi) Location() *string { return &self.Loc }
-
-// TODO
-// func (self *Multi) Delete(i int) {}
-
-func (self *Multi) Add(n ...nucleic.Sequence) (err error) {
-	for _, s := range n {
-		if s.Alphabet() != self.alphabet {
-			return bio.NewError("Inconsistent alphabets", 0, self, s)
+// At returns the letter at position pos.
+func (m *Multi) At(pos seq.Position) alphabet.QLetter {
+	for _, r := range m.Seq {
+		row := rows(r)
+		if pos.Row < row {
+			return r.At(pos)
 		}
+		pos.Row -= row
 	}
-	self.S = append(self.S, n...)
 
-	return
+	panic("multi: index out of range")
 }
 
-// Raw returns a pointer to the underlying []nucleic.Sequence slice.
-func (self *Multi) Raw() interface{} { return &self.S }
-
-// Append a to the ith sequence in the reciever.
-func (self *Multi) Append(i int, a ...alphabet.QLetter) (err error) {
-	return self.Get(i).(seq.Appender).AppendQLetters(a...)
-}
-
-// Append each byte of each a to the appropriate sequence in the reciever.
-func (self *Multi) AppendColumns(a ...[]alphabet.QLetter) (err error) {
-	for i, s := range a {
-		if len(s) != self.Count() {
-			return bio.NewError(fmt.Sprintf("Column %d does not match Count(): %d != %d.", i, len(s), self.Count()), 0, a)
+// Set sets the letter at position pos to l.
+func (m *Multi) Set(pos seq.Position, l alphabet.QLetter) {
+	for _, r := range m.Seq {
+		row := rows(r)
+		if pos.Row < row {
+			r.Set(pos, l)
+			return
 		}
-	}
-	for i, b := 0, make([]alphabet.QLetter, 0, len(a)); i < self.Count(); i, b = i+1, b[:0] {
-		for _, s := range a {
-			b = append(b, s[i])
-		}
-		self.Append(i, b...)
+		pos.Row -= row
 	}
 
-	return
+	panic("multi: index out of range")
 }
 
-// Append each []byte in a to the appropriate sequence in the reciever.
-func (self *Multi) AppendEach(a [][]alphabet.QLetter) (err error) {
-	if len(a) != self.Count() {
-		return bio.NewError(fmt.Sprintf("Number of sequences does not match Count(): %d != %d.", len(a), self.Count()), 0, a)
-	}
-	var i int
-	for _, s := range self.S {
-		if al, ok := s.(nucleic.AlignedAppender); ok {
-			count := al.Count()
-			if al.AppendEach(a[i:i+count]) != nil {
-				panic("internal size mismatch")
-			}
-			i += count
-		} else {
-			s.(seq.Appender).AppendQLetters(a[i]...)
-			i++
-		}
-	}
-
-	return
-}
-
-func (self *Multi) Get(i int) nucleic.Sequence {
-	var count int
-	for _, s := range self.S {
-		if m, ok := s.(nucleic.Getter); ok {
-			count = m.Count()
-			if i < count {
-				return m.Get(i)
-			}
-		} else {
-			count = 1
-			if i == 0 {
-				return s
+// SetE sets the quality at position pos to e to reflect the given p(Error).
+func (m *Multi) SetE(pos seq.Position, q float64) {
+	for _, r := range m.Seq {
+		row := rows(r)
+		if pos.Row < row {
+			if qs, ok := r.(seq.Quality); ok {
+				qs.SetE(pos, q)
+				return
 			}
 		}
-		i -= count
+		pos.Row -= row
 	}
 
-	panic("index out of range")
+	panic("multi: index out of range")
 }
 
-func (self *Multi) Alphabet() alphabet.Alphabet { return self.alphabet }
-
-func (self *Multi) At(pos seq.Position) alphabet.QLetter {
-	var count int
-	for _, s := range self.S {
-		count = s.Count()
-		if pos.Ind < count {
-			return s.At(pos)
-		}
-		pos.Ind -= count
-	}
-
-	panic("index out of range")
+// QEncode encodes the quality at position pos to a letter based on the sequence encoding setting.
+func (m *Multi) QEncode(pos seq.Position) byte {
+	return m.At(pos).Q.Encode(m.Encode)
 }
 
-// Encode the quality at position pos to a letter based on the sequence encoding setting.
-func (self *Multi) QEncode(pos seq.Position) byte {
-	return self.At(pos).Q.Encode(self.encoding)
-}
+// Encoding returns the quality encoding scheme.
+func (m *Multi) Encoding() alphabet.Encoding { return m.Encode }
 
-// Decode a quality letter to a phred score based on the sequence encoding setting.
-func (self *Multi) QDecode(l byte) alphabet.Qphred { return alphabet.DecodeToQphred(l, self.encoding) }
-
-// Return the quality encoding type.
-func (self *Multi) Encoding() alphabet.Encoding { return self.encoding }
-
-// Set the quality encoding type to e.
-func (self *Multi) SetEncoding(e alphabet.Encoding) {
-	for _, s := range self.S {
-		if enc, ok := s.(seq.Encoder); ok {
+// SetEncoding sets the quality encoding scheme to e.
+func (m *Multi) SetEncoding(e alphabet.Encoding) {
+	for _, r := range m.Seq {
+		if enc, ok := r.(seq.Scorer); ok {
 			enc.SetEncoding(e)
 		}
 	}
-	self.encoding = e
+	m.Encode = e
 }
 
-func (self *Multi) EAt(pos seq.Position) float64 {
-	var count int
-	for _, s := range self.S {
-		if a, ok := s.(seq.Counter); ok {
-			count = a.Count()
-		} else {
-			count = 1
-		}
-		if pos.Ind < count {
-			if qs, ok := s.(seq.Quality); ok {
+// EAt returns the probability of a sequence error at position pos.
+func (m *Multi) EAt(pos seq.Position) float64 {
+	for _, r := range m.Seq {
+		row := rows(r)
+		if pos.Row < row {
+			if qs, ok := r.(seq.Quality); ok {
 				return qs.EAt(pos)
 			} else {
 				return nucleic.DefaultQphred.ProbE()
 			}
 		}
-		pos.Ind -= count
+		pos.Row -= row
 	}
 
-	panic("index out of range")
+	panic("multi: index out of range")
 }
 
-func (self *Multi) SetE(pos seq.Position, q float64) {
-	var count int
-	for _, s := range self.S {
-		if a, ok := s.(seq.Counter); ok {
-			count = a.Count()
-		} else {
-			count = 1
-		}
-		if pos.Ind < count {
-			if qs, ok := s.(seq.Quality); ok {
-				qs.SetE(pos, q)
-				return
-			}
-		}
-		pos.Ind -= count
-	}
+// Len returns the length of the alignment.
+func (m *Multi) Len() int {
+	var (
+		min = util.MaxInt
+		max = util.MinInt
+	)
 
-	panic("index out of range")
-}
-
-func (self *Multi) Set(pos seq.Position, l alphabet.QLetter) {
-	var count int
-	for _, s := range self.S {
-		count = s.Count()
-		if pos.Ind < count {
-			s.Set(pos, l)
-			return
-		}
-		pos.Ind -= count
-	}
-
-	panic("index out of range")
-}
-
-func (self *Multi) Column(pos int, fill bool) []alphabet.Letter {
-	if pos < self.Start() || pos >= self.End() {
-		panic("index out of range")
-	}
-
-	var c []alphabet.Letter
-	if fill {
-		c = make([]alphabet.Letter, 0, self.Count())
-	} else {
-		c = []alphabet.Letter{}
-	}
-
-	for _, s := range self.S {
-		if a, ok := s.(nucleic.Aligned); ok {
-			if a.Start() <= pos && pos < a.End() {
-				c = append(c, a.Column(pos, fill)...)
-			} else if fill {
-				c = append(c, self.alphabet.Gap().Repeat(a.Count())...)
-			}
-		} else {
-			if s.Start() <= pos && pos < s.End() {
-				c = append(c, s.At(seq.Position{Pos: pos}).L)
-			} else if fill {
-				c = append(c, self.alphabet.Gap())
-			}
-		}
-	}
-
-	return c
-}
-
-func (self *Multi) ColumnQL(pos int, fill bool) []alphabet.QLetter {
-	if pos < self.Start() || pos >= self.End() {
-		panic("index out of range")
-	}
-
-	var c []alphabet.QLetter
-	if fill {
-		c = make([]alphabet.QLetter, 0, self.Count())
-	} else {
-		c = []alphabet.QLetter{}
-	}
-
-	for _, s := range self.S {
-		if a, ok := s.(nucleic.Aligned); ok {
-			if a.Start() <= pos && pos < a.End() {
-				c = append(c, a.ColumnQL(pos, fill)...)
-			} else if fill {
-				c = append(c, alphabet.QLetter{L: self.alphabet.Gap()}.Repeat(a.Count())...)
-			}
-		} else {
-			if s.Start() <= pos && pos < s.End() {
-				c = append(c, s.At(seq.Position{Pos: pos}))
-			} else if fill {
-				c = append(c, alphabet.QLetter{L: self.alphabet.Gap()})
-			}
-		}
-	}
-
-	return c
-}
-
-func (self *Multi) Len() int {
-	min := util.MaxInt
-	max := util.MinInt
-
-	for _, s := range self.S {
-		if start := s.Start(); start < min {
+	for _, r := range m.Seq {
+		if start := r.Start(); start < min {
 			min = start
 		}
-		if end := s.End(); end > max {
+		if end := r.End(); end > max {
 			max = end
 		}
 	}
@@ -354,320 +176,484 @@ func (self *Multi) Len() int {
 	return max - min
 }
 
-func (self *Multi) Count() (c int) {
-	for _, s := range self.S {
-		c += s.Count()
-	}
-
-	return
-}
-
-func (self *Multi) Offset(o int) {
-	for _, s := range self.S {
-		s.Offset(s.Start() - self.offset + o)
-	}
-	self.offset = o
-}
-
-func (self *Multi) Start() (start int) {
-	start = util.MaxInt
-
-	for _, s := range self.S {
-		if l := s.Start(); l < start {
-			start = l
-		}
-	}
-
-	return
-}
-
-func (self *Multi) End() (end int) {
-	end = util.MinInt
-
-	for _, s := range self.S {
-		if r := s.End(); r > end {
-			end = r
-		}
-	}
-
-	return
-}
-
-func (self *Multi) Copy() seq.Sequence {
-	c := &Multi{}
-	*c = *self
-	c.Meta = nil
-	c.S = make([]nucleic.Sequence, len(self.S))
-	for i, s := range self.S {
-		c.S[i] = s.Copy().(nucleic.Sequence)
+// Rows returns the number of rows in the alignment.
+func (m *Multi) Rows() int {
+	var c int
+	for _, r := range m.Seq {
+		c += rows(r)
 	}
 
 	return c
 }
 
-func (self *Multi) RevComp() {
-	end := self.End()
-	for _, s := range self.S {
-		s.RevComp()
-		s.Offset(end - s.End())
+// SetOffset sets the global offset of the sequence to o.
+func (m *Multi) SetOffset(o int) {
+	for _, r := range m.Seq {
+		r.SetOffset(r.Start() - m.Offset + o)
+	}
+	m.Offset = o
+}
+
+// Start returns the start position of the sequence in global coordinates.
+func (m *Multi) Start() int {
+	start := util.MaxInt
+	for _, r := range m.Seq {
+		if lt := r.Start(); lt < start {
+			start = lt
+		}
+	}
+
+	return start
+}
+
+// End returns the end position of the sequence in global coordinates.
+func (m *Multi) End() int {
+	end := util.MinInt
+	for _, m := range m.Seq {
+		if rt := m.End(); rt > end {
+			end = rt
+		}
+	}
+
+	return end
+}
+
+// Copy returns a copy of the sequence.
+func (m *Multi) Copy() *Multi {
+	c := &Multi{}
+	*c = *m
+	c.Seq = make([]nucleic.Sequence, len(m.Seq))
+	for i, r := range m.Seq {
+		c.Seq[i] = r.Copy().(nucleic.Sequence)
+	}
+
+	return c
+}
+
+// RevComp reverse complements the sequence.
+func (m *Multi) RevComp() {
+	end := m.End()
+	for _, r := range m.Seq {
+		r.RevComp()
+		r.SetOffset(end - m.End())
 	}
 
 	return
 }
 
-func (self *Multi) Reverse() {
-	end := self.End()
-	for _, s := range self.S {
-		s.Reverse()
-		s.Offset(end - s.End())
+// Reverse reverses the order of letters in the the sequence without complementing them.
+func (m *Multi) Reverse() {
+	end := m.End()
+	for _, r := range m.Seq {
+		r.Reverse()
+		r.SetOffset(end - m.End())
 	}
 }
 
-func (self *Multi) Circular(c bool) { self.circular = c }
+// Conformation returns the sequence conformation.
+func (m *Multi) Conformation() feat.Conformation { return m.Conform }
 
-func (self *Multi) IsCircular() bool { return self.circular }
+// SetConformation sets the sequence conformation.
+func (m *Multi) SetConformation(c feat.Conformation) {
+	for _, r := range m.Seq {
+		r.SetConformation(c)
+	}
+	m.Conform = c
+}
 
-func (self *Multi) IsFlush(where int) bool {
-	if self.Count() == 0 {
+// Add adds sequences n to the multiple sequence.
+func (m *Multi) Add(n ...nucleic.Sequence) error {
+	for _, r := range n {
+		if r.Alphabet() != m.Alpha {
+			return errors.New("multi: inconsistent alphabets")
+		}
+	}
+	m.Seq = append(m.Seq, n...)
+
+	return nil
+}
+
+// TODO
+func (m *Multi) Delete(i int) {}
+
+// Get returns the sequence corresponding to the ith row of the Seq.
+func (m *Multi) Get(i int) nucleic.Sequence {
+	var row int
+	for _, r := range m.Seq {
+		if m, ok := r.(nucleic.Getter); ok {
+			row = m.Rows()
+			if i < row {
+				return m.Get(i)
+			}
+		} else {
+			row = 1
+			if i == 0 {
+				return r
+			}
+		}
+		i -= row
+	}
+
+	panic("multi: index out of range")
+}
+
+// Append appends a to the ith sequence in the receiver.
+func (m *Multi) Append(i int, a ...alphabet.QLetter) (err error) {
+	return m.Get(i).(seq.Appender).AppendQLetters(a...)
+}
+
+// Append each byte of each a to the appropriate sequence in the reciever.
+func (m *Multi) AppendColumns(a ...[]alphabet.QLetter) (err error) {
+	for i, c := range a {
+		if len(c) != m.Rows() {
+			return fmt.Errorf("multi: column %d does not match Rows(): %d != %d.", i, len(c), m.Rows())
+		}
+	}
+	for i, b := 0, make([]alphabet.QLetter, 0, len(a)); i < m.Rows(); i, b = i+1, b[:0] {
+		for _, r := range a {
+			b = append(b, r[i])
+		}
+		m.Append(i, b...)
+	}
+
+	return
+}
+
+// AppendEach appends each []alphabet.QLetter in a to the appropriate sequence in the receiver.
+func (m *Multi) AppendEach(a [][]alphabet.QLetter) (err error) {
+	if len(a) != m.Rows() {
+		return fmt.Errorf("multi: number of sequences does not match Rows(): %d != %d.", len(a), m.Rows())
+	}
+	var i int
+	for _, r := range m.Seq {
+		if al, ok := r.(nucleic.AlignedAppender); ok {
+			row := al.Rows()
+			if al.AppendEach(a[i:i+row]) != nil {
+				panic("internal size mismatch")
+			}
+			i += row
+		} else {
+			r.(seq.Appender).AppendQLetters(a[i]...)
+			i++
+		}
+	}
+
+	return
+}
+
+// Column returns a slice of letters reflecting the column at pos.
+func (m *Multi) Column(pos int, fill bool) []alphabet.Letter {
+	if pos < m.Start() || pos >= m.End() {
+		panic("multi: index out of range")
+	}
+
+	var c []alphabet.Letter
+	if fill {
+		c = make([]alphabet.Letter, 0, m.Rows())
+	} else {
+		c = []alphabet.Letter{}
+	}
+
+	for _, r := range m.Seq {
+		if a, ok := r.(seq.Aligned); ok {
+			if a.Start() <= pos && pos < a.End() {
+				c = append(c, a.Column(pos, fill)...)
+			} else if fill {
+				c = append(c, m.Alpha.Gap().Repeat(a.Rows())...)
+			}
+		} else {
+			if r.Start() <= pos && pos < r.End() {
+				c = append(c, r.At(seq.Position{Col: pos}).L)
+			} else if fill {
+				c = append(c, m.Alpha.Gap())
+			}
+		}
+	}
+
+	return c
+}
+
+// ColumnQL returns a slice of quality letters reflecting the column at pos.
+func (m *Multi) ColumnQL(pos int, fill bool) []alphabet.QLetter {
+	if pos < m.Start() || pos >= m.End() {
+		panic("multi: index out of range")
+	}
+
+	var c []alphabet.QLetter
+	if fill {
+		c = make([]alphabet.QLetter, 0, m.Rows())
+	} else {
+		c = []alphabet.QLetter{}
+	}
+
+	for _, r := range m.Seq {
+		if a, ok := r.(seq.Aligned); ok {
+			if a.Start() <= pos && pos < a.End() {
+				c = append(c, a.ColumnQL(pos, fill)...)
+			} else if fill {
+				c = append(c, alphabet.QLetter{L: m.Alpha.Gap()}.Repeat(a.Rows())...)
+			}
+		} else {
+			if r.Start() <= pos && pos < r.End() {
+				c = append(c, r.At(seq.Position{Col: pos}))
+			} else if fill {
+				c = append(c, alphabet.QLetter{L: m.Alpha.Gap()})
+			}
+		}
+	}
+
+	return c
+}
+
+// IsFlush returns a boolean indicating whether the end specified by where is flush - that is
+// all the contributing sequences start at the same offset.
+func (m *Multi) IsFlush(where int) bool {
+	if m.Rows() <= 1 {
 		return true
 	}
 	var start, end int
-	for i, s := range self.S {
-		if l, r := s.Start(), s.End(); i > 0 &&
-			((l != start && where&seq.Start != 0) ||
-				(r != end && where&seq.End != 0)) {
+	for i, r := range m.Seq {
+		if lt, rt := r.Start(), r.End(); i > 0 &&
+			((lt != start && where&seq.Start != 0) ||
+				(rt != end && where&seq.End != 0)) {
 			return false
 		} else if i == 0 {
-			start, end = l, r
+			start, end = lt, rt
 		}
 	}
 	return true
 }
 
-func (self *Multi) Flush(where int, fill alphabet.Letter) {
-	if self.IsFlush(where) {
+// Flush fills ragged sequences with the receiver's gap letter so that all sequences are flush.
+func (m *Multi) Flush(where int, fill alphabet.Letter) {
+	if m.IsFlush(where) {
 		return
 	}
 
 	if where&seq.Start != 0 {
-		start := self.Start()
-		for _, s := range self.S {
-			if s.Start()-start < 1 {
+		start := m.Start()
+		for _, r := range m.Seq {
+			if r.Start()-start < 1 {
 				continue
 			}
-			if m, ok := s.(*Multi); ok {
-				m.Flush(where, fill)
-				continue
+			switch sl := r.Slice().(type) {
+			case alphabet.Letters:
+				r.SetSlice(alphabet.Letters(append(fill.Repeat(r.Start()-start), sl...)))
+			case alphabet.QLetters:
+				r.SetSlice(alphabet.QLetters(append(alphabet.QLetter{L: fill}.Repeat(r.Start()-start), sl...)))
 			}
-			S := s.Raw()
-			switch S.(type) {
-			case *[]alphabet.Letter:
-				uS := S.(*[]alphabet.Letter)
-				*uS = append(fill.Repeat(s.Start()-start), *uS...)
-			case *[]alphabet.QLetter:
-				uS := S.(*[]alphabet.QLetter)
-				*uS = append(alphabet.QLetter{L: fill}.Repeat(s.Start()-start), *uS...)
-			case packed.Packing, *[]alphabet.QPack:
-				panic("not implemented") // and never will be
-				// packed.Seq cannot hold letters beyond the 4 letters in the
-				// alphabet so it cannot have gaps.
-				// Perhaps a bitmap of valid bases may be considered though
-				// I can't see any particularly strong argument for this.
-				// packed.QSeq could have gaps, by assigning 0 Qphred, but this
-				// opens up possibility for abuse unless a valid bitmap is also
-				// inlcuded for this type.
-			}
-			s.Offset(start)
+			r.SetOffset(start)
 		}
 	}
 	if where&seq.End != 0 {
-		end := self.End()
-		for i := 0; i < self.Count(); i++ {
-			s := self.Get(i)
-			if end-s.End() < 1 {
+		end := m.End()
+		for i := 0; i < m.Rows(); i++ {
+			r := m.Get(i)
+			if end-r.End() < 1 {
 				continue
 			}
-			s.(seq.Appender).AppendQLetters(alphabet.QLetter{L: fill}.Repeat(end - s.End())...)
+			r.(seq.Appender).AppendQLetters(alphabet.QLetter{L: fill}.Repeat(end - r.End())...)
 		}
 	}
 }
 
-func (self *Multi) Subseq(start, end int) (sub seq.Sequence, err error) {
-	var (
-		ns []nucleic.Sequence
-		s  *Multi
-	)
+// Subseq returns a multiple subsequence slice of the receiver.
+func (m *Multi) Subseq(start, end int) (*Multi, error) {
+	var ns []nucleic.Sequence
 
-	for _, s := range self.S {
-		rs, err := s.Subseq(start, end)
+	for _, r := range m.Seq {
+		rs := reflect.New(reflect.TypeOf(r)).Interface().(sequtils.Sliceable)
+		err := sequtils.Truncate(rs, r, start, end)
 		if err != nil {
 			return nil, err
 		}
 		ns = append(ns, rs.(nucleic.Sequence))
 	}
 
-	s = &Multi{}
-	*s = *self
-	s.S = ns
+	ss := &Multi{}
+	*ss = *m
+	ss.Seq = ns
 
-	return s, nil
+	return ss, nil
 }
 
-func (self *Multi) Truncate(start, end int) (err error) {
-	for _, s := range self.S {
-		err = s.Truncate(start, end)
+// Truncate truncates the the receiver from start to end.
+func (m *Multi) Truncate(start, end int) error {
+	for _, r := range m.Seq {
+		err := sequtils.Truncate(r, r, start, end)
 		if err != nil {
 			return err
 		}
 	}
 
-	return
+	return nil
 }
 
-func (self *Multi) Join(a *Multi, where int) (err error) {
-	if self.Count() != a.Count() {
-		return bio.NewError("Multis do not hold the same number of sequences", 0, []*Multi{self, a})
+// Join joins a to the receiver at the end specied by where.
+func (m *Multi) Join(a *Multi, where int) error {
+	if m.Rows() != a.Rows() {
+		return fmt.Errorf("multi: row number mismatch %d != %d", m.Rows(), a.Rows())
 	}
 
 	switch where {
 	case seq.Start:
 		if !a.IsFlush(seq.End) {
-			a.Flush(seq.End, self.alphabet.Gap())
+			a.Flush(seq.End, m.Alpha.Gap())
 		}
-		if !self.IsFlush(seq.Start) {
-			self.Flush(seq.Start, self.alphabet.Gap())
+		if !m.IsFlush(seq.Start) {
+			m.Flush(seq.Start, m.Alpha.Gap())
 		}
 	case seq.End:
 		if !a.IsFlush(seq.Start) {
-			a.Flush(seq.Start, self.alphabet.Gap())
+			a.Flush(seq.Start, m.Alpha.Gap())
 		}
-		if !self.IsFlush(seq.End) {
-			self.Flush(seq.End, self.alphabet.Gap())
+		if !m.IsFlush(seq.End) {
+			m.Flush(seq.End, m.Alpha.Gap())
 		}
 	}
 
-	for i := 0; i < self.Count(); i++ {
-		s := self.Get(i)
+	for i := 0; i < m.Rows(); i++ {
+		r := m.Get(i)
 		as := a.Get(i)
-		err = joinOne(s, as, where)
-		if err != nil {
-			return
-		}
-	}
-
-	return
-}
-
-func joinOne(s, as nucleic.Sequence, where int) (err error) {
-	switch s.(type) {
-	case *nucleic.Seq:
-		if t, ok := as.(*nucleic.Seq); !ok {
-			err = joinFailure(s, t)
-		} else {
-			err = s.(*nucleic.Seq).Join(t, where)
-		}
-	case *nucleic.QSeq:
-		if t, ok := as.(*nucleic.QSeq); !ok {
-			err = joinFailure(s, t)
-		} else {
-			err = s.(*nucleic.QSeq).Join(t, where)
-		}
-	case *packed.Seq:
-		if t, ok := as.(*packed.Seq); !ok {
-			err = joinFailure(s, t)
-		} else {
-			err = s.(*packed.Seq).Join(t, where)
-		}
-	case *packed.QSeq:
-		if t, ok := as.(*packed.QSeq); !ok {
-			err = joinFailure(s, t)
-		} else {
-			err = s.(*packed.QSeq).Join(t, where)
-		}
-	case *Multi:
-		if t, ok := as.(*Multi); !ok {
-			err = joinFailure(s, t)
-		} else {
-			err = s.(*Multi).Join(t, where)
-		}
-	default:
-		joinerRegistryLock.RLock()
-		if joinerFunc, ok := joinerRegistry[reflect.TypeOf(s)]; ok {
-			err = joinerFunc(s, as, where)
-		} else {
-			err = bio.NewError(fmt.Sprintf("Sequence type %T not handled.", s), 0, s)
-		}
-		joinerRegistryLock.RUnlock()
-	}
-
-	return
-}
-
-func joinFailure(s, as nucleic.Sequence) error {
-	return bio.NewError(fmt.Sprintf("Sequence type mismatch: %T != %T.", s, as), 0, []nucleic.Sequence{s, as})
-}
-
-type JoinFunc func(a, b nucleic.Sequence, where int) (err error)
-
-func RegisterJoiner(p seq.Polymer, f JoinFunc) {
-	joinerRegistryLock.Lock()
-	joinerRegistry[reflect.TypeOf(p)] = f
-	joinerRegistryLock.Unlock()
-}
-
-func (self *Multi) Stitch(f feat.FeatureSet) (err error) {
-	tr := interval.NewTree()
-	var i *interval.Interval
-
-	for _, feature := range f {
-		i, err = interval.New(emptyString, feature.Start, feature.End, 0, nil)
-		if err != nil {
-			return
-		} else {
-			tr.Insert(i)
-		}
-	}
-
-	span, err := interval.New(emptyString, self.Start(), self.End(), 0, nil)
-	if err != nil {
-		panic("Sequence.End() < Sequence.Start()")
-	}
-	fs, _ := tr.Flatten(span, 0, 0)
-
-	ff := feat.FeatureSet{}
-	for _, seg := range fs {
-		ff = append(ff, &feat.Feature{
-			Start: util.Max(seg.Start(), self.Start()),
-			End:   util.Min(seg.End(), self.End()),
-		})
-	}
-
-	return self.Compose(ff)
-}
-
-func (self *Multi) Compose(f feat.FeatureSet) (err error) {
-	self.Flush(seq.Start|seq.End, self.alphabet.Gap())
-
-	for _, s := range self.S {
-		err = s.Compose(f)
+		err := joinOne(r, as, where)
 		if err != nil {
 			return err
 		}
 	}
 
-	return
+	return nil
 }
 
-func (self *Multi) String() string { return self.Stringify(self) }
-
-func (self *Multi) Consensus(includeMissing bool) (c *nucleic.QSeq) {
-	cs := make([]alphabet.QLetter, 0, self.Len())
-	for i := self.Start(); i < self.End(); i++ {
-		cs = append(cs, self.Consensify(self, i, includeMissing))
+func joinOne(m, am nucleic.Sequence, where int) error {
+	switch m.(type) {
+	case *nucleic.Seq:
+		_, ok := am.(*nucleic.Seq)
+		if !ok {
+			goto MISMATCH
+		}
+		return sequtils.Join(m, am, where)
+	case *nucleic.QSeq:
+		_, ok := am.(*nucleic.QSeq)
+		if !ok {
+			goto MISMATCH
+		}
+		return sequtils.Join(m, am, where)
+	default:
+		joinerRegistryLock.RLock()
+		defer joinerRegistryLock.RUnlock()
+		joinerFunc, ok := joinerRegistry[reflect.TypeOf(m)]
+		if !ok {
+			return fmt.Errorf("multi: sequence type %T not handled.", m)
+		}
+		if reflect.TypeOf(m) != reflect.TypeOf(am) {
+			goto MISMATCH
+		}
+		return joinerFunc(m, am, where)
 	}
 
-	c = nucleic.NewQSeq("Consensus:"+self.ID, cs, self.alphabet, self.encoding)
-	c.Offset(self.offset)
+MISMATCH:
+	return fmt.Errorf("multi: sequence type mismatch: %T != %T.", m, am)
+}
 
-	return
+type JoinFunc func(a, b nucleic.Sequence, where int) (err error)
+
+func RegisterJoiner(p nucleic.Sequence, f JoinFunc) {
+	joinerRegistryLock.Lock()
+	joinerRegistry[reflect.TypeOf(p)] = f
+	joinerRegistryLock.Unlock()
+}
+
+type ft struct {
+	s, e int
+}
+
+func (f *ft) Start() int                    { return f.s }
+func (f *ft) End() int                      { return f.e }
+func (f *ft) Len() int                      { return f.e - f.s }
+func (f *ft) Orientation() feat.Orientation { return feat.Forward }
+func (f *ft) Name() string                  { return "" }
+func (f *ft) Description() string           { return "" }
+func (f *ft) Location() feat.Feature        { return nil }
+
+type fts []feat.Feature
+
+func (f fts) Features() []feat.Feature { return f }
+func (f fts) Len() int                 { return len(f) }
+func (f fts) Less(i, j int) bool       { return f[i].Start() < f[j].Start() }
+func (f fts) Swap(i, j int)            { f[i], f[j] = f[j], f[i] }
+
+func max(a, b int) int {
+	if a > b {
+		return a
+	}
+	return b
+}
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
+}
+
+// Stitch produces a subsequence of the receiver defined by fs. The result is stored in the receiver
+// and all contributing sequences are modified.
+func (m *Multi) Stitch(fs feat.Set) error {
+	ff := fs.Features()
+	for _, f := range ff {
+		if f.End() < f.Start() {
+			return errors.New("multi: feature end < feature start")
+		}
+	}
+	ff = append(fts(nil), ff...)
+	sort.Sort(fts(ff))
+
+	var (
+		fsp = make(fts, 0, len(ff))
+		csp *ft
+	)
+	for i, f := range ff {
+		if s := f.Start(); i == 0 || s > csp.e {
+			csp = &ft{s: s, e: f.End()}
+			fsp = append(fsp, csp)
+		} else {
+			csp.e = max(csp.e, f.End())
+		}
+	}
+
+	return m.Compose(fsp)
+}
+
+// Compose produces a composition of the receiver defined by the features in fs. The result is stored
+// in the receiver and all contributing sequences are modified.
+func (m *Multi) Compose(fs feat.Set) error {
+	m.Flush(seq.Start|seq.End, m.Alpha.Gap())
+
+	for _, r := range m.Seq {
+		err := sequtils.Compose(r, r, fs)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m *Multi) String() string {
+	t := m.Consensus(false)
+	return t.String()
+}
+
+// Consensus returns a quality sequence reflecting the consensus of the receiver determined by the
+// Consensify field.
+func (m *Multi) Consensus(includeMissing bool) *nucleic.QSeq {
+	cm := make([]alphabet.QLetter, 0, m.Len())
+	alpha := m.Alphabet()
+	for i := m.Start(); i < m.End(); i++ {
+		cm = append(cm, m.Consensify(m, alpha, i, includeMissing))
+	}
+
+	c := nucleic.NewQSeq("Consensus:"+m.ID, cm, m.Alpha, m.Encode)
+	c.SetOffset(m.Offset)
+
+	return c
 }

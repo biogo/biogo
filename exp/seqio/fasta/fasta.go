@@ -19,10 +19,10 @@ package fasta
 import (
 	"bufio"
 	"bytes"
-	"code.google.com/p/biogo/bio"
 	"code.google.com/p/biogo/exp/alphabet"
 	"code.google.com/p/biogo/exp/seq"
 	"code.google.com/p/biogo/exp/seqio"
+	"fmt"
 	"io"
 )
 
@@ -41,11 +41,12 @@ type Reader struct {
 	working   seqio.SequenceAppender
 }
 
-// Returns a new fasta format reader using f.
-func NewReader(f io.Reader, t seqio.SequenceAppender) *Reader {
+// Returns a new fasta format reader using f. Sequences returned by the Reader are copied
+// from the provided template.
+func NewReader(f io.Reader, template seqio.SequenceAppender) *Reader {
 	return &Reader{
 		r:         bufio.NewReader(f),
-		t:         t,
+		t:         template,
 		IDPrefix:  []byte(DefaultIDPrefix),
 		SeqPrefix: []byte(DefaultSeqPrefix),
 		working:   nil,
@@ -53,71 +54,67 @@ func NewReader(f io.Reader, t seqio.SequenceAppender) *Reader {
 }
 
 // Read a single sequence and return it or an error.
-func (self *Reader) Read() (s seq.Sequence, err error) {
+func (self *Reader) Read() (seq.Sequence, error) {
 	var (
 		buff, line []byte
 		isPrefix   bool
+		s          seq.Sequence
 	)
 
 	for {
-		if buff, isPrefix, err = self.r.ReadLine(); err == nil {
-			if isPrefix {
-				line = append(line, buff...)
-				continue
-			} else {
-				line = buff
+		var err error
+		if buff, isPrefix, err = self.r.ReadLine(); err != nil {
+			if err != io.EOF || self.working == nil {
+				return nil, err
 			}
+			s = self.working
+			self.working = nil
+			return s, nil
+		}
 
-			line = bytes.TrimSpace(line)
-			if len(line) == 0 {
-				continue
-			}
+		if isPrefix {
+			line = append(line, buff...)
+			continue
+		} else {
+			line = buff
+		}
+		line = bytes.TrimSpace(line)
+		if len(line) == 0 {
+			continue
+		}
 
-			if bytes.HasPrefix(line, self.IDPrefix) {
-				if self.working == nil {
-					self.working = self.header(line)
-					line = nil
-				} else {
-					s = self.working
-					self.working = self.header(line)
-					line = nil
-					break // entering a new sequence so exit read loop
-				}
-			} else if bytes.HasPrefix(line, self.SeqPrefix) {
-				line = bytes.Join(bytes.Fields(line[len(self.SeqPrefix):]), nil)
-				self.working.AppendLetters(alphabet.BytesToLetters(line)...)
+		if bytes.HasPrefix(line, self.IDPrefix) {
+			if self.working == nil {
+				self.working = self.header(line)
 				line = nil
 			} else {
-				return nil, bio.NewError("fasta: badly formed line", 0, line)
+				s = self.working
+				self.working = self.header(line)
+				return s, nil
 			}
+		} else if bytes.HasPrefix(line, self.SeqPrefix) {
+			line = bytes.Join(bytes.Fields(line[len(self.SeqPrefix):]), nil)
+			self.working.AppendLetters(alphabet.BytesToLetters(line)...)
+			line = nil
 		} else {
-			if err == io.EOF {
-				if self.working != nil {
-					s = self.working
-					self.working = nil
-					err = nil
-				}
-				break
-			}
-			return nil, err
+			return nil, fmt.Errorf("fasta: badly formed line %d", line)
 		}
 	}
 
-	return
+	panic("cannot reach")
 }
 
-func (self *Reader) header(line []byte) (s seqio.SequenceAppender) {
-	s = self.t.Copy().(seqio.SequenceAppender)
+func (self *Reader) header(line []byte) seqio.SequenceAppender {
+	s := self.t.Copy().(seqio.SequenceAppender)
 	fieldMark := bytes.IndexAny(line, " \t")
 	if fieldMark < 0 {
-		*s.Name() = string(line[len(self.IDPrefix):])
-		*s.Description() = ""
+		s.SetName(string(line[len(self.IDPrefix):]))
 	} else {
-		*s.Name() = string(line[len(self.IDPrefix):fieldMark])
-		*s.Description() = string(line[fieldMark+1:])
+		s.SetName(string(line[len(self.IDPrefix):fieldMark]))
+		s.SetDescription(string(line[fieldMark+1:]))
 	}
 
-	return
+	return s
 }
 
 // Fasta sequence format writer type.
@@ -139,12 +136,12 @@ func NewWriter(w io.Writer, width int) *Writer {
 }
 
 // Write a single sequence and return the number of bytes written and any error.
-func (self *Writer) Write(s seqio.Sequence) (n int, err error) {
+func (self *Writer) Write(s seq.Sequence) (n int, err error) {
 	var (
 		ln, c  int
 		prefix = append([]byte{'\n'}, self.SeqPrefix...)
 	)
-	id, desc := *s.Name(), *s.Description()
+	id, desc := s.Name(), s.Description()
 	header := make([]byte, 0, len(self.IDPrefix)+len(id)+len(desc)+1)
 	header = append(header, self.IDPrefix...)
 	header = append(header, id...)
@@ -162,7 +159,7 @@ func (self *Writer) Write(s seqio.Sequence) (n int, err error) {
 					return
 				}
 			}
-			ln, err = self.w.Write([]byte{byte(s.At(seq.Position{Pos: i, Ind: c}).L)})
+			ln, err = self.w.Write([]byte{byte(s.At(seq.Position{Col: i, Row: c}).L)})
 			if n += ln; err != nil {
 				return
 			}

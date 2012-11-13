@@ -19,15 +19,15 @@ import (
 	"code.google.com/p/biogo/exp/alphabet"
 	"code.google.com/p/biogo/exp/seq"
 	"code.google.com/p/biogo/exp/seq/nucleic"
-	"code.google.com/p/biogo/feat"
+	"code.google.com/p/biogo/exp/seq/sequtils"
 	"fmt"
 )
 
 var (
 	qm, qn   *QSeq
 	qaligned = func(a *QSeq) {
-		for i := 0; i < a.Count(); i++ {
-			s := a.Extract(i)
+		for i := 0; i < a.Rows(); i++ {
+			s := a.Get(i)
 			fmt.Printf("%v\n", s)
 		}
 		fmt.Println()
@@ -62,7 +62,7 @@ func init() {
 		},
 		alphabet.DNA,
 		alphabet.Sanger,
-		nucleic.QConsensify)
+		seq.DefaultQConsensus)
 
 	if err != nil {
 		panic(err)
@@ -95,7 +95,7 @@ func ExampleNewQSeq() {
 		},
 		alphabet.DNA,
 		alphabet.Sanger,
-		nucleic.QConsensify)
+		seq.DefaultQConsensus)
 	if err != nil {
 		panic(err)
 	}
@@ -110,11 +110,11 @@ func ExampleNewQSeq() {
 }
 
 func ExampleQSeq_Add() {
-	fmt.Printf("%v %v\n", qm.Count(), qm)
+	fmt.Printf("%v %v\n", qm.Rows(), qm)
 	qm.Add(nucleic.NewQSeq("example DNA",
 		[]alphabet.QLetter{{'a', 40}, {'c', 39}, {'g', 40}, {'C', 38}, {'t', 35}, {'g', 20}},
 		alphabet.DNA, alphabet.Sanger))
-	fmt.Printf("%v %v\n", qm.Count(), qm)
+	fmt.Printf("%v %v\n", qm.Rows(), qm)
 	// Output:
 	// 3 acgntgacntggcgcncat
 	// 4 acgctgacntggcgcncat
@@ -122,7 +122,7 @@ func ExampleQSeq_Add() {
 
 func ExampleQSeq_Copy() {
 	qn = qm.Copy().(*QSeq)
-	qn.Set(seq.Position{Pos: 3, Ind: 2}, alphabet.QLetter{L: 't', Q: 40})
+	qn.Set(seq.Position{Col: 3, Row: 2}, alphabet.QLetter{L: 't', Q: 40})
 	qaligned(qm)
 	fmt.Println()
 	qaligned(qn)
@@ -143,16 +143,18 @@ func ExampleQSeq_Copy() {
 }
 
 func ExampleQSeq_Count() {
-	fmt.Println(qm.Count())
+	fmt.Println(qm.Rows())
 	// Output:
 	// 4
 }
 
 func ExampleQSeq_Join() {
 	qaligned(qn)
-	qn.Join(qm, seq.End)
-	fmt.Println()
-	qaligned(qn)
+	err := sequtils.Join(qn, qm, seq.End)
+	if err == nil {
+		fmt.Println()
+		qaligned(qn)
+	}
 	// Output:
 	// ACGCTGACTTGGTGCACGT
 	// ACGGTGACCTGGCGCGCAT
@@ -197,13 +199,13 @@ func ExampleQSeq_RevComp() {
 }
 
 func ExampleQSeq_Stitch() {
-	f := feat.FeatureSet{
-		&feat.Feature{Start: -1, End: 4},
-		&feat.Feature{Start: 30, End: 38},
+	f := fs{
+		&fe{s: -1, e: 4},
+		&fe{s: 30, e: 38},
 	}
 	qaligned(qn)
 	fmt.Println()
-	if err := qn.Stitch(f); err == nil {
+	if err := sequtils.Stitch(qn, qn, f); err == nil {
 		qaligned(qn)
 	} else {
 		fmt.Println(err)
@@ -226,9 +228,11 @@ func ExampleQSeq_Stitch() {
 
 func ExampleQSeq_Truncate() {
 	qaligned(qm)
-	qm.Truncate(4, 12)
-	fmt.Println()
-	qaligned(qm)
+	err := sequtils.Truncate(qm, qm, 4, 12)
+	if err == nil {
+		fmt.Println()
+		qaligned(qm)
+	}
 	// Output:
 	// ACGTGCACCAAGTCAGCGT
 	// ATGCGCGCCAGGTCACCGT

@@ -16,17 +16,17 @@
 package sequtils
 
 import (
-	"code.google.com/p/biogo/exp/alphabet"
+	"code.google.com/p/biogo/exp/feat"
 	"code.google.com/p/biogo/exp/seq"
-	"code.google.com/p/biogo/feat"
 	"fmt"
 )
 
 func ExampleTruncate_1() {
-	s := []byte("ACGCTGACTTGGTGCACGT")
+	s := stringToConformRangeOffSlice("ACGCTGACTTGGTGCACGT")
+	s.conf = feat.Linear
 	fmt.Printf("%s\n", s)
-	if t, err := Truncate(s, 5, 12, false); err == nil {
-		fmt.Printf("%s\n", t)
+	if err := Truncate(s, s, 5, 12); err == nil {
+		fmt.Printf("%s\n", s)
 	}
 	// Output:
 	// ACGCTGACTTGGTGCACGT
@@ -34,81 +34,61 @@ func ExampleTruncate_1() {
 }
 
 func ExampleTruncate_2() {
-	s := []byte("ACGCTGACTTGGTGCACGT")
-
-	circular := true
-	fmt.Printf("%s Circular = %v\n", s, circular)
-	if t, err := Truncate(s, 12, 5, circular); err == nil {
-		fmt.Printf("%s\n", t)
+	var (
+		src = stringToConformRangeOffSlice("ACGCTGACTTGGTGCACGT")
+		dst = &conformRangeOffSlice{}
+	)
+	src.conf = feat.Circular
+	fmt.Printf("%s Conformation = %v\n", src, src.Conformation())
+	if err := Truncate(dst, src, 12, 5); err == nil {
+		fmt.Printf("%s\n", dst)
 	} else {
 		fmt.Println("Error:", err)
 	}
 
-	circular = false
-	fmt.Printf("%s Circular = %v\n", s, circular)
-	if t, err := Truncate(s, 12, 5, circular); err == nil {
-		fmt.Printf("%s\n", t)
+	src.conf = feat.Linear
+	fmt.Printf("%s Conformation = %v\n", src, src.Conformation())
+	if err := Truncate(dst, src, 12, 5); err == nil {
+		fmt.Printf("%s\n", dst)
 	} else {
 		fmt.Println("Error:", err)
 	}
 	// Output:
-	// ACGCTGACTTGGTGCACGT Circular = true
+	// ACGCTGACTTGGTGCACGT Conformation = circular
 	// TGCACGTACGCT
-	// ACGCTGACTTGGTGCACGT Circular = false
-	// Error: Start position greater than end position for non-circular sequence.
-}
-
-func ExampleReverse() {
-	String := func(Q []alphabet.Qphred) string {
-		b := make([]byte, 0, len(Q))
-		for _, q := range Q {
-			b = append(b, q.Encode(alphabet.Sanger))
-		}
-		return string(b)
-	}
-	q := []alphabet.Qphred{40, 40, 40, 39, 40, 36, 38, 32, 21, 13, 9, 0, 0, 0}
-
-	fmt.Println(String(q))
-	t := Reverse(q).([]alphabet.Qphred)
-	fmt.Println(String(t))
-	// Output:
-	// IIIHIEGA6.*!!!
-	// !!!*.6AGEIHIII
+	// ACGCTGACTTGGTGCACGT Conformation = linear
+	// Error: sequtils: start position greater than end position for linear sequence
 }
 
 func ExampleJoin() {
-	var (
-		s1, s2 []byte
-		t      interface{}
-		offset int
-	)
+	var s1, s2 *offSlice
 
-	s1 = []byte("agctgtgctga")
-	s2 = []byte("CGTGCAGTCATGAGTGA")
+	s1 = stringToOffSlice("agctgtgctga")
+	s2 = stringToOffSlice("CGTGCAGTCATGAGTGA")
 	fmt.Printf("%s %s\n", s1, s2)
-	t, offset = Join(s1, s2, seq.Start)
-	fmt.Printf("%s %d\n", t, offset)
+	Join(s1, s2, seq.Start)
+	fmt.Printf("%s\n", s1)
 
-	s1 = []byte("agctgtgctga")
-	s2 = []byte("CGTGCAGTCATGAGTGA")
-	t, offset = Join(s1, s2, seq.End)
-	fmt.Printf("%s %d\n", t, offset)
+	s1 = stringToOffSlice("agctgtgctga")
+	s2 = stringToOffSlice("CGTGCAGTCATGAGTGA")
+	Join(s1, s2, seq.End)
+	fmt.Printf("%s\n", s1)
 	// Output:
-	// agctgtgctga CGTGCAGTCATGAGTGA
+	// agctgtgctga 0 CGTGCAGTCATGAGTGA 0
 	// CGTGCAGTCATGAGTGAagctgtgctga -17
 	// agctgtgctgaCGTGCAGTCATGAGTGA 0
 }
 
 func ExampleStitch() {
-	s := []byte("aAGTATAAgtcagtgcagtgtctggcagTGCTCGTGCgtagtgaagtagGGTTAGTTTa")
-	f := feat.FeatureSet{
-		&feat.Feature{Start: 1, End: 8},
-		&feat.Feature{Start: 28, End: 37},
-		&feat.Feature{Start: 49, End: len(s) - 1},
+	s := stringToConformRangeOffSlice("aAGTATAAgtcagtgcagtgtctggcagTGCTCGTGCgtagtgaagtagGGTTAGTTTa")
+	f := fs{
+		fe{s: 1, e: 8},
+		fe{s: 28, e: 37},
+		fe{s: 49, e: len(s.slice) - 1},
 	}
 	fmt.Printf("%s\n", s)
-	if t, err := Stitch(s, 0, f); err == nil {
-		fmt.Printf("%s\n", t)
+	if err := Stitch(s, s, f); err == nil {
+		fmt.Printf("%s\n", s)
 	}
 	// Output:
 	// aAGTATAAgtcagtgcagtgtctggcagTGCTCGTGCgtagtgaagtagGGTTAGTTTa

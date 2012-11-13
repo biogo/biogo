@@ -17,9 +17,9 @@ package multi
 
 import (
 	"code.google.com/p/biogo/exp/alphabet"
+	"code.google.com/p/biogo/exp/feat"
 	"code.google.com/p/biogo/exp/seq"
 	"code.google.com/p/biogo/exp/seq/nucleic"
-	"code.google.com/p/biogo/feat"
 	"fmt"
 	"strings"
 )
@@ -28,7 +28,7 @@ var (
 	m, n    *Multi
 	aligned = func(a *Multi) {
 		start := a.Start()
-		for i := 0; i < a.Count(); i++ {
+		for i := 0; i < a.Rows(); i++ {
 			s := a.Get(i)
 			fmt.Printf("%s%v\n", strings.Repeat(" ", s.Start()-start), s)
 		}
@@ -45,7 +45,7 @@ func init() {
 			nucleic.NewSeq("example DNA 2", []alphabet.Letter("ACGGTGACCTGGCGCGCAT"), alphabet.DNA),
 			nucleic.NewSeq("example DNA 3", []alphabet.Letter("ACGATGACGTGGCGCTCAT"), alphabet.DNA),
 		},
-		nucleic.Consensify)
+		seq.DefaultConsensus)
 
 	if err != nil {
 		panic(err)
@@ -59,7 +59,7 @@ func ExampleNewMulti() {
 			nucleic.NewSeq("example DNA 2", []alphabet.Letter("ACGGTGACCTGGCGCGCAT"), alphabet.DNA),
 			nucleic.NewSeq("example DNA 3", []alphabet.Letter("ACGATGACGTGGCGCTCAT"), alphabet.DNA),
 		},
-		nucleic.Consensify)
+		seq.DefaultConsensus)
 
 	if err != nil {
 		return
@@ -76,7 +76,7 @@ func ExampleNewMulti() {
 
 func ExampleMulti_Add() {
 	var err error
-	fmt.Printf("%v %v\n", m.Count(), m)
+	fmt.Printf("%v %v\n", m.Rows(), m)
 	err = m.Add(nucleic.NewQSeq("example DNA",
 		[]alphabet.QLetter{{'a', 40}, {'c', 39}, {'g', 40}, {'C', 38}, {'t', 35}, {'g', 20}},
 		alphabet.DNA, alphabet.Sanger))
@@ -84,7 +84,7 @@ func ExampleMulti_Add() {
 		fmt.Println(err)
 		return
 	}
-	fmt.Printf("%v %v\n", m.Count(), m)
+	fmt.Printf("%v %v\n", m.Rows(), m)
 	err = m.Add(nucleic.NewQSeq("example RNA",
 		[]alphabet.QLetter{{'a', 40}, {'c', 39}, {'g', 40}, {'C', 38}, {'t', 35}, {'g', 20}},
 		alphabet.RNA, alphabet.Sanger))
@@ -95,12 +95,12 @@ func ExampleMulti_Add() {
 	// Output:
 	// 3 acgntgacntggcgcncat
 	// 4 acgctgacntggcgcncat
-	// Inconsistent alphabets
+	// multi: inconsistent alphabets
 }
 
 func ExampleMulti_Copy() {
-	n = m.Copy().(*Multi)
-	n.Set(seq.Position{Pos: 3, Ind: 2}, alphabet.QLetter{L: 't'})
+	n = m.Copy()
+	n.Set(seq.Position{Col: 3, Row: 2}, alphabet.QLetter{L: 't'})
 	aligned(m)
 	fmt.Println()
 	aligned(n)
@@ -121,13 +121,13 @@ func ExampleMulti_Copy() {
 }
 
 func ExampleMulti_Count() {
-	fmt.Println(m.Count())
+	fmt.Println(m.Rows())
 	// Output:
 	// 4
 }
 
 func ExampleMulti_IsFlush() {
-	m.Get(3).Offset(13)
+	m.Get(3).SetOffset(13)
 	aligned(m)
 	fmt.Printf("\nFlush at left: %v\nFlush at right: %v\n", m.IsFlush(seq.Start), m.IsFlush(seq.End))
 	m.Flush(seq.Start, '-')
@@ -204,10 +204,25 @@ func ExampleMulti_RevComp() {
 	// atgcgcgccangtcancgt
 }
 
+type fe struct {
+	s, e int
+	st   nucleic.Strand
+	feat.Feature
+}
+
+func (f fe) Start() int                    { return f.s }
+func (f fe) End() int                      { return f.e }
+func (f fe) Len() int                      { return f.e - f.s }
+func (f fe) Orientation() feat.Orientation { return feat.Orientation(f.st) }
+
+type fs []feat.Feature
+
+func (f fs) Features() []feat.Feature { return []feat.Feature(f) }
+
 func ExampleMulti_Stitch() {
-	f := feat.FeatureSet{
-		&feat.Feature{Start: -1, End: 4},
-		&feat.Feature{Start: 30, End: 38},
+	f := fs{
+		&fe{s: -1, e: 4},
+		&fe{s: 30, e: 38},
 	}
 	aligned(n)
 	fmt.Println()

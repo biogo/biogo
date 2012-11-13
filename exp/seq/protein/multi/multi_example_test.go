@@ -17,9 +17,9 @@ package multi
 
 import (
 	"code.google.com/p/biogo/exp/alphabet"
+	"code.google.com/p/biogo/exp/feat"
 	"code.google.com/p/biogo/exp/seq"
 	"code.google.com/p/biogo/exp/seq/protein"
-	"code.google.com/p/biogo/feat"
 	"fmt"
 	"strings"
 )
@@ -28,7 +28,7 @@ var (
 	m, n    *Multi
 	aligned = func(a *Multi) {
 		start := a.Start()
-		for i := 0; i < a.Count(); i++ {
+		for i := 0; i < a.Rows(); i++ {
 			s := a.Get(i)
 			fmt.Printf("%s%v\n", strings.Repeat(" ", s.Start()-start), s)
 		}
@@ -41,11 +41,11 @@ func init() {
 	var err error
 	m, err = NewMulti("example multi",
 		[]protein.Sequence{
-			protein.NewSeq("example protein 1", []alphabet.Letter("ACGCTGACTTGGTGCACGT"), alphabet.Protein),
-			protein.NewSeq("example protein 2", []alphabet.Letter("ACGGTGACCTGGCGCGCAT"), alphabet.Protein),
-			protein.NewSeq("example protein 3", []alphabet.Letter("ACGATGACGTGGCGCTCAT"), alphabet.Protein),
+			protein.NewSeq("example Protein 1", []alphabet.Letter("ACGCTGACTTGGTGCACGT"), alphabet.Protein),
+			protein.NewSeq("example Protein 2", []alphabet.Letter("ACGGTGACCTGGCGCGCAT"), alphabet.Protein),
+			protein.NewSeq("example Protein 3", []alphabet.Letter("ACGATGACGTGGCGCTCAT"), alphabet.Protein),
 		},
-		protein.Consensify)
+		seq.DefaultConsensus)
 
 	if err != nil {
 		panic(err)
@@ -55,11 +55,11 @@ func init() {
 func ExampleNewMulti() {
 	m, err := NewMulti("example multi",
 		[]protein.Sequence{
-			protein.NewSeq("example protein 1", []alphabet.Letter("ACGCTGACTTGGTGCACGT"), alphabet.Protein),
-			protein.NewSeq("example protein 2", []alphabet.Letter("ACGGTGACCTGGCGCGCAT"), alphabet.Protein),
-			protein.NewSeq("example protein 3", []alphabet.Letter("ACGATGACGTGGCGCTCAT"), alphabet.Protein),
+			protein.NewSeq("example Protein 1", []alphabet.Letter("ACGCTGACTTGGTGCACGT"), alphabet.Protein),
+			protein.NewSeq("example Protein 2", []alphabet.Letter("ACGGTGACCTGGCGCGCAT"), alphabet.Protein),
+			protein.NewSeq("example Protein 3", []alphabet.Letter("ACGATGACGTGGCGCTCAT"), alphabet.Protein),
 		},
-		protein.Consensify)
+		seq.DefaultConsensus)
 
 	if err != nil {
 		return
@@ -75,19 +75,24 @@ func ExampleNewMulti() {
 }
 
 func ExampleMulti_Add() {
-	fmt.Printf("%v %v\n", m.Count(), m)
-	m.Add(protein.NewQSeq("example protein",
+	var err error
+	fmt.Printf("%v %v\n", m.Rows(), m)
+	err = m.Add(protein.NewQSeq("example Protein",
 		[]alphabet.QLetter{{'a', 40}, {'c', 39}, {'g', 40}, {'C', 38}, {'t', 35}, {'g', 20}},
 		alphabet.Protein, alphabet.Sanger))
-	fmt.Printf("%v %v\n", m.Count(), m)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	fmt.Printf("%v %v\n", m.Rows(), m)
 	// Output:
 	// 3 acgxtgacxtggcgcxcat
 	// 4 acgctgacxtggcgcxcat
 }
 
 func ExampleMulti_Copy() {
-	n = m.Copy().(*Multi)
-	n.Set(seq.Position{Pos: 3, Ind: 2}, alphabet.QLetter{L: 't'})
+	n = m.Copy()
+	n.Set(seq.Position{Col: 3, Row: 2}, alphabet.QLetter{L: 't'})
 	aligned(m)
 	fmt.Println()
 	aligned(n)
@@ -108,13 +113,13 @@ func ExampleMulti_Copy() {
 }
 
 func ExampleMulti_Count() {
-	fmt.Println(m.Count())
+	fmt.Println(m.Rows())
 	// Output:
 	// 4
 }
 
 func ExampleMulti_IsFlush() {
-	m.Get(3).Offset(13)
+	m.Get(3).SetOffset(13)
 	aligned(m)
 	fmt.Printf("\nFlush at left: %v\nFlush at right: %v\n", m.IsFlush(seq.Start), m.IsFlush(seq.End))
 	m.Flush(seq.Start, '-')
@@ -180,29 +185,43 @@ func ExampleMulti_Reverse() {
 	// ACGGTGACCTGGCGCGCAT
 	// ACGATGACGTGGCGCTCAT
 	// -------------acgCtg
-	// 
+	//
 	// acgxtgacxtggcgcgcat
-	// 
+	//
 	// TGCACGTGGTTCAGTCGCA
 	// TACGCGCGGTCCAGTGGCA
 	// TACTCGCGGTGCAGTAGCA
 	// gtCgca-------------
-	// 
+	//
 	// tacgcgcggtxcagtxgca
 }
 
+type fe struct {
+	s, e int
+	or   feat.Orientation
+	feat.Feature
+}
+
+func (f fe) Start() int                    { return f.s }
+func (f fe) End() int                      { return f.e }
+func (f fe) Len() int                      { return f.e - f.s }
+func (f fe) Orientation() feat.Orientation { return f.or }
+
+type fs []feat.Feature
+
+func (f fs) Features() []feat.Feature { return []feat.Feature(f) }
+
 func ExampleMulti_Stitch() {
-	f := feat.FeatureSet{
-		&feat.Feature{Start: -1, End: 4},
-		&feat.Feature{Start: 30, End: 38},
+	f := fs{
+		&fe{s: -1, e: 4},
+		&fe{s: 30, e: 38},
 	}
 	aligned(n)
 	fmt.Println()
-	err := n.Stitch(f)
-	if err != nil {
-		fmt.Println(err)
-	} else {
+	if err := n.Stitch(f); err == nil {
 		aligned(n)
+	} else {
+		fmt.Println(err)
 	}
 	// Output:
 	// ACGCTGACTTGGTGCACGTACGCTGACTTGGTGCACGT
@@ -230,13 +249,13 @@ func ExampleMulti_Truncate() {
 	// TACGCGCGGTCCAGTGGCA
 	// TACTCGCGGTGCAGTAGCA
 	// gtCgca-------------
-	// 
+	//
 	// tacgcgcggtxcagtxgca
-	// 
+	//
 	// CGTGGTTC
 	// CGCGGTCC
 	// CGCGGTGC
 	// ca------
-	// 
+	//
 	// cgcggtxc
 }

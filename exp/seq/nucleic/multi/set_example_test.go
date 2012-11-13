@@ -53,8 +53,8 @@ func ExampleSet_AppendEach() {
 	// GCCTTTGCACGTTT
 }
 
-func ExampleSet_Count() {
-	fmt.Println(set.Count())
+func ExampleSet_Rows() {
+	fmt.Println(set.Rows())
 	// Output:
 	// 4
 }

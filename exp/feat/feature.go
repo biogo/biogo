@@ -18,6 +18,7 @@ package feat
 
 type Conformationer interface {
 	Conformation() Conformation
+	SetConformation(Conformation)
 }
 
 type Conformation int8
@@ -64,17 +65,21 @@ const (
 	Forward
 )
 
-type Feature interface {
+type Range interface {
 	Start() int
 	End() int
 	Len() int
+}
+
+type Feature interface {
+	Range
 	Name() string
 	Description() string
 	Location() Feature
 }
 
 type Offsetter interface {
-	Offset(int)
+	SetOffset(int)
 }
 
 type Mutable interface {
@@ -92,8 +97,12 @@ type Pair interface {
 }
 
 type Set interface {
-	Add(...Feature)
 	Features() []Feature
+}
+
+type Adder interface {
+	Set
+	Add(...Feature)
 }
 
 type Collection interface {

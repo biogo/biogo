@@ -16,158 +16,124 @@
 package protein
 
 import (
-	"code.google.com/p/biogo/bio"
 	"code.google.com/p/biogo/exp/alphabet"
+	"code.google.com/p/biogo/exp/feat"
 	"code.google.com/p/biogo/exp/seq"
-	"code.google.com/p/biogo/exp/seq/sequtils"
-	"code.google.com/p/biogo/feat"
 )
 
-// QSeq is a basic protein sequence with Phred quality scores.
+// A QSeq is a basic protein acid sequence with Phred quality scores.
 type QSeq struct {
-	ID         string
-	Desc       string
-	Loc        string
-	S          []alphabet.QLetter
+	Annotation
+	Seq        alphabet.QLetters
 	Threshold  alphabet.Qphred // Threshold for returning valid letter.
 	LowQFilter seq.Filter      // How to represent below threshold letter.
-	Stringify  seq.Stringify   // Function allowing user specified string representation.
-	Meta       interface{}     // No operation implicitly copies or changes the contents of Meta.
-	alphabet   alphabet.Peptide
-	circular   bool
-	offset     int
-	encoding   alphabet.Encoding
+	Encode     alphabet.Encoding
 }
 
-// Create a new QSeq with the given id, letter sequence, alphabet and quality encoding.
-func NewQSeq(id string, ql []alphabet.QLetter, alpha alphabet.Peptide, encode alphabet.Encoding) *QSeq {
-	return &QSeq{
-		ID:         id,
-		S:          append([]alphabet.QLetter(nil), ql...),
-		alphabet:   alpha,
-		encoding:   encode,
-		Threshold:  2,
-		LowQFilter: func(s seq.Sequence, _ alphabet.Letter) alphabet.Letter { return s.(*QSeq).alphabet.Ambiguous() },
-		Stringify:  QStringify,
-	}
-}
-
-// Interface guarantees:
+// Interface guarantees
 var (
-	_ seq.Polymer  = &QSeq{}
+	_ feat.Feature = &QSeq{}
 	_ seq.Sequence = &QSeq{}
-	_ seq.Scorer   = &QSeq{}
-	_ seq.Appender = &QSeq{}
 	_ Sequence     = &QSeq{}
-	_ Quality      = &QSeq{}
+	_ seq.Scorer   = &QSeq{}
 )
 
-// Required to satisfy protein.Sequence interface.
-func (self *QSeq) Protein() {}
+// NewQSeq create a new QSeq with the given id, letter sequence, alphabet and quality encoding.
+func NewQSeq(id string, ql []alphabet.QLetter, alpha alphabet.Peptide, enc alphabet.Encoding) *QSeq {
+	return &QSeq{
+		Annotation: Annotation{
+			ID:    id,
+			Alpha: alpha,
+		},
+		Seq:        append(alphabet.QLetters(nil), ql...),
+		Encode:     enc,
+		Threshold:  2,
+		LowQFilter: LowQFilter,
+	}
+}
 
-// Name returns a pointer to the ID string of the sequence.
-func (self *QSeq) Name() *string { return &self.ID }
-
-// Description returns a pointer to the Desc string of the sequence.
-func (self *QSeq) Description() *string { return &self.Desc }
-
-// Location returns a pointer to the Loc string of the sequence.
-func (self *QSeq) Location() *string { return &self.Loc }
-
-// Raw returns a pointer to the underlying []Qphred slice.
-func (self *QSeq) Raw() interface{} { return &self.S }
-
-// Append QLetters to the sequence, the DefaultQphred value is used for quality scores.
-func (self *QSeq) AppendLetters(a ...alphabet.Letter) (err error) {
-	l := self.Len()
-	self.S = append(self.S, make([]alphabet.QLetter, len(a))...)[:l]
+// Append append Letters to the sequence, the DefaultQphred value is used for quality scores.
+func (s *QSeq) AppendLetters(a ...alphabet.Letter) error {
+	l := s.Len()
+	s.Seq = append(s.Seq, make([]alphabet.QLetter, len(a))...)[:l]
 	for _, v := range a {
-		self.S = append(self.S, alphabet.QLetter{L: v, Q: DefaultQphred})
+		s.Seq = append(s.Seq, alphabet.QLetter{L: v, Q: DefaultQphred})
 	}
-
-	return
+	return nil
 }
 
-// Append letters with quality scores to the seq.
-func (self *QSeq) AppendQLetters(a ...alphabet.QLetter) (err error) {
-	self.S = append(self.S, a...)
-	return
+// Append appends QLetters to the sequence.
+func (s *QSeq) AppendQLetters(a ...alphabet.QLetter) error {
+	s.Seq = append(s.Seq, a...)
+	return nil
 }
 
-// Return the Alphabet used by the sequence.
-func (self *QSeq) Alphabet() alphabet.Alphabet { return self.alphabet }
+// Slice returns the sequence data as a alphabet.Slice.
+func (s *QSeq) Slice() alphabet.Slice { return s.Seq }
 
-// Return the letter at position pos.
-func (self *QSeq) At(pos seq.Position) alphabet.QLetter {
-	if pos.Ind != 0 {
+// SetSlice sets the sequence data represented by the sequence. SetSlice will panic if sl
+// is not a alphabet.QLetters.
+func (s *QSeq) SetSlice(sl alphabet.Slice) { s.Seq = sl.(alphabet.QLetters) }
+
+// At returns the letter at position pos.
+func (s *QSeq) At(pos seq.Position) alphabet.QLetter {
+	if pos.Row != 0 {
 		panic("protein: index out of range")
 	}
-	return self.S[pos.Pos-self.offset]
+	return s.Seq[pos.Col-s.Offset]
 }
 
-// Encode the quality at position pos to a letter based on the sequence encoding setting.
-func (self *QSeq) QEncode(pos seq.Position) byte {
-	if pos.Ind != 0 {
+// QEncode encodes the quality at position pos to a letter based on the sequence encoding setting.
+func (s *QSeq) QEncode(pos seq.Position) byte {
+	if pos.Row != 0 {
 		panic("protein: index out of range")
 	}
-	return self.S[pos.Pos-self.offset].Q.Encode(self.encoding)
+	return s.Seq[pos.Col-s.Offset].Q.Encode(s.Encode)
 }
 
-// Decode a quality letter to a phred score based on the sequence encoding setting.
-func (self *QSeq) QDecode(l byte) alphabet.Qphred { return alphabet.DecodeToQphred(l, self.encoding) }
+// Encoding returns the quality encoding scheme.
+func (s *QSeq) Encoding() alphabet.Encoding { return s.Encode }
 
-// Return the quality encoding type.
-func (self *QSeq) Encoding() alphabet.Encoding { return self.encoding }
+// SetEncoding sets the quality encoding scheme to e.
+func (s *QSeq) SetEncoding(e alphabet.Encoding) { s.Encode = e }
 
-// Set the quality encoding type to e.
-func (self *QSeq) SetEncoding(e alphabet.Encoding) { self.encoding = e }
-
-// Return the probability of a sequence error at position pos.
-func (self *QSeq) EAt(pos seq.Position) float64 {
-	if pos.Ind != 0 {
+// EAt returns the probability of a sequence error at position pos.
+func (s *QSeq) EAt(pos seq.Position) float64 {
+	if pos.Row != 0 {
 		panic("protein: index out of range")
 	}
-	return self.S[pos.Pos-self.offset].Q.ProbE()
+	return s.Seq[pos.Col-s.Offset].Q.ProbE()
 }
 
-// Set the letter at position pos to l.
-func (self *QSeq) Set(pos seq.Position, l alphabet.QLetter) {
-	if pos.Ind != 0 {
+// Set sets the letter at position pos to l.
+func (s *QSeq) Set(pos seq.Position, l alphabet.QLetter) {
+	if pos.Row != 0 {
 		panic("protein: index out of range")
 	}
-	self.S[pos.Pos-self.offset] = l
+	s.Seq[pos.Col-s.Offset] = l
 }
 
-// Set the quality at position pos to l to reflect the given p(Error).
-func (self *QSeq) SetE(pos seq.Position, e float64) {
-	if pos.Ind != 0 {
+// SetE sets the quality at position pos to e to reflect the given p(Error).
+func (s *QSeq) SetE(pos seq.Position, e float64) {
+	if pos.Row != 0 {
 		panic("protein: index out of range")
 	}
-	self.S[pos.Pos-self.offset].Q = alphabet.Ephred(e)
+	s.Seq[pos.Col-s.Offset].Q = alphabet.Ephred(e)
 }
 
-// Return the length of the sequence.
-func (self *QSeq) Len() int { return len(self.S) }
+// Len returns the length of the sequence.
+func (s *QSeq) Len() int { return len(s.Seq) }
 
-// Satisfy Counter.
-func (self *QSeq) Count() int { return 1 }
+// Start return the start position of the sequence in global coordinates.
+func (s *QSeq) Start() int { return s.Offset }
 
-// Set the global offset of the sequence to o.
-func (self *QSeq) Offset(o int) { self.offset = o }
+// End returns the end position of the sequence in global coordinates.
+func (s *QSeq) End() int { return s.Offset + s.Len() }
 
-// Return the start position of the sequence in global coordinates.
-func (self *QSeq) Start() int { return self.offset }
-
-// Return the end position of the sequence in global coordinates.
-func (self *QSeq) End() int { return self.offset + self.Len() }
-
-// Return the molecule type of the sequence.
-func (self *QSeq) Moltype() bio.Moltype { return self.alphabet.Moltype() }
-
-// Validate the letters of the sequence according to the specified alphabet.
-func (self *QSeq) Validate() (bool, int) {
-	for i, ql := range self.S {
-		if !self.alphabet.IsValid(ql.L) {
+// Validate validates the letters of the sequence according to the sequence alphabet.
+func (s *QSeq) Validate() (bool, int) {
+	for i, ql := range s.Seq {
+		if !s.Alpha.IsValid(ql.L) {
 			return false, i
 		}
 	}
@@ -175,112 +141,35 @@ func (self *QSeq) Validate() (bool, int) {
 	return true, -1
 }
 
-// Return a copy of the sequence.
-func (self *QSeq) Copy() seq.Sequence {
-	c := *self
-	c.S = append([]alphabet.QLetter(nil), self.S...)
-	c.Meta = nil
+// Copy returns a copy of the sequence.
+func (s *QSeq) Copy() seq.Sequence {
+	c := *s
+	c.Seq = append([]alphabet.QLetter(nil), s.Seq...)
 
 	return &c
 }
 
-// Reverse the sequence.
-func (self *QSeq) Reverse() { self.S = sequtils.Reverse(self.S).([]alphabet.QLetter) }
-
-// Specify that the sequence is circular.
-func (self *QSeq) Circular(c bool) { self.circular = c }
-
-// Return whether the sequence is circular.
-func (self *QSeq) IsCircular() bool { return self.circular }
-
-// Return a subsequence from start to end, wrapping if the sequence is circular.
-func (self *QSeq) Subseq(start int, end int) (sub seq.Sequence, err error) {
-	var s *QSeq
-
-	tt, err := sequtils.Truncate(self.S, start-self.offset, end-self.offset, self.circular)
-	if err == nil {
-		s = &QSeq{}
-		*s = *self
-		s.S = tt.([]alphabet.QLetter)
-		s.S = nil
-		s.Meta = nil
-		s.offset = start
-		s.circular = false
-	}
-
-	return s, nil
+// New returns an empty *QSeq sequence.
+func (s *QSeq) New() seq.Sequence {
+	return &QSeq{}
 }
 
-// Truncate the sequenc from start to end, wrapping if the sequence is circular.
-func (self *QSeq) Truncate(start int, end int) (err error) {
-	tt, err := sequtils.Truncate(self.S, start-self.offset, end-self.offset, self.circular)
-	if err == nil {
-		self.S = tt.([]alphabet.QLetter)
-		self.offset = start
-		self.circular = false
+// Reverse reverses the order of letters in the the sequence without complementing them.
+func (s *QSeq) Reverse() {
+	l := s.Seq
+	for i, j := 0, len(l)-1; i < j; i, j = i+1, j-1 {
+		l[i], l[j] = l[j], l[i]
 	}
-
-	return
 }
 
-// Join p to the sequence at the end specified by where.
-func (self *QSeq) Join(p *QSeq, where int) (err error) {
-	if self.circular {
-		return bio.NewError("Cannot join circular sequence: receiver.", 1, self)
-	} else if p.circular {
-		return bio.NewError("Cannot join circular sequence: parameter.", 1, p)
-	}
-
-	var tt interface{}
-
-	tt, self.offset = sequtils.Join(self.S, p.S, where)
-	self.S = tt.([]alphabet.QLetter)
-
-	return
-}
-
-// Join sequentially order disjunct segments of the sequence, returning any error.
-func (self *QSeq) Stitch(f feat.FeatureSet) (err error) {
-	tt, err := sequtils.Stitch(self.S, self.offset, f)
-	if err == nil {
-		self.S = tt.([]alphabet.QLetter)
-		self.circular = false
-		self.offset = 0
-	}
-
-	return
-}
-
-// Join segments of the sequence, returning any error.
-func (self *QSeq) Compose(f feat.FeatureSet) (err error) {
-	tt, err := sequtils.Compose(self.S, self.offset, f)
-	if err == nil {
-		s := []alphabet.QLetter{}
-		for _, ts := range tt {
-			s = append(s, ts.([]alphabet.QLetter)...)
-		}
-
-		self.S = s
-		self.circular = false
-		self.offset = 0
-	}
-
-	return
-}
-
-// Return a string representation of the sequence. Representation is determined by the Stringify field.
-func (self *QSeq) String() string { return self.Stringify(self) }
-
-// The default Stringify function for QSeq.
-var QStringify = func(s seq.Polymer) string {
-	t := s.(*QSeq)
-	gap := t.Alphabet().Gap()
-	cs := make([]alphabet.Letter, 0, len(t.S))
-	for _, ql := range t.S {
-		if alphabet.Qphred(ql.Q) > t.Threshold || ql.L == gap {
+func (s *QSeq) String() string {
+	gap := s.Alpha.Gap()
+	cs := make([]alphabet.Letter, 0, len(s.Seq))
+	for _, ql := range s.Seq {
+		if alphabet.Qphred(ql.Q) > s.Threshold || ql.L == gap {
 			cs = append(cs, ql.L)
 		} else {
-			cs = append(cs, t.LowQFilter(t, ql.L))
+			cs = append(cs, s.LowQFilter(s, ql.L))
 		}
 	}
 
@@ -288,4 +177,4 @@ var QStringify = func(s seq.Polymer) string {
 }
 
 // The default LowQFilter function for QSeq.
-var LowQFilter = func(s seq.Sequence, _ alphabet.Letter) alphabet.Letter { return s.(*QSeq).alphabet.Ambiguous() }
+var LowQFilter = func(s seq.Alphabeter, _ alphabet.Letter) alphabet.Letter { return s.Alphabet().Ambiguous() }

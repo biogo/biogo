@@ -16,35 +16,28 @@
 package alignment
 
 import (
-	"code.google.com/p/biogo/bio"
 	"code.google.com/p/biogo/exp/alphabet"
+	"code.google.com/p/biogo/exp/feat"
 	"code.google.com/p/biogo/exp/seq"
 	"code.google.com/p/biogo/exp/seq/protein"
-	"code.google.com/p/biogo/exp/seq/sequtils"
-	"code.google.com/p/biogo/feat"
 	"code.google.com/p/biogo/util"
+	"errors"
 	"fmt"
 )
 
-// Aligned protein with quality scores.
+// A QSeq is an aligned protein acid sequence with quality scores.
 type QSeq struct {
-	ID         string
-	Desc       string
-	Loc        string
+	protein.Annotation
 	SubIDs     []string
-	S          [][]alphabet.QLetter
-	Consensify protein.Consensifyer
+	Seq        alphabet.QColumns
+	Consensify seq.ConsenseFunc
 	Threshold  alphabet.Qphred // Threshold for returning valid letter.
 	LowQFilter seq.Filter      // How to represent below threshold letter.
-	Stringify  seq.Stringify
-	Meta       interface{} // No operation implicitly copies or changes the contents of Meta.
-	alphabet   alphabet.Peptide
-	circular   bool
-	offset     int
-	encoding   alphabet.Encoding
+	Encode     alphabet.Encoding
 }
 
-func NewQSeq(id string, subids []string, ql [][]alphabet.QLetter, alpha alphabet.Peptide, encode alphabet.Encoding, cons protein.Consensifyer) (*QSeq, error) {
+// NewSeq creates a new Seq with the given id, letter sequence and alphabet.
+func NewQSeq(id string, subids []string, ql [][]alphabet.QLetter, alpha alphabet.Peptide, enc alphabet.Encoding, cons seq.ConsenseFunc) (*QSeq, error) {
 	switch lids, lseq := len(subids), len(ql); {
 	case lids == 0 && len(ql) == 0:
 	case lseq != 0 && lids == len(ql[0]):
@@ -55,300 +48,232 @@ func NewQSeq(id string, subids []string, ql [][]alphabet.QLetter, alpha alphabet
 			}
 		}
 	default:
-		return nil, bio.NewError("alignment: id/seq number mismatch", 0)
+		return nil, errors.New("alignment: id/seq number mismatch")
 	}
 
 	return &QSeq{
-		ID:         id,
+		Annotation: protein.Annotation{
+			ID:    id,
+			Alpha: alpha,
+		},
 		SubIDs:     append([]string(nil), subids...),
-		S:          append([][]alphabet.QLetter(nil), ql...),
-		alphabet:   alpha,
-		encoding:   encode,
+		Seq:        append([][]alphabet.QLetter(nil), ql...),
+		Encode:     enc,
 		Consensify: cons,
 		Threshold:  2,
-		LowQFilter: func(s seq.Sequence, _ alphabet.Letter) alphabet.Letter { return s.Alphabet().Ambiguous() },
-		Stringify: func(s seq.Polymer) string {
-			t := s.(*QSeq).Consensus(false)
-			t.Threshold = s.(*QSeq).Threshold
-			t.LowQFilter = s.(*QSeq).LowQFilter
-			return t.String()
-		},
+		LowQFilter: protein.LowQFilter,
 	}, nil
 }
 
-// Interface guarantees:
+// Interface guarantees
 var (
-	_ seq.Polymer             = &QSeq{}
-	_ seq.Sequence            = &QSeq{}
-	_ seq.Scorer              = &QSeq{}
-	_ protein.Sequence        = &QSeq{}
-	_ protein.Quality         = &QSeq{}
-	_ protein.Extracter       = &QSeq{}
-	_ protein.Aligned         = &QSeq{}
-	_ protein.AlignedAppender = &QSeq{}
+	_ feat.Feature     = &QSeq{}
+	_ seq.Sequence     = &QSeq{}
+	_ protein.Sequence = &QSeq{}
 )
 
-// Required to satisfy protein.Sequence interface.
-func (self *QSeq) Protein() {}
+// Slice returns the sequence data as a alphabet.Slice.
+func (s *QSeq) Slice() alphabet.Slice { return s.Seq }
 
-// Name returns a pointer to the ID string of the sequence.
-func (self *QSeq) Name() *string { return &self.ID }
+// SetSlice sets the sequence data represented by the Seq. SetSlice will panic if sl
+// is not a QColumns.
+func (s *QSeq) SetSlice(sl alphabet.Slice) { s.Seq = sl.(alphabet.QColumns) }
 
-// Description returns a pointer to the Desc string of the sequence.
-func (self *QSeq) Description() *string { return &self.Desc }
+// At returns the letter at position pos.
+func (s *QSeq) At(pos seq.Position) alphabet.QLetter {
+	return s.Seq[pos.Col-s.Offset][pos.Row]
+}
 
-// Location returns a pointer to the Loc string of the sequence.
-func (self *QSeq) Location() *string { return &self.Loc }
+// Set sets the letter at position pos to l.
+func (s *QSeq) Set(pos seq.Position, l alphabet.QLetter) {
+	s.Seq[pos.Col-s.Offset][pos.Row] = l
+}
 
-// Raw returns a pointer to the underlying [][]alphabet.QLetter slice.
-func (self *QSeq) Raw() interface{} { return &self.S }
+// SetE sets the quality at position pos to e to reflect the given p(Error).
+func (s *QSeq) SetE(pos seq.Position, e float64) {
+	s.Seq[pos.Col-s.Offset][pos.Row].Q = alphabet.Ephred(e)
+}
 
-// Append each byte of each a to the appropriate sequence in the reciever.
-func (self *QSeq) AppendColumns(a ...[]alphabet.QLetter) (err error) {
-	for i, s := range a {
-		if len(s) != self.Count() {
-			return bio.NewError(fmt.Sprintf("Column %d does not match Count(): %d != %d.", i, len(s), self.Count()), 0, a)
-		}
+// QEncode encodes the quality at position pos to a letter based on the sequence encoding setting.
+func (s *QSeq) QEncode(pos seq.Position) byte {
+	return s.Seq[pos.Col-s.Offset][pos.Row].Q.Encode(s.Encode)
+}
+
+// Encoding returns the quality encoding scheme.
+func (s *QSeq) Encoding() alphabet.Encoding { return s.Encode }
+
+// SetEncoding sets the quality encoding scheme to e.
+func (s *QSeq) SetEncoding(e alphabet.Encoding) { s.Encode = e }
+
+// EAt returns the probability of a sequence error at position pos.
+func (s *QSeq) EAt(pos seq.Position) float64 {
+	return s.Seq[pos.Col-s.Offset][pos.Row].Q.ProbE()
+}
+
+// Len returns the length of the alignment.
+func (s *QSeq) Len() int { return len(s.Seq) }
+
+// Rows returns the number of rows in the alignment.
+func (s *QSeq) Rows() int { return s.Seq.Rows() }
+
+// Start returns the start position of the sequence in global coordinates.
+func (s *QSeq) Start() int { return s.Offset }
+
+// End returns the end position of the sequence in global coordinates.
+func (s *QSeq) End() int { return s.Offset + s.Len() }
+
+// Copy returns a copy of the sequence.
+func (s *QSeq) Copy() seq.Sequence {
+	c := *s
+	c.Seq = make([][]alphabet.QLetter, len(s.Seq))
+	for i, s := range s.Seq {
+		c.Seq[i] = append([]alphabet.QLetter(nil), s...)
 	}
-
-	self.S = append(self.S, a...)
-
-	return
-}
-
-// Append each []byte in a to the appropriate sequence in the reciever.
-func (self *QSeq) AppendEach(a [][]alphabet.QLetter) (err error) {
-	if len(a) != self.Count() {
-		return bio.NewError(fmt.Sprintf("Number of sequences does not match Count(): %d != %d.", len(a), self.Count()), 0, a)
-	}
-	max := util.MinInt
-	for _, s := range a {
-		if l := len(s); l > max {
-			max = l
-		}
-	}
-	self.S = append(self.S, make([][]alphabet.QLetter, max)...)[:len(self.S)]
-	for i, b := 0, make([]alphabet.QLetter, 0, len(a)); i < max; i, b = i+1, b[:0] {
-		for _, s := range a {
-			if i < len(s) {
-				b = append(b, s[i])
-			} else {
-				b = append(b, alphabet.QLetter{L: self.alphabet.Gap()})
-			}
-		}
-		self.AppendColumns(b)
-	}
-
-	return
-}
-
-func (self *QSeq) column(m []protein.Sequence, pos int) (c []alphabet.QLetter) {
-	count := 0
-	for _, s := range m {
-		count += s.Count()
-	}
-
-	c = make([]alphabet.QLetter, 0, count)
-
-	for _, s := range m {
-		if a, ok := s.(protein.Aligned); ok {
-			if a.Start() <= pos && pos < a.End() {
-				c = append(c, a.ColumnQL(pos, true)...)
-			} else {
-				c = append(c, alphabet.QLetter{L: self.alphabet.Gap()}.Repeat(a.Count())...)
-			}
-		} else {
-			if s.Start() <= pos && pos < s.End() {
-				c = append(c, s.At(seq.Position{Pos: pos}))
-			} else {
-				c = append(c, alphabet.QLetter{L: self.alphabet.Gap()})
-			}
-		}
-	}
-
-	return
-}
-
-// TODO
-// func (self *QSeq) Delete(i int) {}
-
-// Add sequences n to Alignment. Sequences in n must align start and end with the receiving alignment.
-// Additional sequence will be clipped.
-func (self *QSeq) Add(n ...protein.Sequence) (err error) {
-	for i := self.Start(); i < self.End(); i++ {
-		self.S[i] = append(self.S[i], self.column(n, i)...)
-	}
-	for i := range n {
-		self.SubIDs = append(self.SubIDs, *n[i].Name())
-	}
-
-	return
-}
-
-func (self *QSeq) Extract(i int) protein.Sequence {
-	s := make([]alphabet.QLetter, 0, self.Len())
-	for _, c := range self.S {
-		s = append(s, c[i])
-	}
-
-	return protein.NewQSeq(self.SubIDs[i], s, self.alphabet, self.encoding)
-}
-
-func (self *QSeq) Alphabet() alphabet.Alphabet { return self.alphabet }
-
-func (self *QSeq) At(pos seq.Position) alphabet.QLetter {
-	return self.S[pos.Pos-self.offset][pos.Ind]
-}
-
-func (self *QSeq) QEncode(pos seq.Position) byte {
-	return self.S[pos.Pos-self.offset][pos.Ind].Q.Encode(self.encoding)
-}
-
-func (self *QSeq) QDecode(l byte) alphabet.Qphred {
-	return alphabet.DecodeToQphred(l, self.encoding)
-}
-
-func (self *QSeq) Encoding() alphabet.Encoding { return self.encoding }
-
-// Set the quality encoding type to e.
-func (self *QSeq) SetEncoding(e alphabet.Encoding) { self.encoding = e }
-
-func (self *QSeq) EAt(pos seq.Position) float64 {
-	return self.S[pos.Pos-self.offset][pos.Ind].Q.ProbE()
-}
-
-func (self *QSeq) Set(pos seq.Position, l alphabet.QLetter) {
-	self.S[pos.Pos-self.offset][pos.Ind] = l
-}
-
-func (self *QSeq) SetE(pos seq.Position, l float64) {
-	self.S[pos.Pos-self.offset][pos.Ind].Q = alphabet.Ephred(l)
-}
-
-func (self *QSeq) Column(pos int, _ bool) (c []alphabet.Letter) {
-	c = make([]alphabet.Letter, self.Count())
-	for i, l := range self.S[pos] {
-		if l.Q > self.Threshold {
-			c[i] = l.L
-		} else {
-			c[i] = self.LowQFilter(self, 0)
-		}
-	}
-
-	return
-}
-
-func (self *QSeq) ColumnQL(pos int, _ bool) []alphabet.QLetter { return self.S[pos] }
-
-func (self *QSeq) Len() int { return len(self.S) }
-
-func (self *QSeq) Count() int { return len(self.S[0]) }
-
-func (self *QSeq) Offset(o int) { self.offset = o }
-
-func (self *QSeq) Start() int { return self.offset }
-
-func (self *QSeq) End() int { return self.offset + self.Len() }
-
-func (self *QSeq) Copy() seq.Sequence {
-	c := *self
-	c.S = make([][]alphabet.QLetter, len(self.S))
-	for i, s := range self.S {
-		c.S[i] = append([]alphabet.QLetter(nil), s...)
-	}
-	c.Meta = nil
 
 	return &c
 }
 
-func (self *QSeq) Reverse() { self.S = sequtils.Reverse(self.S).([][]alphabet.QLetter) }
-
-func (self *QSeq) Circular(c bool) { self.circular = c }
-
-func (self *QSeq) IsCircular() bool { return self.circular }
-
-// Return a subsequence from start to end, wrapping if the sequence is circular.
-func (self *QSeq) Subseq(start int, end int) (sub seq.Sequence, err error) {
-	var s *QSeq
-
-	tt, err := sequtils.Truncate(self.S, start-self.offset, end-self.offset, self.circular)
-	if err == nil {
-		s = &QSeq{}
-		*s = *self
-		s.S = tt.([][]alphabet.QLetter)
-		s.S = nil
-		s.Meta = nil
-		s.offset = start
-		s.circular = false
-	}
-
-	return s, nil
+// Return an empty sequence.
+func (s *QSeq) New() seq.Sequence {
+	return &QSeq{}
 }
 
-func (self *QSeq) Truncate(start int, end int) (err error) {
-	tt, err := sequtils.Truncate(self.S, start-self.offset, end-self.offset, self.circular)
-	if err == nil {
-		self.S = tt.([][]alphabet.QLetter)
-		self.offset = start
-		self.circular = false
+// Reverse reverses the order of letters in the the sequence without complementing them.
+func (s *QSeq) Reverse() {
+	l := s.Seq
+	for i, j := 0, len(l)-1; i < j; i, j = i+1, j-1 {
+		l[i], l[j] = l[j], l[i]
 	}
-
-	return
 }
 
-func (self *QSeq) Join(p *QSeq, where int) (err error) {
-	if self.circular {
-		return bio.NewError("Cannot join circular sequence: receiver.", 1, self)
-	} else if p.circular {
-		return bio.NewError("Cannot join circular sequence: parameter.", 1, p)
-	}
-
-	var tt interface{}
-
-	tt, self.offset = sequtils.Join(self.S, p.S, where)
-	self.S = tt.([][]alphabet.QLetter)
-
-	return
+func (s *QSeq) String() string {
+	t := s.Consensus(false)
+	t.Threshold = s.Threshold
+	t.LowQFilter = s.LowQFilter
+	return t.String()
 }
 
-func (self *QSeq) Stitch(f feat.FeatureSet) (err error) {
-	tt, err := sequtils.Stitch(self.S, self.offset, f)
-	if err == nil {
-		self.S = tt.([][]alphabet.QLetter)
-		self.circular = false
-		self.offset = 0
+// Add sequences n to Alignment. Sequences in n must align start and end with the receiving alignment.
+// Additional sequence will be clipped.
+func (s *QSeq) Add(n ...protein.Sequence) error {
+	for i := s.Start(); i < s.End(); i++ {
+		s.Seq[i] = append(s.Seq[i], s.column(n, i)...)
+	}
+	for i := range n {
+		s.SubIDs = append(s.SubIDs, n[i].Name())
 	}
 
-	return
+	return nil
 }
 
-func (self *QSeq) Compose(f feat.FeatureSet) (err error) {
-	tt, err := sequtils.Compose(self.S, self.offset, f)
-	if err == nil {
-		s := [][]alphabet.QLetter{}
-		for _, ts := range tt {
-			s = append(s, ts.([][]alphabet.QLetter)...)
+func (s *QSeq) column(m []protein.Sequence, pos int) []alphabet.QLetter {
+	var row int
+	for _, ss := range m {
+		row += rows(ss)
+	}
+
+	c := make([]alphabet.QLetter, 0, row)
+
+	for _, r := range m {
+		if a, ok := r.(seq.Aligned); ok {
+			if a.Start() <= pos && pos < a.End() {
+				c = append(c, a.ColumnQL(pos, true)...)
+			} else {
+				c = append(c, alphabet.QLetter{L: s.Alpha.Gap()}.Repeat(a.Rows())...)
+			}
+		} else {
+			if r.Start() <= pos && pos < r.End() {
+				c = append(c, r.At(seq.Position{Col: pos}))
+			} else {
+				c = append(c, alphabet.QLetter{L: s.Alpha.Gap()})
+			}
 		}
-
-		self.S = s
-		self.circular = false
-		self.offset = 0
 	}
 
-	return
+	return c
 }
 
-func (self *QSeq) String() string { return self.Stringify(self) }
+// TODO
+func (s *QSeq) Delete(i int) {}
 
-func (self *QSeq) Consensus(_ bool) (qs *protein.QSeq) {
-	cs := make([]alphabet.QLetter, 0, self.Len())
-	for i := range self.S {
-		cs = append(cs, self.Consensify(self, i, false))
+// Get returns the sequence corresponding to the ith row of the Seq.
+func (s *QSeq) Get(i int) protein.Sequence {
+	t := make([]alphabet.QLetter, 0, s.Len())
+	for _, c := range s.Seq {
+		t = append(t, c[i])
 	}
 
-	qs = protein.NewQSeq("Consensus:"+self.ID, cs, self.alphabet, alphabet.Sanger)
-	qs.Offset(self.offset)
-	qs.Circular(self.circular)
+	return protein.NewQSeq(s.SubIDs[i], t, s.Alpha, s.Encode)
+}
 
-	return
+// AppendColumns appends each Qletter of each element of a to the appropriate sequence in the reciever.
+func (s *QSeq) AppendColumns(a ...[]alphabet.QLetter) error {
+	for i, c := range a {
+		if len(c) != s.Rows() {
+			return fmt.Errorf("alignment: column %d does not match Rows(): %d != %d.", i, len(c), s.Rows())
+		}
+	}
+
+	s.Seq = append(s.Seq, a...)
+
+	return nil
+}
+
+// AppendEach appends each []alphabet.QLetter in a to the appropriate sequence in the receiver.
+func (s *QSeq) AppendEach(a [][]alphabet.QLetter) error {
+	if len(a) != s.Rows() {
+		return fmt.Errorf("alignment: number of sequences does not match Rows(): %d != %d.", len(a), s.Rows())
+	}
+	max := util.MinInt
+	for _, r := range a {
+		if l := len(r); l > max {
+			max = l
+		}
+	}
+	s.Seq = append(s.Seq, make([][]alphabet.QLetter, max)...)[:len(s.Seq)]
+	for i, b := 0, make([]alphabet.QLetter, 0, len(a)); i < max; i, b = i+1, b[:0] {
+		for _, r := range a {
+			if i < len(r) {
+				b = append(b, r[i])
+			} else {
+				b = append(b, alphabet.QLetter{L: s.Alpha.Gap()})
+			}
+		}
+		s.AppendColumns(b)
+	}
+
+	return nil
+}
+
+// Column returns a slice of letters reflecting the column at pos.
+func (s *QSeq) Column(pos int, _ bool) []alphabet.Letter {
+	c := make([]alphabet.Letter, s.Rows())
+	for i, l := range s.Seq[pos] {
+		if l.Q > s.Threshold {
+			c[i] = l.L
+		} else {
+			c[i] = s.LowQFilter(s, 0)
+		}
+	}
+
+	return c
+}
+
+// ColumnQL returns a slice of quality letters reflecting the column at pos.
+func (s *QSeq) ColumnQL(pos int, _ bool) []alphabet.QLetter { return s.Seq[pos] }
+
+// Consensus returns a quality sequence reflecting the consensus of the receiver determined by the
+// Consensify field.
+func (s *QSeq) Consensus(_ bool) *protein.QSeq {
+	cs := make([]alphabet.QLetter, 0, s.Len())
+	alpha := s.Alphabet()
+	for i := range s.Seq {
+		cs = append(cs, s.Consensify(s, alpha, i, false))
+	}
+
+	qs := protein.NewQSeq("Consensus:"+s.ID, cs, s.Alpha, alphabet.Sanger)
+	qs.SetOffset(s.Offset)
+	qs.Conform = s.Conform
+
+	return qs
 }

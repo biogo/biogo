@@ -17,67 +17,42 @@ package protein
 
 import (
 	"code.google.com/p/biogo/exp/alphabet"
+	"code.google.com/p/biogo/exp/feat"
 	"code.google.com/p/biogo/exp/seq"
-	"code.google.com/p/biogo/feat"
+	"code.google.com/p/biogo/exp/seq/sequtils"
 	"fmt"
 	"strings"
 )
 
 func ExampleNewSeq() {
-	d := NewSeq("example protein", []alphabet.Letter("ACGCTGACTTGGTGCACGT"), alphabet.Protein)
+	d := NewSeq("example Protein", []alphabet.Letter("ACGCTGACTTGGTGCACGT"), alphabet.Protein)
 	fmt.Println(d, d.Moltype())
 	// Output:
 	// ACGCTGACTTGGTGCACGT Protein
 }
 
 func ExampleSeq_Validate() {
-	r := NewSeq("example protein", []alphabet.Letter("ACGCUGACTTGGTGCACGT"), alphabet.Protein)
+	r := NewSeq("example Protein", []alphabet.Letter("ACGCOGACTTGGTGCACGT"), alphabet.Protein)
 	fmt.Println(r, r.Moltype())
 	if ok, pos := r.Validate(); ok {
-		fmt.Println("valid protein")
+		fmt.Println("valid Protein")
 	} else {
-		fmt.Println(strings.Repeat(" ", pos-1), "^ first invalid protein position")
+		fmt.Println(strings.Repeat(" ", pos-1), "^ first invalid Protein position")
 	}
 	// Output:
-	// ACGCUGACTTGGTGCACGT Protein
-	//     ^ first invalid protein position
+	// ACGCOGACTTGGTGCACGT Protein
+	//     ^ first invalid Protein position
 }
 
 func ExampleSeq_Truncate_1() {
-	s := NewSeq("example protein", []alphabet.Letter("ACGCTGACTTGGTGCACGT"), alphabet.Protein)
+	s := NewSeq("example Protein", []alphabet.Letter("ACGCTGACTTGGTGCACGT"), alphabet.Protein)
 	fmt.Println(s)
-	if err := s.Truncate(5, 12); err == nil {
+	if err := sequtils.Truncate(s, s, 5, 12); err == nil {
 		fmt.Println(s)
 	}
 	// Output:
 	// ACGCTGACTTGGTGCACGT
 	// GACTTGG
-}
-
-func ExampleSeq_Truncate_2() {
-	var s *Seq
-
-	s = NewSeq("example Protein", []alphabet.Letter("ACGCTGACTTGGTGCACGT"), alphabet.Protein)
-	s.Circular(true)
-	fmt.Printf("%s Circular = %v\n", s, s.IsCircular())
-	if err := s.Truncate(12, 5); err == nil {
-		fmt.Printf("%s Circular = %v\n", s, s.IsCircular())
-	} else {
-		fmt.Println("Error:", err)
-	}
-
-	s = NewSeq("example Protein", []alphabet.Letter("ACGCTGACTTGGTGCACGT"), alphabet.Protein)
-	fmt.Printf("%s Circular = %v\n", s, s.IsCircular())
-	if err := s.Truncate(12, 5); err == nil {
-		fmt.Printf("%s Circular = %v\n", s, s.IsCircular())
-	} else {
-		fmt.Println("Error:", err)
-	}
-	// Output:
-	// ACGCTGACTTGGTGCACGT Circular = true
-	// TGCACGTACGCT Circular = false
-	// ACGCTGACTTGGTGCACGT Circular = false
-	// Error: Start position greater than end position for non-circular sequence.
 }
 
 func ExampleSeq_Reverse() {
@@ -96,13 +71,13 @@ func ExampleSeq_Join() {
 	s1 = NewSeq("a", []alphabet.Letter("agctgtgctga"), alphabet.Protein)
 	s2 = NewSeq("b", []alphabet.Letter("CGTGCAGTCATGAGTGA"), alphabet.Protein)
 	fmt.Println(s1, s2)
-	if err := s1.Join(s2, seq.Start); err == nil {
+	if err := sequtils.Join(s1, s2, seq.Start); err == nil {
 		fmt.Println(s1)
 	}
 
 	s1 = NewSeq("a", []alphabet.Letter("agctgtgctga"), alphabet.Protein)
 	s2 = NewSeq("b", []alphabet.Letter("CGTGCAGTCATGAGTGA"), alphabet.Protein)
-	if err := s1.Join(s2, seq.End); err == nil {
+	if err := sequtils.Join(s1, s2, seq.End); err == nil {
 		fmt.Println(s1)
 	}
 	// Output:
@@ -111,15 +86,30 @@ func ExampleSeq_Join() {
 	// agctgtgctgaCGTGCAGTCATGAGTGA
 }
 
+type fe struct {
+	s, e int
+	or   feat.Orientation
+	feat.Feature
+}
+
+func (f fe) Start() int                    { return f.s }
+func (f fe) End() int                      { return f.e }
+func (f fe) Len() int                      { return f.e - f.s }
+func (f fe) Orientation() feat.Orientation { return f.or }
+
+type fs []feat.Feature
+
+func (f fs) Features() []feat.Feature { return []feat.Feature(f) }
+
 func ExampleSeq_Stitch() {
 	s := NewSeq("example Protein", []alphabet.Letter("aAGTATAAgtcagtgcagtgtctggcagTGCTCGTGCgtagtgaagtagGGTTAGTTTa"), alphabet.Protein)
-	f := feat.FeatureSet{
-		&feat.Feature{Start: 1, End: 8},
-		&feat.Feature{Start: 28, End: 37},
-		&feat.Feature{Start: 49, End: s.Len() - 1},
+	f := fs{
+		fe{s: 1, e: 8},
+		fe{s: 28, e: 37},
+		fe{s: 49, e: s.Len() - 1},
 	}
 	fmt.Println(s)
-	if err := s.Stitch(f); err == nil {
+	if err := sequtils.Stitch(s, s, f); err == nil {
 		fmt.Println(s)
 	}
 	// Output:
@@ -129,16 +119,16 @@ func ExampleSeq_Stitch() {
 
 func ExampleSeq_Compose() {
 	s := NewSeq("example Protein", []alphabet.Letter("aAGTATAAgtcagtgcagtgtctggcag<TS>gtagtgaagtagggttagttta"), alphabet.Protein)
-	f := feat.FeatureSet{
-		&feat.Feature{Start: 0, End: 32},
-		&feat.Feature{Start: 1, End: 8},
-		&feat.Feature{Start: 28, End: s.Len() - 1},
+	f := fs{
+		fe{s: 0, e: 32},
+		fe{s: 1, e: 8, or: -1},
+		fe{s: 28, e: s.Len() - 1},
 	}
 	fmt.Println(s)
-	if err := s.Compose(f); err == nil {
+	if err := sequtils.Compose(s, s, f); err == nil {
 		fmt.Println(s)
 	}
 	// Output:
 	// aAGTATAAgtcagtgcagtgtctggcag<TS>gtagtgaagtagggttagttta
-	// aAGTATAAgtcagtgcagtgtctggcag<TS>AGTATAA<TS>gtagtgaagtagggttagttt
+	// aAGTATAAgtcagtgcagtgtctggcag<TS>AATATGA<TS>gtagtgaagtagggttagttt
 }

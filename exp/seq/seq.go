@@ -24,7 +24,8 @@ package seq
 
 import (
 	"code.google.com/p/biogo/exp/alphabet"
-	"code.google.com/p/biogo/feat"
+	"code.google.com/p/biogo/exp/feat"
+	"math"
 )
 
 const (
@@ -32,46 +33,16 @@ const (
 	End
 )
 
-var emptyString = ""
+type Alphabeter interface {
+	Alphabet() alphabet.Alphabet
+}
 
-type Filter func(Sequence, alphabet.Letter) alphabet.Letter
-
-type Stringify func(Polymer) string
+type Filter func(Alphabeter, alphabet.Letter) alphabet.Letter
 
 // A Position holds a sequence position for all sequence types.
 type Position struct {
-	Pos int // The index of a letter within a sequence.
-	Ind int // The specific sequence within a multiple sequence.
-}
-
-// Polymer is the base type for sequences.
-type Polymer interface {
-	Raw() interface{} // Return a pointer the underlying polymer data unless the data is a pointer type, then return the data.
-	Feature
-	Offset(int) // Set the offset of the polymer.
-	Circular
-	Reverser
-	Composer
-	Stitcher
-	Truncator
-	String() string
-}
-
-// A Feature is an entity with a name, description, size and location.
-// At some point this will move into new Feature package.
-type Feature interface {
-	Name() *string        // Return the ID of the polymer.
-	Description() *string // Return the description of the polymer.
-	Location() *string    // Return the location of the polymer.
-	Start() int           // Return the start position of the polymer.
-	End() int             // Return the end position of the polymer.
-	Len() int             // Return the length of the polymer.
-}
-
-// The Circular interface includes the methods required for sequences that can be circular.
-type Circular interface {
-	IsCircular() bool // Return whether the sequence is circular.
-	Circular(bool)    // Specify whether the sequence is circular.
+	Col int // The index of a letter within a sequence.
+	Row int // The specific sequence within a multiple sequence.
 }
 
 // An Appender can append letters.
@@ -80,83 +51,138 @@ type Appender interface {
 	AppendQLetters(...alphabet.QLetter) error
 }
 
-// A Letterer gets and sets letters.
-type Letterer interface {
+// A Feature describes the basis for sequence features.
+type Feature interface {
+	feat.Feature
+	feat.Offsetter
+}
+
+// A Sequence is a feature that stores sequence information.
+type Sequence interface {
+	Feature
 	At(Position) alphabet.QLetter   // Return the letter at a specific position.
 	Set(Position, alphabet.QLetter) // Set the letter at a specific position.
+	Alphabet() alphabet.Alphabet    // Return the Alphabet being used.
+	New() Sequence                  // Return a pointer to the zero value of the concrete type.
+	Copy() Sequence                 // Return a copy of the Sequence.
 }
 
-// A Scorer is a type that provides Phred-based scoring information.
+// A Scorer is a sequence type that provides Phred-based scoring information.
 type Scorer interface {
-	EAt(Position) float64   // Return the p(Error) for a specific position.
-	SetE(Position, float64) // Set the p(Error) for a specific position.
-	Encoder
+	EAt(Position) float64          // Return the p(Error) for a specific position.
+	SetE(Position, float64)        // Set the p(Error) for a specific position.
+	Encoding() alphabet.Encoding   // Return the score encoding scheme.
+	SetEncoding(alphabet.Encoding) // Set the score encoding scheme.
+	QEncode(pos Position) byte     // Encode the quality at pos according the the encoding scheme.
 }
 
-// A Sequence is a polymer whose elements are letters.
-type Sequence interface {
-	Letterer
-	Counter
-	Alphabet() alphabet.Alphabet             // Return the Alphabet being used.
-	Subseq(start, end int) (Sequence, error) // Return a subsequence of the polymer from start to end or an error.
-	Copy() Sequence                          // Return a copy of the Sequence.
-}
-
-// A Counter is a polymer type returns the number of polymers it contains.
-type Counter interface {
-	Count() int // Return the number of sub-polymers recursively.
-}
-
-// An Aligner is a polymer type whose sub-polymers are aligned.
-type Aligner interface {
-	Column(pos int) []alphabet.Letter    // Return the letter elements for all sub-polymers at a specific index.
-	ColumnQL(pos int) []alphabet.QLetter // Return the quality letter elements for all sub-polymers at a specific index.
-}
-
-// An Encoder is a type that can encode Phred-based scoring information.
-type Encoder interface {
-	Encoding() alphabet.Encoding    // Return the score encoding scheme.
-	SetEncoding(alphabet.Encoding)  // Set the score encoding scheme.
-	QEncode(pos Position) byte      // Encode the quality at pos according the the encoding scheme.
-	QDecode(l byte) alphabet.Qphred // Decode the l into a Qphred according the the encoding scheme.
-}
-
-// A Quality is a Polymer whose elements are Phred scores.
+// A Quality is a feature whose elements are Phred scores.
 type Quality interface {
 	Scorer
-	At(Position) alphabet.Qphred
-	Set(Position, alphabet.Qphred)
-	Subseq(start, end int) (Quality, error) // Return a subsequence of the polymer from start to end or an error.
-	Copy() Quality                          // Return a copy of the Quality.
+	Copy() Quality // Return a copy of the Quality.
 }
 
 // A Complementer type can be reverse complemented.
 type Complementer interface {
-	RevComp() // Reverse complement the polymer.
+	RevComp() // Reverse complement the sequence.
 }
 
-// A Reverse type can Reverse itself.
+// A Reverser type can be reversed.
 type Reverser interface {
-	Reverse() // Reverse the order of elements in the polymer.
+	Reverse() // Reverse the order of elements in the sequence.
 }
 
-// A Truncator type can truncate itself.
-type Truncator interface {
-	Truncate(start, end int) error // Truncate the polymer from start to end, returning any error.
+// Aligned describes the interface for aligned multiple sequences.
+type Aligned interface {
+	Start() int
+	End() int
+	Rows() int
+	Column(pos int, fill bool) []alphabet.Letter
+	ColumnQL(pos int, fill bool) []alphabet.QLetter
 }
 
-// A Joiner would be a type that can join another polymer. This interface is advisory.
-// All polymers should satisfy the intent of this interface taking their own type only.
-type Joiner interface {
-	Join(Joiner, int) error // Join another polymer at end specified, returning any error.
+// ConsenseFunc is a function type that returns the consensus letter for a column of an alignment.
+type ConsenseFunc func(a Aligned, alpha alphabet.Alphabet, pos int, fill bool) alphabet.QLetter
+
+// The default ConsenseFunc function.
+var DefaultConsensus = func(a Aligned, alpha alphabet.Alphabet, pos int, fill bool) alphabet.QLetter {
+	w := make([]int, alpha.Len())
+	c := a.Column(pos, fill)
+
+	for _, l := range c {
+		if alpha.IsValid(l) {
+			w[alpha.IndexOf(l)]++
+		}
+	}
+
+	var max, maxi int
+	for i, v := range w {
+		if v > max {
+			max, maxi = v, i
+		}
+	}
+
+	return alphabet.QLetter{
+		L: alpha.Letter(maxi),
+		Q: alphabet.Ephred(1 - (float64(max) / float64(len(c)))),
+	}
 }
 
-// A Stitcher can join together sequentially ordered disjunct segments of the polymer.
-type Stitcher interface {
-	Stitch(f feat.FeatureSet) error // Join segments described by f, returning any error.
-}
+// Tolerance on float comparison for QConsensify.
+var FloatTolerance float64 = 1e-10
 
-// A Composer can join together segments of the polymer in any order, potentially repeatedly.
-type Composer interface {
-	Compose(f feat.FeatureSet) error // Join segments described by f, returning any error.
+// A default ConsenseFunc function that takes letter quality into account.
+// http://staden.sourceforge.net/manual/gap4_unix_120.html
+var DefaultQConsensus = func(a Aligned, alpha alphabet.Alphabet, pos int, fill bool) alphabet.QLetter {
+	w := make([]float64, alpha.Len())
+	for i := range w {
+		w[i] = 1
+	}
+
+	others := float64(alpha.Len() - 1)
+	c := a.ColumnQL(pos, fill)
+	for _, l := range c {
+		if alpha.IsValid(l.L) {
+			i, alt := alpha.IndexOf(l.L), l.Q.ProbE()
+			p := (1 - alt)
+			alt /= others
+			for b := range w {
+				if i == b {
+					w[b] *= p
+				} else {
+					w[b] *= alt
+				}
+			}
+		}
+	}
+
+	var (
+		max         = 0.
+		sum         float64
+		best, count int
+	)
+	for _, p := range w {
+		sum += p
+	}
+	for i, v := range w {
+		if v /= sum; v > max {
+			max, best = v, i
+			count = 0
+		}
+		if v == max || math.Abs(max-v) < FloatTolerance {
+			count++
+		}
+	}
+
+	if count > 1 {
+		return alphabet.QLetter{
+			L: alpha.Ambiguous(),
+			Q: 0,
+		}
+	}
+
+	return alphabet.QLetter{
+		L: alpha.Letter(best),
+		Q: alphabet.Ephred(1 - max),
+	}
 }

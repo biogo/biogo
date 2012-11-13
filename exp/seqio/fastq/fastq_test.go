@@ -159,12 +159,12 @@ func (s *S) TestReadFastq(c *check.C) {
 				}
 			} else {
 				t := s.(*nucleic.QSeq)
-				header := *t.Name()
-				if desc := *t.Description(); len(desc) > 0 {
+				header := t.Name()
+				if desc := t.Description(); len(desc) > 0 {
 					header += " " + desc
 				}
 				obtainN = append(obtainN, header)
-				obtainQL = append(obtainQL, *(t.Raw().(*[]alphabet.QLetter)))
+				obtainQL = append(obtainQL, (t.Slice().(alphabet.QLetters)))
 			}
 		}
 		c.Check(obtainN, check.DeepEquals, expectN)
@@ -190,7 +190,7 @@ func (s *S) TestWriteFastq(c *check.C) {
 
 		for i := range expectN {
 			seq.ID = expectN[i]
-			seq.S = expectQL[i]
+			seq.Seq = expectQL[i]
 			if n, err := w.Write(seq); err != nil {
 				c.Fatalf("Failed to write to buffer: %s", err)
 			} else {

@@ -18,16 +18,12 @@ package seqio
 
 import "code.google.com/p/biogo/exp/seq"
 
-// A Sequence is a generic sequence type.
-type Sequence interface {
-	seq.Polymer
-	seq.Sequence
-}
-
 // A SequenceAppender is a generic sequence type that can append elements.
 type SequenceAppender interface {
+	SetName(string)
+	SetDescription(string)
 	seq.Appender
-	Sequence
+	seq.Sequence
 }
 
 type Reader interface {
@@ -35,5 +31,5 @@ type Reader interface {
 }
 
 type Writer interface {
-	Write(Sequence) (int, error)
+	Write(seq.Sequence) (int, error)
 }

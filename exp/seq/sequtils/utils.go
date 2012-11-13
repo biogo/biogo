@@ -13,145 +13,295 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-// Package sequtils provides generic functions for manipulation of slices used in the seq types.
+// Package sequtils provides generic functions for manipulation of biogo/seq/... types.
 package sequtils
 
 import (
-	"code.google.com/p/biogo/bio"
+	"code.google.com/p/biogo/exp/alphabet"
+	"code.google.com/p/biogo/exp/feat"
 	"code.google.com/p/biogo/exp/seq"
-	"code.google.com/p/biogo/feat"
-	"code.google.com/p/biogo/interval"
-	"code.google.com/p/biogo/util"
-	"reflect"
+	"errors"
+	"sort"
 )
 
-var emptyString = ""
+// A Conformationer can give information regarding the sequence's conformation. For the
+// purposes of sequtils, types that are not a Conformationer are treated as linear.
+type Conformationer interface {
+	Conformation() feat.Conformation
+}
 
-// Truncate provides a function that may be used by polymer types to implement Truncator.
-// It makes use of reflection and so may be slower than type-specific implementations.
-// This is the reference implementation and should be used to compare type-specific
-// implementation against in testing. 
-func Truncate(pol interface{}, start, end int, circular bool) (p interface{}, err error) {
-	pv := reflect.ValueOf(pol)
-	if l := pv.Len(); start < 0 || end < 0 || start > l || end > l {
-		return nil, bio.NewError("Out of range.", 0, nil)
+// A ConformationSetter can set its sequence conformation.
+type ConformationSetter interface {
+	SetConformation(feat.Conformation)
+}
+
+// A Slicer returns and sets a Slice. 
+type Slicer interface {
+	Slice() alphabet.Slice
+	SetSlice(alphabet.Slice)
+}
+
+// A Joinable can be joined to another of the same concrete type using the Join function.
+type Joinable interface {
+	SetOffset(int)
+	Slice() alphabet.Slice
+	SetSlice(alphabet.Slice)
+}
+
+// Join joins a and be with the target location of b specified by where. The offset of dst
+// will be updated if src is prepended. Join will panic if dst and src do not hold the same
+// concrete Slice type. Circular sequences cannot be joined.
+func Join(dst, src Joinable, where int) error {
+	dstC, dstOk := dst.(Conformationer)
+	srcC, srcOk := src.(Conformationer)
+	switch {
+	case dstOk && dstC.Conformation() > feat.Linear, srcOk && srcC.Conformation() > feat.Linear:
+		return errors.New("sequtils: cannot join circular sequence")
+	}
+
+	o := dst
+	if where == seq.End {
+		src, dst = dst, src
+	}
+	dstSl, srcSl := dst.Slice(), src.Slice()
+	srcLen := srcSl.Len()
+	if where == seq.Start {
+		dst.SetOffset(-srcLen)
+	}
+	t := dst.Slice().Make(srcLen, srcLen+dstSl.Len())
+	t.Copy(srcSl)
+	o.SetSlice(t.Append(dstSl))
+	return nil
+}
+
+// A Sliceable can be truncated, stitched and composed.
+type Sliceable interface {
+	Start() int
+	End() int
+	SetOffset(int)
+	Slice() alphabet.Slice
+	SetSlice(alphabet.Slice)
+}
+
+// Truncate performs a truncation on src from start to end and places the result in dst.
+// The conformation of dst is set to linear and the offset is set to start. If dst and src
+// are not equal, a copy of the truncation is allocated. Only circular sequences can be
+// truncated with start > end.
+func Truncate(dst, src Sliceable, start, end int) error {
+	var (
+		sl     = src.Slice()
+		offset = src.Start()
+	)
+	if start < offset || end > src.End() {
+		return errors.New("sequtils: index out of range")
 	}
 	if start <= end {
-		p = pv.Slice(start, end).Interface()
-	} else if circular {
-		tv := reflect.MakeSlice(pv.Type(), pv.Len()-start, pv.Len()+end-start)
-		reflect.Copy(tv, pv.Slice(start, pv.Len()))
-		p = reflect.AppendSlice(tv, pv.Slice(0, end)).Interface()
-	} else {
-		return nil, bio.NewError("Start position greater than end position for non-circular sequence.", 0, pol)
-	}
-
-	return
-}
-
-// Reverse provides a function that may be used by polymer types to implement Polymer.
-// It makes use of reflection and so may be slower than type-specific implementations.
-// This is the reference implementation and should be used to compare type-specific
-// implementation against in testing. 
-func Reverse(pol interface{}) interface{} {
-	pv := reflect.ValueOf(pol)
-	pLen := pv.Len()
-
-	i, j := 0, pLen-1
-	var tv interface{}
-	for ; i < j; i, j = i+1, j-1 {
-		tv = pv.Index(i).Interface()
-		pv.Index(i).Set(pv.Index(j))
-		pv.Index(j).Set(reflect.ValueOf(tv))
-	}
-
-	return pv.Interface()
-}
-
-// Join provides a function that may be used by polymer types.
-// It makes use of reflection and so may be slower than type-specific implementations.
-// This is the reference implementation and should be used to compare type-specific
-// implementation against in testing. 
-func Join(pol1, pol2 interface{}, where int) (j interface{}, offset int) {
-	if where == seq.End {
-		pol2, pol1 = pol1, pol2
-	}
-	pol2v := reflect.ValueOf(pol2)
-	pol1v := reflect.ValueOf(pol1)
-	pol2Len := pol2v.Len()
-	if where == seq.Start {
-		offset = -pol2v.Len()
-	}
-
-	tv := reflect.MakeSlice(pol1v.Type(), pol2Len, pol2Len+pol1v.Len())
-	reflect.Copy(tv, pol2v)
-	j = reflect.AppendSlice(tv, pol1v).Interface()
-
-	return
-}
-
-// Stitch provides a function that may be used by polymer types to implement Stitcher.
-// It makes use of reflection and so may be slower than type-specific implementations.
-// This is the reference implementation and should be used to compare type-specific
-// implementation against in testing. 
-func Stitch(pol interface{}, offset int, f feat.FeatureSet) (s interface{}, err error) {
-	t := interval.NewTree()
-	var i *interval.Interval
-
-	for _, feature := range f {
-		i, err = interval.New(emptyString, feature.Start, feature.End, 0, nil)
-		if err != nil {
-			return
+		if dst == src {
+			dst.SetSlice(sl.Slice(start-offset, end-offset))
 		} else {
-			t.Insert(i)
+			dst.SetSlice(sl.Make(0, sl.Len()).Append(sl.Slice(start-offset, end-offset)))
 		}
+		dst.SetOffset(start)
+		if dst, ok := dst.(ConformationSetter); ok {
+			dst.SetConformation(feat.Linear)
+		}
+		return nil
 	}
 
-	pv := reflect.ValueOf(pol)
-	pLen := pv.Len()
-	end := pLen + offset
-	span, err := interval.New(emptyString, offset, end, 0, nil)
-	if err != nil {
-		panic("Sequence.End() < Sequence.Start()")
+	if src, ok := src.(Conformationer); !ok || src.Conformation() == feat.Linear {
+		return errors.New("sequtils: start position greater than end position for linear sequence")
 	}
-	fs, _ := t.Flatten(span, 0, 0)
-	l := 0
-
-	for _, seg := range fs {
-		l += util.Min(seg.End(), end) - util.Max(seg.Start(), offset)
+	if end < offset || start > src.End() {
+		return errors.New("sequtils: index out of range")
 	}
-	tv := reflect.MakeSlice(pv.Type(), 0, l)
-
-	for _, seg := range fs {
-		tv = reflect.AppendSlice(tv, pv.Slice(util.Max(seg.Start()-offset, 0), util.Min(seg.End()-offset, pLen)))
+	t := sl.Make(sl.Len()-start+offset, sl.Len()+end-start)
+	t.Copy(sl.Slice(start-offset, sl.Len()))
+	dst.SetSlice(t.Append(sl.Slice(0, end-offset)))
+	dst.SetOffset(start)
+	if dst, ok := dst.(ConformationSetter); ok {
+		dst.SetConformation(feat.Linear)
 	}
 
-	return tv.Interface(), nil
+	return nil
 }
 
-// Compose provides a function that may be used by polymer types to implement Composer.
-// It makes use of reflection and so may be slower than type-specific implementations.
-// This is the reference implementation and should be used to compare type-specific
-// implementation against in testing. 
-func Compose(pol interface{}, offset int, f feat.FeatureSet) (s []interface{}, err error) {
-	pv := reflect.ValueOf(pol)
-	pLen := pv.Len()
+type feats []feat.Feature
+
+func (f feats) Len() int           { return len(f) }
+func (f feats) Less(i, j int) bool { return f[i].Start() < f[j].Start() }
+func (f feats) Swap(i, j int)      { f[i], f[j] = f[j], f[i] }
+
+func max(a, b int) int {
+	if a > b {
+		return a
+	}
+	return b
+}
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
+}
+
+// Stitch produces a subsequence of src defined by fs and places the the result in dst.
+// The subsequences are guaranteed to be in order and non-overlapping even if not provided as such.
+// Stitching a circular sequence returns a linear sequence.
+func Stitch(dst, src Sliceable, fs feat.Set) error {
+	var (
+		sl     = src.Slice()
+		offset = src.Start()
+		ff     = feats(fs.Features())
+	)
+	for _, f := range ff {
+		if f.End() < f.Start() {
+			return errors.New("sequtils: feature end < feature start")
+		}
+	}
+	ff = append(feats(nil), ff...)
+	sort.Sort(ff)
+	// FIXME Does not correctly deal with circular sequences and feature sets.
+	// Range over ff if src is circular and  and trunc at start and end, do checks to
+	// see if feature splits on origin and rearrange tail to front.
+
+	pLen := sl.Len()
 	end := pLen + offset
 
-	tv := make([]reflect.Value, len(f))
-	for i, seg := range f {
-		if seg.End < seg.Start {
-			return nil, bio.NewError("Feature End < Start", 0, f)
+	type fi struct{ s, e int }
+	var (
+		fsp = make([]*fi, 0, len(ff))
+		csp *fi
+	)
+	for i, f := range ff {
+		if s := f.Start(); i == 0 || s > csp.e {
+			csp = &fi{s: s, e: f.End()}
+			fsp = append(fsp, csp)
+		} else {
+			csp.e = max(csp.e, f.End())
 		}
-		l := util.Min(seg.End, end) - util.Max(seg.Start, offset)
-		tv[i] = reflect.MakeSlice(pv.Type(), l, l)
-		reflect.Copy(tv[i], pv.Slice(util.Max(seg.Start-offset, 0), util.Min(seg.End-offset, pLen)))
 	}
 
-	s = make([]interface{}, len(tv))
-	for i := range tv {
-		s[i] = tv[i].Interface()
+	var l int
+	for _, f := range fsp {
+		l += max(0, min(f.e, end)-max(f.s, offset))
+	}
+	t := sl.Make(0, l)
+
+	for _, f := range fsp {
+		fs, fe := max(f.s-offset, 0), min(f.e-offset, pLen)
+		if fs >= fe {
+			continue
+		}
+		t = t.Append(sl.Slice(fs, fe))
 	}
 
+	dst.SetSlice(t)
+	if dst, ok := dst.(ConformationSetter); ok {
+		dst.SetConformation(feat.Linear)
+	}
+	dst.SetOffset(0)
+
+	return nil
+}
+
+// Compose produces a composition of src defined by the features in fs. The subparts of
+// the composition may be out of order and if features in fs specify orientation may be
+// reversed or reverse complemented depending on the type of src - if src can provide and
+// set an alphabet and reverse complement reversed segments will be complemented, if src
+// can reverse these segments will only be reversed. If src is unable to satisfy these
+// conditions and a reverse segment is specified an error is returned.
+// Composing a circular sequence returns a linear sequence.
+func Compose(dst, src Sliceable, fs feat.Set) error {
+	var (
+		sl     = src.Slice()
+		offset = src.Start()
+		ff     = feats(fs.Features())
+	)
+
+	pLen := sl.Len()
+	end := pLen + offset
+
+	t := make([]alphabet.Slice, len(ff))
+	var tl int
+	for i, f := range ff {
+		if f.End() < f.Start() {
+			return errors.New("sequtils: feature end < feature start")
+		}
+		l := min(f.End(), end) - max(f.Start(), offset)
+		tl += l
+		t[i] = sl.Make(l, l)
+		t[i].Copy(sl.Slice(max(f.Start()-offset, 0), min(f.End()-offset, pLen)))
+	}
+
+	type (
+		Complementer interface {
+			New() seq.Sequence
+			Alphabet() alphabet.Alphabet
+			SetAlphabet(alphabet.Nucleic)
+			RevComp()
+		}
+		Reverser interface {
+			New() seq.Sequence
+			Reverse()
+		}
+	)
+
+	c := sl.Make(0, tl)
+	var r Sliceable
+	for i, ts := range t {
+		if f, ok := ff[i].(feat.Orienter); ok && f.Orientation() == feat.Reverse {
+			switch src := src.(type) {
+			case Complementer:
+				if r == nil {
+					r = src.New().(Sliceable)
+					r.(Complementer).SetAlphabet(src.Alphabet().(alphabet.Nucleic))
+				}
+				r.SetSlice(ts)
+				r.(Complementer).RevComp()
+			case Reverser:
+				if r == nil {
+					r = src.New().(Sliceable)
+				}
+				r.SetSlice(ts)
+				r.(Reverser).Reverse()
+			default:
+				return errors.New("sequtils: unable to reverse segment during compose")
+			}
+			c = c.Append(r.Slice())
+		} else {
+			c = c.Append(ts)
+		}
+	}
+
+	dst.SetSlice(c)
+	if dst, ok := dst.(ConformationSetter); ok {
+		dst.SetConformation(feat.Linear)
+	}
+	dst.SetOffset(0)
+
+	return nil
+}
+
+// A QualityFeature describes a segment of sequence quality information. EAt() called with
+// column values within Start() and End() is expected to return valid error probabilities for
+// the zero'th row position.
+type QualityFeature interface {
+	feat.Feature
+	EAt(seq.Position) float64
+}
+
+// Trim uses the modified-Mott trimming function to determine the start and end positions
+// of good sequence. http://www.phrap.org/phredphrap/phred.html
+func Trim(q QualityFeature, limit float64) (start, end int) {
+	var sum, max float64
+	for i := q.Start(); i < q.End(); i++ {
+		sum += limit - q.EAt(seq.Position{Col: i})
+		if sum < 0 {
+			sum, start = 0, i+1
+		}
+		if sum >= max {
+			max, end = sum, i+1
+		}
+	}
 	return
 }

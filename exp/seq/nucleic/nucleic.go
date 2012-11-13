@@ -23,10 +23,8 @@ package nucleic
 import (
 	"code.google.com/p/biogo/exp/alphabet"
 	"code.google.com/p/biogo/exp/seq"
-	"math"
+	"code.google.com/p/biogo/exp/seq/sequtils"
 )
-
-var emptyString = ""
 
 // Strand stores nucleic acid sequence strand information.
 type Strand int8
@@ -40,8 +38,8 @@ const (
 // The default value for Qphred scores from non-quality sequences.
 var DefaultQphred alphabet.Qphred = 40
 
-func (self Strand) String() string {
-	switch self {
+func (s Strand) String() string {
+	switch s {
 	case Plus:
 		return "(+)"
 	case None:
@@ -54,139 +52,40 @@ func (self Strand) String() string {
 
 // Sequence describes the interface for nucleic acid sequences.
 type Sequence interface {
-	seq.Polymer
 	seq.Sequence
+	seq.Reverser
 	seq.Complementer
+	sequtils.Slicer
+	sequtils.Conformationer
+	sequtils.ConformationSetter
 	Nucleic() // No op function to tag nucleic type sequence data.
 }
 
 // Quality describes the interface for nucleic acid sequences with quality scores.
 type Quality interface {
-	seq.Polymer
-	seq.Sequence
-	seq.Scorer
-	seq.Complementer
-	Nucleic()
-}
-
-// Aligned describes the interface for aligned multiple sequences.
-type Aligned interface {
 	Sequence
-	Column(pos int, fill bool) []alphabet.Letter
-	ColumnQL(pos int, fill bool) []alphabet.QLetter
-	Consensus(fill bool) *QSeq
+	EAt(seq.Position) float64      // Return the p(Error) for a specific position.
+	SetE(seq.Position, float64)    // Set the p(Error) for a specific position.
+	Encoding() alphabet.Encoding   // Return the score encoding scheme.
+	SetEncoding(alphabet.Encoding) // Set the score encoding scheme.
+	QEncode(seq.Position) byte     // Encode the quality at pos according the the encoding scheme.
 }
 
 // An AlignedAppenderis a multiple sequence alignment that can append letters.
 type AlignedAppender interface {
-	Aligned
+	seq.Aligned
 	AppendColumns(a ...[]alphabet.QLetter) (err error)
 	AppendEach(a [][]alphabet.QLetter) (err error)
 }
 
-// Extracter describes the interface for column based aligned multiple sequences.
-type Extracter interface {
-	Sequence
-	Extract(i int) Sequence
-}
-
 // Getter describes the interface for sets of sequences or aligned multiple sequences.
 type Getter interface {
-	Sequence
+	Rows() int
 	Get(i int) Sequence
 }
 
-// GetterAppender is a type for sets of sequences or aligned multiple sequences that can append letters to individual or grouped seqeunces.
+// GetterAppender is a type for sets of sequences or aligned multiple sequences that can append letters to individual or grouped sequences.
 type GetterAppender interface {
 	Getter
 	AppendEach(a [][]alphabet.QLetter) (err error)
-}
-
-// Consensifyer is a function type that returns the consensus letter for a column of an alignment.
-type Consensifyer func(a Aligned, pos int, fill bool) alphabet.QLetter
-
-// The default Consensifyer function.
-var Consensify = func(a Aligned, pos int, fill bool) alphabet.QLetter {
-	alpha := a.Alphabet()
-	w := make([]int, alpha.Len())
-	c := a.Column(pos, fill)
-
-	for _, l := range c {
-		if alpha.IsValid(l) {
-			w[alpha.IndexOf(l)]++
-		}
-	}
-
-	var max, maxi int
-	for i, v := range w {
-		if v > max {
-			max, maxi = v, i
-		}
-	}
-
-	return alphabet.QLetter{
-		L: alpha.Letter(maxi),
-		Q: alphabet.Ephred(1 - (float64(max) / float64(len(c)))),
-	}
-}
-
-// Tolerance on float comparison for QConsensify
-var FloatTolerance float64 = 1e-10
-
-// A default Consensifyer function that takes letter quality into account.
-// http://staden.sourceforge.net/manual/gap4_unix_120.html
-var QConsensify = func(a Aligned, pos int, fill bool) alphabet.QLetter {
-	alpha := a.Alphabet()
-
-	w := make([]float64, alpha.Len())
-	for i := range w {
-		w[i] = 1
-	}
-
-	others := float64(alpha.Len() - 1)
-	c := a.ColumnQL(pos, fill)
-	for _, l := range c {
-		if alpha.IsValid(l.L) {
-			i, alt := alpha.IndexOf(l.L), l.Q.ProbE()
-			p := (1 - alt)
-			alt /= others
-			for b := range w {
-				if i == b {
-					w[b] *= p
-				} else {
-					w[b] *= alt
-				}
-			}
-		}
-	}
-
-	var (
-		max         = 0.
-		sum         float64
-		best, count int
-	)
-	for _, p := range w {
-		sum += p
-	}
-	for i, v := range w {
-		if v /= sum; v > max {
-			max, best = v, i
-			count = 0
-		}
-		if v == max || math.Abs(max-v) < FloatTolerance {
-			count++
-		}
-	}
-
-	if count > 1 {
-		return alphabet.QLetter{
-			L: alpha.Ambiguous(),
-			Q: 0,
-		}
-	}
-
-	return alphabet.QLetter{
-		L: alpha.Letter(best),
-		Q: alphabet.Ephred(1 - max),
-	}
 }

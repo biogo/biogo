@@ -17,20 +17,19 @@ package protein
 
 import (
 	"code.google.com/p/biogo/exp/alphabet"
-	"code.google.com/p/biogo/exp/seq"
 	"fmt"
 	"strings"
 )
 
 func ExampleNewQSeq() {
-	d := NewQSeq("example protein", []alphabet.QLetter{{'A', 40}, {'C', 39}, {'G', 40}, {'C', 38}, {'T', 35}, {'G', 20}}, alphabet.Protein, alphabet.Sanger)
+	d := NewQSeq("example Protein", []alphabet.QLetter{{'A', 40}, {'C', 39}, {'G', 40}, {'C', 38}, {'T', 35}, {'G', 20}}, alphabet.Protein, alphabet.Sanger)
 	fmt.Println(d, d.Moltype())
 	// Output:
 	// ACGCTG Protein
 }
 
 func ExampleQSeq_Validate() {
-	r := NewQSeq("example protein", []alphabet.QLetter{{'A', 40}, {'C', 39}, {'G', 40}, {'C', 38}, {'U', 35}, {'G', 20}}, alphabet.Protein, alphabet.Sanger)
+	r := NewQSeq("example Protein", []alphabet.QLetter{{'A', 40}, {'C', 39}, {'G', 40}, {'C', 38}, {'O', 35}, {'G', 20}}, alphabet.Protein, alphabet.Sanger)
 	fmt.Println(r, r.Moltype())
 	if ok, pos := r.Validate(); ok {
 		fmt.Println("valid Protein")
@@ -38,7 +37,7 @@ func ExampleQSeq_Validate() {
 		fmt.Println(strings.Repeat(" ", pos-1), "^ first invalid Protein position")
 	}
 	// Output:
-	// ACGCUG Protein
+	// ACGCOG Protein
 	//     ^ first invalid Protein position
 }
 
@@ -49,18 +48,6 @@ func ExampleQSeq_Append() {
 		16, 16, 16, 10, 15, 18, 18, 18, 11, 2, 11, 20, 19, 18, 18, 16, 10, 12, 22, 0, 0, 0, 0}
 	l := []alphabet.Letter("NTTTCTTCTATATCCTTTTCATCTTTTAATCCATTCACCATTTTTTTCCCTCCACCTACCTNTCCTTCTCTTTCT")
 	s := NewQSeq("example Protein", nil, alphabet.Protein, alphabet.Sanger)
-	s.Stringify = func(p seq.Polymer) string {
-		s := p.(*QSeq)
-		lb, qb, b := []alphabet.Letter{}, []byte{}, []byte{}
-		for i, ql := range s.S {
-			lb = append(lb, ql.L)
-			qb = append(qb, s.QEncode(seq.Position{Pos: i}))
-		}
-		b = append(b, alphabet.LettersToBytes(lb)...)
-		b = append(b, '\n')
-		b = append(b, qb...)
-		return string(b)
-	}
 
 	for i := range l {
 		s.AppendQLetters(alphabet.QLetter{L: l[i], Q: q[i]})
@@ -72,9 +59,7 @@ func ExampleQSeq_Append() {
 	fmt.Println(s)
 	// Output:
 	// Forward:
-	// NTTTCTTCTATATCCTTTTCATCTTTTAATCCATTCACCATTTTTTTCCCTCCACCTACCTNTCCTTCTCTTTCT
-	// #.47435885169773237879795033445-3255530396.)05545553111+0333,#,54331+-7!!!!
+	// xTTTCTTCTATATCCTTTTCATCTTTTAATCCATTCACCATTTTTTTCCCTCCACCTACCTxTCCTTCTCTxxxx
 	// Reverse:
-	// TCTTTCTCTTCCTNTCCATCCACCTCCCTTTTTTTACCACTTACCTAATTTTCTACTTTTCCTATATCTTCTTTN
-	// !!!!7-+13345,#,3330+11135554550).6930355523-54433059797873237796158853474.#
+	// xxxxTCTCTTCCTxTCCATCCACCTCCCTTTTTTTACCACTTACCTAATTTTCTACTTTTCCTATATCTTCTTTx
 }

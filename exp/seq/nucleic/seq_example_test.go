@@ -17,8 +17,9 @@ package nucleic
 
 import (
 	"code.google.com/p/biogo/exp/alphabet"
+	"code.google.com/p/biogo/exp/feat"
 	"code.google.com/p/biogo/exp/seq"
-	"code.google.com/p/biogo/feat"
+	"code.google.com/p/biogo/exp/seq/sequtils"
 	"fmt"
 	"strings"
 )
@@ -46,7 +47,7 @@ func ExampleSeq_Validate() {
 func ExampleSeq_Truncate_1() {
 	s := NewSeq("example DNA", []alphabet.Letter("ACGCTGACTTGGTGCACGT"), alphabet.DNA)
 	fmt.Println(s)
-	if err := s.Truncate(5, 12); err == nil {
+	if err := sequtils.Truncate(s, s, 5, 12); err == nil {
 		fmt.Println(s)
 	}
 	// Output:
@@ -58,26 +59,26 @@ func ExampleSeq_Truncate_2() {
 	var s *Seq
 
 	s = NewSeq("example DNA", []alphabet.Letter("ACGCTGACTTGGTGCACGT"), alphabet.DNA)
-	s.Circular(true)
-	fmt.Printf("%s Circular = %v\n", s, s.IsCircular())
-	if err := s.Truncate(12, 5); err == nil {
-		fmt.Printf("%s Circular = %v\n", s, s.IsCircular())
+	s.Conform = feat.Circular
+	fmt.Printf("%s Conformation = %v\n", s, s.Conformation())
+	if err := sequtils.Truncate(s, s, 12, 5); err == nil {
+		fmt.Printf("%s Conformation = %v\n", s, s.Conformation())
 	} else {
 		fmt.Println("Error:", err)
 	}
 
 	s = NewSeq("example DNA", []alphabet.Letter("ACGCTGACTTGGTGCACGT"), alphabet.DNA)
-	fmt.Printf("%s Circular = %v\n", s, s.IsCircular())
-	if err := s.Truncate(12, 5); err == nil {
-		fmt.Printf("%s Circular = %v\n", s, s.IsCircular())
+	fmt.Printf("%s Conformation = %v\n", s, s.Conformation())
+	if err := sequtils.Truncate(s, s, 12, 5); err == nil {
+		fmt.Printf("%s Conformation = %v\n", s, s.Conformation())
 	} else {
 		fmt.Println("Error:", err)
 	}
 	// Output:
-	// ACGCTGACTTGGTGCACGT Circular = true
-	// TGCACGTACGCT Circular = false
-	// ACGCTGACTTGGTGCACGT Circular = false
-	// Error: Start position greater than end position for non-circular sequence.
+	// ACGCTGACTTGGTGCACGT Conformation = circular
+	// TGCACGTACGCT Conformation = linear
+	// ACGCTGACTTGGTGCACGT Conformation = linear
+	// Error: sequtils: start position greater than end position for linear sequence
 }
 
 func ExampleSeq_RevComp() {
@@ -96,13 +97,13 @@ func ExampleSeq_Join() {
 	s1 = NewSeq("a", []alphabet.Letter("agctgtgctga"), alphabet.DNA)
 	s2 = NewSeq("b", []alphabet.Letter("CGTGCAGTCATGAGTGA"), alphabet.DNA)
 	fmt.Println(s1, s2)
-	if err := s1.Join(s2, seq.Start); err == nil {
+	if err := sequtils.Join(s1, s2, seq.Start); err == nil {
 		fmt.Println(s1)
 	}
 
 	s1 = NewSeq("a", []alphabet.Letter("agctgtgctga"), alphabet.DNA)
 	s2 = NewSeq("b", []alphabet.Letter("CGTGCAGTCATGAGTGA"), alphabet.DNA)
-	if err := s1.Join(s2, seq.End); err == nil {
+	if err := sequtils.Join(s1, s2, seq.End); err == nil {
 		fmt.Println(s1)
 	}
 	// Output:
@@ -111,15 +112,30 @@ func ExampleSeq_Join() {
 	// agctgtgctgaCGTGCAGTCATGAGTGA
 }
 
+type fe struct {
+	s, e int
+	st   Strand
+	feat.Feature
+}
+
+func (f fe) Start() int                    { return f.s }
+func (f fe) End() int                      { return f.e }
+func (f fe) Len() int                      { return f.e - f.s }
+func (f fe) Orientation() feat.Orientation { return feat.Orientation(f.st) }
+
+type fs []feat.Feature
+
+func (f fs) Features() []feat.Feature { return []feat.Feature(f) }
+
 func ExampleSeq_Stitch() {
 	s := NewSeq("example DNA", []alphabet.Letter("aAGTATAAgtcagtgcagtgtctggcagTGCTCGTGCgtagtgaagtagGGTTAGTTTa"), alphabet.DNA)
-	f := feat.FeatureSet{
-		&feat.Feature{Start: 1, End: 8},
-		&feat.Feature{Start: 28, End: 37},
-		&feat.Feature{Start: 49, End: s.Len() - 1},
+	f := fs{
+		fe{s: 1, e: 8},
+		fe{s: 28, e: 37},
+		fe{s: 49, e: s.Len() - 1},
 	}
 	fmt.Println(s)
-	if err := s.Stitch(f); err == nil {
+	if err := sequtils.Stitch(s, s, f); err == nil {
 		fmt.Println(s)
 	}
 	// Output:
@@ -129,13 +145,13 @@ func ExampleSeq_Stitch() {
 
 func ExampleSeq_Compose() {
 	s := NewSeq("example DNA", []alphabet.Letter("aAGTATAAgtcagtgcagtgtctggcag<TS>gtagtgaagtagggttagttta"), alphabet.DNA)
-	f := feat.FeatureSet{
-		&feat.Feature{Start: 0, End: 32},
-		&feat.Feature{Start: 1, End: 8, Strand: -1},
-		&feat.Feature{Start: 28, End: s.Len() - 1},
+	f := fs{
+		fe{s: 0, e: 32},
+		fe{s: 1, e: 8, st: -1},
+		fe{s: 28, e: s.Len() - 1},
 	}
 	fmt.Println(s)
-	if err := s.Compose(f); err == nil {
+	if err := sequtils.Compose(s, s, f); err == nil {
 		fmt.Println(s)
 	}
 	// Output:

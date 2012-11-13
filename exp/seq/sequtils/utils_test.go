@@ -16,11 +16,14 @@
 package sequtils
 
 import (
+	"code.google.com/p/biogo/exp/alphabet"
+	"code.google.com/p/biogo/exp/feat"
 	"code.google.com/p/biogo/exp/seq"
-	"code.google.com/p/biogo/feat"
+	"fmt"
 	check "launchpad.net/gocheck"
 	"reflect"
 	"testing"
+	"unsafe"
 )
 
 // Tests
@@ -31,162 +34,254 @@ type S struct{}
 var _ = check.Suite(&S{})
 
 var (
-	lorem = "Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua."
+	lorem = stringToSlice("Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.")
 )
 
-//func Truncate(pol interface{}, start, end int, circular bool) (p interface{}, err error)
-// Truncate pol from start to end, allowing wrap around if circular, and return.
+type slice []byte
+
+func stringToSlice(s string) slice {
+	b := []byte(s)
+	return *(*slice)(unsafe.Pointer(&b))
+}
+func (s slice) Make(len, cap int) alphabet.Slice       { return make(slice, len, cap) }
+func (s slice) Len() int                               { return len(s) }
+func (s slice) Cap() int                               { return cap(s) }
+func (s slice) Slice(start, end int) alphabet.Slice    { return s[start:end] }
+func (s slice) Append(a alphabet.Slice) alphabet.Slice { return append(s, a.(slice)...) }
+func (s slice) Copy(a alphabet.Slice) int              { return copy(s, a.(slice)) }
+
+type offSlice struct {
+	slice
+	offset int
+	conf   feat.Conformation
+}
+
+func stringToOffSlice(s string) *offSlice {
+	return &offSlice{slice: stringToSlice(s)}
+}
+func (os *offSlice) Conformation() feat.Conformation { return os.conf }
+func (os *offSlice) SetOffset(o int)                 { os.offset = o }
+func (os *offSlice) Slice() alphabet.Slice           { return os.slice }
+func (os *offSlice) SetSlice(sl alphabet.Slice)      { os.slice = sl.(slice) }
+func (os *offSlice) String() string                  { return fmt.Sprintf("%s %d", os.slice, os.offset) }
+
+type conformRangeOffSlice struct {
+	slice
+	offset int
+	conf   feat.Conformation
+}
+
+func stringToConformRangeOffSlice(s string) *conformRangeOffSlice {
+	return &conformRangeOffSlice{slice: stringToSlice(s)}
+}
+func (os *conformRangeOffSlice) Conformation() feat.Conformation     { return os.conf }
+func (os *conformRangeOffSlice) SetConformation(c feat.Conformation) { os.conf = c }
+func (os *conformRangeOffSlice) SetOffset(o int)                     { os.offset = o }
+func (os *conformRangeOffSlice) Start() int                          { return os.offset }
+func (os *conformRangeOffSlice) End() int                            { return os.offset + len(os.slice) }
+func (os *conformRangeOffSlice) Slice() alphabet.Slice               { return os.slice }
+func (os *conformRangeOffSlice) SetSlice(sl alphabet.Slice)          { os.slice = sl.(slice) }
+func (os *conformRangeOffSlice) String() string                      { return fmt.Sprintf("%s", os.slice) }
+
 func (s *S) TestTruncate(c *check.C) {
 	type test struct {
-		in         interface{}
+		in         *conformRangeOffSlice
 		start, end int
-		circular   bool
 		expect     interface{}
 	}
 
 	var T []test = []test{
-		{in: []byte(lorem), start: 28, end: 39, circular: false, expect: []byte("consectetur")},
-		{in: []byte(lorem), start: 28, end: 39, circular: true, expect: []byte("consectetur")},
-		{in: []byte(lorem), start: 117, end: 5, circular: false, expect: "Start position greater than end position for non-circular sequence."},
-		{in: []byte(lorem), start: 117, end: 5, circular: true, expect: []byte("aliqua.Lorem")},
+		{
+			in:     &conformRangeOffSlice{slice: lorem, conf: feat.Linear},
+			start:  28,
+			end:    39,
+			expect: stringToSlice("consectetur"),
+		},
+		{
+			in:     &conformRangeOffSlice{slice: lorem, conf: feat.Linear, offset: 1},
+			start:  29,
+			end:    40,
+			expect: stringToSlice("consectetur"),
+		},
+		{
+			in:     &conformRangeOffSlice{slice: lorem, conf: feat.Circular},
+			start:  28,
+			end:    39,
+			expect: stringToSlice("consectetur"),
+		},
+		{
+			in:     &conformRangeOffSlice{slice: lorem, conf: feat.Linear},
+			start:  117,
+			end:    5,
+			expect: "sequtils: start position greater than end position for linear sequence",
+		},
+		{
+			in:     &conformRangeOffSlice{slice: lorem, conf: feat.Circular},
+			start:  117,
+			end:    5,
+			expect: stringToSlice("aliqua.Lorem"),
+		},
+		{
+			in:     &conformRangeOffSlice{slice: lorem, conf: feat.Circular, offset: 1},
+			start:  118,
+			end:    6,
+			expect: stringToSlice("aliqua.Lorem"),
+		},
+		{
+			in:     &conformRangeOffSlice{slice: lorem, conf: feat.Linear},
+			start:  5,
+			end:    1170,
+			expect: "sequtils: index out of range",
+		},
+		{
+			in:     &conformRangeOffSlice{slice: lorem, conf: feat.Circular},
+			start:  1170,
+			end:    5,
+			expect: "sequtils: index out of range",
+		},
 	}
 
 	for _, t := range T {
-		if trunc, err := Truncate(t.in, t.start, t.end, t.circular); err == nil {
-			c.Check(trunc, check.DeepEquals, t.expect)
-			if !t.circular || (t.circular && t.end >= t.start) {
+		r := &conformRangeOffSlice{}
+		if err := Truncate(r, t.in, t.start, t.end); err != nil {
+			c.Check(err, check.ErrorMatches, t.expect)
+		} else {
+			c.Check(r.slice, check.DeepEquals, t.expect)
+			c.Check(r.conf, check.Equals, feat.Linear)
+			if t.in.conf != feat.Circular || (t.in.conf == feat.Circular && t.end >= t.start) {
 				c.Check(t.end-t.start, check.Equals, reflect.ValueOf(t.expect).Len())
 			} else {
-				c.Check(t.end+reflect.ValueOf(t.in).Len()-t.start, check.Equals, reflect.ValueOf(t.expect).Len())
+				c.Check(t.end+reflect.ValueOf(t.in.slice).Len()-t.start, check.Equals, reflect.ValueOf(t.expect).Len())
 			}
-		} else {
-			c.Check(err, check.ErrorMatches, t.expect)
 		}
 	}
 }
 
-//func Reverse(pol interface{}) interface{}
-// Reverse the order of pol inplace and return.
-func (s *S) TestReverse(c *check.C) {
-	type test struct {
-		in, expect interface{}
-	}
-
-	var T []test = []test{
-		{
-			in:     []byte(lorem),
-			expect: []byte(".auqila angam erolod te erobal tu tnudidicni ropmet domsuie od des ,tile gnicisipida rutetcesnoc ,tema tis rolod muspi meroL"),
-		},
-	}
-
-	for _, t := range T {
-		c.Check(Reverse(t.in), check.DeepEquals, t.expect)
-		c.Check(Reverse(t.in), check.DeepEquals, Reverse(Reverse(t.in)))
-	}
-}
-
-//func Join(pol interface{}, p interface{}, where int) (j interface{}, offset int)
-// Join p to pol inplace according to where specified, and return.
 func (s *S) TestJoin(c *check.C) {
-	type result struct {
-		v interface{}
-		i int
-	}
 	type test struct {
-		a, b   interface{}
+		a, b   *offSlice
 		where  int
-		expect result
+		expect *offSlice
 	}
 
 	var T []test = []test{
-		{a: []byte(lorem[28:40]), b: []byte(lorem[117:]), where: seq.Start, expect: result{v: []byte("aliqua.consectetur "), i: -7}},
-		{a: []byte(lorem[28:40]), b: []byte(lorem[117:]), where: seq.End, expect: result{v: []byte("consectetur aliqua."), i: 0}},
+		{
+			a:      &offSlice{lorem[28:40], 0, feat.Linear},
+			b:      &offSlice{lorem[117:], 0, feat.Linear},
+			where:  seq.Start,
+			expect: &offSlice{stringToSlice("aliqua.consectetur "), -7, feat.Linear},
+		},
+		{
+			a:      &offSlice{lorem[28:40], 0, feat.Linear},
+			b:      &offSlice{lorem[117:], 0, feat.Linear},
+			where:  seq.End,
+			expect: &offSlice{stringToSlice("consectetur aliqua."), 0, feat.Linear},
+		},
 	}
 
 	for _, t := range T {
-		v, i := Join(t.a, t.b, t.where)
-		c.Check(v, check.DeepEquals, t.expect.v)
-		c.Check(i, check.Equals, t.expect.i)
+		Join(t.a, t.b, t.where)
+		c.Check(t.a, check.DeepEquals, t.expect)
 	}
 }
 
-//func Stitch(pol interface{}, offset int, f feat.FeatureSet) (s interface{}, err error)
-// Join together colinear segments of pol described by f with an offset applied, and return.
+type fe struct {
+	s, e int
+	feat.Feature
+}
+
+func (f fe) Start() int { return f.s }
+func (f fe) End() int   { return f.e }
+func (f fe) Len() int   { return f.e - f.s }
+
+type fs []feat.Feature
+
+func (f fs) Features() []feat.Feature { return []feat.Feature(f) }
+
 func (s *S) TestStitch(c *check.C) {
-	type result struct {
-		v interface{}
-		i int
-	}
 	type test struct {
-		in     interface{}
-		f      feat.FeatureSet
-		offset int
-		expect result
-	}
-
-	var T []test = []test{
-		{
-			in: []byte(lorem), f: feat.FeatureSet{{Start: 12, End: 18}, {Start: 24, End: 26}, {Start: 103, End: 110}},
-			expect: result{v: []byte("dolor et dolore"), i: 15},
-		},
-		{
-			in: []byte(lorem), f: feat.FeatureSet{{Start: 12, End: 18}, {Start: 24, End: 26}, {Start: 103, End: 110}}, offset: -1,
-			expect: result{v: []byte("olor st,dolore "), i: 15},
-		},
-		{
-			in: []byte(lorem), f: feat.FeatureSet{{Start: 12, End: 18}, {Start: 13, End: 17}, {Start: 24, End: 26}, {Start: 103, End: 110}},
-			expect: result{v: []byte("dolor et dolore"), i: 15},
-		},
-		{
-			in: []byte(lorem), f: feat.FeatureSet{{Start: 12, End: 18}, {Start: 13, End: 17}, {Start: 24, End: 26}, {Start: 103, End: 110}}, offset: -1,
-			expect: result{v: []byte("olor st,dolore "), i: 15},
-		},
-		{
-			in: []byte(lorem), f: feat.FeatureSet{{Start: 19, End: 18}},
-			expect: result{v: "Interval end < start"},
-		},
-	}
-
-	for _, t := range T {
-		if stitch, err := Stitch(t.in, t.offset, t.f); err == nil {
-			c.Check(stitch, check.DeepEquals, t.expect.v)
-			c.Check(reflect.ValueOf(t.expect.v).Len(), check.Equals, t.expect.i)
-		} else {
-			c.Check(err, check.ErrorMatches, t.expect.v)
-		}
-	}
-}
-
-//func Compose(pol interface{}, offset int, f feat.FeatureSet) (s interface{}, err error)
-// Join together sequentially ordered disjunct segments of pol described by f with an offset applied, and return.
-func (s *S) TestCompose(c *check.C) {
-	type test struct {
-		in     interface{}
-		f      feat.FeatureSet
-		offset int
+		in     *conformRangeOffSlice
+		f      feat.Set
 		expect interface{}
 	}
 
 	var T []test = []test{
-		{in: []byte(lorem), f: feat.FeatureSet{{Start: 12, End: 18}, {Start: 24, End: 26}, {Start: 103, End: 110}}, expect: []byte("dolor et dolore")},
-		{in: []byte(lorem), f: feat.FeatureSet{{Start: 12, End: 18}, {Start: 24, End: 26}, {Start: 103, End: 110}}, offset: -1, expect: []byte("olor st,dolore ")},
-		{in: []byte(lorem), f: feat.FeatureSet{{Start: 12, End: 18}, {Start: 13, End: 17}, {Start: 24, End: 26}, {Start: 103, End: 110}}, expect: []byte("dolor oloret dolore")},
-		{in: []byte(lorem), f: feat.FeatureSet{{Start: 12, End: 18}, {Start: 13, End: 17}, {Start: 24, End: 26}, {Start: 103, End: 110}}, offset: -1, expect: []byte("olor slor t,dolore ")},
-		{in: []byte(lorem), f: feat.FeatureSet{{Start: 19, End: 18}}, expect: "Feature End < Start"},
+		{
+			in:     &conformRangeOffSlice{slice: lorem, conf: feat.Linear, offset: 0},
+			f:      fs{fe{s: 12, e: 18}, fe{s: 24, e: 26}, fe{s: 103, e: 110}},
+			expect: stringToSlice("dolor et dolore"),
+		},
+		{
+			in:     &conformRangeOffSlice{slice: lorem, conf: feat.Linear, offset: -1},
+			f:      fs{fe{s: 12, e: 18}, fe{s: 24, e: 26}, fe{s: 103, e: 110}},
+			expect: stringToSlice("olor st,dolore "),
+		},
+		{
+			in:     &conformRangeOffSlice{slice: lorem, conf: feat.Linear, offset: 0},
+			f:      fs{fe{s: 12, e: 18}, fe{s: 13, e: 17}, fe{s: 24, e: 26}, fe{s: 103, e: 110}},
+			expect: stringToSlice("dolor et dolore"),
+		},
+		{
+			in:     &conformRangeOffSlice{slice: lorem, conf: feat.Linear, offset: -1},
+			f:      fs{fe{s: 12, e: 18}, fe{s: 13, e: 17}, fe{s: 24, e: 26}, fe{s: 103, e: 110}},
+			expect: stringToSlice("olor st,dolore "),
+		},
+		{
+			in:     &conformRangeOffSlice{slice: lorem, conf: feat.Linear, offset: 0},
+			f:      fs{fe{s: 19, e: 18}},
+			expect: "sequtils: feature end < feature start",
+		},
 	}
 
 	for _, t := range T {
-		if compose, err := Compose(t.in, t.offset, t.f); err == nil {
-			composed := []byte{}
-			for _, seg := range compose {
-				composed = append(composed, seg.([]byte)...)
-			}
-			c.Check(composed, check.DeepEquals, t.expect)
-			l := 0
-			for _, f := range t.f {
-				l += f.Len()
-			}
-			c.Check(l, check.Equals, reflect.ValueOf(t.expect).Len())
+		r := &conformRangeOffSlice{}
+		if err := Stitch(r, t.in, t.f); err != nil {
+			c.Check(err, check.ErrorMatches, t.expect)
+		} else {
+			c.Check(r.slice, check.DeepEquals, t.expect)
+		}
+	}
+}
+
+func (s *S) TestCompose(c *check.C) {
+	type test struct {
+		in     *conformRangeOffSlice
+		f      feat.Set
+		expect interface{}
+	}
+
+	var T []test = []test{
+		{
+			in:     &conformRangeOffSlice{slice: lorem, conf: feat.Linear, offset: 0},
+			f:      fs{fe{s: 12, e: 18}, fe{s: 24, e: 26}, fe{s: 103, e: 110}},
+			expect: stringToSlice("dolor et dolore"),
+		},
+		{
+			in:     &conformRangeOffSlice{slice: lorem, conf: feat.Linear, offset: -1},
+			f:      fs{fe{s: 12, e: 18}, fe{s: 24, e: 26}, fe{s: 103, e: 110}},
+			expect: stringToSlice("olor st,dolore "),
+		},
+		{
+			in:     &conformRangeOffSlice{slice: lorem, conf: feat.Linear, offset: 0},
+			f:      fs{fe{s: 12, e: 18}, fe{s: 13, e: 17}, fe{s: 24, e: 26}, fe{s: 103, e: 110}},
+			expect: stringToSlice("dolor oloret dolore"),
+		},
+		{
+			in:     &conformRangeOffSlice{slice: lorem, conf: feat.Linear, offset: -1},
+			f:      fs{fe{s: 12, e: 18}, fe{s: 13, e: 17}, fe{s: 24, e: 26}, fe{s: 103, e: 110}},
+			expect: stringToSlice("olor slor t,dolore "),
+		},
+		{
+			in:     &conformRangeOffSlice{slice: lorem, conf: feat.Linear, offset: 0},
+			f:      fs{fe{s: 19, e: 18}},
+			expect: "sequtils: feature end < feature start",
+		},
+	}
+
+	for _, t := range T {
+		r := &conformRangeOffSlice{}
+		if err := Compose(r, t.in, t.f); err == nil {
+			c.Check(r.slice, check.DeepEquals, t.expect)
 		} else {
 			c.Check(err, check.ErrorMatches, t.expect)
 		}

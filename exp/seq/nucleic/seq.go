@@ -16,239 +16,126 @@
 package nucleic
 
 import (
-	"code.google.com/p/biogo/bio"
 	"code.google.com/p/biogo/exp/alphabet"
+	"code.google.com/p/biogo/exp/feat"
 	"code.google.com/p/biogo/exp/seq"
-	"code.google.com/p/biogo/exp/seq/sequtils"
-	"code.google.com/p/biogo/feat"
 )
 
-// Seq is a basic nucleic acid sequence.
+// A Seq is a basic nucleic acid sequence.
 type Seq struct {
-	ID        string
-	Desc      string
-	Loc       string
-	S         []alphabet.Letter
-	Strand    Strand
-	Stringify seq.Stringify // Function allowing user specified string representation.
-	Meta      interface{}   // No operation implicitly copies or changes the contents of Meta.
-	alphabet  alphabet.Nucleic
-	circular  bool
-	offset    int
+	Annotation
+	Seq alphabet.Letters
 }
 
-// Create a new Seq with the given id, letter sequence and alphabet.
-func NewSeq(id string, b []alphabet.Letter, alpha alphabet.Nucleic) *Seq {
-	return &Seq{
-		ID:        id,
-		S:         append([]alphabet.Letter(nil), b...),
-		alphabet:  alpha,
-		Strand:    1,
-		Stringify: Stringify,
-	}
-}
-
-// Interface guarantees:
+// Interface guarantees
 var (
-	_ seq.Polymer  = &Seq{}
+	_ feat.Feature = &Seq{}
 	_ seq.Sequence = &Seq{}
-	_ seq.Appender = &Seq{}
 	_ Sequence     = &Seq{}
 )
 
-// Required to satisfy nucleic.Sequence interface.
-func (self *Seq) Nucleic() {}
-
-// Name returns a pointer to the ID string of the sequence.
-func (self *Seq) Name() *string { return &self.ID }
-
-// Description returns a pointer to the Desc string of the sequence.
-func (self *Seq) Description() *string { return &self.Desc }
-
-// Location returns a pointer to the Loc string of the sequence.
-func (self *Seq) Location() *string { return &self.Loc }
-
-// Raw returns a pointer to the the underlying []alphabet.Letter slice.
-func (self *Seq) Raw() interface{} { return &self.S }
-
-// Append QLetters to the sequence, ignoring Q component.
-func (self *Seq) AppendQLetters(a ...alphabet.QLetter) (err error) {
-	l := self.Len()
-	self.S = append(self.S, make([]alphabet.Letter, len(a))...)[:l]
-	for _, v := range a {
-		self.S = append(self.S, v.L)
+// NewSeq creates a new Seq with the given id, letter sequence and alphabet.
+func NewSeq(id string, b []alphabet.Letter, alpha alphabet.Nucleic) *Seq {
+	return &Seq{
+		Annotation: Annotation{
+			ID:     id,
+			Alpha:  alpha,
+			Strand: Plus,
+		},
+		Seq: append(alphabet.Letters(nil), b...),
 	}
-
-	return
 }
 
-// Append Letters to the sequence.
-func (self *Seq) AppendLetters(a ...alphabet.Letter) (err error) {
-	self.S = append(self.S, a...)
-
-	return
+// Append append QLetters to the sequence, ignoring Q component.
+func (s *Seq) AppendQLetters(a ...alphabet.QLetter) error {
+	l := s.Len()
+	s.Seq = append(s.Seq, make([]alphabet.Letter, len(a))...)[:l]
+	for _, v := range a {
+		s.Seq = append(s.Seq, v.L)
+	}
+	return nil
 }
 
-// Return the Alphabet used by the sequence.
-func (self *Seq) Alphabet() alphabet.Alphabet { return self.alphabet }
+// Append appends Letters to the sequence.
+func (s *Seq) AppendLetters(a ...alphabet.Letter) error {
+	s.Seq = append(s.Seq, a...)
+	return nil
+}
 
-// Return the letter at position pos.
-func (self *Seq) At(pos seq.Position) alphabet.QLetter {
-	if pos.Ind != 0 {
+// Slice returns the sequence data as a alphabet.Slice.
+func (s *Seq) Slice() alphabet.Slice { return s.Seq }
+
+// SetSlice sets the sequence data represented by the sequence. SetSlice will panic if sl
+// is not a alphabet.Letters.
+func (s *Seq) SetSlice(sl alphabet.Slice) { s.Seq = sl.(alphabet.Letters) }
+
+// At returns the letter at position pos.
+func (s *Seq) At(pos seq.Position) alphabet.QLetter {
+	if pos.Row != 0 {
 		panic("nucleic: index out of range")
 	}
 	return alphabet.QLetter{
-		L: self.S[pos.Pos-self.offset],
+		L: s.Seq[pos.Col-s.Offset],
 		Q: DefaultQphred,
 	}
 }
 
-// Set the letter at position pos to l.
-func (self *Seq) Set(pos seq.Position, l alphabet.QLetter) {
-	if pos.Ind != 0 {
+// Set sets the letter at position pos to l.
+func (s *Seq) Set(pos seq.Position, l alphabet.QLetter) {
+	if pos.Row != 0 {
 		panic("nucleic: index out of range")
 	}
-	self.S[pos.Pos-self.offset] = l.L
+	s.Seq[pos.Col-s.Offset] = l.L
 }
 
-// Return the length of the sequence.
-func (self *Seq) Len() int { return len(self.S) }
+// Len returns the length of the sequence.
+func (s *Seq) Len() int { return len(s.Seq) }
 
-// Satisfy Counter.
-func (self *Seq) Count() int { return 1 }
+// Start returns the start position of the sequence in global coordinates.
+func (s *Seq) Start() int { return s.Offset }
 
-// Set the global offset of the sequence to o.
-func (self *Seq) Offset(o int) { self.offset = o }
+// End returns the end position of the sequence in global coordinates.
+func (s *Seq) End() int { return s.Offset + s.Len() }
 
-// Return the start position of the sequence in global coordinates.
-func (self *Seq) Start() int { return self.offset }
+// Validate validates the letters of the sequence according to the sequence alphabet.
+func (s *Seq) Validate() (bool, int) { return s.Alpha.AllValid(s.Seq) }
 
-// Return the end position of the sequence in global coordinates.
-func (self *Seq) End() int { return self.offset + self.Len() }
-
-// Return the molecule type of the sequence.
-func (self *Seq) Moltype() bio.Moltype { return self.alphabet.Moltype() }
-
-// Validate the letters of the sequence according to the specified alphabet.
-func (self *Seq) Validate() (bool, int) { return self.alphabet.AllValid(self.S) }
-
-// Return a copy of the sequence.
-func (self *Seq) Copy() seq.Sequence {
-	c := *self
-	c.S = append([]alphabet.Letter(nil), self.S...)
-	c.Meta = nil
-
+// Copy returns a copy of the sequence.
+func (s *Seq) Copy() seq.Sequence {
+	c := *s
+	c.Seq = append([]alphabet.Letter(nil), s.Seq...)
 	return &c
 }
 
-// Reverse complement the sequence.
-func (self *Seq) RevComp() {
-	self.S = self.revComp(self.S, self.alphabet.ComplementTable())
-	self.Strand = -self.Strand
+// New returns an empty *Seq sequence.
+func (s *Seq) New() seq.Sequence {
+	return &Seq{}
 }
 
-func (self *Seq) revComp(s []alphabet.Letter, complement []alphabet.Letter) []alphabet.Letter {
-	i, j := 0, len(s)-1
+// RevComp reverse complements the sequence.
+func (s *Seq) RevComp() {
+	s.revComp(s.Seq, s.Alpha.ComplementTable())
+	s.Strand = -s.Strand
+}
+
+func (s *Seq) revComp(l, comp []alphabet.Letter) []alphabet.Letter {
+	i, j := 0, len(l)-1
 	for ; i < j; i, j = i+1, j-1 {
-		s[i], s[j] = complement[s[j]], complement[s[i]]
+		l[i], l[j] = comp[l[j]], comp[l[i]]
 	}
 	if i == j {
-		s[i] = complement[s[i]]
+		l[i] = comp[l[i]]
 	}
-
-	return s
+	return l
 }
 
-// Reverse the sequence.
-func (self *Seq) Reverse() { self.S = sequtils.Reverse(self.S).([]alphabet.Letter) }
-
-// Specify that the sequence is circular.
-func (self *Seq) Circular(c bool) { self.circular = c }
-
-// Return whether the sequence is circular.
-func (self *Seq) IsCircular() bool { return self.circular }
-
-// Return a subsequence from start to end, wrapping if the sequence is circular.
-func (self *Seq) Subseq(start int, end int) (sub seq.Sequence, err error) {
-	var s *Seq
-
-	tt, err := sequtils.Truncate(self.S, start-self.offset, end-self.offset, self.circular)
-	if err == nil {
-		s = &Seq{}
-		*s = *self
-		s.S = tt.([]alphabet.Letter)
-		s.S = nil
-		s.Meta = nil
-		s.offset = start
-		s.circular = false
+// Reverse reverses the order of letters in the the sequence without complementing them.
+func (s *Seq) Reverse() {
+	l := s.Seq
+	for i, j := 0, len(l)-1; i < j; i, j = i+1, j-1 {
+		l[i], l[j] = l[j], l[i]
 	}
-
-	return s, nil
+	s.Strand = None
 }
 
-// Truncate the sequence from start to end, wrapping if the sequence is circular.
-func (self *Seq) Truncate(start int, end int) (err error) {
-	tt, err := sequtils.Truncate(self.S, start-self.offset, end-self.offset, self.circular)
-	if err == nil {
-		self.S = tt.([]alphabet.Letter)
-		self.offset = start
-		self.circular = false
-	}
-
-	return
-}
-
-// Join p to the sequence at the end specified by where.
-func (self *Seq) Join(p *Seq, where int) (err error) {
-	if self.circular {
-		return bio.NewError("Cannot join circular sequence: receiver.", 1, self)
-	} else if p.circular {
-		return bio.NewError("Cannot join circular sequence: parameter.", 1, p)
-	}
-
-	tt, offset := sequtils.Join(self.S, p.S, where)
-	self.offset = offset
-	self.S = tt.([]alphabet.Letter)
-
-	return
-}
-
-// Join sequentially order disjunct segments of the sequence, returning any error.
-func (self *Seq) Stitch(f feat.FeatureSet) (err error) {
-	tt, err := sequtils.Stitch(self.S, self.offset, f)
-	if err == nil {
-		self.S = tt.([]alphabet.Letter)
-		self.circular = false
-		self.offset = 0
-	}
-
-	return
-}
-
-// Join segments of the sequence, returning any error.
-func (self *Seq) Compose(f feat.FeatureSet) (err error) {
-	tt, err := sequtils.Compose(self.S, self.offset, f)
-	if err == nil {
-		s := []alphabet.Letter{}
-		complement := self.alphabet.ComplementTable()
-		for i, ts := range tt {
-			if f[i].Strand == -1 {
-				s = append(s, self.revComp(ts.([]alphabet.Letter), complement)...)
-			} else {
-				s = append(s, ts.([]alphabet.Letter)...)
-			}
-		}
-
-		self.S = s
-		self.circular = false
-		self.offset = 0
-	}
-
-	return
-}
-
-// Return a string representation of the sequence. Representation is determined by the Stringify field.
-func (self *Seq) String() string { return self.Stringify(self) }
-
-// The default Stringify function for Seq.
-var Stringify = func(s seq.Polymer) string { return alphabet.Letters(s.(*Seq).S).String() }
+func (s *Seq) String() string { return alphabet.Letters(s.Seq).String() }

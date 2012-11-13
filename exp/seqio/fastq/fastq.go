@@ -19,34 +19,16 @@ package fastq
 import (
 	"bufio"
 	"bytes"
-	"code.google.com/p/biogo/bio"
 	"code.google.com/p/biogo/exp/alphabet"
 	"code.google.com/p/biogo/exp/seq"
 	"code.google.com/p/biogo/exp/seqio"
+	"errors"
 	"io"
 )
 
-/*
-Encodings
-
-
-
-                                                                                            Q-range  Encoding
-
- Sanger         !"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHI···                                 0 - 40  Phred+33
- Solexa                                 ··;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdefgh··· -5 - 40  Solexa+64
- Illumina 1.3+                                 @ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdefgh···  0 - 40  Phred+64
- Illumina 1.5+                                 xxḆCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdefgh···  3 - 40  Phred+64*
- Illumina 1.8   !"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJ···                                0 - 40  Phred+33
-
-                !"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdefghijklmnopqrstuvwxyz{|}~
-                |                         |    |        |                              |                     |
-               33                        59   64       73                            104                   126
-
- Q-range for typical raw reads
-
- * 0=unused, 1=unused, 2=Read Segment Quality Control Indicator (Ḇ)
-*/
+type Encoder interface {
+	Encoding() alphabet.Encoding
+}
 
 // Fastq sequence format reader type.
 type Reader struct {
@@ -55,10 +37,11 @@ type Reader struct {
 	enc alphabet.Encoding
 }
 
-// Returns a new fastq format reader using r.
-func NewReader(r io.Reader, t seqio.SequenceAppender) *Reader {
+// Returns a new fastq format reader using r. Sequences returned by the Reader are copied
+// from the provided template.
+func NewReader(r io.Reader, template seqio.SequenceAppender) *Reader {
 	var enc alphabet.Encoding
-	if e, ok := t.(seq.Encoder); ok {
+	if e, ok := template.(Encoder); ok {
 		enc = e.Encoding()
 	} else {
 		enc = alphabet.None
@@ -66,14 +49,14 @@ func NewReader(r io.Reader, t seqio.SequenceAppender) *Reader {
 
 	return &Reader{
 		r:   bufio.NewReader(r),
-		t:   t,
+		t:   template,
 		enc: enc,
 	}
 }
 
 // Read a single sequence and return it or an error.
 // TODO: Does not read multi-line fastq.
-func (self *Reader) Read() (s seq.Sequence, err error) {
+func (self *Reader) Read() (seq.Sequence, error) {
 	var (
 		buff, line, label []byte
 		isPrefix          bool
@@ -84,68 +67,67 @@ func (self *Reader) Read() (s seq.Sequence, err error) {
 	inQual := false
 
 	for {
-		if buff, isPrefix, err = self.r.ReadLine(); err == nil {
-			if isPrefix {
-				line = append(line, buff...)
-				continue
-			} else {
-				line = buff
-			}
-
-			line = bytes.TrimSpace(line)
-			if len(line) == 0 {
-				continue
-			}
-			switch {
-			case !inQual && line[0] == '@':
-				t = self.readHeader(line)
-				label, line = line, nil
-			case !inQual && line[0] == '+':
-				if len(label) == 0 {
-					return nil, bio.NewError("fastq: no header line parsed before +line in fastq format", 0)
-				}
-				if len(line) > 1 && bytes.Compare(label[1:], line[1:]) != 0 {
-					return nil, bio.NewError("fastq: quality header does not match sequence header", 0)
-				}
-				inQual = true
-			case !inQual:
-				line = bytes.Join(bytes.Fields(line), nil)
-				seqBuff = make([]alphabet.QLetter, len(line))
-				for i := range line {
-					seqBuff[i].L = alphabet.Letter(line[i])
-				}
-			case inQual:
-				line = bytes.Join(bytes.Fields(line), nil)
-				if len(line) != len(seqBuff) {
-					return nil, bio.NewError("fastq: sequence/quality length mismatch", 0)
-				}
-				for i := range line {
-					seqBuff[i].Q = alphabet.DecodeToQphred(line[i], self.enc)
-				}
-				t.AppendQLetters(seqBuff...)
-
-				return t, nil
-			}
+		var err error
+		if buff, isPrefix, err = self.r.ReadLine(); err != nil {
+			return nil, err
+		}
+		if isPrefix {
+			line = append(line, buff...)
+			continue
 		} else {
-			return
+			line = buff
+		}
+
+		line = bytes.TrimSpace(line)
+		if len(line) == 0 {
+			continue
+		}
+		switch {
+		case !inQual && line[0] == '@':
+			t = self.readHeader(line)
+			label, line = line, nil
+		case !inQual && line[0] == '+':
+			if len(label) == 0 {
+				return nil, errors.New("fastq: no header line parsed before +line in fastq format")
+			}
+			if len(line) > 1 && bytes.Compare(label[1:], line[1:]) != 0 {
+				return nil, errors.New("fastq: quality header does not match sequence header")
+			}
+			inQual = true
+		case !inQual:
+			line = bytes.Join(bytes.Fields(line), nil)
+			seqBuff = make([]alphabet.QLetter, len(line))
+			for i := range line {
+				seqBuff[i].L = alphabet.Letter(line[i])
+			}
+		case inQual:
+			line = bytes.Join(bytes.Fields(line), nil)
+			if len(line) != len(seqBuff) {
+				return nil, errors.New("fastq: sequence/quality length mismatch")
+			}
+			for i := range line {
+				seqBuff[i].Q = self.enc.DecodeToQphred(line[i])
+			}
+			t.AppendQLetters(seqBuff...)
+
+			return t, nil
 		}
 	}
 
 	panic("cannot reach")
 }
 
-func (self *Reader) readHeader(line []byte) (s seqio.SequenceAppender) {
-	s = self.t.Copy().(seqio.SequenceAppender)
+func (self *Reader) readHeader(line []byte) seqio.SequenceAppender {
+	s := self.t.Copy().(seqio.SequenceAppender)
 	fieldMark := bytes.IndexAny(line, " \t")
 	if fieldMark < 0 {
-		*s.Name() = string(line[1:])
-		*s.Description() = ""
+		s.SetName(string(line[1:]))
 	} else {
-		*s.Name() = string(line[1:fieldMark])
-		*s.Description() = string(line[fieldMark+1:])
+		s.SetName(string(line[1:fieldMark]))
+		s.SetDescription(string(line[fieldMark+1:]))
 	}
 
-	return
+	return s
 }
 
 // Fastq sequence format writer type.
@@ -162,12 +144,12 @@ func NewWriter(w io.Writer) *Writer {
 }
 
 // Write a single sequence and return the number of bytes written and any error.
-func (self *Writer) Write(s seqio.Sequence) (n int, err error) {
+func (self *Writer) Write(s seq.Sequence) (n int, err error) {
 	var (
 		ln, c int
 		enc   alphabet.Encoding
 	)
-	if e, ok := s.(seq.Encoder); ok {
+	if e, ok := s.(Encoder); ok {
 		enc = e.Encoding()
 	} else {
 		enc = alphabet.Sanger
@@ -178,7 +160,7 @@ func (self *Writer) Write(s seqio.Sequence) (n int, err error) {
 		return
 	}
 	for i := 0; i < s.Len(); i++ {
-		ln, err = self.w.Write([]byte{byte(s.At(seq.Position{Pos: i, Ind: c}).L)})
+		ln, err = self.w.Write([]byte{byte(s.At(seq.Position{Col: i, Row: c}).L)})
 		if n += ln; err != nil {
 			return
 		}
@@ -199,7 +181,7 @@ func (self *Writer) Write(s seqio.Sequence) (n int, err error) {
 		}
 	}
 	for i := 0; i < s.Len(); i++ {
-		ln, err = self.w.Write([]byte{s.At(seq.Position{Pos: i, Ind: c}).Q.Encode(enc)})
+		ln, err = self.w.Write([]byte{s.At(seq.Position{Col: i, Row: c}).Q.Encode(enc)})
 		if n += ln; err != nil {
 			return
 		}
@@ -212,17 +194,17 @@ func (self *Writer) Write(s seqio.Sequence) (n int, err error) {
 	return
 }
 
-func (self *Writer) writeHeader(prefix byte, s seqio.Sequence) (n int, err error) {
+func (self *Writer) writeHeader(prefix byte, s seq.Sequence) (n int, err error) {
 	var ln int
 	n, err = self.w.Write([]byte{prefix})
 	if err != nil {
 		return
 	}
-	ln, err = io.WriteString(self.w, *s.Name())
+	ln, err = io.WriteString(self.w, s.Name())
 	if n += ln; err != nil {
 		return
 	}
-	if desc := *s.Description(); len(desc) != 0 {
+	if desc := s.Description(); len(desc) != 0 {
 		ln, err = self.w.Write([]byte{' '})
 		if n += ln; err != nil {
 			return

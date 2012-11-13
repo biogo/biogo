@@ -17,17 +17,18 @@ package alignment
 
 import (
 	"code.google.com/p/biogo/exp/alphabet"
+	"code.google.com/p/biogo/exp/feat"
 	"code.google.com/p/biogo/exp/seq"
 	"code.google.com/p/biogo/exp/seq/protein"
-	"code.google.com/p/biogo/feat"
+	"code.google.com/p/biogo/exp/seq/sequtils"
 	"fmt"
 )
 
 var (
 	m, n    *Seq
 	aligned = func(a *Seq) {
-		for i := 0; i < a.Count(); i++ {
-			s := a.Extract(i)
+		for i := 0; i < a.Rows(); i++ {
+			s := a.Get(i)
 			fmt.Printf("%v\n", s)
 		}
 		fmt.Println()
@@ -61,7 +62,7 @@ func init() {
 			[]alphabet.Letter("TTT"),
 		},
 		alphabet.Protein,
-		protein.Consensify)
+		seq.DefaultConsensus)
 
 	if err != nil {
 		panic(err)
@@ -93,7 +94,7 @@ func ExampleNewSeq() {
 			[]alphabet.Letter("TTT"),
 		},
 		alphabet.Protein,
-		protein.Consensify)
+		seq.DefaultConsensus)
 	if err != nil {
 		panic(err)
 	}
@@ -108,11 +109,11 @@ func ExampleNewSeq() {
 }
 
 func ExampleSeq_Add() {
-	fmt.Printf("%v %v\n", m.Count(), m)
+	fmt.Printf("%v %v\n", m.Rows(), m)
 	m.Add(protein.NewQSeq("example Protein",
 		[]alphabet.QLetter{{'a', 40}, {'c', 39}, {'g', 40}, {'C', 38}, {'t', 35}, {'g', 20}},
 		alphabet.Protein, alphabet.Sanger))
-	fmt.Printf("%v %v\n", m.Count(), m)
+	fmt.Printf("%v %v\n", m.Rows(), m)
 	// Output:
 	// 3 acgxtgacxtggcgcxcat
 	// 4 acgctgacxtggcgcxcat
@@ -120,7 +121,7 @@ func ExampleSeq_Add() {
 
 func ExampleSeq_Copy() {
 	n = m.Copy().(*Seq)
-	n.Set(seq.Position{Pos: 3, Ind: 2}, alphabet.QLetter{L: 't'})
+	n.Set(seq.Position{Col: 3, Row: 2}, alphabet.QLetter{L: 't'})
 	aligned(m)
 	fmt.Println()
 	aligned(n)
@@ -141,14 +142,17 @@ func ExampleSeq_Copy() {
 }
 
 func ExampleSeq_Count() {
-	fmt.Println(m.Count())
+	fmt.Println(m.Rows())
 	// Output:
 	// 4
 }
 
 func ExampleSeq_Join() {
 	aligned(n)
-	n.Join(m, seq.End)
+	err := sequtils.Join(n, m, seq.End)
+	if err != nil {
+		fmt.Println(err)
+	}
 	fmt.Println()
 	aligned(n)
 	// Output:
@@ -190,56 +194,73 @@ func ExampleSeq_Reverse() {
 	// TACGCGCGGTCCAGTGGCA
 	// TACTCGCGGTGCAGTAGCA
 	// -------------gtCgca
-	// 
+	//
 	// tacxcgcggtxcagtcgca
+
 }
 
+type fe struct {
+	s, e int
+	or   feat.Orientation
+	feat.Feature
+}
+
+func (f fe) Start() int                    { return f.s }
+func (f fe) End() int                      { return f.e }
+func (f fe) Len() int                      { return f.e - f.s }
+func (f fe) Orientation() feat.Orientation { return feat.Orientation(f.or) }
+
+type fs []feat.Feature
+
+func (f fs) Features() []feat.Feature { return []feat.Feature(f) }
+
 func ExampleSeq_Stitch() {
-	f := feat.FeatureSet{
-		&feat.Feature{Start: -1, End: 4},
-		&feat.Feature{Start: 30, End: 38},
+	f := fs{
+		&fe{s: -1, e: 4},
+		&fe{s: 30, e: 38},
 	}
 	aligned(n)
 	fmt.Println()
-	err := n.Stitch(f)
-	if err != nil {
-		fmt.Println(err)
-	} else {
+	if err := sequtils.Stitch(n, n, f); err == nil {
 		aligned(n)
+	} else {
+		fmt.Println(err)
 	}
 	// Output:
 	// ACGCTGACTTGGTGCACGTACGCTGACTTGGTGCACGT
 	// ACGGTGACCTGGCGCGCATACGGTGACCTGGCGCGCAT
 	// ACGtTGACGTGGCGCTCATACGATGACGTGGCGCTCAT
 	// acgCtg-------------acgCtg-------------
-	// 
+	//
 	// acgctgacxtggcgcxcatacgctgacxtggcgcxcat
-	// 
+	//
 	// ACGCGTGCACGT
 	// ACGGGCGCGCAT
 	// ACGtGCGCTCAT
 	// acgC--------
-	// 
+	//
 	// acgcgcgcxcat
 }
 
 func ExampleSeq_Truncate() {
 	aligned(m)
-	m.Truncate(4, 12)
-	fmt.Println()
-	aligned(m)
+	err := sequtils.Truncate(m, m, 4, 12)
+	if err == nil {
+		fmt.Println()
+		aligned(m)
+	}
 	// Output:
 	// TGCACGTGGTTCAGTCGCA
 	// TACGCGCGGTCCAGTGGCA
 	// TACTCGCGGTGCAGTAGCA
 	// -------------gtCgca
-	// 
+	//
 	// tacxcgcggtxcagtcgca
-	// 
+	//
 	// CGTGGTTC
 	// CGCGGTCC
 	// CGCGGTGC
 	// --------
-	// 
+	//
 	// cgcggtxc
 }

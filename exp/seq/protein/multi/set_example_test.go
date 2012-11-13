@@ -32,7 +32,7 @@ func ExampleSet_AppendEach() {
 	}
 	set = make(Set, 4)
 	for i := range set {
-		set[i] = protein.NewSeq(fmt.Sprintf("example DNA %d", i), ss[i], alphabet.Protein)
+		set[i] = protein.NewSeq(fmt.Sprintf("example Protein %d", i), ss[i], alphabet.Protein)
 	}
 	as := [][]alphabet.QLetter{
 		alphabet.QLetter{L: 'A'}.Repeat(2),
@@ -53,8 +53,8 @@ func ExampleSet_AppendEach() {
 	// GCCTTTGCACGTTT
 }
 
-func ExampleSet_Count() {
-	fmt.Println(set.Count())
+func ExampleSet_Rows() {
+	fmt.Println(set.Rows())
 	// Output:
 	// 4
 }

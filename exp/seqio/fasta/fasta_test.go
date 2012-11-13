@@ -18,9 +18,7 @@ package fasta
 import (
 	"bytes"
 	"code.google.com/p/biogo/exp/alphabet"
-	"code.google.com/p/biogo/exp/seq/nucleic/packed"
 	"code.google.com/p/biogo/exp/seq/protein"
-	"fmt"
 	"io"
 	check "launchpad.net/gocheck"
 	"testing"
@@ -84,12 +82,12 @@ func (s *S) TestReadFasta(c *check.C) {
 				}
 			} else {
 				t := s.(*protein.Seq)
-				header := *t.Name()
-				if desc := *t.Description(); len(desc) > 0 {
+				header := t.Name()
+				if desc := t.Description(); len(desc) > 0 {
 					header += " " + desc
 				}
 				obtainN = append(obtainN, header)
-				obtainS = append(obtainS, *(t.Raw().(*[]alphabet.Letter)))
+				obtainS = append(obtainS, t.Slice().(alphabet.Letters))
 			}
 		}
 		c.Check(obtainN, check.DeepEquals, expectN)
@@ -99,66 +97,6 @@ func (s *S) TestReadFasta(c *check.C) {
 			c.Check(obtainS[i], check.DeepEquals, expectS[i])
 		}
 		obtainS = nil
-	}
-}
-
-func (s *S) TestReadFastaPacked(c *check.C) {
-	var (
-		pfan = "test"
-		pfas = "cagcagcacgcaggaggctagcagcatcgatgtatagctagactatacgatc"
-	)
-
-	t, err := packed.NewSeq("", nil, alphabet.DNA)
-	if err != nil {
-		c.Fatalf("Failed to create new packed.Seq: %v", err)
-	}
-	r := NewReader(bytes.NewBufferString(fmt.Sprintf(">%s\n%s\n", pfan, pfas)), t)
-	for {
-		if s, err := r.Read(); err != nil {
-			if err == io.EOF {
-				break
-			} else {
-				c.Fatalf("Failed to read %q: %s", pfan, err)
-			}
-		} else {
-			t := s.(*packed.Seq)
-			header := *t.Name()
-			if desc := *t.Description(); len(desc) > 0 {
-				header += " " + desc
-			}
-			c.Check(header, check.Equals, pfan)
-			c.Check(fmt.Sprintf("%s", s), check.Equals, pfas)
-		}
-	}
-}
-
-func (s *S) TestReadFastaQPacked(c *check.C) {
-	var (
-		pfan = "test"
-		pfas = "cagcagcacgcaggaggctagcagcatcgatgtatagctagactatacgatc"
-	)
-
-	t, err := packed.NewQSeq("", nil, alphabet.DNA, alphabet.Sanger)
-	if err != nil {
-		c.Fatalf("Failed to create new packed.QSeq: %v", err)
-	}
-	r := NewReader(bytes.NewBufferString(fmt.Sprintf(">%s\n%s\n", pfan, pfas)), t)
-	for {
-		if s, err := r.Read(); err != nil {
-			if err == io.EOF {
-				break
-			} else {
-				c.Fatalf("Failed to read %q: %s", pfan, err)
-			}
-		} else {
-			t := s.(*packed.QSeq)
-			header := *t.Name()
-			if desc := *t.Description(); len(desc) > 0 {
-				header += " " + desc
-			}
-			c.Check(header, check.Equals, pfan)
-			c.Check(fmt.Sprintf("%s", s), check.Equals, pfas)
-		}
 	}
 }
 
@@ -173,7 +111,7 @@ func (s *S) TestWriteFasta(c *check.C) {
 
 	for i := range expectN {
 		seq.ID = expectN[i]
-		seq.S = expectS[i]
+		seq.Seq = expectS[i]
 		if n, err := w.Write(seq); err != nil {
 			c.Fatalf("Failed to write to buffer: %s", err)
 		} else {

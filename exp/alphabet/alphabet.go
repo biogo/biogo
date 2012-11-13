@@ -221,29 +221,29 @@ func (self *Generic) IndexOf(n Letter) int {
 }
 
 // Return a copy of the internal []bool indicating valid letters.
-func (self *Generic) ValidLetters() (v []bool) {
-	v = make([]bool, 256)
+func (self *Generic) ValidLetters() []bool {
+	v := make([]bool, 256)
 	copy(v, self.valid[:])
-	return
+	return v
 }
 
 // Return a copy of the internal []int specifying letter to index conversion.
-func (self *Generic) LetterIndex() (i []int) {
-	i = make([]int, 256)
+func (self *Generic) LetterIndex() []int {
+	i := make([]int, 256)
 	copy(i, self.index[:])
 
-	return
+	return i
 }
 
 // Return a string indicating characters accepted as valid by the Validator.
-func (self *Generic) String() (s string) {
-	s = self.letters
+func (self *Generic) String() string {
+	s := self.letters
 
 	if !self.caseSensitive {
 		s += strings.ToUpper(s)
 	}
 
-	return
+	return s
 }
 
 // Pairing provides a lookup table between a letter and its complement.
@@ -253,12 +253,12 @@ type Pairing struct {
 }
 
 // Create a new Pairing from a pair of strings. 
-func NewPairing(s, c string) (p *Pairing, err error) {
+func NewPairing(s, c string) (*Pairing, error) {
 	if len(s) != len(c) {
 		return nil, errors.New("Length of pairing definitions do not match.")
 	}
 
-	p = &Pairing{
+	p := &Pairing{
 		pair: make([]Letter, 256),
 		ok:   make([]bool, 256),
 	}
@@ -276,7 +276,7 @@ func NewPairing(s, c string) (p *Pairing, err error) {
 		p.ok[v] = true
 	}
 
-	return
+	return p, nil
 }
 
 // Returns the complement of a letter and true if the complement is a valid letter otherwise unchanged and false.
@@ -312,10 +312,10 @@ func (n nucleic) nucleic() {}
 // Create a generalised Nucleic alphabet. The Complement table is checked for validity and an error is returned if an invalid complement pair is found.
 // Pairings that result in no change but would otherwise be invalid are allowed. If invalid pairings are required, the Pairing should be provided after
 // creating the Nucleic struct.
-func NewNucleic(letters string, molType bio.Moltype, pairs *Pairing, gap, ambiguous Letter, caseSensitive bool) (n Nucleic, err error) {
+func NewNucleic(letters string, molType bio.Moltype, pairs *Pairing, gap, ambiguous Letter, caseSensitive bool) (Nucleic, error) {
 	g, err := NewGeneric(letters, molType, gap, ambiguous, caseSensitive)
 	if err != nil {
-		return
+		return nil, err
 	}
 
 	if pairs != nil {
@@ -345,10 +345,10 @@ type peptide struct {
 func (p peptide) peptide() {}
 
 // Return a new Peptide alphabet.
-func NewPeptide(letters string, gap, ambiguous Letter, caseSensitive bool) (p Peptide, err error) {
+func NewPeptide(letters string, gap, ambiguous Letter, caseSensitive bool) (Peptide, error) {
 	g, err := NewGeneric(letters, bio.Protein, gap, ambiguous, caseSensitive)
 	if err != nil {
-		return
+		return nil, err
 	}
 	return &peptide{g}, nil
 }

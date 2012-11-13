@@ -22,95 +22,95 @@ import (
 )
 
 // A slice of quality scores that satisfies the alphabet.Slice interface.
-type Qphreds []alphabet.Qphred
+type Qsolexas []alphabet.Qsolexa
 
-func (q Qphreds) Make(len, cap int) alphabet.Slice    { return make(Qphreds, len, cap) }
-func (q Qphreds) Len() int                            { return len(q) }
-func (q Qphreds) Cap() int                            { return cap(q) }
-func (q Qphreds) Slice(start, end int) alphabet.Slice { return q[start:end] }
-func (q Qphreds) Append(a alphabet.Slice) alphabet.Slice {
-	return append(q, a.(Qphreds)...)
+func (q Qsolexas) Make(len, cap int) alphabet.Slice    { return make(Qsolexas, len, cap) }
+func (q Qsolexas) Len() int                            { return len(q) }
+func (q Qsolexas) Cap() int                            { return cap(q) }
+func (q Qsolexas) Slice(start, end int) alphabet.Slice { return q[start:end] }
+func (q Qsolexas) Append(a alphabet.Slice) alphabet.Slice {
+	return append(q, a.(Qsolexas)...)
 }
-func (q Qphreds) Copy(a alphabet.Slice) int { return copy(q, a.(Qphreds)) }
+func (q Qsolexas) Copy(a alphabet.Slice) int { return copy(q, a.(Qsolexas)) }
 
-type Phred struct {
+type Solexa struct {
 	nucleic.Annotation
-	Qual   Qphreds
+	Qual   Qsolexas
 	Encode alphabet.Encoding
 }
 
 // Create a new scoring type.
-func NewPhred(id string, q []alphabet.Qphred, encode alphabet.Encoding) *Phred {
-	return &Phred{
+func NewSolexa(id string, q []alphabet.Qsolexa, encode alphabet.Encoding) *Solexa {
+	return &Solexa{
 		Annotation: nucleic.Annotation{ID: id},
-		Qual:       append([]alphabet.Qphred(nil), q...),
+		Qual:       append([]alphabet.Qsolexa(nil), q...),
 		Encode:     encode,
 	}
 }
 
 // Returns the underlying quality score slice.
-func (q *Phred) Slice() alphabet.Slice { return q.Qual }
+func (q *Solexa) Slice() alphabet.Slice { return q.Qual }
 
 // Set the underlying quality score slice.
-func (q *Phred) SetSlice(sl alphabet.Slice) { q.Qual = sl.(Qphreds) }
+func (q *Solexa) SetSlice(sl alphabet.Slice) { q.Qual = sl.(Qsolexas) }
 
 // Append to the scores.
-func (q *Phred) Append(a ...alphabet.Qphred) { q.Qual = append(q.Qual, a...) }
+func (q *Solexa) Append(a ...alphabet.Qsolexa) { q.Qual = append(q.Qual, a...) }
 
 // Return the raw score at position pos.
-func (q *Phred) At(pos seq.Position) alphabet.Qphred { return q.Qual[pos.Col-q.Offset] }
+func (q *Solexa) At(pos seq.Position) alphabet.Qsolexa { return q.Qual[pos.Col-q.Offset] }
 
 // Return the error probability at position pos.
-func (q *Phred) EAt(pos seq.Position) float64 { return q.Qual[pos.Col-q.Offset].ProbE() }
+func (q *Solexa) EAt(pos seq.Position) float64 { return q.Qual[pos.Col-q.Offset].ProbE() }
 
 // Set the raw score at position pos to qual.
-func (q *Phred) Set(pos seq.Position, qual alphabet.Qphred) { q.Qual[pos.Col-q.Offset] = qual }
+func (q *Solexa) Set(pos seq.Position, qual alphabet.Qsolexa) { q.Qual[pos.Col-q.Offset] = qual }
 
 // Set the error probability to e at position pos.
-func (q *Phred) SetE(pos seq.Position, e float64) {
-	q.Qual[pos.Col-q.Offset] = alphabet.Ephred(e)
+func (q *Solexa) SetE(pos seq.Position, e float64) {
+	q.Qual[pos.Col-q.Offset] = alphabet.Esolexa(e)
 }
 
 // Encode the quality at position pos to a letter based on the sequence Encode setting.
-func (q *Phred) QEncode(pos seq.Position) byte {
+func (q *Solexa) QEncode(pos seq.Position) byte {
 	return q.Qual[pos.Col-q.Offset].Encode(q.Encode)
 }
 
 // Decode a quality letter to a phred score based on the sequence Encode setting.
-func (q *Phred) QDecode(l byte) alphabet.Qphred { return q.Encode.DecodeToQphred(l) }
+func (q *Solexa) QDecode(l byte) alphabet.Qsolexa { return q.Encode.DecodeToQsolexa(l) }
 
 // Return the quality Encode type.
-func (q *Phred) Encoding() alphabet.Encoding { return q.Encode }
+func (q *Solexa) Encoding() alphabet.Encoding { return q.Encode }
 
 // Set the quality Encode type to e.
-func (q *Phred) SetEncoding(e alphabet.Encoding) { q.Encode = e }
+func (q *Solexa) SetEncoding(e alphabet.Encoding) { q.Encode = e }
 
 // Return the lenght of the score sequence.
-func (q *Phred) Len() int { return len(q.Qual) }
+func (q *Solexa) Len() int { return len(q.Qual) }
 
 // Return the start position of the score sequence.
-func (q *Phred) Start() int { return q.Offset }
+func (q *Solexa) Start() int { return q.Offset }
 
 // Return the end position of the score sequence.
-func (q *Phred) End() int { return q.Offset + q.Len() }
+func (q *Solexa) End() int { return q.Offset + q.Len() }
 
 // Return a copy of the quality sequence.
-func (q *Phred) Copy() seq.Quality {
+func (q *Solexa) Copy() seq.Quality {
 	c := *q
-	c.Qual = append([]alphabet.Qphred(nil), q.Qual...)
+	c.Qual = append([]alphabet.Qsolexa(nil), q.Qual...)
 
 	return &c
 }
 
 // Reverse the order of elements in the sequence.
-func (q *Phred) Reverse() {
+func (q *Solexa) Reverse() {
 	l := q.Qual
 	for i, j := 0, len(l)-1; i < j; i, j = i+1, j-1 {
 		l[i], l[j] = l[j], l[i]
 	}
 }
 
-func (q *Phred) String() string {
+func (q *Solexa) String() string {
 	qs := make([]byte, 0, len(q.Qual))
 	for _, s := range q.Qual {
 		qs = append(qs, s.Encode(q.Encode))

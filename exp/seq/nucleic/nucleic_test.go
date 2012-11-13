@@ -16,9 +16,7 @@
 package nucleic
 
 import (
-	//"code.google.com/p/biogo/feat"
 	check "launchpad.net/gocheck"
-	//"reflect"
 	"testing"
 )
 

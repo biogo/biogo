@@ -17,33 +17,37 @@
 package alignment
 
 import (
-	"code.google.com/p/biogo/bio"
 	"code.google.com/p/biogo/exp/alphabet"
+	"code.google.com/p/biogo/exp/feat"
 	"code.google.com/p/biogo/exp/seq"
 	"code.google.com/p/biogo/exp/seq/nucleic"
-	"code.google.com/p/biogo/exp/seq/sequtils"
-	"code.google.com/p/biogo/feat"
 	"code.google.com/p/biogo/util"
+	"errors"
 	"fmt"
 )
 
-// Alignment nucleic acid.
-type Seq struct {
-	ID         string
-	Desc       string
-	Loc        string
-	SubIDs     []string
-	S          [][]alphabet.Letter
-	Consensify nucleic.Consensifyer
-	Strand     nucleic.Strand
-	Stringify  seq.Stringify
-	Meta       interface{} // No operation implicitly copies or changes the contents of Meta.
-	alphabet   alphabet.Nucleic
-	circular   bool
-	offset     int
+type rowCounter interface {
+	Rows() int
 }
 
-func NewSeq(id string, subids []string, b [][]alphabet.Letter, alpha alphabet.Nucleic, cons nucleic.Consensifyer) (*Seq, error) {
+func rows(s nucleic.Sequence) int {
+	row := 1
+	if m, ok := s.(rowCounter); ok {
+		row = m.Rows()
+	}
+	return row
+}
+
+// A Seq is an aligned nucleic acid sequence.
+type Seq struct {
+	nucleic.Annotation
+	SubIDs     []string
+	Seq        alphabet.Columns
+	Consensify seq.ConsenseFunc
+}
+
+// NewSeq creates a new Seq with the given id, letter sequence and alphabet.
+func NewSeq(id string, subids []string, b [][]alphabet.Letter, alpha alphabet.Nucleic, cons seq.ConsenseFunc) (*Seq, error) {
 	switch lids, lseq := len(subids), len(b); {
 	case lids == 0 && len(b) == 0:
 	case lseq != 0 && lids == len(b[0]):
@@ -54,314 +58,240 @@ func NewSeq(id string, subids []string, b [][]alphabet.Letter, alpha alphabet.Nu
 			}
 		}
 	default:
-		return nil, bio.NewError("alignment: id/seq number mismatch", 0)
+		return nil, errors.New("alignment: id/seq number mismatch")
 	}
 
 	return &Seq{
-		ID:         id,
-		SubIDs:     append([]string(nil), subids...),
-		S:          append([][]alphabet.Letter(nil), b...),
-		alphabet:   alpha,
-		Strand:     1,
-		Consensify: cons,
-		Stringify: func(s seq.Polymer) string {
-			t := s.(*Seq).Consensus(false)
-			return t.String()
+		Annotation: nucleic.Annotation{
+			ID:    id,
+			Alpha: alpha,
 		},
+		SubIDs:     append([]string(nil), subids...),
+		Seq:        append([][]alphabet.Letter(nil), b...),
+		Consensify: cons,
 	}, nil
 }
 
-// Interface guarantees:
+// Interface guarantees
 var (
-	_ seq.Polymer             = &Seq{}
-	_ seq.Sequence            = &Seq{}
-	_ nucleic.Sequence        = &Seq{}
-	_ nucleic.Extracter       = &Seq{}
-	_ nucleic.Aligned         = &Seq{}
-	_ nucleic.AlignedAppender = &Seq{}
+	_ feat.Feature     = &Seq{}
+	_ seq.Sequence     = &Seq{}
+	_ nucleic.Sequence = &Seq{}
 )
 
-// Required to satisfy nucleic.Sequence interface.
-func (self *Seq) Nucleic() {}
+// Slice returns the sequence data as a alphabet.Slice.
+func (s *Seq) Slice() alphabet.Slice { return s.Seq }
 
-// Raw returns a pointer to the underlying [][]byte slice.
-func (self *Seq) Raw() interface{} { return &self.S }
+// SetSlice sets the sequence data represented by the Seq. SetSlice will panic if sl
+// is not a Columns.
+func (s *Seq) SetSlice(sl alphabet.Slice) { s.Seq = sl.(alphabet.Columns) }
 
-// Append each byte of each a to the appropriate sequence in the reciever.
-func (self *Seq) AppendColumns(a ...[]alphabet.QLetter) (err error) {
-	for i, s := range a {
-		if len(s) != self.Count() {
-			return bio.NewError(fmt.Sprintf("Column %d does not match Count(): %d != %d.", i, len(s), self.Count()), 0, a)
-		}
-	}
-
-	self.S = append(self.S, make([][]alphabet.Letter, len(a))...)[:len(self.S)]
-	for _, s := range a {
-		c := make([]alphabet.Letter, len(s))
-		for i := range s {
-			c[i] = s[i].L
-		}
-		self.S = append(self.S, c)
-	}
-
-	return
-}
-
-// Append each []byte in a to the appropriate sequence in the reciever.
-func (self *Seq) AppendEach(a [][]alphabet.QLetter) (err error) {
-	if len(a) != self.Count() {
-		return bio.NewError(fmt.Sprintf("Number of sequences does not match Count(): %d != %d.", len(a), self.Count()), 0, a)
-	}
-	max := util.MinInt
-	for _, s := range a {
-		if l := len(s); l > max {
-			max = l
-		}
-	}
-	self.S = append(self.S, make([][]alphabet.Letter, max)...)[:len(self.S)]
-	for i, b := 0, make([]alphabet.QLetter, 0, len(a)); i < max; i, b = i+1, b[:0] {
-		for _, s := range a {
-			if i < len(s) {
-				b = append(b, s[i])
-			} else {
-				b = append(b, alphabet.QLetter{L: self.alphabet.Gap()})
-			}
-		}
-		self.AppendColumns(b)
-	}
-
-	return
-}
-
-// Name returns a pointer to the ID string of the sequence.
-func (self *Seq) Name() *string { return &self.ID }
-
-// Description returns a pointer to the Desc string of the sequence.
-func (self *Seq) Description() *string { return &self.Desc }
-
-// Location returns a pointer to the Loc string of the sequence.
-func (self *Seq) Location() *string { return &self.Loc }
-
-func (self *Seq) column(m []nucleic.Sequence, pos int) (c []alphabet.Letter) {
-	count := 0
-	for _, s := range m {
-		count += s.Count()
-	}
-
-	c = make([]alphabet.Letter, 0, count)
-
-	for _, s := range m {
-		if a, ok := s.(nucleic.Aligned); ok {
-			if a.Start() <= pos && pos < a.End() {
-				c = append(c, a.Column(pos, true)...)
-			} else {
-				c = append(c, self.alphabet.Gap().Repeat(a.Count())...)
-			}
-		} else {
-			if s.Start() <= pos && pos < s.End() {
-				c = append(c, s.At(seq.Position{Pos: pos}).L)
-			} else {
-				c = append(c, self.alphabet.Gap())
-			}
-		}
-	}
-
-	return
-}
-
-// TODO
-// func (self *Seq) Delete(i int) {}
-
-// Add sequences n to Seq. Sequences in n must align start and end with the receiving alignment.
-// Additional sequence will be clipped.
-func (self *Seq) Add(n ...nucleic.Sequence) (err error) {
-	for i := self.Start(); i < self.End(); i++ {
-		self.S[i] = append(self.S[i], self.column(n, i)...)
-	}
-	for i := range n {
-		self.SubIDs = append(self.SubIDs, *n[i].Name())
-	}
-
-	return
-}
-
-func (self *Seq) Extract(i int) nucleic.Sequence {
-	s := make([]alphabet.Letter, 0, self.Len())
-	for _, c := range self.S {
-		s = append(s, c[i])
-	}
-
-	return nucleic.NewSeq(self.SubIDs[i], s, self.alphabet)
-}
-
-func (self *Seq) Alphabet() alphabet.Alphabet { return self.alphabet }
-
-func (self *Seq) At(pos seq.Position) alphabet.QLetter {
+// At returns the letter at position pos.
+func (s *Seq) At(pos seq.Position) alphabet.QLetter {
 	return alphabet.QLetter{
-		L: self.S[pos.Pos-self.offset][pos.Ind],
+		L: s.Seq[pos.Col-s.Offset][pos.Row],
 		Q: nucleic.DefaultQphred,
 	}
 }
 
-func (self *Seq) Set(pos seq.Position, l alphabet.QLetter) {
-	self.S[pos.Pos-self.offset][pos.Ind] = l.L
+// Set sets the letter at position pos to l.
+func (s *Seq) Set(pos seq.Position, l alphabet.QLetter) {
+	s.Seq[pos.Col-s.Offset][pos.Row] = l.L
 }
 
-func (self *Seq) Column(pos int, _ bool) (c []alphabet.Letter) {
-	c = make([]alphabet.Letter, self.Count())
-	copy(c, self.S[pos])
+// Len returns the length of the alignment.
+func (s *Seq) Len() int { return len(s.Seq) }
 
-	return
-}
+// Rows returns the number of rows in the alignment.
+func (s *Seq) Rows() int { return s.Seq.Rows() }
 
-func (self *Seq) ColumnQL(pos int, _ bool) (c []alphabet.QLetter) {
-	c = make([]alphabet.QLetter, self.Count())
-	for i, l := range self.S[pos] {
-		c[i] = alphabet.QLetter{
-			L: l,
-			Q: nucleic.DefaultQphred,
-		}
+// Start returns the start position of the sequence in global coordinates.
+func (s *Seq) Start() int { return s.Offset }
+
+// End returns the end position of the sequence in global coordinates.
+func (s *Seq) End() int { return s.Offset + s.Len() }
+
+// Copy returns a copy of the sequence.
+func (s *Seq) Copy() seq.Sequence {
+	c := *s
+	c.Seq = make(alphabet.Columns, len(s.Seq))
+	for i, cs := range s.Seq {
+		c.Seq[i] = append([]alphabet.Letter(nil), cs...)
 	}
-
-	return
-}
-
-func (self *Seq) Len() int { return len(self.S) }
-
-func (self *Seq) Count() int { return len(self.S[0]) }
-
-func (self *Seq) Offset(o int) { self.offset = o }
-
-func (self *Seq) Start() int { return self.offset }
-
-func (self *Seq) End() int { return self.offset + self.Len() }
-
-func (self *Seq) Copy() seq.Sequence {
-	c := *self
-	c.S = make([][]alphabet.Letter, len(self.S))
-	for i, s := range self.S {
-		c.S[i] = append([]alphabet.Letter(nil), s...)
-	}
-	c.Meta = nil
 
 	return &c
 }
 
-func (self *Seq) RevComp() {
-	self.S = self.revComp(self.S, self.alphabet.ComplementTable())
-	self.Strand = -self.Strand
+// New returns an empty *Seq sequence.
+func (s *Seq) New() seq.Sequence {
+	return &Seq{}
 }
 
-func (self *Seq) revComp(rs [][]alphabet.Letter, complement []alphabet.Letter) [][]alphabet.Letter {
+// RevComp reverse complements the sequence.
+func (s *Seq) RevComp() {
+	s.Seq = s.revComp(s.Seq, s.Alpha.ComplementTable())
+	s.Strand = -s.Strand
+}
+
+func (s *Seq) revComp(rs [][]alphabet.Letter, comp []alphabet.Letter) [][]alphabet.Letter {
 	i, j := 0, len(rs)-1
 	for ; i < j; i, j = i+1, j-1 {
-		for s := range rs[i] {
-			rs[i][s], rs[j][s] = complement[rs[j][s]], complement[rs[i][s]]
+		for r := range rs[i] {
+			rs[i][r], rs[j][r] = comp[rs[j][r]], comp[rs[i][r]]
 		}
 	}
 	if i == j {
-		for s := range rs[i] {
-			rs[i][s] = complement[rs[i][s]]
+		for r := range rs[i] {
+			rs[i][r] = comp[rs[i][r]]
 		}
 	}
 
 	return rs
 }
 
-func (self *Seq) Reverse() { self.S = sequtils.Reverse(self.S).([][]alphabet.Letter) }
-
-func (self *Seq) Circular(c bool) { self.circular = c }
-
-func (self *Seq) IsCircular() bool { return self.circular }
-
-// Return a subsequence from start to end, wrapping if the sequence is circular.
-func (self *Seq) Subseq(start int, end int) (sub seq.Sequence, err error) {
-	var s *Seq
-
-	tt, err := sequtils.Truncate(self.S, start-self.offset, end-self.offset, self.circular)
-	if err == nil {
-		s = &Seq{}
-		*s = *self
-		s.S = tt.([][]alphabet.Letter)
-		s.S = nil
-		s.Meta = nil
-		s.offset = start
-		s.circular = false
+// Reverse reverses the order of letters in the the sequence without complementing them.
+func (s *Seq) Reverse() {
+	l := s.Seq
+	for i, j := 0, len(l)-1; i < j; i, j = i+1, j-1 {
+		l[i], l[j] = l[j], l[i]
 	}
-
-	return s, nil
+	s.Strand = nucleic.None
 }
 
-func (self *Seq) Truncate(start int, end int) (err error) {
-	tt, err := sequtils.Truncate(self.S, start-self.offset, end-self.offset, self.circular)
-	if err == nil {
-		self.S = tt.([][]alphabet.Letter)
-		self.offset = start
-		self.circular = false
-	}
-
-	return
+func (s *Seq) String() string {
+	return s.Consensus(false).String()
 }
 
-func (self *Seq) Join(p *Seq, where int) (err error) {
-	if self.circular {
-		return bio.NewError("Cannot join circular sequence: receiver.", 1, self)
-	} else if p.circular {
-		return bio.NewError("Cannot join circular sequence: parameter.", 1, p)
+// Add adds the sequences n to Seq. Sequences in n should align start and end with the receiving alignment.
+// Additional sequence will be clipped and missing sequence will be filled with the gap letter.
+func (s *Seq) Add(n ...nucleic.Sequence) error {
+	for i := s.Start(); i < s.End(); i++ {
+		s.Seq[i] = append(s.Seq[i], s.column(n, i)...)
+	}
+	for i := range n {
+		s.SubIDs = append(s.SubIDs, n[i].Name())
 	}
 
-	var tt interface{}
-
-	tt, self.offset = sequtils.Join(self.S, p.S, where)
-	self.S = tt.([][]alphabet.Letter)
-
-	return
+	return nil
 }
 
-func (self *Seq) Stitch(f feat.FeatureSet) (err error) {
-	tt, err := sequtils.Stitch(self.S, self.offset, f)
-	if err == nil {
-		self.S = tt.([][]alphabet.Letter)
-		self.circular = false
-		self.offset = 0
+func (s *Seq) column(m []nucleic.Sequence, pos int) []alphabet.Letter {
+	row := 0
+	for _, ss := range m {
+		row += rows(ss)
 	}
 
-	return
-}
+	c := make([]alphabet.Letter, 0, row)
 
-func (self *Seq) Compose(f feat.FeatureSet) (err error) {
-	tt, err := sequtils.Compose(self.S, self.offset, f)
-	if err == nil {
-		s := [][]alphabet.Letter{}
-		complement := self.alphabet.ComplementTable()
-		for i, ts := range tt {
-			if f[i].Strand == -1 {
-				s = append(s, self.revComp(ts.([][]alphabet.Letter), complement)...)
+	for _, ss := range m {
+		if a, ok := ss.(seq.Aligned); ok {
+			if a.Start() <= pos && pos < a.End() {
+				c = append(c, a.Column(pos, true)...)
 			} else {
-				s = append(s, ts.([][]alphabet.Letter)...)
+				c = append(c, s.Alpha.Gap().Repeat(a.Rows())...)
+			}
+		} else {
+			if ss.Start() <= pos && pos < ss.End() {
+				c = append(c, ss.At(seq.Position{Col: pos}).L)
+			} else {
+				c = append(c, s.Alpha.Gap())
 			}
 		}
-
-		self.S = s
-		self.circular = false
-		self.offset = 0
 	}
 
-	return
+	return c
 }
 
-func (self *Seq) String() string { return self.Stringify(self) }
+// TODO
+func (s *Seq) Delete(i int) {}
 
-func (self *Seq) Consensus(_ bool) (qs *nucleic.QSeq) {
-	cs := make([]alphabet.QLetter, 0, self.Len())
-	for i := range self.S {
-		cs = append(cs, self.Consensify(self, i, false))
+// Get returns the sequence corresponding to the ith row of the Seq.
+func (s *Seq) Get(i int) nucleic.Sequence {
+	c := make([]alphabet.Letter, 0, s.Len())
+	for _, l := range s.Seq {
+		c = append(c, l[i])
 	}
 
-	qs = nucleic.NewQSeq("Consensus:"+self.ID, cs, self.alphabet, alphabet.Sanger)
-	qs.Strand = self.Strand
-	qs.Offset(self.offset)
-	qs.Circular(self.circular)
+	return nucleic.NewSeq(s.SubIDs[i], c, s.Alpha)
+}
 
-	return
+// AppendColumns appends each Qletter of each element of a to the appropriate sequence in the reciever.
+func (s *Seq) AppendColumns(a ...[]alphabet.QLetter) error {
+	for i, r := range a {
+		if len(r) != s.Rows() {
+			return fmt.Errorf("alignment: column %d does not match Rows(): %d != %d.", i, len(r), s.Rows())
+		}
+	}
+
+	s.Seq = append(s.Seq, make([][]alphabet.Letter, len(a))...)[:len(s.Seq)]
+	for _, r := range a {
+		c := make([]alphabet.Letter, len(r))
+		for i := range r {
+			c[i] = r[i].L
+		}
+		s.Seq = append(s.Seq, c)
+	}
+
+	return nil
+}
+
+// AppendEach appends each []alphabet.QLetter in a to the appropriate sequence in the receiver.
+func (s *Seq) AppendEach(a [][]alphabet.QLetter) error {
+	if len(a) != s.Rows() {
+		return fmt.Errorf("alignment: number of sequences does not match Rows(): %d != %d.", len(a), s.Rows())
+	}
+	max := util.MinInt
+	for _, ss := range a {
+		if l := len(ss); l > max {
+			max = l
+		}
+	}
+	s.Seq = append(s.Seq, make([][]alphabet.Letter, max)...)[:len(s.Seq)]
+	for i, b := 0, make([]alphabet.QLetter, 0, len(a)); i < max; i, b = i+1, b[:0] {
+		for _, ss := range a {
+			if i < len(ss) {
+				b = append(b, ss[i])
+			} else {
+				b = append(b, alphabet.QLetter{L: s.Alpha.Gap()})
+			}
+		}
+		s.AppendColumns(b)
+	}
+
+	return nil
+}
+
+// Column returns a slice of letters reflecting the column at pos.
+func (s *Seq) Column(pos int, _ bool) []alphabet.Letter {
+	return s.Seq[pos]
+}
+
+// ColumnQL returns a slice of quality letters reflecting the column at pos.
+func (s *Seq) ColumnQL(pos int, _ bool) []alphabet.QLetter {
+	c := make([]alphabet.QLetter, s.Rows())
+	for i, l := range s.Seq[pos] {
+		c[i] = alphabet.QLetter{
+			L: l,
+			Q: nucleic.DefaultQphred,
+		}
+	}
+
+	return c
+}
+
+// Consensus returns a quality sequence reflecting the consensus of the receiver determined by the
+// Consensify field.
+func (s *Seq) Consensus(_ bool) *nucleic.QSeq {
+	cs := make([]alphabet.QLetter, 0, s.Len())
+	alpha := s.Alphabet()
+	for i := range s.Seq {
+		cs = append(cs, s.Consensify(s, alpha, i, false))
+	}
+
+	qs := nucleic.NewQSeq("Consensus:"+s.ID, cs, s.Alpha, alphabet.Sanger)
+	qs.Strand = s.Strand
+	qs.SetOffset(s.Offset)
+	qs.Conform = s.Conform
+
+	return qs
 }
