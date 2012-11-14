@@ -223,7 +223,7 @@ func (s *QSeq) Format(fs fmt.State, c rune) {
 			fmt.Fprint(fs, "...")
 		}
 	case 'a':
-		fmt.Fprintf(fs, ">%s %s\n", s.ID, s.Desc)
+		s.formatDescLineTo(fs, '>')
 		for i, ql := range buf {
 			fmt.Fprintf(fs, "%c", s.QFilter(s.Alpha, s.Threshold, ql))
 			if wOk && i < s.Len()-1 && i%w == w-1 {

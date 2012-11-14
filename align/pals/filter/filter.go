@@ -20,9 +20,9 @@ package filter
 
 import (
 	"code.google.com/p/biogo/bio"
+	"code.google.com/p/biogo/exp/seq/linear"
 	"code.google.com/p/biogo/index/kmerindex"
 	"code.google.com/p/biogo/morass"
-	"code.google.com/p/biogo/seq"
 )
 
 // Ukonnen's Lemma: U(n, q, 𝛜) := (n + 1) - q(⌊𝛜n⌋ + 1)
@@ -41,7 +41,7 @@ type Params struct {
 // Filter implements a q-gram filter similar to that described in Rassmussen 2005.
 // This implementation is a translation of the C++ code written by Edgar and Myers.
 type Filter struct {
-	target         *seq.Seq
+	target         *linear.Seq
 	index          *kmerindex.Index
 	tubes          []tubeState
 	morass         *morass.Morass
@@ -72,7 +72,7 @@ func New(index *kmerindex.Index, params *Params) (f *Filter) {
 // Filter a query sequence against the stored index. If query and the target are the same sequence,
 // selfAlign can be used to avoid double seaching - behavior is undefined if the the sequences are not the same.
 // A morass is used to store and sort individual filter hits.
-func (f *Filter) Filter(query *seq.Seq, selfAlign, complement bool, morass *morass.Morass) error {
+func (f *Filter) Filter(query *linear.Seq, selfAlign, complement bool, morass *morass.Morass) error {
 	f.selfAlign = selfAlign
 	f.complement = complement
 	f.morass = morass

@@ -16,8 +16,8 @@
 package filter
 
 import (
+	"code.google.com/p/biogo/exp/seq/linear"
 	"code.google.com/p/biogo/index/kmerindex"
-	"code.google.com/p/biogo/seq"
 	"sort"
 )
 
@@ -27,7 +27,7 @@ const (
 
 // A Merger aggregates and clips an ordered set of trapezoids.
 type Merger struct {
-	target, query              *seq.Seq
+	target, query              *linear.Seq
 	filterParams               *Params
 	maxIGap                    int
 	leftPadding, bottomPadding int
@@ -37,11 +37,12 @@ type Merger struct {
 	trapOrder, tail            *Trapezoid
 	eoTerm                     *Trapezoid
 	trapCount                  int
+	valueToCode                []int
 }
 
 // Create a new Merger using the provided kmerindex, query sequence, filter parameters and maximum inter-segment gap length.
 // If selfCompare is true only the upper diagonal of the comparison matrix is examined.
-func NewMerger(index *kmerindex.Index, query *seq.Seq, filterParams *Params, maxIGap int, selfCompare bool) *Merger {
+func NewMerger(index *kmerindex.Index, query *linear.Seq, filterParams *Params, maxIGap int, selfCompare bool) *Merger {
 	tubeWidth := filterParams.TubeOffset + filterParams.MaxError
 	binWidth := tubeWidth - 1
 	leftPadding := diagonalPadding + binWidth
@@ -65,6 +66,7 @@ func NewMerger(index *kmerindex.Index, query *seq.Seq, filterParams *Params, max
 		binWidth:       binWidth,
 		eoTerm:         eoTerm,
 		trapOrder:      eoTerm,
+		valueToCode:    index.Seq.Alpha.LetterIndex(),
 	}
 }
 
@@ -163,7 +165,7 @@ func (m *Merger) clipVertical() {
 
 		i := 0
 		for i = lagPosition; i < lastPosition; i++ {
-			if lookUp.ValueToCode[m.query.Seq[i]] >= 0 {
+			if m.valueToCode[m.query.Seq[i]] >= 0 {
 				if i-lagPosition >= m.maxIGap {
 					if lagPosition-base.Bottom > 0 {
 						if m.freeTraps == nil {
@@ -210,7 +212,7 @@ func (m *Merger) clipTrapezoids() {
 		lagClip := aBottom
 		i := 0
 		for i = lagPosition; i < lastPosition; i++ {
-			if lookUp.ValueToCode[m.target.Seq[i]] >= 0 {
+			if m.valueToCode[m.target.Seq[i]] >= 0 {
 				if i-lagPosition >= m.maxIGap {
 					if lagPosition > lagClip {
 						if m.freeTraps == nil {

@@ -16,9 +16,10 @@
 package dp
 
 import (
+	"code.google.com/p/biogo/align"
 	"code.google.com/p/biogo/align/pals/filter"
-	"code.google.com/p/biogo/align/sw"
-	"code.google.com/p/biogo/seq"
+	"code.google.com/p/biogo/exp/alphabet"
+	"code.google.com/p/biogo/exp/seq/linear"
 	"code.google.com/p/biogo/util"
 	check "launchpad.net/gocheck"
 	"testing"
@@ -62,13 +63,15 @@ var _ = check.Suite(&S{})
 func (s *S) TestAlignment(c *check.C) {
 	l := [...]byte{'A', 'C', 'G', 'T'}
 	Q := len(l)
-	a := &seq.Seq{Seq: make([]byte, 0, util.Pow(Q, k))}
+	a := &linear.Seq{Seq: make(alphabet.Letters, 0, util.Pow(Q, k))}
+	a.Alpha = alphabet.DNA
 	for _, i := range util.DeBruijn(byte(Q), k) {
-		a.Seq = append(a.Seq, l[i])
+		a.Seq = append(a.Seq, alphabet.Letter(l[i]))
 	}
-	b := &seq.Seq{Seq: make([]byte, 0, util.Pow(Q, k-1))}
+	b := &linear.Seq{Seq: make(alphabet.Letters, 0, util.Pow(Q, k-1))}
+	b.Alpha = alphabet.DNA
 	for _, i := range util.DeBruijn(byte(Q), k-1) {
-		b.Seq = append(b.Seq, l[i])
+		b.Seq = append(b.Seq, alphabet.Letter(l[i]))
 	}
 	aligner := NewAligner(a, b, int(k), 50, 0.80)
 	aligner.Config = &AlignConfig{
@@ -86,17 +89,17 @@ func (s *S) TestAlignment(c *check.C) {
 	c.Check(lb, check.Equals, 664)
 	c.Check(err, check.Equals, nil)
 	for _, h := range H {
-		sa, sb := &seq.Seq{Seq: a.Seq[h.Abpos:h.Aepos]}, &seq.Seq{Seq: b.Seq[h.Bbpos:h.Bepos]}
-		swm := [][]int{
+		sa, sb := &linear.Seq{Seq: a.Seq[h.Abpos:h.Aepos]}, &linear.Seq{Seq: b.Seq[h.Bbpos:h.Bepos]}
+		smith := align.SW{
 			{2, -1, -1, -1, -1},
 			{-1, 2, -1, -1, -1},
 			{-1, -1, 2, -1, -1},
 			{-1, -1, -1, 2, -1},
 			{-1, -1, -1, -1, 0},
 		}
-
-		smith := &sw.Aligner{Matrix: swm, LookUp: sw.LookUpN, GapChar: '-'}
 		swa, _ := smith.Align(sa, sb)
-		c.Logf("a: %s\nb: %s\n", swa[0], swa[1])
+		fa := align.Format(sa, sb, swa, '-')
+		c.Logf("%v\n", swa)
+		c.Logf("%s\n%s\n", fa[0], fa[1])
 	}
 }

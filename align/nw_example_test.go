@@ -13,16 +13,19 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package nw
+package align
 
 import (
-	"code.google.com/p/biogo/seq"
+	"code.google.com/p/biogo/exp/alphabet"
+	"code.google.com/p/biogo/exp/seq/linear"
 	"fmt"
 )
 
-func ExampleAligner_Align() {
-	nwsa := &seq.Seq{Seq: []byte("AGACTAGTTA")}
-	nwsb := &seq.Seq{Seq: []byte("GACAGACG")}
+func ExampleNWAffine_Align() {
+	nwsa := &linear.Seq{Seq: alphabet.BytesToLetters([]byte("AGACTAGTTA"))}
+	nwsa.Alpha = alphabet.DNA
+	nwsb := &linear.Seq{Seq: alphabet.BytesToLetters([]byte("GACAGACG"))}
+	nwsb.Alpha = alphabet.DNA
 
 	//  	 A	 C	 G	 T	 -
 	// A	10	-3	-1	-4	-5
@@ -30,20 +33,22 @@ func ExampleAligner_Align() {
 	// G	-1	-5	 7	-3	-5
 	// T	-4	 0	-3	 8	-5
 	// -	-5	-5	-5	-5	 0
-	nwm := [][]int{
+	needle := NW{
 		{10, -3, -1, -4, -5},
 		{-3, 9, -5, 0, -5},
 		{-1, -5, 7, -3, -5},
 		{-4, 0, -3, 8, -5},
-		{-4, -4, -4, -4, 0},
+		{-5, -5, -5, -5, 0},
 	}
 
-	needle := &Aligner{Matrix: nwm, LookUp: LookUpN, GapChar: '-'}
-	nwa, err := needle.Align(nwsa, nwsb)
+	aln, err := needle.Align(nwsa, nwsb)
 	if err == nil {
-		fmt.Printf("%s\n%s\n", nwa[0].Seq, nwa[1].Seq)
+		fmt.Printf("%s\n", aln)
+		fa := Format(nwsa, nwsb, aln, '-')
+		fmt.Printf("%s\n%s\n", fa[0], fa[1])
 	}
 	// Output:
+	//[[0,1)/-=0 [1,4)/[0,3)=26 [4,5)/-=-5 [5,10)/[3,8)=12]
 	// AGACTAGTTA
 	// -GAC-AGACG
 }

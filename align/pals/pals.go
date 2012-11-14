@@ -13,16 +13,16 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-// Package implementing functions required for PALS sequence alignment
+// Package pals implements functions and methods required for PALS sequence alignment.
 package pals
 
 import (
 	"code.google.com/p/biogo/align/pals/dp"
 	"code.google.com/p/biogo/align/pals/filter"
 	"code.google.com/p/biogo/bio"
+	"code.google.com/p/biogo/exp/seq/linear"
 	"code.google.com/p/biogo/index/kmerindex"
 	"code.google.com/p/biogo/morass"
-	"code.google.com/p/biogo/seq"
 	"code.google.com/p/biogo/util"
 	"io"
 	"os"
@@ -59,7 +59,7 @@ var (
 //  Efficient q-gram filters for finding all 𝛜-matches over a given length.
 //   Kim R. Rasmussen, Jens Stoye, and Eugene W. Myers. J. of Computational Biology 13:296–308 (2006).
 type PALS struct {
-	target, query *seq.Seq
+	target, query *linear.Seq
 	selfCompare   bool
 	index         *kmerindex.Index
 	FilterParams  *filter.Params
@@ -82,7 +82,7 @@ type PALS struct {
 }
 
 // Return a new PALS aligner. Requires
-func New(target, query *seq.Seq, selfComp bool, m *morass.Morass, threads, tubeOffset int, mem *uintptr, log Logger) *PALS {
+func New(target, query *linear.Seq, selfComp bool, m *morass.Morass, threads, tubeOffset int, mem *uintptr, log Logger) *PALS {
 	return &PALS{
 		target:      target,
 		query:       query,
@@ -283,12 +283,13 @@ func (p *PALS) Align(complement bool) (dp.DPHits, error) {
 		return nil, p.err
 	}
 	var (
-		working *seq.Seq
+		working *linear.Seq
 		err     error
 	)
 	if complement {
 		p.notify("Complementing query")
-		working, _ = p.query.RevComp()
+		working = p.query.Copy().(*linear.Seq)
+		working.RevComp()
 		p.notify("Complemented query")
 	} else {
 		working = p.query

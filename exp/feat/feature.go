@@ -93,7 +93,6 @@ type LocationSetter interface {
 
 type Pair interface {
 	Features() [2]Feature
-	Invert() // Swap base feature and partner feature.
 }
 
 type Set interface {

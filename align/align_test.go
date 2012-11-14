@@ -13,11 +13,14 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package nw
+package align
 
 import (
-	"code.google.com/p/biogo/io/seqio/fasta"
+	"code.google.com/p/biogo/exp/alphabet"
+	"code.google.com/p/biogo/exp/seq/linear"
+	"code.google.com/p/biogo/exp/seqio/fasta"
 	check "launchpad.net/gocheck"
+	"strings"
 	"testing"
 )
 
@@ -31,26 +34,45 @@ var _ = check.Suite(&S{})
 func (s *S) TestXXX(c *check.C) {
 }
 
-func BenchmarkAlign(b *testing.B) {
+func BenchmarkSWAlign(b *testing.B) {
 	b.StopTimer()
-	if r, err := fasta.NewReaderName("../testdata/crsp.fa"); err != nil {
-		return
-	} else {
-		nwsa, _ := r.Read()
-		nwsb, _ := r.Read()
+	t := &linear.Seq{}
+	t.Alpha = alphabet.DNA
+	r := fasta.NewReader(strings.NewReader(crspFa), t)
+	swsa, _ := r.Read()
+	swsb, _ := r.Read()
 
-		nwm := [][]int{
-			{10, -3, -1, -4, -5},
-			{-3, 9, -5, 0, -5},
-			{-1, -5, 7, -3, -5},
-			{-4, 0, -3, 8, -5},
-			{-4, -4, -4, -4, 0},
-		}
+	smith := SW{
+		{2, -1, -1, -1, -1},
+		{-1, 2, -1, -1, -1},
+		{-1, -1, 2, -1, -1},
+		{-1, -1, -1, 2, -1},
+		{-1, -1, -1, -1, 0},
+	}
+	b.StartTimer()
+	for i := 0; i < b.N; i++ {
+		smith.Align(swsa, swsb)
+	}
+}
 
-		needle := &Aligner{Matrix: nwm, LookUp: LookUpN, GapChar: '-'}
-		b.StartTimer()
-		for i := 0; i < b.N; i++ {
-			needle.Align(nwsa, nwsb)
-		}
+func BenchmarkNWAlign(b *testing.B) {
+	b.StopTimer()
+	t := &linear.Seq{}
+	t.Alpha = alphabet.DNA
+	r := fasta.NewReader(strings.NewReader(crspFa), t)
+	nwsa, _ := r.Read()
+	nwsb, _ := r.Read()
+
+	needle := NW{
+		{10, -3, -1, -4, -5},
+		{-3, 9, -5, 0, -5},
+		{-1, -5, 7, -3, -5},
+		{-4, 0, -3, 8, -5},
+		{-4, -4, -4, -4, 0},
+	}
+
+	b.StartTimer()
+	for i := 0; i < b.N; i++ {
+		needle.Align(nwsa, nwsb)
 	}
 }

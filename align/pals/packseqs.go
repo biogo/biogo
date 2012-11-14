@@ -16,9 +16,12 @@
 package pals
 
 import (
-	"bytes"
-	"code.google.com/p/biogo/seq"
+	"code.google.com/p/biogo/exp/alphabet"
+	"code.google.com/p/biogo/exp/feat"
+	"code.google.com/p/biogo/exp/seq"
+	"code.google.com/p/biogo/exp/seq/linear"
 	"code.google.com/p/biogo/util"
+	"errors"
 	"fmt"
 )
 
@@ -29,74 +32,142 @@ var (
 
 // A Packer collects a set of sequence into a Packed sequence.
 type Packer struct {
-	Packed  *seq.Seq
+	packed  *Packed
 	lastPad int
 	length  int
+}
+
+type Packed struct {
+	*linear.Seq
+	seqMap
+}
+
+// Convert coordinates in a packed sequence into a feat.Feature.
+func (pa *Packed) feature(from, to int, comp bool) (feat.Feature, error) {
+	if comp {
+		from, to = pa.Len()-to, pa.Len()-from
+	}
+	if from >= to {
+		return nil, errors.New("pals: from > to")
+	}
+
+	// DPHit coordinates sometimes over/underflow.
+	// This is a lazy hack to work around it, should really figure
+	// out what is going on.
+	if from < 0 {
+		from = 0
+	}
+	if to > pa.Len() {
+		to = pa.Len()
+	}
+
+	// Take midpoint of segment -- lazy hack again, endpoints
+	// sometimes under / overflow
+	bin := (from + to) / (2 * binSize)
+	binCount := (pa.Len() + binSize - 1) / binSize
+
+	if bin < 0 || bin >= binCount {
+		return nil, fmt.Errorf("pals: bin %d out of range 0..%d", bin, binCount-1)
+	}
+
+	contigIndex := pa.seqMap.binMap[bin]
+
+	if contigIndex < 0 || contigIndex >= len(pa.seqMap.contigs) {
+		return nil, fmt.Errorf("pals: contig index %d out of range 0..%d", pa.ID, contigIndex, len(pa.seqMap.contigs))
+	}
+
+	length := to - from
+
+	if length < 0 {
+		return nil, errors.New("pals: length < 0")
+	}
+
+	contig := pa.seqMap.contigs[contigIndex]
+	contigFrom := from - contig.from
+	contigTo := contigFrom + length
+
+	if contigFrom < 0 {
+		contigFrom = 0
+	}
+
+	if contigTo > contig.Len() {
+		contigTo = contig.Len()
+	}
+
+	return &Feature{
+		ID:   contig.ID,
+		From: contigFrom,
+		To:   contigTo,
+		Loc:  contig.Seq.Loc,
+	}, nil
 }
 
 // Create a new Packer.
 func NewPacker(id string) *Packer {
 	return &Packer{
-		Packed: &seq.Seq{
-			ID:     id,
-			Strand: 1,
-			Meta:   seqMap{},
+		packed: &Packed{
+			Seq:    &linear.Seq{Annotation: seq.Annotation{ID: id}},
+			seqMap: seqMap{},
 		},
 	}
 }
 
 // Pack a sequence into the Packed sequence. Returns a string giving diagnostic information.
-func (pa *Packer) Pack(sequence *seq.Seq) string {
-	m := pa.Packed.Meta.(seqMap)
+func (pa *Packer) Pack(seq *linear.Seq) (string, error) {
+	if pa.packed.Alpha == nil {
+		pa.packed.Alpha = seq.Alpha
+	} else if pa.packed.Alpha != seq.Alpha {
+		return "", errors.New("pals: alphabet mismatch")
+	}
 
-	c := contig{seq: sequence}
+	c := contig{Seq: seq}
 
-	padding := binSize - sequence.Len()%binSize
+	padding := binSize - seq.Len()%binSize
 	if padding < minPadding {
 		padding += binSize
 	}
 
 	pa.length += pa.lastPad
 	c.from = pa.length
-	pa.length += sequence.Len()
+	pa.length += seq.Len()
 	pa.lastPad = padding
 
-	bins := make([]int, (padding+sequence.Len())/binSize)
+	m := &pa.packed.seqMap
+	bins := make([]int, (padding+seq.Len())/binSize)
 	for i := 0; i < len(bins); i++ {
 		bins[i] = len(m.contigs)
 	}
-
 	m.binMap = append(m.binMap, bins...)
 	m.contigs = append(m.contigs, c)
-	pa.Packed.Meta = m
 
-	return fmt.Sprintf("%20s\t%10d\t%7d-%-d", sequence.ID[:util.Min(20, len(sequence.ID))], sequence.Len(), len(m.binMap)-len(bins), len(m.binMap)-1)
+	return fmt.Sprintf("%20s\t%10d\t%7d-%-d", seq.ID[:util.Min(20, len(seq.ID))], seq.Len(), len(m.binMap)-len(bins), len(m.binMap)-1), nil
 }
 
 // Finalise the sequence packing.
-func (pa *Packer) FinalisePack() {
+func (pa *Packer) FinalisePack() *Packed {
 	lastPad := 0
-	pa.Packed.Seq = make([]byte, 0, pa.length)
-	for _, c := range pa.Packed.Meta.(seqMap).contigs {
-		padding := binSize - c.seq.Len()%binSize
+	seq := make(alphabet.Letters, 0, pa.length)
+	for _, c := range pa.packed.seqMap.contigs {
+		padding := binSize - c.Len()%binSize
 		if padding < minPadding {
 			padding += binSize
 		}
-		pa.Packed.Seq = append(pa.Packed.Seq, bytes.Repeat([]byte("N"), lastPad)...)
-		pa.Packed.Seq = append(pa.Packed.Seq, c.seq.Seq...)
+		seq = append(seq, alphabet.Letter('N').Repeat(lastPad)...)
+		seq = append(seq, c.Seq.Seq...)
 		lastPad = padding
 	}
+	pa.packed.Seq.Seq = seq
+
+	return pa.packed
 }
 
-// TODO: The following types should be rationalised to make a true Packed sequence type - include in exp/seq.
-
-// A Contig holds a sequence within a SeqMap.
+// A contig holds a sequence within a SeqMap.
 type contig struct {
-	seq  *seq.Seq
+	*linear.Seq
 	from int
 }
 
-// A SeqMap is a collection of sequences mapped to a Packed sequence.
+// A seqMap is a collection of sequences mapped to a Packed sequence.
 type seqMap struct {
 	contigs []contig
 	binMap  []int

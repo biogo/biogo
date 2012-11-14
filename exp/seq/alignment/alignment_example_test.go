@@ -24,17 +24,7 @@ import (
 	"fmt"
 )
 
-var (
-	m, n    *Seq
-	aligned = func(a *Seq) {
-		for i := 0; i < a.Rows(); i++ {
-			s := a.Row(i).Copy() // FIXME should not need a Copy - require Format method on Row.
-			fmt.Printf("%-s\n", s)
-		}
-		fmt.Println()
-		fmt.Println(a)
-	}
-)
+var m, n *Seq
 
 func init() {
 	var err error
@@ -95,11 +85,10 @@ func ExampleNewSeq() {
 		},
 		alphabet.DNA,
 		seq.DefaultConsensus)
-	if err != nil {
-		panic(err)
+	if err == nil {
+		fmt.Printf("%-s\n\n%-s\n", m, m.Consensus(false))
 	}
 
-	aligned(m)
 	// Output:
 	// ACGCTGACTTGGTGCACGT
 	// ACGGTGACCTGGCGCGCAT
@@ -109,11 +98,11 @@ func ExampleNewSeq() {
 }
 
 func ExampleSeq_Add() {
-	fmt.Printf("%v %v\n", m.Rows(), m)
+	fmt.Printf("%v %-s\n", m.Rows(), m.Consensus(false))
 	m.Add(linear.NewQSeq("example DNA",
 		[]alphabet.QLetter{{'a', 40}, {'c', 39}, {'g', 40}, {'C', 38}, {'t', 35}, {'g', 20}},
 		alphabet.DNA, alphabet.Sanger))
-	fmt.Printf("%v %v\n", m.Rows(), m)
+	fmt.Printf("%v %-s\n", m.Rows(), m.Consensus(false))
 	// Output:
 	// 3 acgntgacntggcgcncat
 	// 4 acgctgacntggcgcncat
@@ -122,9 +111,8 @@ func ExampleSeq_Add() {
 func ExampleSeq_Copy() {
 	n = m.Copy().(*Seq)
 	n.Row(2).Set(3, alphabet.QLetter{L: 't'})
-	aligned(m)
-	fmt.Println()
-	aligned(n)
+	fmt.Printf("%-s\n\n%-s\n\n", m, m.Consensus(false))
+	fmt.Printf("%-s\n\n%-s\n", n, n.Consensus(false))
 	// Output:
 	// ACGCTGACTTGGTGCACGT
 	// ACGGTGACCTGGCGCGCAT
@@ -148,13 +136,11 @@ func ExampleSeq_Count() {
 }
 
 func ExampleSeq_Join() {
-	aligned(n)
+	fmt.Printf("%-s\n\n%-s\n", n, n.Consensus(false))
 	err := sequtils.Join(n, m, seq.End)
-	if err != nil {
-		fmt.Println(err)
+	if err == nil {
+		fmt.Printf("\n%-s\n\n%-s\n", n, n.Consensus(false))
 	}
-	fmt.Println()
-	aligned(n)
 	// Output:
 	// ACGCTGACTTGGTGCACGT
 	// ACGGTGACCTGGCGCGCAT
@@ -178,10 +164,10 @@ func ExampleAlignment_Len() {
 }
 
 func ExampleSeq_RevComp() {
-	aligned(m)
+	fmt.Printf("%-s\n\n%-s\n", m, m.Consensus(false))
 	fmt.Println()
 	m.RevComp()
-	aligned(m)
+	fmt.Printf("%-s\n\n%-s\n", m, m.Consensus(false))
 	// Output:
 	// ACGCTGACTTGGTGCACGT
 	// ACGGTGACCTGGCGCGCAT
@@ -218,10 +204,9 @@ func ExampleSeq_Stitch() {
 		&fe{s: -1, e: 4},
 		&fe{s: 30, e: 38},
 	}
-	aligned(n)
-	fmt.Println()
+	fmt.Printf("%-s\n\n%-s\n", n, n.Consensus(false))
 	if err := sequtils.Stitch(n, n, f); err == nil {
-		aligned(n)
+		fmt.Printf("\n%-s\n\n%-s\n", n, n.Consensus(false))
 	} else {
 		fmt.Println(err)
 	}
@@ -242,11 +227,10 @@ func ExampleSeq_Stitch() {
 }
 
 func ExampleSeq_Truncate() {
-	aligned(m)
+	fmt.Printf("%-s\n\n%-s\n", m, m.Consensus(false))
 	err := sequtils.Truncate(m, m, 4, 12)
 	if err == nil {
-		fmt.Println()
-		aligned(m)
+		fmt.Printf("\n%-s\n\n%-s\n", m, m.Consensus(false))
 	}
 	// Output:
 	// ACGTGCACCAAGTCAGCGT

@@ -46,14 +46,14 @@ func NewWriterName(name string, v, width int, header bool) (*Writer, error) {
 }
 
 // Write a single feature and return the number of bytes written and any error.
-func (w *Writer) Write(pair *FeaturePair) (n int, err error) {
-	t.Location = pair.B.ID
-	t.Start = pair.B.Start
-	t.End = pair.B.End
+func (w *Writer) Write(pair *Pair) (n int, err error) {
+	t.Location = pair.B.Name()
+	t.Start = pair.B.Start()
+	t.End = pair.B.End()
 	t.Score = floatPtr(float64(pair.Score))
 	t.Strand = pair.Strand
 	t.Frame = -1
-	t.Attributes = fmt.Sprintf("Target %s %d %d; maxe %.2g", pair.A.ID, pair.A.Start+1, pair.A.End, pair.Error) // +1 is kludge for absence of gffwriter
+	t.Attributes = fmt.Sprintf("Target %s %d %d; maxe %.2g", pair.A.Name(), pair.A.Start()+1, pair.A.End(), pair.Error) // +1 is kludge for absence of gffwriter
 	return w.w.Write(t)
 }
 

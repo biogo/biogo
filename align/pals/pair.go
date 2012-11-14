@@ -17,88 +17,35 @@ package pals
 
 import (
 	"code.google.com/p/biogo/align/pals/dp"
-	"code.google.com/p/biogo/bio"
-	"code.google.com/p/biogo/feat"
-	"code.google.com/p/biogo/seq"
+	"code.google.com/p/biogo/exp/feat"
+	gff "code.google.com/p/biogo/feat"
 	"fmt"
 	"strconv"
 	"strings"
 )
 
-// A FeaturePair holds a pair of features with additional information relating the two.
-type FeaturePair struct {
-	A, B   *feat.Feature
+// A Pair holds a pair of features with additional information relating the two.
+type Pair struct {
+	A, B   feat.Feature
 	Score  int     // Score of alignment between features.
 	Error  float64 // Identity difference between feature sequences.
 	Strand int8    // Strand relationship: positive indicates same strand, negative indicates opposite strand.
 }
 
-// Convert coordinates in a packed sequence into a feat.Feature.
-func featureOf(contigs *seq.Seq, from, to int, comp bool) (feature *feat.Feature, err error) {
-	if comp {
-		from, to = contigs.Len()-to, contigs.Len()-from
-	}
-	if from >= to {
-		return nil, bio.NewError(fmt.Sprintf("%s: from > to", contigs.ID), 0, nil)
-	}
-
-	// DPHit coordinates sometimes over/underflow.
-	// This is a lazy hack to work around it, should really figure
-	// out what is going on.
-	if from < 0 {
-		from = 0
-	}
-	if to > contigs.Len() {
-		to = contigs.Len()
-	}
-
-	// Take midpoint of segment -- lazy hack again, endpoints
-	// sometimes under / overflow
-	bin := (from + to) / (2 * binSize)
-	binCount := (contigs.Len() + binSize - 1) / binSize
-
-	if bin < 0 || bin >= binCount {
-		return nil, bio.NewError(fmt.Sprintf("%s: bin %d out of range 0..%d", contigs.ID, bin, binCount-1), 0, nil)
-	}
-
-	contigIndex := contigs.Meta.(seqMap).binMap[bin]
-
-	if contigIndex < 0 || contigIndex >= len(contigs.Meta.(seqMap).contigs) {
-		return nil, bio.NewError(fmt.Sprintf("%s: contig index %d out of range 0..%d", contigs.ID, contigIndex, len(contigs.Meta.(seqMap).contigs)), 0, nil)
-	}
-
-	length := to - from
-
-	if length < 0 {
-		return nil, bio.NewError(fmt.Sprintf("%s: length < 0", contigs.ID), 0, nil)
-	}
-
-	contig := contigs.Meta.(seqMap).contigs[contigIndex]
-	contigFrom := from - contig.from
-	contigTo := contigFrom + length
-
-	if contigFrom < 0 {
-		contigFrom = 0
-	}
-
-	if contigTo > contig.seq.Len() {
-		contigTo = contig.seq.Len()
-	}
-
-	return &feat.Feature{
-		ID:    contig.seq.ID,
-		Start: contigFrom,
-		End:   contigTo,
-	}, nil
+func (fp *Pair) String() string {
+	return fmt.Sprintf("%s/%s[%d,%d)--%s/%s[%d,%d)",
+		fp.A.Location().Location().Name(), fp.A.Name(), fp.A.Start(), fp.A.End(),
+		fp.B.Location().Location().Name(), fp.B.Name(), fp.B.Start(), fp.B.End(),
+	)
 }
 
-// Convert a DPHit and two packed sequences into a FeaturePair.
-func NewFeaturePair(target, query *seq.Seq, hit dp.DPHit, comp bool) (*FeaturePair, error) {
-	t, err := featureOf(target, hit.Abpos, hit.Aepos, false)
+// NewPair converts a DPHit and two packed sequences into a Pair.
+func NewPair(target, query *Packed, hit dp.DPHit, comp bool) (*Pair, error) {
+	t, err := target.feature(hit.Abpos, hit.Aepos, false)
 	if err != nil {
 		return nil, err
 	}
-	q, err := featureOf(query, hit.Bbpos, hit.Bepos, comp)
+	q, err := query.feature(hit.Bbpos, hit.Bepos, comp)
 	if err != nil {
 		return nil, err
 	}
@@ -110,7 +57,7 @@ func NewFeaturePair(target, query *seq.Seq, hit dp.DPHit, comp bool) (*FeaturePa
 		strand = 1
 	}
 
-	return &FeaturePair{
+	return &Pair{
 		A:      t,
 		B:      q,
 		Score:  hit.Score,
@@ -119,8 +66,9 @@ func NewFeaturePair(target, query *seq.Seq, hit dp.DPHit, comp bool) (*FeaturePa
 	}, nil
 }
 
-// Expand a feat.Feature containing a PALS-type feature attribute into a FeaturePair.
-func ExpandFeature(f *feat.Feature) (*FeaturePair, error) {
+// ExpandFeature converts an old-style *feat.Feature (package temporarily renamed to gff for collision avoidance) containing a PALS-type feature attribute
+// into a Pair.
+func ExpandFeature(f *gff.Feature) (*Pair, error) {
 	if len(f.Attributes) < 7 || f.Attributes[:7] != "Target " {
 		return nil, fmt.Errorf("pals: not a feature pair")
 	}
@@ -144,13 +92,18 @@ func ExpandFeature(f *feat.Feature) (*FeaturePair, error) {
 		return nil, err
 	}
 
-	fp := &FeaturePair{
-		A: f,
-		B: &feat.Feature{
-			ID:       fmt.Sprintf("%s:%d..%d", fields[1], s, e),
-			Location: fields[1],
-			Start:    s,
-			End:      e},
+	fp := &Pair{
+		A: &Feature{
+			ID:   f.ID,
+			Loc:  Contig(f.Location),
+			From: f.Start,
+			To:   f.End,
+		},
+		B: &Feature{
+			ID:   fmt.Sprintf("%s:%d..%d", fields[1], s, e),
+			Loc:  Contig(fields[1]),
+			From: s,
+			To:   e},
 		Score:  int(*f.Score),
 		Error:  maxe,
 		Strand: f.Strand,
@@ -163,8 +116,8 @@ func ExpandFeature(f *feat.Feature) (*FeaturePair, error) {
 }
 
 // Invert returns a reversed copy of the feature pair such that A', B' = B, A.
-func (fp *FeaturePair) Invert() *FeaturePair {
-	return &FeaturePair{
+func (fp *Pair) Invert() *Pair {
+	return &Pair{
 		A:      fp.B,
 		B:      fp.A,
 		Score:  fp.Score,

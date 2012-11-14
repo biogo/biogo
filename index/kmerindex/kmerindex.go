@@ -20,7 +20,7 @@ package kmerindex
 
 import (
 	"code.google.com/p/biogo/bio"
-	"code.google.com/p/biogo/seq"
+	"code.google.com/p/biogo/exp/seq/linear"
 	"code.google.com/p/biogo/util"
 	"fmt"
 	"math"
@@ -37,7 +37,7 @@ type Kmer uint32 // Sensible size for word type uint64 will double the size of t
 type Index struct {
 	finger  []Kmer
 	pos     []int
-	Seq     *seq.Seq
+	Seq     *linear.Seq
 	k       int
 	kMask   Kmer
 	indexed bool
@@ -59,7 +59,7 @@ func init() {
 }
 
 // Create a new Kmer Index with a word size k based on sequence
-func New(k int, sequence *seq.Seq) (i *Index, err error) {
+func New(k int, sequence *linear.Seq) (i *Index, err error) {
 	switch {
 	case k > MaxKmerLen:
 		return nil, bio.NewError("k greater than MaxKmerLen", 0, k, MaxKmerLen)
@@ -224,7 +224,7 @@ func (self *Index) StringKmerIndex() (map[string][]int, bool) {
 type Eval func(index *Index, j, kmer int)
 
 // Applies the f Eval func to all kmers in s from start to end. Returns any panic raised by f as an error.
-func (self *Index) ForEachKmerOf(s *seq.Seq, start, end int, f Eval) (err error) {
+func (self *Index) ForEachKmerOf(s *linear.Seq, start, end int, f Eval) (err error) {
 	defer func() {
 		if !Debug {
 			if r := recover(); r != nil {
@@ -277,7 +277,7 @@ func (self *Index) GetK() int {
 }
 
 // Returns a pointer to the indexed seq.Seq.
-func (self *Index) GetSeq() *seq.Seq {
+func (self *Index) GetSeq() *linear.Seq {
 	return self.Seq
 }
 

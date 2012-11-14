@@ -25,6 +25,7 @@ package seq
 import (
 	"code.google.com/p/biogo/exp/alphabet"
 	"code.google.com/p/biogo/exp/feat"
+	"fmt"
 	"math"
 )
 
@@ -84,6 +85,7 @@ type Sequence interface {
 	Slicer
 	Conformationer
 	ConformationSetter
+	fmt.Formatter
 }
 
 // A Feature describes the basis for sequence features.

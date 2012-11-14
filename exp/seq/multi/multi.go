@@ -27,6 +27,7 @@ import (
 	"fmt"
 	"reflect"
 	"sort"
+	"strings"
 	"sync"
 )
 
@@ -39,18 +40,6 @@ var (
 	joinerRegistryLock *sync.RWMutex
 	joinerRegistry     map[reflect.Type]JoinFunc
 )
-
-// type rowCounter interface {
-// 	Rows() int
-// }
-
-// func rows(s seq.Sequence) int {
-// 	row := 1
-// 	if m, ok := s.(rowCounter); ok {
-// 		row = m.Rows()
-// 	}
-// 	return row
-// }
 
 type Multi struct {
 	seq.Annotation
@@ -79,54 +68,6 @@ func NewMulti(id string, n []seq.Sequence, cons seq.ConsenseFunc) (*Multi, error
 	}, nil
 }
 
-// At returns the letter at position pos.
-// func (m *Multi) At(pos seq.Position) alphabet.QLetter {
-// 	for _, r := range m.Seq {
-// 		row := rows(r)
-// 		if pos.Row < row {
-// 			return r.At(pos)
-// 		}
-// 		pos.Row -= row
-// 	}
-
-// 	panic("multi: index out of range")
-// }// 
-
-// Set sets the letter at position pos to l.
-// func (m *Multi) Set(pos seq.Position, l alphabet.QLetter) {
-// 	for _, r := range m.Seq {
-// 		row := rows(r)
-// 		if pos.Row < row {
-// 			r.Set(pos, l)
-// 			return
-// 		}
-// 		pos.Row -= row
-// 	}
-
-// 	panic("multi: index out of range")
-// }// 
-
-// SetE sets the quality at position pos to e to reflect the given p(Error).
-// func (m *Multi) SetE(pos seq.Position, q float64) {
-// 	for _, r := range m.Seq {
-// 		row := rows(r)
-// 		if pos.Row < row {
-// 			if qs, ok := r.(seq.Quality); ok {
-// 				qs.SetE(pos, q)
-// 				return
-// 			}
-// 		}
-// 		pos.Row -= row
-// 	}
-
-// 	panic("multi: index out of range")
-// }// 
-
-// QEncode encodes the quality at position pos to a letter based on the sequence encoding setting.
-// func (m *Multi) QEncode(pos seq.Position) byte {
-// 	return m.At(pos).Q.Encode(m.Encode)
-// }// 
-
 // Encoding returns the quality encoding scheme.
 func (m *Multi) Encoding() alphabet.Encoding { return m.Encode }
 
@@ -139,23 +80,6 @@ func (m *Multi) SetEncoding(e alphabet.Encoding) {
 	}
 	m.Encode = e
 }
-
-// EAt returns the probability of a sequence error at position pos.
-// func (m *Multi) EAt(pos seq.Position) float64 {
-// 	for _, r := range m.Seq {
-// 		row := rows(r)
-// 		if pos.Row < row {
-// 			if qs, ok := r.(seq.Quality); ok {
-// 				return qs.EAt(pos)
-// 			} else {
-// 				return seq.DefaultQphred.ProbE()
-// 			}
-// 		}
-// 		pos.Row -= row
-// 	}
-
-// 	panic("multi: index out of range")
-// }// 
 
 // Len returns the length of the alignment.
 func (m *Multi) Len() int {
@@ -271,9 +195,12 @@ func (m *Multi) Add(n ...seq.Sequence) error {
 	return nil
 }
 
-// TODO
-func (m *Multi) Delete(i int) {}
+// Delete removes the sequence represented at row i of the alignment. It panics if i is out of range.
+func (m *Multi) Delete(i int) {
+	m.Seq = m.Seq[:i+copy(m.Seq[i:], m.Seq[i+1:])]
+}
 
+// Row returns the sequence represented at row i of the alignment. It panics is i is out of range.
 func (m *Multi) Row(i int) seq.Sequence {
 	return m.Seq[i]
 }
@@ -636,4 +563,43 @@ func (m *Multi) Consensus(includeMissing bool) *linear.QSeq {
 	c.SetOffset(m.Offset)
 
 	return c
+}
+
+// Format is a support routine for fmt.Formatter. It accepts the formats 'v' and 's'
+// (string), 'a' (fasta) and 'q' (fastq). String, fasta and fastq formats support
+// truncated output via the verb's precision. Fasta format supports sequence line
+// specification via the verb's width field. Fastq format supports optional inclusion
+// of the '+' line descriptor line with the '+' flag. The 'v' verb supports the '#'
+// flag for Go syntax output. The 's' and 'v' formats support the '-' flag for
+// omission of the sequence name and in conjunction with this, the ' ' flag for
+// alignment justification.
+func (m *Multi) Format(fs fmt.State, c rune) {
+	if m == nil {
+		fmt.Fprint(fs, "<nil>")
+		return
+	}
+	var align bool
+	switch c {
+	case 'v':
+		if fs.Flag('#') {
+			fmt.Fprintf(fs, "&%#v", *m)
+			return
+		}
+		fallthrough
+	case 's':
+		align = fs.Flag(' ') && fs.Flag('-')
+		fallthrough
+	case 'a', 'q':
+		for i, r := range m.Seq {
+			if align {
+				fmt.Fprintf(fs, "%s", strings.Repeat(" ", r.Start()-m.Start()))
+			}
+			r.Format(fs, c)
+			if i < m.Rows()-1 {
+				fmt.Fprintln(fs)
+			}
+		}
+	default:
+		fmt.Fprintf(fs, "%%!%c(*multi.Multi=%.10s)", c, m)
+	}
 }

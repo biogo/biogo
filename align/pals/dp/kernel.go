@@ -17,7 +17,7 @@ package dp
 
 import (
 	"code.google.com/p/biogo/align/pals/filter"
-	"code.google.com/p/biogo/seq"
+	"code.google.com/p/biogo/exp/seq/linear"
 )
 
 const (
@@ -27,10 +27,12 @@ const (
 
 // A kernel handles the actual dp alignment process.
 type kernel struct {
-	target, query *seq.Seq
+	target, query *linear.Seq
 
 	minLen  int
 	maxDiff float64
+
+	valueToCode []int
 
 	maxIGap    int
 	diffCost   int
@@ -225,7 +227,7 @@ func (k *kernel) traceForward(mid, low, high int) {
 			temp = cost
 			cost = score
 			score = thatVector.at(j)
-			if k.query.Seq[i] == k.target.Seq[j-1] && lookUp.ValueToCode[k.query.Seq[i]] >= 0 {
+			if k.query.Seq[i] == k.target.Seq[j-1] && k.valueToCode[k.query.Seq[i]] >= 0 {
 				cost += k.matchCost
 			}
 
@@ -249,7 +251,7 @@ func (k *kernel) traceForward(mid, low, high int) {
 		if j <= k.target.Len() {
 			var ratchet int
 
-			if k.query.Seq[i] == k.target.Seq[j-1] && lookUp.ValueToCode[k.query.Seq[i]] >= 0 {
+			if k.query.Seq[i] == k.target.Seq[j-1] && k.valueToCode[k.query.Seq[i]] >= 0 {
 				score += k.matchCost
 			}
 
@@ -375,7 +377,7 @@ func (k *kernel) traceReverse(top, low, high, bottom, xfactor int) {
 			temp = cost
 			cost = score
 			score = thatVector.at(j)
-			if k.query.Seq[i] == k.target.Seq[j] && lookUp.ValueToCode[k.query.Seq[i]] >= 0 {
+			if k.query.Seq[i] == k.target.Seq[j] && k.valueToCode[k.query.Seq[i]] >= 0 {
 				cost += k.matchCost
 			}
 
@@ -399,7 +401,7 @@ func (k *kernel) traceReverse(top, low, high, bottom, xfactor int) {
 		if j >= 0 {
 			var ratchet int
 
-			if k.query.Seq[i] == k.target.Seq[j] && lookUp.ValueToCode[k.query.Seq[i]] >= 0 {
+			if k.query.Seq[i] == k.target.Seq[j] && k.valueToCode[k.query.Seq[i]] >= 0 {
 				score += k.matchCost
 			}
 

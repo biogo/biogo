@@ -21,21 +21,9 @@ import (
 	"code.google.com/p/biogo/exp/seq"
 	"code.google.com/p/biogo/exp/seq/linear"
 	"fmt"
-	"strings"
 )
 
-var (
-	m, n    *Multi
-	aligned = func(a *Multi) {
-		start := a.Start()
-		for i := 0; i < a.Rows(); i++ {
-			s := a.Row(i)
-			fmt.Printf("%s%-s\n", strings.Repeat(" ", s.Start()-start), s)
-		}
-		fmt.Println()
-		fmt.Println(a)
-	}
-)
+var m, n *Multi
 
 func init() {
 	var err error
@@ -65,7 +53,7 @@ func ExampleNewMulti() {
 		return
 	}
 
-	aligned(m)
+	fmt.Printf("%- s\n\n%-s\n", m, m.Consensus(false))
 	// Output:
 	// ACGCTGACTTGGTGCACGT
 	// ACGGTGACCTGGCGCGCAT
@@ -76,7 +64,7 @@ func ExampleNewMulti() {
 
 func ExampleMulti_Add() {
 	var err error
-	fmt.Printf("%v %-s\n", m.Rows(), m)
+	fmt.Printf("%v %-s\n", m.Rows(), m.Consensus(false))
 	err = m.Add(linear.NewQSeq("example DNA",
 		[]alphabet.QLetter{{'a', 40}, {'c', 39}, {'g', 40}, {'C', 38}, {'t', 35}, {'g', 20}},
 		alphabet.DNA, alphabet.Sanger))
@@ -84,7 +72,7 @@ func ExampleMulti_Add() {
 		fmt.Println(err)
 		return
 	}
-	fmt.Printf("%v %-s\n", m.Rows(), m)
+	fmt.Printf("%v %-s\n", m.Rows(), m.Consensus(false))
 	err = m.Add(linear.NewQSeq("example RNA",
 		[]alphabet.QLetter{{'a', 40}, {'c', 39}, {'g', 40}, {'C', 38}, {'t', 35}, {'g', 20}},
 		alphabet.RNA, alphabet.Sanger))
@@ -101,9 +89,10 @@ func ExampleMulti_Add() {
 func ExampleMulti_Copy() {
 	n = m.Copy().(*Multi)
 	n.Row(2).Set(3, alphabet.QLetter{L: 't'})
-	aligned(m)
-	fmt.Println()
-	aligned(n)
+	fmt.Printf("%- s\n\n%-s\n\n%- s\n\n%-s\n",
+		m, m.Consensus(false),
+		n, n.Consensus(false),
+	)
 	// Output:
 	// ACGCTGACTTGGTGCACGT
 	// ACGGTGACCTGGCGCGCAT
@@ -128,11 +117,10 @@ func ExampleMulti_Count() {
 
 func ExampleMulti_IsFlush() {
 	m.Row(3).SetOffset(13)
-	aligned(m)
+	fmt.Printf("%- s\n\n%-s\n", m, m.Consensus(false))
 	fmt.Printf("\nFlush at left: %v\nFlush at right: %v\n", m.IsFlush(seq.Start), m.IsFlush(seq.End))
 	m.Flush(seq.Start, '-')
-	fmt.Println()
-	aligned(m)
+	fmt.Printf("\n%- s\n\n%-s\n", m, m.Consensus(false))
 	fmt.Printf("\nFlush at left: %v\nFlush at right: %v\n", m.IsFlush(seq.Start), m.IsFlush(seq.End))
 	// Output:
 	// ACGCTGACTTGGTGCACGT
@@ -157,10 +145,9 @@ func ExampleMulti_IsFlush() {
 }
 
 func ExampleMulti_Join() {
-	aligned(n)
+	fmt.Printf("%- s\n\n%-s\n", n, n.Consensus(false))
 	n.Join(m, seq.End)
-	fmt.Println()
-	aligned(n)
+	fmt.Printf("\n%- s\n\n%-s\n", n, n.Consensus(false))
 	// Output:
 	// ACGCTGACTTGGTGCACGT
 	// ACGGTGACCTGGCGCGCAT
@@ -184,10 +171,9 @@ func ExampleMulti_Len() {
 }
 
 func ExampleMulti_RevComp() {
-	aligned(m)
-	fmt.Println()
+	fmt.Printf("%- s\n\n%-s\n\n", m, m.Consensus(false))
 	m.RevComp()
-	aligned(m)
+	fmt.Printf("%- s\n\n%-s\n", m, m.Consensus(false))
 	// Output:
 	// ACGCTGACTTGGTGCACGT
 	// ACGGTGACCTGGCGCGCAT
@@ -224,10 +210,9 @@ func ExampleMulti_Stitch() {
 		&fe{s: -1, e: 4},
 		&fe{s: 30, e: 38},
 	}
-	aligned(n)
-	fmt.Println()
+	fmt.Printf("%- s\n\n%-s\n\n", n, n.Consensus(false))
 	if err := n.Stitch(f); err == nil {
-		aligned(n)
+		fmt.Printf("%- s\n\n%-s\n", n, n.Consensus(false))
 	} else {
 		fmt.Println(err)
 	}
@@ -248,10 +233,9 @@ func ExampleMulti_Stitch() {
 }
 
 func ExampleMulti_Truncate() {
-	aligned(m)
+	fmt.Printf("%- s\n\n%-s\n\n", m, m.Consensus(false))
 	m.Truncate(4, 12)
-	fmt.Println()
-	aligned(m)
+	fmt.Printf("%- s\n\n%-s\n", m, m.Consensus(false))
 	// Output:
 	// ACGTGCACCAAGTCAGCGT
 	// ATGCGCGCCAGGTCACCGT

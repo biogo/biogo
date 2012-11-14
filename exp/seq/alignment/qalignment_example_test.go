@@ -23,17 +23,7 @@ import (
 	"fmt"
 )
 
-var (
-	qm, qn   *QSeq
-	qaligned = func(a *QSeq) {
-		for i := 0; i < a.Rows(); i++ {
-			s := a.Row(i).Copy()
-			fmt.Printf("%-s\n", s)
-		}
-		fmt.Println()
-		fmt.Println(a)
-	}
-)
+var qm, qn *QSeq
 
 func init() {
 	var err error
@@ -96,11 +86,10 @@ func ExampleNewQSeq() {
 		alphabet.DNA,
 		alphabet.Sanger,
 		seq.DefaultQConsensus)
-	if err != nil {
-		panic(err)
+	if err == nil {
+		fmt.Printf("%-s\n\n%-s\n", qm, qm.Consensus(false))
 	}
 
-	qaligned(qm)
 	// Output:
 	// ACGCTGACTTGGTGCACGT
 	// ACGGTGACCTGGCGCGCAT
@@ -110,11 +99,11 @@ func ExampleNewQSeq() {
 }
 
 func ExampleQSeq_Add() {
-	fmt.Printf("%v %v\n", qm.Rows(), qm)
+	fmt.Printf("%v %-s\n", qm.Rows(), qm.Consensus(false))
 	qm.Add(linear.NewQSeq("example DNA",
 		[]alphabet.QLetter{{'a', 40}, {'c', 39}, {'g', 40}, {'C', 38}, {'t', 35}, {'g', 20}},
 		alphabet.DNA, alphabet.Sanger))
-	fmt.Printf("%v %v\n", qm.Rows(), qm)
+	fmt.Printf("%v %-s\n", qm.Rows(), qm.Consensus(false))
 	// Output:
 	// 3 acgntgacntggcgcncat
 	// 4 acgctgacntggcgcncat
@@ -123,9 +112,8 @@ func ExampleQSeq_Add() {
 func ExampleQSeq_Copy() {
 	qn = qm.Copy().(*QSeq)
 	qn.Row(2).Set(3, alphabet.QLetter{L: 't', Q: 40})
-	qaligned(qm)
-	fmt.Println()
-	qaligned(qn)
+	fmt.Printf("%-s\n\n%-s\n\n", qm, qm.Consensus(false))
+	fmt.Printf("%-s\n\n%-s\n", qn, qn.Consensus(false))
 	// Output:
 	// ACGCTGACTTGGTGCACGT
 	// ACGGTGACCTGGCGCGCAT
@@ -149,11 +137,10 @@ func ExampleQSeq_Count() {
 }
 
 func ExampleQSeq_Join() {
-	qaligned(qn)
+	fmt.Printf("%-s\n\n%-s\n", qn, qn.Consensus(false))
 	err := sequtils.Join(qn, qm, seq.End)
 	if err == nil {
-		fmt.Println()
-		qaligned(qn)
+		fmt.Printf("\n%-s\n\n%-s\n", qn, qn.Consensus(false))
 	}
 	// Output:
 	// ACGCTGACTTGGTGCACGT
@@ -178,10 +165,9 @@ func ExampleQAlignment_Len() {
 }
 
 func ExampleQSeq_RevComp() {
-	qaligned(qm)
-	fmt.Println()
+	fmt.Printf("%-s\n\n%-s\n\n", qm, qm.Consensus(false))
 	qm.RevComp()
-	qaligned(qm)
+	fmt.Printf("%-s\n\n%-s\n", qm, qm.Consensus(false))
 	// Output:
 	// ACGCTGACTTGGTGCACGT
 	// ACGGTGACCTGGCGCGCAT
@@ -203,10 +189,9 @@ func ExampleQSeq_Stitch() {
 		&fe{s: -1, e: 4},
 		&fe{s: 30, e: 38},
 	}
-	qaligned(qn)
-	fmt.Println()
+	fmt.Printf("%-s\n\n%-s\n", qn, qn.Consensus(false))
 	if err := sequtils.Stitch(qn, qn, f); err == nil {
-		qaligned(qn)
+		fmt.Printf("\n%-s\n\n%-s\n", qn, qn.Consensus(false))
 	} else {
 		fmt.Println(err)
 	}
@@ -227,11 +212,10 @@ func ExampleQSeq_Stitch() {
 }
 
 func ExampleQSeq_Truncate() {
-	qaligned(qm)
+	fmt.Printf("%-s\n\n%-s\n", qm, qm.Consensus(false))
 	err := sequtils.Truncate(qm, qm, 4, 12)
 	if err == nil {
-		fmt.Println()
-		qaligned(qm)
+		fmt.Printf("\n%-s\n\n%-s\n", qm, qm.Consensus(false))
 	}
 	// Output:
 	// ACGTGCACCAAGTCAGCGT

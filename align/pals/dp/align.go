@@ -19,7 +19,7 @@ package dp
 import (
 	"code.google.com/p/biogo/align/pals/filter"
 	"code.google.com/p/biogo/bio"
-	"code.google.com/p/biogo/seq"
+	"code.google.com/p/biogo/exp/seq/linear"
 	"sort"
 )
 
@@ -49,7 +49,7 @@ type AlignConfig struct {
 
 // An Aligner provides allows local alignment of subsections of long sequences.
 type Aligner struct {
-	target, query *seq.Seq
+	target, query *linear.Seq
 	k             int
 	minHitLength  int
 	minId         float64
@@ -58,7 +58,7 @@ type Aligner struct {
 }
 
 // Create a new Aligner based on target and query sequences. 
-func NewAligner(target, query *seq.Seq, k, minLength int, minId float64) *Aligner {
+func NewAligner(target, query *linear.Seq, k, minLength int, minId float64) *Aligner {
 	return &Aligner{
 		target:       target,
 		query:        query,
@@ -74,12 +74,13 @@ func (a *Aligner) AlignTraps(trapezoids filter.Trapezoids) DPHits {
 	covered := make([]bool, len(trapezoids))
 
 	dp := &kernel{
-		target:     a.target,
-		query:      a.query,
-		trapezoids: trapezoids,
-		covered:    covered,
-		minLen:     a.minHitLength,
-		maxDiff:    1 - a.minId,
+		target:      a.target,
+		query:       a.query,
+		valueToCode: a.target.Alpha.LetterIndex(),
+		trapezoids:  trapezoids,
+		covered:     covered,
+		minLen:      a.minHitLength,
+		maxDiff:     1 - a.minId,
 
 		maxIGap:    a.Config.MaxIGap,
 		diffCost:   a.Config.DiffCost,

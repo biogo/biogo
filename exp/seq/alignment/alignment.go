@@ -24,6 +24,8 @@ import (
 	"code.google.com/p/biogo/util"
 	"errors"
 	"fmt"
+	"strings"
+	"unicode"
 )
 
 // A Seq is an aligned sequence.
@@ -177,14 +179,28 @@ func (s *Seq) column(m []seq.Sequence, pos int) []alphabet.Letter {
 	return c
 }
 
-// TODO
-func (s *Seq) Delete(i int) {}
+// Delete removes the sequence represented at row i of the alignment. It panics if i is out of range.
+func (s *Seq) Delete(i int) {
+	if i >= s.Rows() {
+		panic("alignment: index out of range")
+	}
+	cs := s.Seq
+	for j, c := range cs {
+		cs[j] = c[:i+copy(c[i:], c[i+1:])]
+	}
+	sa := s.SubAnnotations
+	s.SubAnnotations = sa[:i+copy(sa[i:], sa[i+1:])]
+}
 
+// Row returns the sequence represented at row i of the alignment. It panics is i is out of range.
 func (s *Seq) Row(i int) seq.Sequence {
+	if i < 0 || i >= s.Rows() {
+		panic("alignment: index out of range")
+	}
 	return Row{Align: s, Row: i}
 }
 
-// AppendColumns appends each Qletter of each element of a to the appropriate sequence in the reciever.
+// AppendColumns appends each Qletter of each element of a to the appropriate sequence in the receiver.
 func (s *Seq) AppendColumns(a ...[]alphabet.QLetter) error {
 	for i, r := range a {
 		if len(r) != s.Rows() {
@@ -265,13 +281,45 @@ func (s *Seq) Consensus(_ bool) *linear.QSeq {
 	return qs
 }
 
-// A Row is a pointer into an alignment that satifies the seq.Sequence interface.
+// Format is a support routine for fmt.Formatter. It accepts the formats 'v' and 's'
+// (string), 'a' (fasta) and 'q' (fastq). String, fasta and fastq formats support
+// truncated output via the verb's precision. Fasta format supports sequence line
+// specification via the verb's width field. Fastq format supports optional inclusion
+// of the '+' line descriptor line with the '+' flag. The 'v' verb supports the '#'
+// flag for Go syntax output. The 's' and 'v' formats support the '-' flag for
+// omission of the sequence name.
+func (s *Seq) Format(fs fmt.State, c rune) {
+	if s == nil {
+		fmt.Fprint(fs, "<nil>")
+		return
+	}
+	switch c {
+	case 'v':
+		if fs.Flag('#') {
+			fmt.Fprintf(fs, "&%#v", *s)
+			return
+		}
+		fallthrough
+	case 's', 'a', 'q':
+		r := Row{Align: s}
+		for r.Row = 0; r.Row < s.Rows(); r.Row++ {
+			r.Format(fs, c)
+			if r.Row < s.Rows()-1 {
+				fmt.Fprintln(fs)
+			}
+		}
+	default:
+		fmt.Fprintf(fs, "%%!%c(*alignment.Seq=%.10s)", c, s)
+	}
+}
+
+// A Row is a pointer into an alignment that satisfies the seq.Sequence interface.
 type Row struct {
 	Align *Seq
 	Row   int
 }
 
-// At returns the letter at position pos.
+// At returns the letter at position i.
 func (r Row) At(i int) alphabet.QLetter {
 	return alphabet.QLetter{
 		L: r.Align.Seq[i-r.Align.Offset][r.Row],
@@ -279,7 +327,7 @@ func (r Row) At(i int) alphabet.QLetter {
 	}
 }
 
-// Set sets the letter at position pos to l.
+// Set sets the letter at position i to l.
 func (r Row) Set(i int, l alphabet.QLetter) {
 	r.Align.Seq[i-r.Align.Offset][r.Row] = l.L
 }
@@ -299,9 +347,11 @@ func (r Row) Location() feat.Feature { return r.Align.SubAnnotations[r.Row].Loc 
 func (r Row) Alphabet() alphabet.Alphabet         { return r.Align.Alpha }
 func (r Row) Conformation() feat.Conformation     { return r.Align.Conform }
 func (r Row) SetConformation(c feat.Conformation) { r.Align.SubAnnotations[r.Row].Conform = c }
-func (r Row) Name() string                        { return r.Align.SubAnnotations[r.Row].ID }
-func (r Row) Description() string                 { return r.Align.SubAnnotations[r.Row].Desc }
-func (r Row) SetOffset(o int)                     { r.Align.SubAnnotations[r.Row].Offset = o }
+func (r Row) Name() string {
+	return r.Align.SubAnnotations[r.Row].ID
+}
+func (r Row) Description() string { return r.Align.SubAnnotations[r.Row].Desc }
+func (r Row) SetOffset(o int)     { r.Align.SubAnnotations[r.Row].Offset = o }
 
 func (r Row) RevComp() {
 	rs, comp := r.Align.Seq, r.Alphabet().(alphabet.Complementor).ComplementTable()
@@ -327,12 +377,124 @@ func (r Row) Copy() seq.Sequence {
 	for i, c := range r.Align.Seq {
 		b[i] = c[r.Row]
 	}
+	switch {
+	case r.Row < 0:
+		panic("under")
+	case r.Row >= r.Align.Rows():
+		panic("bang over Rows()")
+	case r.Row >= len(r.Align.SubAnnotations):
+
+		panic(fmt.Sprintf("bang over len(SubAnns): %d %d", r.Row, len(r.Align.SubAnnotations)))
+	}
 	return linear.NewSeq(r.Name(), b, r.Alphabet())
 }
 func (r Row) CopyAnnotation() *seq.Annotation { return r.Align.SubAnnotations[r.Row].CopyAnnotation() }
 
-// SetSlice uncoditionally panics.
+// String returns a string representation of the sequence data only.
+func (r Row) String() string { return fmt.Sprintf("%-s", r) }
+
+// Format is a support routine for fmt.Formatter. It accepts the formats 'v' and 's'
+// (string), 'a' (fasta) and 'q' (fastq). String, fasta and fastq formats support
+// truncated output via the verb's precision. Fasta format supports sequence line
+// specification via the verb's width field. Fastq format supports optional inclusion
+// of the '+' line descriptor line with the '+' flag. The 'v' verb supports the '#'
+// flag for Go syntax output. The 's' and 'v' formats support the '-' flag for
+// omission of the sequence name.
+func (r Row) Format(fs fmt.State, c rune) {
+	var (
+		s      = r.Align
+		w, wOk = fs.Width()
+		p, pOk = fs.Precision()
+		buf    alphabet.Columns
+	)
+	if s != nil {
+		if pOk {
+			buf = s.Seq[:min(p, len(s.Seq))]
+		} else {
+			buf = s.Seq
+		}
+	}
+
+	switch c {
+	case 'v':
+		if fs.Flag('#') {
+			type shadowRow Row
+			sr := fmt.Sprintf("%#v", shadowRow(r))
+			fmt.Fprintf(fs, "%T%s", r, sr[strings.Index(sr, "{"):])
+			return
+		}
+		fallthrough
+	case 's':
+		if s == nil {
+			fmt.Fprint(fs, "<nil>")
+			return
+		}
+		if !fs.Flag('-') {
+			fmt.Fprintf(fs, "%q ", r.Name())
+		}
+		for _, lc := range buf {
+			fmt.Fprintf(fs, "%c", lc[r.Row])
+		}
+		if pOk && s != nil && p < s.Len() {
+			fmt.Fprint(fs, "...")
+		}
+	case 'a':
+		if s == nil {
+			return
+		}
+		r.formatDescLineTo(fs, '>')
+		for i, lc := range buf {
+			fmt.Fprintf(fs, "%c", lc[r.Row])
+			if wOk && i < s.Len()-1 && i%w == w-1 {
+				fmt.Fprintln(fs)
+			}
+		}
+		if pOk && p < s.Len() {
+			fmt.Fprint(fs, "...")
+		}
+	case 'q':
+		if s == nil {
+			return
+		}
+		r.formatDescLineTo(fs, '@')
+		for _, lc := range buf {
+			fmt.Fprintf(fs, "%c", lc[r.Row])
+		}
+		if pOk && p < s.Len() {
+			fmt.Fprintln(fs, "...")
+		} else {
+			fmt.Fprintln(fs)
+		}
+		if fs.Flag('+') {
+			r.formatDescLineTo(fs, '+')
+		} else {
+			fmt.Fprintln(fs, "+")
+		}
+		e := seq.DefaultQphred.Encode(seq.DefaultEncoding)
+		if e >= unicode.MaxASCII {
+			e = unicode.MaxASCII - 1
+		}
+		for _ = range buf {
+			fmt.Fprintf(fs, "%c", e)
+		}
+		if pOk && p < s.Len() {
+			fmt.Fprint(fs, "...")
+		}
+	default:
+		fmt.Fprintf(fs, "%%!%c(alignment.Row=%.10s)", c, s)
+	}
+}
+
+func (r Row) formatDescLineTo(fs fmt.State, p rune) {
+	fmt.Fprintf(fs, "%c%s", p, r.Name())
+	if d := r.Description(); d != "" {
+		fmt.Fprintf(fs, " %s", d)
+	}
+	fmt.Fprintln(fs)
+}
+
+// SetSlice unconditionally panics.
 func (r Row) SetSlice(_ alphabet.Slice) { panic("alignment: cannot alter row slice") }
 
-// Slice uncoditionally panics.
+// Slice unconditionally panics.
 func (r Row) Slice() alphabet.Slice { panic("alignment: cannot get row slice") }

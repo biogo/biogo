@@ -16,7 +16,8 @@
 package kmerindex
 
 import (
-	"code.google.com/p/biogo/seq"
+	"code.google.com/p/biogo/exp/alphabet"
+	"code.google.com/p/biogo/exp/seq/linear"
 	"code.google.com/p/biogo/util"
 	check "launchpad.net/gocheck"
 	"math/rand"
@@ -27,7 +28,7 @@ import (
 func Test(t *testing.T) { check.TestingT(t) }
 
 type S struct {
-	*seq.Seq
+	*linear.Seq
 }
 
 var _ = check.Suite(&S{})
@@ -36,10 +37,10 @@ var testLen = 1000
 
 func (s *S) SetUpSuite(c *check.C) {
 	MaxKmerLen = 14
-	s.Seq = &seq.Seq{}
-	s.Seq.Seq = make([]byte, testLen)
+	s.Seq = &linear.Seq{}
+	s.Seq.Seq = make(alphabet.Letters, testLen)
 	for i := range s.Seq.Seq {
-		s.Seq.Seq[i] = [...]byte{'A', 'C', 'G', 'T'}[rand.Int()%4]
+		s.Seq.Seq[i] = [...]alphabet.Letter{'A', 'C', 'G', 'T'}[rand.Int()%4]
 	}
 }
 
@@ -67,7 +68,7 @@ func (s *S) TestKmerFrequencies(c *check.C) {
 			c.Check(ok, check.Equals, true)
 			hashFreqs := make(map[string]int)
 			for i := 0; i+k <= s.Seq.Len(); i++ {
-				hashFreqs[string(s.Seq.Seq[i:i+k])]++
+				hashFreqs[string(alphabet.LettersToBytes(s.Seq.Seq[i:i+k]))]++
 			}
 			for key := range freqs {
 				if freqs[key] != hashFreqs[i.Stringify(key)] {
@@ -99,7 +100,7 @@ func (s *S) TestKmerPositions(c *check.C) {
 			i.Build()
 			hashPos := make(map[string][]int)
 			for i := 0; i+k <= s.Seq.Len(); i++ {
-				hashPos[string(s.Seq.Seq[i:i+k])] = append(hashPos[string(s.Seq.Seq[i:i+k])], i)
+				hashPos[string(alphabet.LettersToBytes(s.Seq.Seq[i:i+k]))] = append(hashPos[string(alphabet.LettersToBytes(s.Seq.Seq[i:i+k]))], i)
 			}
 			pos, ok := i.KmerIndex()
 			c.Check(ok, check.Equals, true)
@@ -118,7 +119,7 @@ func (s *S) TestKmerPositionsString(c *check.C) {
 			i.Build()
 			hashPos := make(map[string][]int)
 			for i := 0; i+k <= s.Seq.Len(); i++ {
-				hashPos[string(s.Seq.Seq[i:i+k])] = append(hashPos[string(s.Seq.Seq[i:i+k])], i)
+				hashPos[string(alphabet.LettersToBytes(s.Seq.Seq[i:i+k]))] = append(hashPos[string(alphabet.LettersToBytes(s.Seq.Seq[i:i+k]))], i)
 			}
 			pos, ok := i.StringKmerIndex()
 			c.Check(ok, check.Equals, true)

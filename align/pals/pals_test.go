@@ -19,7 +19,9 @@ import (
 	"bytes"
 	"code.google.com/p/biogo/align/pals/dp"
 	"code.google.com/p/biogo/align/pals/filter"
-	"code.google.com/p/biogo/seq"
+	"code.google.com/p/biogo/exp/alphabet"
+	"code.google.com/p/biogo/exp/seq"
+	"code.google.com/p/biogo/exp/seq/linear"
 	"code.google.com/p/biogo/util"
 	"fmt"
 	check "launchpad.net/gocheck"
@@ -34,7 +36,7 @@ const (
 var (
 	maxk byte    = 8
 	l    [Q]byte = [Q]byte{'A', 'C', 'G', 'T'}
-	ps   *seq.Seq
+	ps   *Packed
 )
 
 // Helpers
@@ -62,7 +64,7 @@ func Test(t *testing.T) { check.TestingT(t) }
 
 type ft struct {
 	start, end int
-	result     string
+	result     *Feature
 }
 
 //	1:            deBruijn1          4            0-0
@@ -74,12 +76,12 @@ type ft struct {
 //	7:            deBruijn7      16384           11-27
 //	8:            deBruijn8      65536           28-92
 var T []ft = []ft{
-	{1020, 1030, "deBruijn2::0..6:( ):"},
-	{1025, 1030, "deBruijn2::1..6:( ):"},
-	{1010, 1060, "deBruijn2::0..16:( ):"},
-	{0, 1060, "deBruijn1::0..4:( ):"},
-	{4 * binSize, 4*binSize + 904, "deBruijn5::0..904:( ):"},
-	{29 * binSize, 32*binSize - 1, "deBruijn8::1024..4095:( ):"},
+	{1020, 1030, &Feature{"deBruijn2", 0, 6, nil}},
+	{1025, 1030, &Feature{"deBruijn2", 1, 6, nil}},
+	{1010, 1060, &Feature{"deBruijn2", 0, 16, nil}},
+	{0, 1060, &Feature{"deBruijn1", 0, 4, nil}},
+	{4 * binSize, 4*binSize + 904, &Feature{"deBruijn5", 0, 904, nil}},
+	{29 * binSize, 32*binSize - 1, &Feature{"deBruijn8", 1024, 4095, nil}},
 }
 
 type pt struct {
@@ -110,19 +112,23 @@ var _ = check.Suite(&S{})
 func (s *S) SetUpSuite(c *check.C) {
 	p := NewPacker("")
 	for k := byte(1); k <= maxk; k++ {
-		a := &seq.Seq{ID: fmt.Sprintf("deBruijn%d", k), Seq: make([]byte, 0, util.Pow(Q, k))}
+		a := &linear.Seq{
+			Annotation: seq.Annotation{
+				ID: fmt.Sprintf("deBruijn%d", k),
+			},
+			Seq: make(alphabet.Letters, 0, util.Pow(Q, k)),
+		}
 		for _, i := range util.DeBruijn(byte(Q), k) {
-			a.Seq = append(a.Seq, l[i])
+			a.Seq = append(a.Seq, alphabet.Letter(l[i]))
 		}
 		p.Pack(a)
 	}
-	p.FinalisePack()
-	ps = p.Packed
+	ps = p.FinalisePack()
 }
 
 func (s *S) TestOptimise(c *check.C) {
 	// minHitLen int, minId float64, target, query *seq.Seq, tubeOffset int, maxMem uint64
-	t := &seq.Seq{Seq: make([]byte, 29940)}
+	t := &linear.Seq{Seq: make(alphabet.Letters, 29940)}
 	for _, p := range P {
 		pa := New(t, t, true, nil, 1, 0, nil, nil)
 		err := pa.Optimise(p.l, p.id)
@@ -137,23 +143,28 @@ func (s *S) TestOptimise(c *check.C) {
 func (s *S) TestPack(c *check.C) {
 	p := NewPacker("")
 	for k := byte(1); k <= maxk; k++ {
-		a := &seq.Seq{ID: fmt.Sprintf("deBruijn%d", k), Seq: make([]byte, 0, util.Pow(Q, k))}
-		for _, i := range util.DeBruijn(byte(Q), k) {
-			a.Seq = append(a.Seq, l[i])
+		a := &linear.Seq{
+			Annotation: seq.Annotation{
+				ID: fmt.Sprintf("deBruijn%d", k),
+			},
+			Seq: make(alphabet.Letters, 0, util.Pow(Q, k)),
 		}
-		c.Logf("%d: %s", k, p.Pack(a))
+		for _, i := range util.DeBruijn(byte(Q), k) {
+			a.Seq = append(a.Seq, alphabet.Letter(l[i]))
+		}
+		ps, _ := p.Pack(a)
+		c.Logf("%d: %s", k, ps)
 	}
-	p.FinalisePack()
-	c.Check(p.Packed.Len(), check.Equals, 94208)
+	c.Check(p.FinalisePack().Len(), check.Equals, 94208)
 }
 
 func (s *S) TestFeaturise(c *check.C) {
 	for _, t := range T {
-		f, err := featureOf(ps, t.start, t.end, false)
+		f, err := ps.feature(t.start, t.end, false)
 		if err != nil {
 			c.Fatal(err)
 		}
-		c.Check(f.String(), check.Equals, t.result)
+		c.Check(f, check.DeepEquals, t.result)
 	}
 }
 
@@ -161,13 +172,13 @@ func (s *S) TestWrite(c *check.C) {
 	b := &B{&bytes.Buffer{}}
 	w := NewWriter(b, 0, 60, false)
 	for _, t := range T {
-		if f1, err := featureOf(ps, t.start, t.end, false); err != nil {
+		if f1, err := ps.feature(t.start, t.end, false); err != nil {
 			c.Fatal(err)
 		} else {
-			if f2, err := featureOf(ps, t.start, t.end, false); err != nil {
+			if f2, err := ps.feature(t.start, t.end, false); err != nil {
 				c.Fatal(err)
 			} else {
-				n, err := w.Write(&FeaturePair{A: f1, B: f2})
+				n, err := w.Write(&Pair{A: f1, B: f2})
 				c.Check(n, check.Not(check.Equals), 0)
 				c.Check(err, check.Equals, nil)
 			}

@@ -16,9 +16,10 @@
 package filter
 
 import (
+	"code.google.com/p/biogo/exp/alphabet"
+	"code.google.com/p/biogo/exp/seq/linear"
 	"code.google.com/p/biogo/index/kmerindex"
 	"code.google.com/p/biogo/morass"
-	"code.google.com/p/biogo/seq"
 	"code.google.com/p/biogo/util"
 	check "launchpad.net/gocheck"
 	"testing"
@@ -36,13 +37,15 @@ var _ = check.Suite(&S{})
 func (s *S) TestFilterAndMerge(c *check.C) {
 	l := [...]byte{'A', 'C', 'G', 'T'}
 	Q := len(l)
-	a := &seq.Seq{Seq: make([]byte, 0, util.Pow(Q, k))}
+	a := &linear.Seq{Seq: make(alphabet.Letters, 0, util.Pow(Q, k))}
+	a.Alpha = alphabet.DNA
 	for _, i := range util.DeBruijn(byte(Q), k) {
-		a.Seq = append(a.Seq, l[i])
+		a.Seq = append(a.Seq, alphabet.Letter(l[i]))
 	}
-	b := &seq.Seq{Seq: make([]byte, 0, util.Pow(Q, k-1))}
+	b := &linear.Seq{Seq: make(alphabet.Letters, 0, util.Pow(Q, k-1))}
+	// b.Alpha = alphabet.DNA // Not actually required for this use.
 	for _, i := range util.DeBruijn(byte(Q), k-1) {
-		b.Seq = append(b.Seq, l[i])
+		b.Seq = append(b.Seq, alphabet.Letter(l[i]))
 	}
 	i, err := kmerindex.New(int(k), a)
 	if err != nil {

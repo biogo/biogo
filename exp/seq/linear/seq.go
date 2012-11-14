@@ -174,7 +174,7 @@ func (s *Seq) Format(fs fmt.State, c rune) {
 			fmt.Fprint(fs, "...")
 		}
 	case 'a':
-		fmt.Fprintf(fs, ">%s %s\n", s.ID, s.Desc)
+		s.formatDescLineTo(fs, '>')
 		for i, l := range buf {
 			fmt.Fprintf(fs, "%c", l)
 			if wOk && i < s.Len()-1 && i%w == w-1 {

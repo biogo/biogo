@@ -221,20 +221,13 @@ func (self *Generic) IndexOf(n Letter) int {
 	return self.index[n]
 }
 
-// Return a copy of the internal []bool indicating valid letters.
-func (self *Generic) ValidLetters() []bool {
-	v := make([]bool, 256)
-	copy(v, self.valid[:])
-	return v
-}
+// Return a slice of the internal []bool indicating valid letters. The returned slice should not
+// be altered.
+func (self *Generic) ValidLetters() []bool { return self.valid[:] }
 
-// Return a copy of the internal []int specifying letter to index conversion.
-func (self *Generic) LetterIndex() []int {
-	i := make([]int, 256)
-	copy(i, self.index[:])
-
-	return i
-}
+// Return a slice of the internal []int specifying letter to index conversion. The return 
+// index should not be altered.
+func (self *Generic) LetterIndex() []int { return self.index[:] }
 
 // Return a string indicating characters accepted as valid by the Validator.
 func (self *Generic) String() string {

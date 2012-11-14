@@ -16,35 +16,36 @@
 package pals
 
 import (
-	"code.google.com/p/biogo/feat"
+	"code.google.com/p/biogo/exp/feat"
 	check "launchpad.net/gocheck"
 )
 
 var (
-	testPairs = []*FeaturePair{
-		&FeaturePair{
-			A:     &feat.Feature{ID: "a", Location: "testchr", Start: 2, End: 4},
-			B:     &feat.Feature{ID: "g", Location: "testchr", Start: 7, End: 9},
+	testChr   = Contig("testchr")
+	testPairs = []*Pair{
+		&Pair{
+			A:     &Feature{ID: "a", Loc: testChr, From: 2, To: 4},
+			B:     &Feature{ID: "g", Loc: testChr, From: 7, To: 9},
 			Score: 1,
 		},
-		&FeaturePair{
-			A:     &feat.Feature{ID: "b", Location: "testchr", Start: 3, End: 4},
-			B:     &feat.Feature{ID: "i", Location: "testchr", Start: 7, End: 8},
+		&Pair{
+			A:     &Feature{ID: "b", Loc: testChr, From: 3, To: 4},
+			B:     &Feature{ID: "i", Loc: testChr, From: 7, To: 8},
 			Score: 1,
 		},
-		&FeaturePair{
-			A:     &feat.Feature{ID: "c", Location: "testchr", Start: 1, End: 3},
-			B:     &feat.Feature{ID: "j", Location: "testchr", Start: 8, End: 9},
+		&Pair{
+			A:     &Feature{ID: "c", Loc: testChr, From: 1, To: 3},
+			B:     &Feature{ID: "j", Loc: testChr, From: 8, To: 9},
 			Score: 1,
 		},
-		&FeaturePair{
-			A:     &feat.Feature{ID: "d", Location: "testchr", Start: 1, End: 4},
-			B:     &feat.Feature{ID: "f", Location: "testchr", Start: 6, End: 9},
+		&Pair{
+			A:     &Feature{ID: "d", Loc: testChr, From: 1, To: 4},
+			B:     &Feature{ID: "f", Loc: testChr, From: 6, To: 9},
 			Score: 1,
 		},
-		&FeaturePair{
-			B:     &feat.Feature{ID: "e", Location: "testchr", Start: 4, End: 5},
-			A:     &feat.Feature{ID: "k", Location: "testchr", Start: 10, End: 11},
+		&Pair{
+			A:     &Feature{ID: "k", Loc: testChr, From: 10, To: 11},
+			B:     &Feature{ID: "e", Loc: testChr, From: 4, To: 5},
 			Score: 1,
 		},
 	}
@@ -54,7 +55,7 @@ func (s *S) TestPiler(c *check.C) {
 	epsilon := 0.95
 	for _, f := range []PileFilter{
 		nil,
-		func(a, b *feat.Feature, pa, pb *PileInterval) bool {
+		func(a, b feat.Feature, pa, pb *PileInterval) bool {
 			lpa := float64(pa.End - pa.Start)
 			lpb := float64(pb.End - pb.Start)
 
@@ -78,7 +79,7 @@ func (s *S) TestPiler(c *check.C) {
 			c.Logf("%d %v", i, pi)
 			for _, fp := range pi.Images {
 				c.Logf("\t%v", fp)
-				c.Check(fp.A.Meta, check.DeepEquals, pi)
+				c.Check(fp.A.Location(), check.DeepEquals, pi)
 			}
 		}
 	}
