@@ -41,8 +41,8 @@ var (
 )
 
 var (
-	DNA, RNA Nucleic
-	Protein  Peptide
+	DNA, RNA Complementor
+	Protein  Alphabet
 )
 
 func init() {
@@ -97,6 +97,7 @@ type Alphabet interface {
 
 // Nucleic alphabets are able to complement their values.
 type Complementor interface {
+	Alphabet
 	Complement(Letter) (Letter, bool)
 	ComplementTable() []Letter
 }
@@ -295,24 +296,15 @@ func (self *Pairing) ComplementTable() (t []Letter) {
 	return
 }
 
-// The Nucleic type incorporates a Generic alphabet with the capacity to return a complement.
-type Nucleic interface {
-	Alphabet
-	Complementor
-	nucleic()
-}
-
 type nucleic struct {
 	*Generic
 	*Pairing
 }
 
-func (n nucleic) nucleic() {}
-
 // Create a generalised Nucleic alphabet. The Complement table is checked for validity and an error is returned if an invalid complement pair is found.
 // Pairings that result in no change but would otherwise be invalid are allowed. If invalid pairings are required, the Pairing should be provided after
 // creating the Nucleic struct.
-func NewNucleic(letters string, molType bio.Moltype, pairs *Pairing, gap, ambiguous Letter, caseSensitive bool) (Nucleic, error) {
+func NewNucleic(letters string, molType bio.Moltype, pairs *Pairing, gap, ambiguous Letter, caseSensitive bool) (Complementor, error) {
 	g, err := NewGeneric(letters, molType, gap, ambiguous, caseSensitive)
 	if err != nil {
 		return nil, err
@@ -332,23 +324,7 @@ func NewNucleic(letters string, molType bio.Moltype, pairs *Pairing, gap, ambigu
 	}, nil
 }
 
-// Peptide wraps Generic to provide type restrictions.
-type Peptide interface {
-	Alphabet
-	peptide()
-}
-
-type peptide struct {
-	*Generic
-}
-
-func (p peptide) peptide() {}
-
 // Return a new Peptide alphabet.
-func NewPeptide(letters string, gap, ambiguous Letter, caseSensitive bool) (Peptide, error) {
-	g, err := NewGeneric(letters, bio.Protein, gap, ambiguous, caseSensitive)
-	if err != nil {
-		return nil, err
-	}
-	return &peptide{g}, nil
+func NewPeptide(letters string, gap, ambiguous Letter, caseSensitive bool) (Alphabet, error) {
+	return NewGeneric(letters, bio.Protein, gap, ambiguous, caseSensitive)
 }

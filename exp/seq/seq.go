@@ -15,7 +15,7 @@
 
 // Package seq provides the base for storage and manipulation of biological sequence information.
 // 
-// A variety of sequence types are provided by derived packages including nucleic and protein sequence
+// A variety of sequence types are provided by derived packages including linear and protein sequence
 // with and without quality scores. Multiple sequence data is also supported as unaligned sets and aligned sequences.
 // 
 // Quality scoring is based on Phred scores, although there is the capacity to interconvert between Phred and
@@ -33,6 +33,9 @@ const (
 	End
 )
 
+// The default value for Qphred scores from non-quality sequences.
+var DefaultQphred alphabet.Qphred = 40
+
 type Alphabeter interface {
 	Alphabet() alphabet.Alphabet
 }
@@ -45,10 +48,19 @@ type Position struct {
 	Row int // The specific sequence within a multiple sequence.
 }
 
-// An Appender can append letters.
-type Appender interface {
-	AppendLetters(...alphabet.Letter) error
-	AppendQLetters(...alphabet.QLetter) error
+// A Sequence is a feature that stores sequence information.
+type Sequence interface {
+	Feature
+	At(Position) alphabet.QLetter   // Return the letter at a specific position.
+	Set(Position, alphabet.QLetter) // Set the letter at a specific position.
+	Alphabet() alphabet.Alphabet    // Return the Alphabet being used.
+	RevComp()                       // Reverse complement the sequence.
+	Reverse()                       // Reverse the order of elements in the sequence.
+	New() Sequence                  // Return a pointer to the zero value of the concrete type.
+	Copy() Sequence                 // Return a copy of the Sequence.
+	Slicer
+	Conformationer
+	ConformationSetter
 }
 
 // A Feature describes the basis for sequence features.
@@ -57,14 +69,21 @@ type Feature interface {
 	feat.Offsetter
 }
 
-// A Sequence is a feature that stores sequence information.
-type Sequence interface {
-	Feature
-	At(Position) alphabet.QLetter   // Return the letter at a specific position.
-	Set(Position, alphabet.QLetter) // Set the letter at a specific position.
-	Alphabet() alphabet.Alphabet    // Return the Alphabet being used.
-	New() Sequence                  // Return a pointer to the zero value of the concrete type.
-	Copy() Sequence                 // Return a copy of the Sequence.
+// A Conformationer can give information regarding the sequence's conformation. For the
+// purposes of sequtils, types that are not a Conformationer are treated as linear.
+type Conformationer interface {
+	Conformation() feat.Conformation
+}
+
+// A ConformationSetter can set its sequence conformation.
+type ConformationSetter interface {
+	SetConformation(feat.Conformation)
+}
+
+// A Slicer returns and sets a Slice. 
+type Slicer interface {
+	Slice() alphabet.Slice
+	SetSlice(alphabet.Slice)
 }
 
 // A Scorer is a sequence type that provides Phred-based scoring information.
@@ -82,14 +101,22 @@ type Quality interface {
 	Copy() Quality // Return a copy of the Quality.
 }
 
-// A Complementer type can be reverse complemented.
-type Complementer interface {
-	RevComp() // Reverse complement the sequence.
+// Getter describes the interface for sets of sequences or aligned multiple sequences.
+type Getter interface {
+	Rows() int
+	Get(i int) Sequence
 }
 
-// A Reverser type can be reversed.
-type Reverser interface {
-	Reverse() // Reverse the order of elements in the sequence.
+// GetterAppender is a type for sets of sequences or aligned multiple sequences that can append letters to individual or grouped sequences.
+type GetterAppender interface {
+	Getter
+	AppendEach(a [][]alphabet.QLetter) (err error)
+}
+
+// An Appender can append letters.
+type Appender interface {
+	AppendLetters(...alphabet.Letter) error
+	AppendQLetters(...alphabet.QLetter) error
 }
 
 // Aligned describes the interface for aligned multiple sequences.
@@ -99,6 +126,13 @@ type Aligned interface {
 	Rows() int
 	Column(pos int, fill bool) []alphabet.Letter
 	ColumnQL(pos int, fill bool) []alphabet.QLetter
+}
+
+// An AlignedAppenderis a multiple sequence alignment that can append letters.
+type AlignedAppender interface {
+	Aligned
+	AppendColumns(a ...[]alphabet.QLetter) (err error)
+	AppendEach(a [][]alphabet.QLetter) (err error)
 }
 
 // ConsenseFunc is a function type that returns the consensus letter for a column of an alignment.

@@ -18,7 +18,7 @@ package alignment
 import (
 	"code.google.com/p/biogo/exp/alphabet"
 	"code.google.com/p/biogo/exp/seq"
-	"code.google.com/p/biogo/exp/seq/nucleic"
+	"code.google.com/p/biogo/exp/seq/linear"
 	"code.google.com/p/biogo/exp/seq/sequtils"
 	"fmt"
 )
@@ -111,7 +111,7 @@ func ExampleNewQSeq() {
 
 func ExampleQSeq_Add() {
 	fmt.Printf("%v %v\n", qm.Rows(), qm)
-	qm.Add(nucleic.NewQSeq("example DNA",
+	qm.Add(linear.NewQSeq("example DNA",
 		[]alphabet.QLetter{{'a', 40}, {'c', 39}, {'g', 40}, {'C', 38}, {'t', 35}, {'g', 20}},
 		alphabet.DNA, alphabet.Sanger))
 	fmt.Printf("%v %v\n", qm.Rows(), qm)

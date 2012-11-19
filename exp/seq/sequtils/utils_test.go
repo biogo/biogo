@@ -186,13 +186,15 @@ func (s *S) TestJoin(c *check.C) {
 }
 
 type fe struct {
-	s, e int
+	s, e   int
+	orient feat.Orientation
 	feat.Feature
 }
 
-func (f fe) Start() int { return f.s }
-func (f fe) End() int   { return f.e }
-func (f fe) Len() int   { return f.e - f.s }
+func (f fe) Start() int                    { return f.s }
+func (f fe) End() int                      { return f.e }
+func (f fe) Len() int                      { return f.e - f.s }
+func (f fe) Orientation() feat.Orientation { return f.orient }
 
 type fs []feat.Feature
 
@@ -270,6 +272,11 @@ func (s *S) TestCompose(c *check.C) {
 			in:     &conformRangeOffSlice{slice: lorem, conf: feat.Linear, offset: -1},
 			f:      fs{fe{s: 12, e: 18}, fe{s: 13, e: 17}, fe{s: 24, e: 26}, fe{s: 103, e: 110}},
 			expect: stringToSlice("olor slor t,dolore "),
+		},
+		{
+			in:     &conformRangeOffSlice{slice: lorem, conf: feat.Linear, offset: -1},
+			f:      fs{fe{s: 12, e: 18}, fe{s: 13, e: 17}, fe{s: 24, e: 26, orient: feat.Reverse}, fe{s: 103, e: 110}},
+			expect: "sequtils: unable to reverse segment during compose",
 		},
 		{
 			in:     &conformRangeOffSlice{slice: lorem, conf: feat.Linear, offset: 0},

@@ -161,10 +161,10 @@ func BenchmarkComplementDNA(b *testing.B) {
 }
 
 func BenchmarkComplementDNADirect(b *testing.B) {
-	complement := DNA.ComplementTable()
+	comp := DNA.ComplementTable()
 	var c Letter
 	for i := 0; i < b.N; i++ {
-		if c = complement[Letter(i)]; c != 0x80 {
+		if c = comp[Letter(i)]; c != 0x80 {
 		}
 	}
 }

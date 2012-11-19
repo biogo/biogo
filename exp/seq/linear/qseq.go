@@ -13,7 +13,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package nucleic
+package linear
 
 import (
 	"code.google.com/p/biogo/exp/alphabet"
@@ -21,9 +21,9 @@ import (
 	"code.google.com/p/biogo/exp/seq"
 )
 
-// A QSeq is a basic nucleic acid sequence with Phred quality scores.
+// A QSeq is a basic linear sequence with Phred quality scores.
 type QSeq struct {
-	Annotation
+	seq.Annotation
 	Seq        alphabet.QLetters
 	Threshold  alphabet.Qphred // Threshold for returning valid letter.
 	LowQFilter seq.Filter      // How to represent below threshold letter.
@@ -34,17 +34,16 @@ type QSeq struct {
 var (
 	_ feat.Feature = &QSeq{}
 	_ seq.Sequence = &QSeq{}
-	_ Sequence     = &QSeq{}
 	_ seq.Scorer   = &QSeq{}
 )
 
 // NewQSeq create a new QSeq with the given id, letter sequence, alphabet and quality encoding.
-func NewQSeq(id string, ql []alphabet.QLetter, alpha alphabet.Nucleic, enc alphabet.Encoding) *QSeq {
+func NewQSeq(id string, ql []alphabet.QLetter, alpha alphabet.Alphabet, enc alphabet.Encoding) *QSeq {
 	return &QSeq{
-		Annotation: Annotation{
+		Annotation: seq.Annotation{
 			ID:     id,
 			Alpha:  alpha,
-			Strand: Plus,
+			Strand: seq.Plus,
 		},
 		Seq:        append(alphabet.QLetters(nil), ql...),
 		Encode:     enc,
@@ -58,7 +57,7 @@ func (s *QSeq) AppendLetters(a ...alphabet.Letter) error {
 	l := s.Len()
 	s.Seq = append(s.Seq, make([]alphabet.QLetter, len(a))...)[:l]
 	for _, v := range a {
-		s.Seq = append(s.Seq, alphabet.QLetter{L: v, Q: DefaultQphred})
+		s.Seq = append(s.Seq, alphabet.QLetter{L: v, Q: seq.DefaultQphred})
 	}
 	return nil
 }
@@ -79,7 +78,7 @@ func (s *QSeq) SetSlice(sl alphabet.Slice) { s.Seq = sl.(alphabet.QLetters) }
 // At returns the letter at position pos.
 func (s *QSeq) At(pos seq.Position) alphabet.QLetter {
 	if pos.Row != 0 {
-		panic("nucleic: index out of range")
+		panic("linear: index out of range")
 	}
 	return s.Seq[pos.Col-s.Offset]
 }
@@ -87,7 +86,7 @@ func (s *QSeq) At(pos seq.Position) alphabet.QLetter {
 // QEncode encodes the quality at position pos to a letter based on the sequence encoding setting.
 func (s *QSeq) QEncode(pos seq.Position) byte {
 	if pos.Row != 0 {
-		panic("nucleic: index out of range")
+		panic("linear: index out of range")
 	}
 	return s.Seq[pos.Col-s.Offset].Q.Encode(s.Encode)
 }
@@ -101,7 +100,7 @@ func (s *QSeq) SetEncoding(e alphabet.Encoding) { s.Encode = e }
 // EAt returns the probability of a sequence error at position pos.
 func (s *QSeq) EAt(pos seq.Position) float64 {
 	if pos.Row != 0 {
-		panic("nucleic: index out of range")
+		panic("linear: index out of range")
 	}
 	return s.Seq[pos.Col-s.Offset].Q.ProbE()
 }
@@ -109,7 +108,7 @@ func (s *QSeq) EAt(pos seq.Position) float64 {
 // Set sets the letter at position pos to l.
 func (s *QSeq) Set(pos seq.Position, l alphabet.QLetter) {
 	if pos.Row != 0 {
-		panic("nucleic: index out of range")
+		panic("linear: index out of range")
 	}
 	s.Seq[pos.Col-s.Offset] = l
 }
@@ -117,7 +116,7 @@ func (s *QSeq) Set(pos seq.Position, l alphabet.QLetter) {
 // SetE sets the quality at position pos to e to reflect the given p(Error).
 func (s *QSeq) SetE(pos seq.Position, e float64) {
 	if pos.Row != 0 {
-		panic("nucleic: index out of range")
+		panic("linear: index out of range")
 	}
 	s.Seq[pos.Col-s.Offset].Q = alphabet.Ephred(e)
 }
@@ -155,13 +154,10 @@ func (s *QSeq) New() seq.Sequence {
 	return &QSeq{}
 }
 
-// RevComp reverse complements the sequence.
+// RevComp reverse complements the sequence. RevComp will panic if the alphabet used by
+// the receiver is not a Complementor.
 func (s *QSeq) RevComp() {
-	s.revComp(s.Seq, s.Alpha.ComplementTable())
-	s.Strand = -s.Strand
-}
-
-func (s *QSeq) revComp(l []alphabet.QLetter, comp []alphabet.Letter) []alphabet.QLetter {
+	l, comp := s.Seq, s.Alphabet().(alphabet.Complementor).ComplementTable()
 	i, j := 0, len(l)-1
 	for ; i < j; i, j = i+1, j-1 {
 		l[i].L, l[j].L = comp[l[j].L], comp[l[i].L]
@@ -170,7 +166,7 @@ func (s *QSeq) revComp(l []alphabet.QLetter, comp []alphabet.Letter) []alphabet.
 	if i == j {
 		l[i].L = comp[l[i].L]
 	}
-	return l
+	s.Strand = -s.Strand
 }
 
 // Reverse reverses the order of letters in the the sequence without complementing them.
@@ -179,7 +175,7 @@ func (s *QSeq) Reverse() {
 	for i, j := 0, len(l)-1; i < j; i, j = i+1, j-1 {
 		l[i], l[j] = l[j], l[i]
 	}
-	s.Strand = None
+	s.Strand = seq.None
 }
 
 func (s *QSeq) String() string {

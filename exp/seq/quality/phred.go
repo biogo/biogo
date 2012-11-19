@@ -18,7 +18,7 @@ package quality
 import (
 	"code.google.com/p/biogo/exp/alphabet"
 	"code.google.com/p/biogo/exp/seq"
-	"code.google.com/p/biogo/exp/seq/nucleic"
+	"code.google.com/p/biogo/exp/seq/linear"
 )
 
 // A slice of quality scores that satisfies the alphabet.Slice interface.
@@ -34,7 +34,7 @@ func (q Qphreds) Append(a alphabet.Slice) alphabet.Slice {
 func (q Qphreds) Copy(a alphabet.Slice) int { return copy(q, a.(Qphreds)) }
 
 type Phred struct {
-	nucleic.Annotation
+	linear.Annotation
 	Qual   Qphreds
 	Encode alphabet.Encoding
 }
@@ -42,7 +42,7 @@ type Phred struct {
 // Create a new scoring type.
 func NewPhred(id string, q []alphabet.Qphred, encode alphabet.Encoding) *Phred {
 	return &Phred{
-		Annotation: nucleic.Annotation{ID: id},
+		Annotation: linear.Annotation{ID: id},
 		Qual:       append([]alphabet.Qphred(nil), q...),
 		Encode:     encode,
 	}

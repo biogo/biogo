@@ -31,13 +31,13 @@ func ExamplePairing_ComplementOf() {
 		ok bool
 	)
 
-	c, ok = DNA.Complement('a')
+	c, ok = DNA.(Complementor).Complement('a')
 	fmt.Printf("%c %v\n", c, ok)
-	c, ok = DNA.Complement('n')
+	c, ok = DNA.(Complementor).Complement('n')
 	fmt.Printf("%c %v\n", c, ok)
-	c, ok = RNA.Complement('a')
+	c, ok = RNA.(Complementor).Complement('a')
 	fmt.Printf("%c %v\n", c, ok)
-	_, ok = RNA.Complement('t')
+	_, ok = RNA.(Complementor).Complement('t')
 	fmt.Printf("%v\n", ok)
 	// Output:
 	// t true

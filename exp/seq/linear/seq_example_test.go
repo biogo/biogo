@@ -13,7 +13,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package nucleic
+package linear
 
 import (
 	"code.google.com/p/biogo/exp/alphabet"
@@ -114,7 +114,7 @@ func ExampleSeq_Join() {
 
 type fe struct {
 	s, e int
-	st   Strand
+	st   seq.Strand
 	feat.Feature
 }
 

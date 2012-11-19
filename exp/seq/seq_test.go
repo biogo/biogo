@@ -17,27 +17,19 @@ package seq_test
 
 import (
 	"code.google.com/p/biogo/exp/seq"
-	"code.google.com/p/biogo/exp/seq/nucleic"
-	na "code.google.com/p/biogo/exp/seq/nucleic/alignment"
-	"code.google.com/p/biogo/exp/seq/protein"
-	pa "code.google.com/p/biogo/exp/seq/protein/alignment"
+	"code.google.com/p/biogo/exp/seq/alignment"
+	"code.google.com/p/biogo/exp/seq/linear"
 	"testing"
 )
 
 func TestSeq(t *testing.T) {
 	var (
-		_ seq.Sequence = &nucleic.Seq{}
-		_ seq.Sequence = &nucleic.QSeq{}
-		_ seq.Sequence = &na.Seq{}
-		_ seq.Sequence = &na.QSeq{}
-		_ seq.Sequence = &protein.Seq{}
-		_ seq.Sequence = &protein.QSeq{}
-		_ seq.Sequence = &pa.Seq{}
-		_ seq.Sequence = &pa.QSeq{}
+		_ seq.Sequence = &linear.Seq{}
+		_ seq.Sequence = &linear.QSeq{}
+		_ seq.Sequence = &alignment.Seq{}
+		_ seq.Sequence = &alignment.QSeq{}
 
-		_ seq.Scorer = &nucleic.QSeq{}
-		_ seq.Scorer = &na.QSeq{}
-		_ seq.Scorer = &protein.QSeq{}
-		_ seq.Scorer = &pa.QSeq{}
+		_ seq.Scorer = &linear.QSeq{}
+		_ seq.Scorer = &alignment.QSeq{}
 	)
 }

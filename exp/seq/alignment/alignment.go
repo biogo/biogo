@@ -20,7 +20,7 @@ import (
 	"code.google.com/p/biogo/exp/alphabet"
 	"code.google.com/p/biogo/exp/feat"
 	"code.google.com/p/biogo/exp/seq"
-	"code.google.com/p/biogo/exp/seq/protein"
+	"code.google.com/p/biogo/exp/seq/linear"
 	"code.google.com/p/biogo/util"
 	"errors"
 	"fmt"
@@ -30,7 +30,7 @@ type rowCounter interface {
 	Rows() int
 }
 
-func rows(s protein.Sequence) int {
+func rows(s seq.Sequence) int {
 	row := 1
 	if m, ok := s.(rowCounter); ok {
 		row = m.Rows()
@@ -38,16 +38,16 @@ func rows(s protein.Sequence) int {
 	return row
 }
 
-// A Seq is an aligned protein acid sequence.
+// A Seq is an aligned sequence.
 type Seq struct {
-	protein.Annotation
+	seq.Annotation
 	SubIDs     []string
 	Seq        alphabet.Columns
 	Consensify seq.ConsenseFunc
 }
 
 // NewSeq creates a new Seq with the given id, letter sequence and alphabet.
-func NewSeq(id string, subids []string, b [][]alphabet.Letter, alpha alphabet.Peptide, cons seq.ConsenseFunc) (*Seq, error) {
+func NewSeq(id string, subids []string, b [][]alphabet.Letter, alpha alphabet.Alphabet, cons seq.ConsenseFunc) (*Seq, error) {
 	switch lids, lseq := len(subids), len(b); {
 	case lids == 0 && len(b) == 0:
 	case lseq != 0 && lids == len(b[0]):
@@ -62,7 +62,7 @@ func NewSeq(id string, subids []string, b [][]alphabet.Letter, alpha alphabet.Pe
 	}
 
 	return &Seq{
-		Annotation: protein.Annotation{
+		Annotation: seq.Annotation{
 			ID:    id,
 			Alpha: alpha,
 		},
@@ -74,9 +74,9 @@ func NewSeq(id string, subids []string, b [][]alphabet.Letter, alpha alphabet.Pe
 
 // Interface guarantees
 var (
-	_ feat.Feature     = &Seq{}
-	_ seq.Sequence     = &Seq{}
-	_ protein.Sequence = &Seq{}
+	_ feat.Feature = &Seq{}
+	_ seq.Sequence = &Seq{}
+	_ seq.Sequence = &Seq{}
 )
 
 // Slice returns the sequence data as a alphabet.Slice.
@@ -90,7 +90,7 @@ func (s *Seq) SetSlice(sl alphabet.Slice) { s.Seq = sl.(alphabet.Columns) }
 func (s *Seq) At(pos seq.Position) alphabet.QLetter {
 	return alphabet.QLetter{
 		L: s.Seq[pos.Col-s.Offset][pos.Row],
-		Q: protein.DefaultQphred,
+		Q: seq.DefaultQphred,
 	}
 }
 
@@ -127,12 +127,31 @@ func (s *Seq) New() seq.Sequence {
 	return &Seq{}
 }
 
+// RevComp reverse complements the sequence. RevComp will panic if the alphabet used by
+// the receiver is not a Complementor.
+func (s *Seq) RevComp() {
+	rs, comp := s.Seq, s.Alpha.(alphabet.Complementor).ComplementTable()
+	i, j := 0, len(rs)-1
+	for ; i < j; i, j = i+1, j-1 {
+		for r := range rs[i] {
+			rs[i][r], rs[j][r] = comp[rs[j][r]], comp[rs[i][r]]
+		}
+	}
+	if i == j {
+		for r := range rs[i] {
+			rs[i][r] = comp[rs[i][r]]
+		}
+	}
+	s.Strand = -s.Strand
+}
+
 // Reverse reverses the order of letters in the the sequence without complementing them.
 func (s *Seq) Reverse() {
 	l := s.Seq
 	for i, j := 0, len(l)-1; i < j; i, j = i+1, j-1 {
 		l[i], l[j] = l[j], l[i]
 	}
+	s.Strand = seq.None
 }
 
 func (s *Seq) String() string {
@@ -141,7 +160,7 @@ func (s *Seq) String() string {
 
 // Add adds the sequences n to Seq. Sequences in n should align start and end with the receiving alignment.
 // Additional sequence will be clipped and missing sequence will be filled with the gap letter.
-func (s *Seq) Add(n ...protein.Sequence) error {
+func (s *Seq) Add(n ...seq.Sequence) error {
 	for i := s.Start(); i < s.End(); i++ {
 		s.Seq[i] = append(s.Seq[i], s.column(n, i)...)
 	}
@@ -152,7 +171,7 @@ func (s *Seq) Add(n ...protein.Sequence) error {
 	return nil
 }
 
-func (s *Seq) column(m []protein.Sequence, pos int) []alphabet.Letter {
+func (s *Seq) column(m []seq.Sequence, pos int) []alphabet.Letter {
 	row := 0
 	for _, ss := range m {
 		row += rows(ss)
@@ -183,13 +202,13 @@ func (s *Seq) column(m []protein.Sequence, pos int) []alphabet.Letter {
 func (s *Seq) Delete(i int) {}
 
 // Get returns the sequence corresponding to the ith row of the Seq.
-func (s *Seq) Get(i int) protein.Sequence {
+func (s *Seq) Get(i int) seq.Sequence {
 	c := make([]alphabet.Letter, 0, s.Len())
 	for _, l := range s.Seq {
 		c = append(c, l[i])
 	}
 
-	return protein.NewSeq(s.SubIDs[i], c, s.Alpha)
+	return linear.NewSeq(s.SubIDs[i], c, s.Alpha)
 }
 
 // AppendColumns appends each Qletter of each element of a to the appropriate sequence in the reciever.
@@ -249,7 +268,7 @@ func (s *Seq) ColumnQL(pos int, _ bool) []alphabet.QLetter {
 	for i, l := range s.Seq[pos] {
 		c[i] = alphabet.QLetter{
 			L: l,
-			Q: protein.DefaultQphred,
+			Q: seq.DefaultQphred,
 		}
 	}
 
@@ -258,14 +277,15 @@ func (s *Seq) ColumnQL(pos int, _ bool) []alphabet.QLetter {
 
 // Consensus returns a quality sequence reflecting the consensus of the receiver determined by the
 // Consensify field.
-func (s *Seq) Consensus(_ bool) *protein.QSeq {
+func (s *Seq) Consensus(_ bool) *linear.QSeq {
 	cs := make([]alphabet.QLetter, 0, s.Len())
 	alpha := s.Alphabet()
 	for i := range s.Seq {
 		cs = append(cs, s.Consensify(s, alpha, i, false))
 	}
 
-	qs := protein.NewQSeq("Consensus:"+s.ID, cs, s.Alpha, alphabet.Sanger)
+	qs := linear.NewQSeq("Consensus:"+s.ID, cs, s.Alpha, alphabet.Sanger)
+	qs.Strand = s.Strand
 	qs.SetOffset(s.Offset)
 	qs.Conform = s.Conform
 

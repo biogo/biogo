@@ -19,7 +19,7 @@ import (
 	"code.google.com/p/biogo/exp/alphabet"
 	"code.google.com/p/biogo/exp/feat"
 	"code.google.com/p/biogo/exp/seq"
-	"code.google.com/p/biogo/exp/seq/protein"
+	"code.google.com/p/biogo/exp/seq/linear"
 	"code.google.com/p/biogo/exp/seq/sequtils"
 	"fmt"
 )
@@ -61,7 +61,7 @@ func init() {
 			[]alphabet.Letter("GAA"),
 			[]alphabet.Letter("TTT"),
 		},
-		alphabet.Protein,
+		alphabet.DNA,
 		seq.DefaultConsensus)
 
 	if err != nil {
@@ -93,7 +93,7 @@ func ExampleNewSeq() {
 			[]alphabet.Letter("GAA"),
 			[]alphabet.Letter("TTT"),
 		},
-		alphabet.Protein,
+		alphabet.DNA,
 		seq.DefaultConsensus)
 	if err != nil {
 		panic(err)
@@ -105,18 +105,18 @@ func ExampleNewSeq() {
 	// ACGGTGACCTGGCGCGCAT
 	// ACGATGACGTGGCGCTCAT
 	// 
-	// acgxtgacxtggcgcxcat
+	// acgntgacntggcgcncat
 }
 
 func ExampleSeq_Add() {
 	fmt.Printf("%v %v\n", m.Rows(), m)
-	m.Add(protein.NewQSeq("example Protein",
+	m.Add(linear.NewQSeq("example DNA",
 		[]alphabet.QLetter{{'a', 40}, {'c', 39}, {'g', 40}, {'C', 38}, {'t', 35}, {'g', 20}},
-		alphabet.Protein, alphabet.Sanger))
+		alphabet.DNA, alphabet.Sanger))
 	fmt.Printf("%v %v\n", m.Rows(), m)
 	// Output:
-	// 3 acgxtgacxtggcgcxcat
-	// 4 acgctgacxtggcgcxcat
+	// 3 acgntgacntggcgcncat
+	// 4 acgctgacntggcgcncat
 }
 
 func ExampleSeq_Copy() {
@@ -131,14 +131,14 @@ func ExampleSeq_Copy() {
 	// ACGATGACGTGGCGCTCAT
 	// acgCtg-------------
 	// 
-	// acgctgacxtggcgcxcat
+	// acgctgacntggcgcncat
 	// 
 	// ACGCTGACTTGGTGCACGT
 	// ACGGTGACCTGGCGCGCAT
 	// ACGtTGACGTGGCGCTCAT
 	// acgCtg-------------
 	// 
-	// acgctgacxtggcgcxcat
+	// acgctgacntggcgcncat
 }
 
 func ExampleSeq_Count() {
@@ -161,14 +161,14 @@ func ExampleSeq_Join() {
 	// ACGtTGACGTGGCGCTCAT
 	// acgCtg-------------
 	// 
-	// acgctgacxtggcgcxcat
+	// acgctgacntggcgcncat
 	// 
 	// ACGCTGACTTGGTGCACGTACGCTGACTTGGTGCACGT
 	// ACGGTGACCTGGCGCGCATACGGTGACCTGGCGCGCAT
 	// ACGtTGACGTGGCGCTCATACGATGACGTGGCGCTCAT
 	// acgCtg-------------acgCtg-------------
 	// 
-	// acgctgacxtggcgcxcatacgctgacxtggcgcxcat
+	// acgctgacntggcgcncatacgctgacntggcgcncat
 }
 
 func ExampleAlignment_Len() {
@@ -177,10 +177,10 @@ func ExampleAlignment_Len() {
 	// 19
 }
 
-func ExampleSeq_Reverse() {
+func ExampleSeq_RevComp() {
 	aligned(m)
 	fmt.Println()
-	m.Reverse()
+	m.RevComp()
 	aligned(m)
 	// Output:
 	// ACGCTGACTTGGTGCACGT
@@ -188,27 +188,26 @@ func ExampleSeq_Reverse() {
 	// ACGATGACGTGGCGCTCAT
 	// acgCtg-------------
 	// 
-	// acgctgacxtggcgcxcat
+	// acgctgacntggcgcncat
 	// 
-	// TGCACGTGGTTCAGTCGCA
-	// TACGCGCGGTCCAGTGGCA
-	// TACTCGCGGTGCAGTAGCA
-	// -------------gtCgca
-	//
-	// tacxcgcggtxcagtcgca
-
+	// ACGTGCACCAAGTCAGCGT
+	// ATGCGCGCCAGGTCACCGT
+	// ATGAGCGCCACGTCATCGT
+	// -------------caGcgt
+	// 
+	// atgngcgccangtcagcgt
 }
 
 type fe struct {
 	s, e int
-	or   feat.Orientation
+	st   seq.Strand
 	feat.Feature
 }
 
 func (f fe) Start() int                    { return f.s }
 func (f fe) End() int                      { return f.e }
 func (f fe) Len() int                      { return f.e - f.s }
-func (f fe) Orientation() feat.Orientation { return feat.Orientation(f.or) }
+func (f fe) Orientation() feat.Orientation { return feat.Orientation(f.st) }
 
 type fs []feat.Feature
 
@@ -227,19 +226,19 @@ func ExampleSeq_Stitch() {
 		fmt.Println(err)
 	}
 	// Output:
-	// ACGCTGACTTGGTGCACGTACGCTGACTTGGTGCACGT
-	// ACGGTGACCTGGCGCGCATACGGTGACCTGGCGCGCAT
-	// ACGtTGACGTGGCGCTCATACGATGACGTGGCGCTCAT
-	// acgCtg-------------acgCtg-------------
-	//
-	// acgctgacxtggcgcxcatacgctgacxtggcgcxcat
-	//
-	// ACGCGTGCACGT
-	// ACGGGCGCGCAT
-	// ACGtGCGCTCAT
-	// acgC--------
-	//
-	// acgcgcgcxcat
+	// ACGCTGACTTGGTGCACGTACGTGCACCAAGTCAGCGT
+	// ACGGTGACCTGGCGCGCATATGCGCGCCAGGTCACCGT
+	// ACGtTGACGTGGCGCTCATATGAGCGCCACGTCATCGT
+	// acgCtg--------------------------caGcgt
+	// 
+	// acgctgacntggcgcncatatgngcgccangtcagcgt
+	// 
+	// ACGCGTCAGCGT
+	// ACGGGTCACCGT
+	// ACGtGTCATCGT
+	// acgC--caGcgt
+	// 
+	// acgcgtcagcgt
 }
 
 func ExampleSeq_Truncate() {
@@ -250,17 +249,17 @@ func ExampleSeq_Truncate() {
 		aligned(m)
 	}
 	// Output:
-	// TGCACGTGGTTCAGTCGCA
-	// TACGCGCGGTCCAGTGGCA
-	// TACTCGCGGTGCAGTAGCA
-	// -------------gtCgca
-	//
-	// tacxcgcggtxcagtcgca
-	//
-	// CGTGGTTC
-	// CGCGGTCC
-	// CGCGGTGC
+	// ACGTGCACCAAGTCAGCGT
+	// ATGCGCGCCAGGTCACCGT
+	// ATGAGCGCCACGTCATCGT
+	// -------------caGcgt
+	// 
+	// atgngcgccangtcagcgt
+	// 
+	// GCACCAAG
+	// GCGCCAGG
+	// GCGCCACG
 	// --------
-	//
-	// cgcggtxc
+	// 
+	// gcgccang
 }

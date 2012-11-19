@@ -13,7 +13,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package nucleic
+package linear
 
 import (
 	"code.google.com/p/biogo/exp/alphabet"
@@ -21,9 +21,9 @@ import (
 	"code.google.com/p/biogo/exp/seq"
 )
 
-// A Seq is a basic nucleic acid sequence.
+// A Seq is a basic linear sequence.
 type Seq struct {
-	Annotation
+	seq.Annotation
 	Seq alphabet.Letters
 }
 
@@ -31,16 +31,15 @@ type Seq struct {
 var (
 	_ feat.Feature = &Seq{}
 	_ seq.Sequence = &Seq{}
-	_ Sequence     = &Seq{}
 )
 
 // NewSeq creates a new Seq with the given id, letter sequence and alphabet.
-func NewSeq(id string, b []alphabet.Letter, alpha alphabet.Nucleic) *Seq {
+func NewSeq(id string, b []alphabet.Letter, alpha alphabet.Alphabet) *Seq {
 	return &Seq{
-		Annotation: Annotation{
+		Annotation: seq.Annotation{
 			ID:     id,
 			Alpha:  alpha,
-			Strand: Plus,
+			Strand: seq.Plus,
 		},
 		Seq: append(alphabet.Letters(nil), b...),
 	}
@@ -72,18 +71,18 @@ func (s *Seq) SetSlice(sl alphabet.Slice) { s.Seq = sl.(alphabet.Letters) }
 // At returns the letter at position pos.
 func (s *Seq) At(pos seq.Position) alphabet.QLetter {
 	if pos.Row != 0 {
-		panic("nucleic: index out of range")
+		panic("linear: index out of range")
 	}
 	return alphabet.QLetter{
 		L: s.Seq[pos.Col-s.Offset],
-		Q: DefaultQphred,
+		Q: seq.DefaultQphred,
 	}
 }
 
 // Set sets the letter at position pos to l.
 func (s *Seq) Set(pos seq.Position, l alphabet.QLetter) {
 	if pos.Row != 0 {
-		panic("nucleic: index out of range")
+		panic("linear: index out of range")
 	}
 	s.Seq[pos.Col-s.Offset] = l.L
 }
@@ -112,13 +111,10 @@ func (s *Seq) New() seq.Sequence {
 	return &Seq{}
 }
 
-// RevComp reverse complements the sequence.
+// RevComp reverse complements the sequence. RevComp will panic if the alphabet used by
+// the receiver is not a Complementor.
 func (s *Seq) RevComp() {
-	s.revComp(s.Seq, s.Alpha.ComplementTable())
-	s.Strand = -s.Strand
-}
-
-func (s *Seq) revComp(l, comp []alphabet.Letter) []alphabet.Letter {
+	l, comp := s.Seq, s.Alphabet().(alphabet.Complementor).ComplementTable()
 	i, j := 0, len(l)-1
 	for ; i < j; i, j = i+1, j-1 {
 		l[i], l[j] = comp[l[j]], comp[l[i]]
@@ -126,7 +122,7 @@ func (s *Seq) revComp(l, comp []alphabet.Letter) []alphabet.Letter {
 	if i == j {
 		l[i] = comp[l[i]]
 	}
-	return l
+	s.Strand = -s.Strand
 }
 
 // Reverse reverses the order of letters in the the sequence without complementing them.
@@ -135,7 +131,7 @@ func (s *Seq) Reverse() {
 	for i, j := 0, len(l)-1; i < j; i, j = i+1, j-1 {
 		l[i], l[j] = l[j], l[i]
 	}
-	s.Strand = None
+	s.Strand = seq.None
 }
 
 func (s *Seq) String() string { return alphabet.Letters(s.Seq).String() }

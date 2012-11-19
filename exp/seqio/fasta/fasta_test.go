@@ -18,7 +18,7 @@ package fasta
 import (
 	"bytes"
 	"code.google.com/p/biogo/exp/alphabet"
-	"code.google.com/p/biogo/exp/seq/protein"
+	"code.google.com/p/biogo/exp/seq/linear"
 	"io"
 	check "launchpad.net/gocheck"
 	"testing"
@@ -72,7 +72,7 @@ func (s *S) TestReadFasta(c *check.C) {
 	)
 
 	for _, fa := range fas {
-		r := NewReader(bytes.NewBufferString(fa), protein.NewSeq("", nil, alphabet.Protein))
+		r := NewReader(bytes.NewBufferString(fa), linear.NewSeq("", nil, alphabet.Protein))
 		for {
 			if s, err := r.Read(); err != nil {
 				if err == io.EOF {
@@ -81,7 +81,7 @@ func (s *S) TestReadFasta(c *check.C) {
 					c.Fatalf("Failed to read %q: %s", fa, err)
 				}
 			} else {
-				t := s.(*protein.Seq)
+				t := s.(*linear.Seq)
 				header := t.Name()
 				if desc := t.Description(); len(desc) > 0 {
 					header += " " + desc
@@ -107,7 +107,7 @@ func (s *S) TestWriteFasta(c *check.C) {
 	b := &bytes.Buffer{}
 	w := NewWriter(b, 60)
 
-	seq := protein.NewSeq("", nil, alphabet.Protein)
+	seq := linear.NewSeq("", nil, alphabet.Protein)
 
 	for i := range expectN {
 		seq.ID = expectN[i]

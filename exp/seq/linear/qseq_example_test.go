@@ -13,7 +13,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package protein
+package linear
 
 import (
 	"code.google.com/p/biogo/exp/alphabet"
@@ -22,23 +22,23 @@ import (
 )
 
 func ExampleNewQSeq() {
-	d := NewQSeq("example Protein", []alphabet.QLetter{{'A', 40}, {'C', 39}, {'G', 40}, {'C', 38}, {'T', 35}, {'G', 20}}, alphabet.Protein, alphabet.Sanger)
+	d := NewQSeq("example DNA", []alphabet.QLetter{{'A', 40}, {'C', 39}, {'G', 40}, {'C', 38}, {'T', 35}, {'G', 20}}, alphabet.DNA, alphabet.Sanger)
 	fmt.Println(d, d.Moltype())
 	// Output:
-	// ACGCTG Protein
+	// ACGCTG DNA
 }
 
 func ExampleQSeq_Validate() {
-	r := NewQSeq("example Protein", []alphabet.QLetter{{'A', 40}, {'C', 39}, {'G', 40}, {'C', 38}, {'O', 35}, {'G', 20}}, alphabet.Protein, alphabet.Sanger)
+	r := NewQSeq("example RNA", []alphabet.QLetter{{'A', 40}, {'C', 39}, {'G', 40}, {'C', 38}, {'T', 35}, {'G', 20}}, alphabet.RNA, alphabet.Sanger)
 	fmt.Println(r, r.Moltype())
 	if ok, pos := r.Validate(); ok {
-		fmt.Println("valid Protein")
+		fmt.Println("valid RNA")
 	} else {
-		fmt.Println(strings.Repeat(" ", pos-1), "^ first invalid Protein position")
+		fmt.Println(strings.Repeat(" ", pos-1), "^ first invalid RNA position")
 	}
 	// Output:
-	// ACGCOG Protein
-	//     ^ first invalid Protein position
+	// ACGCTG RNA
+	//     ^ first invalid RNA position
 }
 
 func ExampleQSeq_Append() {
@@ -47,19 +47,19 @@ func ExampleQSeq_Append() {
 		18, 18, 19, 19, 20, 12, 18, 17, 20, 20, 20, 18, 15, 18, 24, 21, 13, 8, 15, 20, 20, 19, 20, 20, 20, 18,
 		16, 16, 16, 10, 15, 18, 18, 18, 11, 2, 11, 20, 19, 18, 18, 16, 10, 12, 22, 0, 0, 0, 0}
 	l := []alphabet.Letter("NTTTCTTCTATATCCTTTTCATCTTTTAATCCATTCACCATTTTTTTCCCTCCACCTACCTNTCCTTCTCTTTCT")
-	s := NewQSeq("example Protein", nil, alphabet.Protein, alphabet.Sanger)
+	s := NewQSeq("example DNA", nil, alphabet.DNA, alphabet.Sanger)
 
 	for i := range l {
 		s.AppendQLetters(alphabet.QLetter{L: l[i], Q: q[i]})
 	}
 	fmt.Println("Forward:")
 	fmt.Println(s)
-	s.Reverse()
+	s.RevComp()
 	fmt.Println("Reverse:")
 	fmt.Println(s)
 	// Output:
 	// Forward:
-	// xTTTCTTCTATATCCTTTTCATCTTTTAATCCATTCACCATTTTTTTCCCTCCACCTACCTxTCCTTCTCTxxxx
+	// nTTTCTTCTATATCCTTTTCATCTTTTAATCCATTCACCATTTTTTTCCCTCCACCTACCTnTCCTTCTCTnnnn
 	// Reverse:
-	// xxxxTCTCTTCCTxTCCATCCACCTCCCTTTTTTTACCACTTACCTAATTTTCTACTTTTCCTATATCTTCTTTx
+	// nnnnAGAGAAGGAnAGGTAGGTGGAGGGAAAAAAATGGTGAATGGATTAAAAGATGAAAAGGATATAGAAGAAAn
 }

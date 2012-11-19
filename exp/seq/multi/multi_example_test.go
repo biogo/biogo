@@ -19,7 +19,7 @@ import (
 	"code.google.com/p/biogo/exp/alphabet"
 	"code.google.com/p/biogo/exp/feat"
 	"code.google.com/p/biogo/exp/seq"
-	"code.google.com/p/biogo/exp/seq/nucleic"
+	"code.google.com/p/biogo/exp/seq/linear"
 	"fmt"
 	"strings"
 )
@@ -40,10 +40,10 @@ var (
 func init() {
 	var err error
 	m, err = NewMulti("example multi",
-		[]nucleic.Sequence{
-			nucleic.NewSeq("example DNA 1", []alphabet.Letter("ACGCTGACTTGGTGCACGT"), alphabet.DNA),
-			nucleic.NewSeq("example DNA 2", []alphabet.Letter("ACGGTGACCTGGCGCGCAT"), alphabet.DNA),
-			nucleic.NewSeq("example DNA 3", []alphabet.Letter("ACGATGACGTGGCGCTCAT"), alphabet.DNA),
+		[]seq.Sequence{
+			linear.NewSeq("example DNA 1", []alphabet.Letter("ACGCTGACTTGGTGCACGT"), alphabet.DNA),
+			linear.NewSeq("example DNA 2", []alphabet.Letter("ACGGTGACCTGGCGCGCAT"), alphabet.DNA),
+			linear.NewSeq("example DNA 3", []alphabet.Letter("ACGATGACGTGGCGCTCAT"), alphabet.DNA),
 		},
 		seq.DefaultConsensus)
 
@@ -54,10 +54,10 @@ func init() {
 
 func ExampleNewMulti() {
 	m, err := NewMulti("example multi",
-		[]nucleic.Sequence{
-			nucleic.NewSeq("example DNA 1", []alphabet.Letter("ACGCTGACTTGGTGCACGT"), alphabet.DNA),
-			nucleic.NewSeq("example DNA 2", []alphabet.Letter("ACGGTGACCTGGCGCGCAT"), alphabet.DNA),
-			nucleic.NewSeq("example DNA 3", []alphabet.Letter("ACGATGACGTGGCGCTCAT"), alphabet.DNA),
+		[]seq.Sequence{
+			linear.NewSeq("example DNA 1", []alphabet.Letter("ACGCTGACTTGGTGCACGT"), alphabet.DNA),
+			linear.NewSeq("example DNA 2", []alphabet.Letter("ACGGTGACCTGGCGCGCAT"), alphabet.DNA),
+			linear.NewSeq("example DNA 3", []alphabet.Letter("ACGATGACGTGGCGCTCAT"), alphabet.DNA),
 		},
 		seq.DefaultConsensus)
 
@@ -77,7 +77,7 @@ func ExampleNewMulti() {
 func ExampleMulti_Add() {
 	var err error
 	fmt.Printf("%v %v\n", m.Rows(), m)
-	err = m.Add(nucleic.NewQSeq("example DNA",
+	err = m.Add(linear.NewQSeq("example DNA",
 		[]alphabet.QLetter{{'a', 40}, {'c', 39}, {'g', 40}, {'C', 38}, {'t', 35}, {'g', 20}},
 		alphabet.DNA, alphabet.Sanger))
 	if err != nil {
@@ -85,7 +85,7 @@ func ExampleMulti_Add() {
 		return
 	}
 	fmt.Printf("%v %v\n", m.Rows(), m)
-	err = m.Add(nucleic.NewQSeq("example RNA",
+	err = m.Add(linear.NewQSeq("example RNA",
 		[]alphabet.QLetter{{'a', 40}, {'c', 39}, {'g', 40}, {'C', 38}, {'t', 35}, {'g', 20}},
 		alphabet.RNA, alphabet.Sanger))
 	if err != nil {
@@ -206,7 +206,7 @@ func ExampleMulti_RevComp() {
 
 type fe struct {
 	s, e int
-	st   nucleic.Strand
+	st   seq.Strand
 	feat.Feature
 }
 

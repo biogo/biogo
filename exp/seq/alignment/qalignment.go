@@ -19,15 +19,15 @@ import (
 	"code.google.com/p/biogo/exp/alphabet"
 	"code.google.com/p/biogo/exp/feat"
 	"code.google.com/p/biogo/exp/seq"
-	"code.google.com/p/biogo/exp/seq/nucleic"
+	"code.google.com/p/biogo/exp/seq/linear"
 	"code.google.com/p/biogo/util"
 	"errors"
 	"fmt"
 )
 
-// A QSeq is an aligned nucleic acid sequence with quality scores.
+// A QSeq is an aligned sequence with quality scores.
 type QSeq struct {
-	nucleic.Annotation
+	seq.Annotation
 	SubIDs     []string
 	Seq        alphabet.QColumns
 	Consensify seq.ConsenseFunc
@@ -37,7 +37,7 @@ type QSeq struct {
 }
 
 // NewSeq creates a new Seq with the given id, letter sequence and alphabet.
-func NewQSeq(id string, subids []string, ql [][]alphabet.QLetter, alpha alphabet.Nucleic, enc alphabet.Encoding, cons seq.ConsenseFunc) (*QSeq, error) {
+func NewQSeq(id string, subids []string, ql [][]alphabet.QLetter, alpha alphabet.Alphabet, enc alphabet.Encoding, cons seq.ConsenseFunc) (*QSeq, error) {
 	switch lids, lseq := len(subids), len(ql); {
 	case lids == 0 && len(ql) == 0:
 	case lseq != 0 && lids == len(ql[0]):
@@ -52,7 +52,7 @@ func NewQSeq(id string, subids []string, ql [][]alphabet.QLetter, alpha alphabet
 	}
 
 	return &QSeq{
-		Annotation: nucleic.Annotation{
+		Annotation: seq.Annotation{
 			ID:    id,
 			Alpha: alpha,
 		},
@@ -61,15 +61,15 @@ func NewQSeq(id string, subids []string, ql [][]alphabet.QLetter, alpha alphabet
 		Encode:     enc,
 		Consensify: cons,
 		Threshold:  2,
-		LowQFilter: nucleic.LowQFilter,
+		LowQFilter: linear.LowQFilter,
 	}, nil
 }
 
 // Interface guarantees
 var (
-	_ feat.Feature     = &QSeq{}
-	_ seq.Sequence     = &QSeq{}
-	_ nucleic.Sequence = &QSeq{}
+	_ feat.Feature = &QSeq{}
+	_ seq.Sequence = &QSeq{}
+	_ seq.Sequence = &QSeq{}
 )
 
 // Slice returns the sequence data as a alphabet.Slice.
@@ -138,13 +138,10 @@ func (s *QSeq) New() seq.Sequence {
 	return &QSeq{}
 }
 
-// RevComp reverse complements the sequence.
+// RevComp reverse complements the sequence. RevComp will panic if the alphabet used by
+// the receiver is not a Complementor.
 func (s *QSeq) RevComp() {
-	s.Seq = s.revComp(s.Seq, s.Alpha.ComplementTable())
-	s.Strand = -s.Strand
-}
-
-func (s *QSeq) revComp(rs [][]alphabet.QLetter, comp []alphabet.Letter) [][]alphabet.QLetter {
+	rs, comp := s.Seq, s.Alpha.(alphabet.Complementor).ComplementTable()
 	i, j := 0, len(rs)-1
 	for ; i < j; i, j = i+1, j-1 {
 		for r := range rs[i] {
@@ -157,8 +154,7 @@ func (s *QSeq) revComp(rs [][]alphabet.QLetter, comp []alphabet.Letter) [][]alph
 			rs[i][r].L = comp[rs[i][r].L]
 		}
 	}
-
-	return rs
+	s.Strand = -s.Strand
 }
 
 // Reverse reverses the order of letters in the the sequence without complementing them.
@@ -167,7 +163,7 @@ func (s *QSeq) Reverse() {
 	for i, j := 0, len(l)-1; i < j; i, j = i+1, j-1 {
 		l[i], l[j] = l[j], l[i]
 	}
-	s.Strand = nucleic.None
+	s.Strand = seq.None
 }
 
 func (s *QSeq) String() string {
@@ -179,7 +175,7 @@ func (s *QSeq) String() string {
 
 // Add sequences n to Alignment. Sequences in n must align start and end with the receiving alignment.
 // Additional sequence will be clipped.
-func (s *QSeq) Add(n ...nucleic.Sequence) error {
+func (s *QSeq) Add(n ...seq.Sequence) error {
 	for i := s.Start(); i < s.End(); i++ {
 		s.Seq[i] = append(s.Seq[i], s.column(n, i)...)
 	}
@@ -190,7 +186,7 @@ func (s *QSeq) Add(n ...nucleic.Sequence) error {
 	return nil
 }
 
-func (s *QSeq) column(m []nucleic.Sequence, pos int) []alphabet.QLetter {
+func (s *QSeq) column(m []seq.Sequence, pos int) []alphabet.QLetter {
 	var row int
 	for _, ss := range m {
 		row += rows(ss)
@@ -221,13 +217,13 @@ func (s *QSeq) column(m []nucleic.Sequence, pos int) []alphabet.QLetter {
 func (s *QSeq) Delete(i int) {}
 
 // Get returns the sequence corresponding to the ith row of the Seq.
-func (s *QSeq) Get(i int) nucleic.Sequence {
+func (s *QSeq) Get(i int) seq.Sequence {
 	t := make([]alphabet.QLetter, 0, s.Len())
 	for _, c := range s.Seq {
 		t = append(t, c[i])
 	}
 
-	return nucleic.NewQSeq(s.SubIDs[i], t, s.Alpha, s.Encode)
+	return linear.NewQSeq(s.SubIDs[i], t, s.Alpha, s.Encode)
 }
 
 // AppendColumns appends each Qletter of each element of a to the appropriate sequence in the reciever.
@@ -288,14 +284,14 @@ func (s *QSeq) ColumnQL(pos int, _ bool) []alphabet.QLetter { return s.Seq[pos] 
 
 // Consensus returns a quality sequence reflecting the consensus of the receiver determined by the
 // Consensify field.
-func (s *QSeq) Consensus(_ bool) *nucleic.QSeq {
+func (s *QSeq) Consensus(_ bool) *linear.QSeq {
 	cs := make([]alphabet.QLetter, 0, s.Len())
 	alpha := s.Alphabet()
 	for i := range s.Seq {
 		cs = append(cs, s.Consensify(s, alpha, i, false))
 	}
 
-	qs := nucleic.NewQSeq("Consensus:"+s.ID, cs, s.Alpha, alphabet.Sanger)
+	qs := linear.NewQSeq("Consensus:"+s.ID, cs, s.Alpha, alphabet.Sanger)
 	qs.Strand = s.Strand
 	qs.SetOffset(s.Offset)
 	qs.Conform = s.Conform

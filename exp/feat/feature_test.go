@@ -17,48 +17,30 @@ package feat_test
 
 import (
 	"code.google.com/p/biogo/exp/feat"
-	"code.google.com/p/biogo/exp/seq/nucleic"
-	na "code.google.com/p/biogo/exp/seq/nucleic/alignment"
-	nm "code.google.com/p/biogo/exp/seq/nucleic/multi"
-	"code.google.com/p/biogo/exp/seq/protein"
-	pa "code.google.com/p/biogo/exp/seq/protein/alignment"
-	pm "code.google.com/p/biogo/exp/seq/protein/multi"
+	"code.google.com/p/biogo/exp/seq/alignment"
+	"code.google.com/p/biogo/exp/seq/linear"
+	"code.google.com/p/biogo/exp/seq/multi"
 	"testing"
 )
 
 func TestFeat(t *testing.T) {
 	var (
-		_ feat.Feature = &nucleic.Seq{}
-		_ feat.Feature = &protein.Seq{}
-		_ feat.Feature = &nucleic.QSeq{}
-		_ feat.Feature = &protein.QSeq{}
-		_ feat.Feature = &na.Seq{}
-		_ feat.Feature = &pa.Seq{}
-		_ feat.Feature = &na.QSeq{}
-		_ feat.Feature = &pa.QSeq{}
-		_ feat.Feature = &nm.Multi{}
-		_ feat.Feature = &pm.Multi{}
+		_ feat.Feature = &linear.Seq{}
+		_ feat.Feature = &linear.QSeq{}
+		_ feat.Feature = &alignment.Seq{}
+		_ feat.Feature = &alignment.QSeq{}
+		_ feat.Feature = &multi.Multi{}
 
-		_ feat.Offsetter = &nucleic.Seq{}
-		_ feat.Offsetter = &protein.Seq{}
-		_ feat.Offsetter = &nucleic.QSeq{}
-		_ feat.Offsetter = &protein.QSeq{}
-		_ feat.Offsetter = &na.Seq{}
-		_ feat.Offsetter = &pa.Seq{}
-		_ feat.Offsetter = &na.QSeq{}
-		_ feat.Offsetter = &pa.QSeq{}
-		_ feat.Offsetter = &nm.Multi{}
-		_ feat.Offsetter = &pm.Multi{}
+		_ feat.Offsetter = &linear.Seq{}
+		_ feat.Offsetter = &linear.QSeq{}
+		_ feat.Offsetter = &alignment.Seq{}
+		_ feat.Offsetter = &alignment.QSeq{}
+		_ feat.Offsetter = &multi.Multi{}
 
-		_ feat.LocationSetter = &nucleic.Seq{}
-		_ feat.LocationSetter = &protein.Seq{}
-		_ feat.LocationSetter = &nucleic.QSeq{}
-		_ feat.LocationSetter = &protein.QSeq{}
-		_ feat.LocationSetter = &na.Seq{}
-		_ feat.LocationSetter = &pa.Seq{}
-		_ feat.LocationSetter = &na.QSeq{}
-		_ feat.LocationSetter = &pa.QSeq{}
-		_ feat.LocationSetter = &nm.Multi{}
-		_ feat.LocationSetter = &pm.Multi{}
+		_ feat.LocationSetter = &linear.Seq{}
+		_ feat.LocationSetter = &linear.QSeq{}
+		_ feat.LocationSetter = &alignment.Seq{}
+		_ feat.LocationSetter = &alignment.QSeq{}
+		_ feat.LocationSetter = &multi.Multi{}
 	)
 }

@@ -20,7 +20,7 @@ import (
 	"code.google.com/p/biogo/exp/alphabet"
 	"code.google.com/p/biogo/exp/feat"
 	"code.google.com/p/biogo/exp/seq"
-	"code.google.com/p/biogo/exp/seq/nucleic"
+	"code.google.com/p/biogo/exp/seq/linear"
 	"code.google.com/p/biogo/exp/seq/sequtils"
 	"code.google.com/p/biogo/util"
 	"errors"
@@ -44,7 +44,7 @@ type rowCounter interface {
 	Rows() int
 }
 
-func rows(s nucleic.Sequence) int {
+func rows(s seq.Sequence) int {
 	row := 1
 	if m, ok := s.(rowCounter); ok {
 		row = m.Rows()
@@ -53,24 +53,24 @@ func rows(s nucleic.Sequence) int {
 }
 
 type Multi struct {
-	nucleic.Annotation
-	Seq        []nucleic.Sequence
+	seq.Annotation
+	Seq        []seq.Sequence
 	Consensify seq.ConsenseFunc
 	Encode     alphabet.Encoding
 }
 
 // Create a new Multi sequence.
-func NewMulti(id string, n []nucleic.Sequence, cons seq.ConsenseFunc) (*Multi, error) {
-	var alpha alphabet.Nucleic
+func NewMulti(id string, n []seq.Sequence, cons seq.ConsenseFunc) (*Multi, error) {
+	var alpha alphabet.Alphabet
 	for _, s := range n {
 		if alpha != nil && s.Alphabet() != alpha {
 			return nil, errors.New("multi: inconsistent alphabets")
 		} else if alpha == nil {
-			alpha = s.Alphabet().(alphabet.Nucleic)
+			alpha = s.Alphabet()
 		}
 	}
 	return &Multi{
-		Annotation: nucleic.Annotation{
+		Annotation: seq.Annotation{
 			ID:    id,
 			Alpha: alpha,
 		},
@@ -148,7 +148,7 @@ func (m *Multi) EAt(pos seq.Position) float64 {
 			if qs, ok := r.(seq.Quality); ok {
 				return qs.EAt(pos)
 			} else {
-				return nucleic.DefaultQphred.ProbE()
+				return seq.DefaultQphred.ProbE()
 			}
 		}
 		pos.Row -= row
@@ -222,9 +222,9 @@ func (m *Multi) End() int {
 func (m *Multi) Copy() *Multi {
 	c := &Multi{}
 	*c = *m
-	c.Seq = make([]nucleic.Sequence, len(m.Seq))
+	c.Seq = make([]seq.Sequence, len(m.Seq))
 	for i, r := range m.Seq {
-		c.Seq[i] = r.Copy().(nucleic.Sequence)
+		c.Seq[i] = r.Copy().(seq.Sequence)
 	}
 
 	return c
@@ -262,7 +262,7 @@ func (m *Multi) SetConformation(c feat.Conformation) {
 }
 
 // Add adds sequences n to the multiple sequence.
-func (m *Multi) Add(n ...nucleic.Sequence) error {
+func (m *Multi) Add(n ...seq.Sequence) error {
 	for _, r := range n {
 		if r.Alphabet() != m.Alpha {
 			return errors.New("multi: inconsistent alphabets")
@@ -277,10 +277,10 @@ func (m *Multi) Add(n ...nucleic.Sequence) error {
 func (m *Multi) Delete(i int) {}
 
 // Get returns the sequence corresponding to the ith row of the Seq.
-func (m *Multi) Get(i int) nucleic.Sequence {
+func (m *Multi) Get(i int) seq.Sequence {
 	var row int
 	for _, r := range m.Seq {
-		if m, ok := r.(nucleic.Getter); ok {
+		if m, ok := r.(seq.Getter); ok {
 			row = m.Rows()
 			if i < row {
 				return m.Get(i)
@@ -326,7 +326,7 @@ func (m *Multi) AppendEach(a [][]alphabet.QLetter) (err error) {
 	}
 	var i int
 	for _, r := range m.Seq {
-		if al, ok := r.(nucleic.AlignedAppender); ok {
+		if al, ok := r.(seq.AlignedAppender); ok {
 			row := al.Rows()
 			if al.AppendEach(a[i:i+row]) != nil {
 				panic("internal size mismatch")
@@ -459,7 +459,7 @@ func (m *Multi) Flush(where int, fill alphabet.Letter) {
 
 // Subseq returns a multiple subsequence slice of the receiver.
 func (m *Multi) Subseq(start, end int) (*Multi, error) {
-	var ns []nucleic.Sequence
+	var ns []seq.Sequence
 
 	for _, r := range m.Seq {
 		rs := reflect.New(reflect.TypeOf(r)).Interface().(sequtils.Sliceable)
@@ -467,7 +467,7 @@ func (m *Multi) Subseq(start, end int) (*Multi, error) {
 		if err != nil {
 			return nil, err
 		}
-		ns = append(ns, rs.(nucleic.Sequence))
+		ns = append(ns, rs.(seq.Sequence))
 	}
 
 	ss := &Multi{}
@@ -524,16 +524,16 @@ func (m *Multi) Join(a *Multi, where int) error {
 	return nil
 }
 
-func joinOne(m, am nucleic.Sequence, where int) error {
+func joinOne(m, am seq.Sequence, where int) error {
 	switch m.(type) {
-	case *nucleic.Seq:
-		_, ok := am.(*nucleic.Seq)
+	case *linear.Seq:
+		_, ok := am.(*linear.Seq)
 		if !ok {
 			goto MISMATCH
 		}
 		return sequtils.Join(m, am, where)
-	case *nucleic.QSeq:
-		_, ok := am.(*nucleic.QSeq)
+	case *linear.QSeq:
+		_, ok := am.(*linear.QSeq)
 		if !ok {
 			goto MISMATCH
 		}
@@ -555,9 +555,9 @@ MISMATCH:
 	return fmt.Errorf("multi: sequence type mismatch: %T != %T.", m, am)
 }
 
-type JoinFunc func(a, b nucleic.Sequence, where int) (err error)
+type JoinFunc func(a, b seq.Sequence, where int) (err error)
 
-func RegisterJoiner(p nucleic.Sequence, f JoinFunc) {
+func RegisterJoiner(p seq.Sequence, f JoinFunc) {
 	joinerRegistryLock.Lock()
 	joinerRegistry[reflect.TypeOf(p)] = f
 	joinerRegistryLock.Unlock()
@@ -645,14 +645,14 @@ func (m *Multi) String() string {
 
 // Consensus returns a quality sequence reflecting the consensus of the receiver determined by the
 // Consensify field.
-func (m *Multi) Consensus(includeMissing bool) *nucleic.QSeq {
+func (m *Multi) Consensus(includeMissing bool) *linear.QSeq {
 	cm := make([]alphabet.QLetter, 0, m.Len())
 	alpha := m.Alphabet()
 	for i := m.Start(); i < m.End(); i++ {
 		cm = append(cm, m.Consensify(m, alpha, i, includeMissing))
 	}
 
-	c := nucleic.NewQSeq("Consensus:"+m.ID, cm, m.Alpha, m.Encode)
+	c := linear.NewQSeq("Consensus:"+m.ID, cm, m.Alpha, m.Encode)
 	c.SetOffset(m.Offset)
 
 	return c

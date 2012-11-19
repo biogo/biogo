@@ -19,17 +19,16 @@ import (
 	"code.google.com/p/biogo/bio"
 	"code.google.com/p/biogo/exp/alphabet"
 	"code.google.com/p/biogo/exp/seq"
-	"code.google.com/p/biogo/exp/seq/nucleic"
 	"code.google.com/p/biogo/util"
 	"fmt"
 )
 
-type Set []nucleic.Sequence
+type Set []seq.Sequence
 
 // Interface guarantees
 var (
-	_ nucleic.Getter         = &Set{}
-	_ nucleic.GetterAppender = &Set{}
+	_ seq.Getter         = &Set{}
+	_ seq.GetterAppender = &Set{}
 )
 
 // Append each []byte in a to the appropriate sequence in the reciever.
@@ -39,7 +38,7 @@ func (s Set) AppendEach(a [][]alphabet.QLetter) (err error) {
 	}
 	var i int
 	for _, r := range s {
-		if m, ok := r.(nucleic.GetterAppender); ok {
+		if m, ok := r.(seq.GetterAppender); ok {
 			row := m.Rows()
 			if m.AppendEach(a[i:i+row]) != nil {
 				panic("internal size mismatch")
@@ -58,10 +57,10 @@ func (s Set) AppendEach(a [][]alphabet.QLetter) (err error) {
 	return
 }
 
-func (s Set) Get(i int) nucleic.Sequence {
+func (s Set) Get(i int) seq.Sequence {
 	var row int
 	for _, r := range s {
-		if m, ok := r.(nucleic.Getter); ok {
+		if m, ok := r.(seq.Getter); ok {
 			row = m.Rows()
 			if i < row {
 				return m.Get(i)

@@ -24,23 +24,6 @@ import (
 	"sort"
 )
 
-// A Conformationer can give information regarding the sequence's conformation. For the
-// purposes of sequtils, types that are not a Conformationer are treated as linear.
-type Conformationer interface {
-	Conformation() feat.Conformation
-}
-
-// A ConformationSetter can set its sequence conformation.
-type ConformationSetter interface {
-	SetConformation(feat.Conformation)
-}
-
-// A Slicer returns and sets a Slice. 
-type Slicer interface {
-	Slice() alphabet.Slice
-	SetSlice(alphabet.Slice)
-}
-
 // A Joinable can be joined to another of the same concrete type using the Join function.
 type Joinable interface {
 	SetOffset(int)
@@ -52,8 +35,8 @@ type Joinable interface {
 // will be updated if src is prepended. Join will panic if dst and src do not hold the same
 // concrete Slice type. Circular sequences cannot be joined.
 func Join(dst, src Joinable, where int) error {
-	dstC, dstOk := dst.(Conformationer)
-	srcC, srcOk := src.(Conformationer)
+	dstC, dstOk := dst.(seq.Conformationer)
+	srcC, srcOk := src.(seq.Conformationer)
 	switch {
 	case dstOk && dstC.Conformation() > feat.Linear, srcOk && srcC.Conformation() > feat.Linear:
 		return errors.New("sequtils: cannot join circular sequence")
@@ -102,13 +85,13 @@ func Truncate(dst, src Sliceable, start, end int) error {
 			dst.SetSlice(sl.Make(0, sl.Len()).Append(sl.Slice(start-offset, end-offset)))
 		}
 		dst.SetOffset(start)
-		if dst, ok := dst.(ConformationSetter); ok {
+		if dst, ok := dst.(seq.ConformationSetter); ok {
 			dst.SetConformation(feat.Linear)
 		}
 		return nil
 	}
 
-	if src, ok := src.(Conformationer); !ok || src.Conformation() == feat.Linear {
+	if src, ok := src.(seq.Conformationer); !ok || src.Conformation() == feat.Linear {
 		return errors.New("sequtils: start position greater than end position for linear sequence")
 	}
 	if end < offset || start > src.End() {
@@ -118,7 +101,7 @@ func Truncate(dst, src Sliceable, start, end int) error {
 	t.Copy(sl.Slice(start-offset, sl.Len()))
 	dst.SetSlice(t.Append(sl.Slice(0, end-offset)))
 	dst.SetOffset(start)
-	if dst, ok := dst.(ConformationSetter); ok {
+	if dst, ok := dst.(seq.ConformationSetter); ok {
 		dst.SetConformation(feat.Linear)
 	}
 
@@ -196,7 +179,7 @@ func Stitch(dst, src Sliceable, fs feat.Set) error {
 	}
 
 	dst.SetSlice(t)
-	if dst, ok := dst.(ConformationSetter); ok {
+	if dst, ok := dst.(seq.ConformationSetter); ok {
 		dst.SetConformation(feat.Linear)
 	}
 	dst.SetOffset(0)
@@ -204,12 +187,21 @@ func Stitch(dst, src Sliceable, fs feat.Set) error {
 	return nil
 }
 
+type SliceReverser interface {
+	Sliceable
+	New() seq.Sequence
+	Alphabet() alphabet.Alphabet
+	SetAlphabet(alphabet.Alphabet)
+	RevComp()
+	Reverse()
+}
+
 // Compose produces a composition of src defined by the features in fs. The subparts of
 // the composition may be out of order and if features in fs specify orientation may be
-// reversed or reverse complemented depending on the type of src - if src can provide and
-// set an alphabet and reverse complement reversed segments will be complemented, if src
-// can reverse these segments will only be reversed. If src is unable to satisfy these
-// conditions and a reverse segment is specified an error is returned.
+// reversed or reverse complemented depending on the src - if src is a SliceReverser and
+// its alphabet is a Complementor the segment will be reverse complemented, if the alphabte
+// is not a Complementor these segments will only be reversed. If src is not a SliceREverser
+// and a reverse segment is specified an error is returned.
 // Composing a circular sequence returns a linear sequence.
 func Compose(dst, src Sliceable, fs feat.Set) error {
 	var (
@@ -233,37 +225,23 @@ func Compose(dst, src Sliceable, fs feat.Set) error {
 		t[i].Copy(sl.Slice(max(f.Start()-offset, 0), min(f.End()-offset, pLen)))
 	}
 
-	type (
-		Complementer interface {
-			New() seq.Sequence
-			Alphabet() alphabet.Alphabet
-			SetAlphabet(alphabet.Nucleic)
-			RevComp()
-		}
-		Reverser interface {
-			New() seq.Sequence
-			Reverse()
-		}
-	)
-
 	c := sl.Make(0, tl)
-	var r Sliceable
+	var r SliceReverser
 	for i, ts := range t {
 		if f, ok := ff[i].(feat.Orienter); ok && f.Orientation() == feat.Reverse {
 			switch src := src.(type) {
-			case Complementer:
+			case SliceReverser:
 				if r == nil {
-					r = src.New().(Sliceable)
-					r.(Complementer).SetAlphabet(src.Alphabet().(alphabet.Nucleic))
+					r = src.New().(SliceReverser)
+					if _, ok := src.Alphabet().(alphabet.Complementor); ok {
+						r.SetAlphabet(src.Alphabet())
+						r.SetSlice(ts)
+						r.RevComp()
+					} else {
+						r.SetSlice(ts)
+						r.Reverse()
+					}
 				}
-				r.SetSlice(ts)
-				r.(Complementer).RevComp()
-			case Reverser:
-				if r == nil {
-					r = src.New().(Sliceable)
-				}
-				r.SetSlice(ts)
-				r.(Reverser).Reverse()
 			default:
 				return errors.New("sequtils: unable to reverse segment during compose")
 			}
@@ -274,7 +252,7 @@ func Compose(dst, src Sliceable, fs feat.Set) error {
 	}
 
 	dst.SetSlice(c)
-	if dst, ok := dst.(ConformationSetter); ok {
+	if dst, ok := dst.(seq.ConformationSetter); ok {
 		dst.SetConformation(feat.Linear)
 	}
 	dst.SetOffset(0)

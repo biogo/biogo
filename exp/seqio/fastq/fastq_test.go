@@ -18,7 +18,7 @@ package fastq
 import (
 	"bytes"
 	"code.google.com/p/biogo/exp/alphabet"
-	"code.google.com/p/biogo/exp/seq/nucleic"
+	"code.google.com/p/biogo/exp/seq/linear"
 	"io"
 	check "launchpad.net/gocheck"
 	"testing"
@@ -149,7 +149,7 @@ func (s *S) TestReadFastq(c *check.C) {
 	)
 
 	for _, fq := range fqs {
-		r := NewReader(bytes.NewBufferString(fq), nucleic.NewQSeq("", nil, alphabet.DNA, alphabet.Sanger))
+		r := NewReader(bytes.NewBufferString(fq), linear.NewQSeq("", nil, alphabet.DNA, alphabet.Sanger))
 		for {
 			if s, err := r.Read(); err != nil {
 				if err == io.EOF {
@@ -158,7 +158,7 @@ func (s *S) TestReadFastq(c *check.C) {
 					c.Fatalf("Failed to read %q: %s", fq, err)
 				}
 			} else {
-				t := s.(*nucleic.QSeq)
+				t := s.(*linear.QSeq)
 				header := t.Name()
 				if desc := t.Description(); len(desc) > 0 {
 					header += " " + desc
@@ -186,7 +186,7 @@ func (s *S) TestWriteFastq(c *check.C) {
 		b := &bytes.Buffer{}
 		w := NewWriter(b)
 		w.QID = j == 0
-		seq := nucleic.NewQSeq("", nil, alphabet.DNA, alphabet.Sanger)
+		seq := linear.NewQSeq("", nil, alphabet.DNA, alphabet.Sanger)
 
 		for i := range expectN {
 			seq.ID = expectN[i]
