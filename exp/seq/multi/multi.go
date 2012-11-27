@@ -264,7 +264,10 @@ func (m *Multi) SetConformation(c feat.Conformation) {
 // Add adds sequences n to the multiple sequence.
 func (m *Multi) Add(n ...seq.Sequence) error {
 	for _, r := range n {
-		if r.Alphabet() != m.Alpha {
+		if m.Alpha == nil {
+			m.Alpha = r.Alphabet()
+			continue
+		} else if r.Alphabet() != m.Alpha {
 			return errors.New("multi: inconsistent alphabets")
 		}
 	}
