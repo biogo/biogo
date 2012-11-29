@@ -19,6 +19,8 @@ import (
 	"code.google.com/p/biogo/exp/alphabet"
 	"code.google.com/p/biogo/exp/feat"
 	"code.google.com/p/biogo/exp/seq"
+	"fmt"
+	"unicode"
 )
 
 // A QSeq is a basic linear sequence with Phred quality scores.
@@ -178,6 +180,7 @@ func (s *QSeq) Reverse() {
 	s.Strand = seq.None
 }
 
+// String returns a string representation of the sequence data only.
 func (s *QSeq) String() string {
 	gap := s.Alpha.Gap()
 	cs := make([]alphabet.Letter, 0, len(s.Seq))
@@ -190,6 +193,108 @@ func (s *QSeq) String() string {
 	}
 
 	return alphabet.Letters(cs).String()
+}
+
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
+}
+
+// Format is a support routine for fmt.Formatter. It accepts the formats 'v' and 's'
+// (string), 'a' (fasta) and 'q' (fastq). String, fasta and fastq formats support
+// truncated output via the verb's precision. Fasta format supports sequence line
+// specification via the verb's width field. Fastq format supports optional inclusion
+// of the '+' line descriptor line with the '+' flag. The 'v' verb supports the '#'
+// flag for Go syntax output.
+func (s *QSeq) Format(fs fmt.State, c rune) {
+	if s == nil {
+		fmt.Fprint(fs, "<nil>")
+		return
+	}
+	var (
+		w, wOk = fs.Width()
+		p, pOk = fs.Precision()
+		buf    []alphabet.QLetter
+	)
+	if pOk {
+		buf = s.Seq[:min(p, len(s.Seq))]
+	} else {
+		buf = s.Seq
+	}
+
+	switch c {
+	case 'v':
+		if fs.Flag('#') {
+			fmt.Fprintf(fs, "&%#v", *s)
+			return
+		}
+		fallthrough
+	case 's':
+		fmt.Fprintf(fs, "%q ", s.ID)
+		for _, ql := range buf {
+			if ql.Q < s.Threshold {
+				fmt.Fprintf(fs, "%c", s.LowQFilter(s, ql.L))
+			} else {
+				fmt.Fprintf(fs, "%c", ql.L)
+			}
+		}
+		if pOk && p < s.Len() {
+			fmt.Fprint(fs, "...")
+		}
+	case 'a':
+		fmt.Fprintf(fs, ">%s %s\n", s.ID, s.Desc)
+		gap := s.Alpha.Gap()
+		for i, ql := range buf {
+			if ql.Q > s.Threshold || ql.L == gap {
+				fmt.Fprintf(fs, "%c", ql.L)
+			} else {
+				fmt.Fprintf(fs, "%c", s.LowQFilter(s, ql.L))
+			}
+			if wOk && i < s.Len()-1 && i%w == w-1 {
+				fmt.Fprintln(fs)
+			}
+		}
+		if pOk && p < s.Len() {
+			fmt.Fprint(fs, "...")
+		}
+	case 'q':
+		s.formatDescLineTo(fs, '@')
+		for _, ql := range buf {
+			fmt.Fprintf(fs, "%c", ql.L)
+		}
+		if pOk && p < s.Len() {
+			fmt.Fprintln(fs, "...")
+		} else {
+			fmt.Fprintln(fs)
+		}
+		if fs.Flag('+') {
+			s.formatDescLineTo(fs, '+')
+		} else {
+			fmt.Fprintln(fs, "+")
+		}
+		for _, ql := range buf {
+			e := ql.Q.Encode(s.Encode)
+			if e >= unicode.MaxASCII {
+				e = unicode.MaxASCII - 1
+			}
+			fmt.Fprintf(fs, "%c", e)
+		}
+		if pOk && p < s.Len() {
+			fmt.Fprint(fs, "...")
+		}
+	default:
+		fmt.Fprintf(fs, "%%!%c(linear.QSeq=%.10s)", c, s)
+	}
+}
+
+func (s *QSeq) formatDescLineTo(fs fmt.State, p rune) {
+	fmt.Fprintf(fs, "%c%s", p, s.ID)
+	if s.Desc != "" {
+		fmt.Fprintf(fs, " %s", s.Desc)
+	}
+	fmt.Fprintln(fs)
 }
 
 // The default LowQFilter function for QSeq.

@@ -33,8 +33,12 @@ const (
 	End
 )
 
-// The default value for Qphred scores from non-quality sequences.
-var DefaultQphred alphabet.Qphred = 40
+var (
+	// The default value for Qphred scores from non-quality sequences.
+	DefaultQphred alphabet.Qphred = 40
+	// The default encoding for Qphred scores from non-quality sequences.
+	DefaultEncoding alphabet.Encoding = alphabet.Sanger
+)
 
 type Alphabeter interface {
 	Alphabet() alphabet.Alphabet
