@@ -142,85 +142,87 @@ type AlignedAppender interface {
 // ConsenseFunc is a function type that returns the consensus letter for a column of an alignment.
 type ConsenseFunc func(a Aligned, alpha alphabet.Alphabet, pos int, fill bool) alphabet.QLetter
 
-// The default ConsenseFunc function.
-var DefaultConsensus = func(a Aligned, alpha alphabet.Alphabet, pos int, fill bool) alphabet.QLetter {
-	w := make([]int, alpha.Len())
-	c := a.Column(pos, fill)
+var (
+	// The default ConsenseFunc function.
+	DefaultConsensus = func(a Aligned, alpha alphabet.Alphabet, pos int, fill bool) alphabet.QLetter {
+		w := make([]int, alpha.Len())
+		c := a.Column(pos, fill)
 
-	for _, l := range c {
-		if alpha.IsValid(l) {
-			w[alpha.IndexOf(l)]++
+		for _, l := range c {
+			if alpha.IsValid(l) {
+				w[alpha.IndexOf(l)]++
+			}
+		}
+
+		var max, maxi int
+		for i, v := range w {
+			if v > max {
+				max, maxi = v, i
+			}
+		}
+
+		return alphabet.QLetter{
+			L: alpha.Letter(maxi),
+			Q: alphabet.Ephred(1 - (float64(max) / float64(len(c)))),
 		}
 	}
 
-	var max, maxi int
-	for i, v := range w {
-		if v > max {
-			max, maxi = v, i
+	// A default ConsenseFunc function that takes letter quality into account.
+	// http://staden.sourceforge.net/manual/gap4_unix_120.html
+	DefaultQConsensus = func(a Aligned, alpha alphabet.Alphabet, pos int, fill bool) alphabet.QLetter {
+		w := make([]float64, alpha.Len())
+		for i := range w {
+			w[i] = 1
 		}
-	}
 
-	return alphabet.QLetter{
-		L: alpha.Letter(maxi),
-		Q: alphabet.Ephred(1 - (float64(max) / float64(len(c)))),
-	}
-}
-
-// Tolerance on float comparison for DefaultQConsensus.
-var FloatTolerance float64 = 1e-10
-
-// A default ConsenseFunc function that takes letter quality into account.
-// http://staden.sourceforge.net/manual/gap4_unix_120.html
-var DefaultQConsensus = func(a Aligned, alpha alphabet.Alphabet, pos int, fill bool) alphabet.QLetter {
-	w := make([]float64, alpha.Len())
-	for i := range w {
-		w[i] = 1
-	}
-
-	others := float64(alpha.Len() - 1)
-	c := a.ColumnQL(pos, fill)
-	for _, l := range c {
-		if alpha.IsValid(l.L) {
-			i, alt := alpha.IndexOf(l.L), l.Q.ProbE()
-			p := (1 - alt)
-			alt /= others
-			for b := range w {
-				if i == b {
-					w[b] *= p
-				} else {
-					w[b] *= alt
+		others := float64(alpha.Len() - 1)
+		c := a.ColumnQL(pos, fill)
+		for _, l := range c {
+			if alpha.IsValid(l.L) {
+				i, alt := alpha.IndexOf(l.L), l.Q.ProbE()
+				p := (1 - alt)
+				alt /= others
+				for b := range w {
+					if i == b {
+						w[b] *= p
+					} else {
+						w[b] *= alt
+					}
 				}
 			}
 		}
-	}
 
-	var (
-		max         = 0.
-		sum         float64
-		best, count int
-	)
-	for _, p := range w {
-		sum += p
-	}
-	for i, v := range w {
-		if v /= sum; v > max {
-			max, best = v, i
-			count = 0
+		var (
+			max         = 0.
+			sum         float64
+			best, count int
+		)
+		for _, p := range w {
+			sum += p
 		}
-		if v == max || math.Abs(max-v) < FloatTolerance {
-			count++
+		for i, v := range w {
+			if v /= sum; v > max {
+				max, best = v, i
+				count = 0
+			}
+			if v == max || math.Abs(max-v) < FloatTolerance {
+				count++
+			}
 		}
-	}
 
-	if count > 1 {
+		if count > 1 {
+			return alphabet.QLetter{
+				L: alpha.Ambiguous(),
+				Q: 0,
+			}
+		}
+
 		return alphabet.QLetter{
-			L: alpha.Ambiguous(),
-			Q: 0,
+			L: alpha.Letter(best),
+			Q: alphabet.Ephred(1 - max),
 		}
 	}
 
-	return alphabet.QLetter{
-		L: alpha.Letter(best),
-		Q: alphabet.Ephred(1 - max),
-	}
-}
+	// Tolerance on float comparison for DefaultQConsensus.
+	FloatTolerance float64 = 1e-10
+)
