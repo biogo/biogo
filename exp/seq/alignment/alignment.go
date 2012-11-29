@@ -41,9 +41,9 @@ func rows(s seq.Sequence) int {
 // A Seq is an aligned sequence.
 type Seq struct {
 	seq.Annotation
-	SubIDs     []string
-	Seq        alphabet.Columns
-	Consensify seq.ConsenseFunc
+	SubIDs         []string
+	Seq            alphabet.Columns
+	ColumnConsense seq.ConsenseFunc
 }
 
 // NewSeq creates a new Seq with the given id, letter sequence and alphabet.
@@ -66,9 +66,9 @@ func NewSeq(id string, subids []string, b [][]alphabet.Letter, alpha alphabet.Al
 			ID:    id,
 			Alpha: alpha,
 		},
-		SubIDs:     append([]string(nil), subids...),
-		Seq:        append([][]alphabet.Letter(nil), b...),
-		Consensify: cons,
+		SubIDs:         append([]string(nil), subids...),
+		Seq:            append([][]alphabet.Letter(nil), b...),
+		ColumnConsense: cons,
 	}, nil
 }
 
@@ -276,12 +276,12 @@ func (s *Seq) ColumnQL(pos int, _ bool) []alphabet.QLetter {
 }
 
 // Consensus returns a quality sequence reflecting the consensus of the receiver determined by the
-// Consensify field.
+// ColumnConsense field.
 func (s *Seq) Consensus(_ bool) *linear.QSeq {
 	cs := make([]alphabet.QLetter, 0, s.Len())
 	alpha := s.Alphabet()
 	for i := range s.Seq {
-		cs = append(cs, s.Consensify(s, alpha, i, false))
+		cs = append(cs, s.ColumnConsense(s, alpha, i, false))
 	}
 
 	qs := linear.NewQSeq("Consensus:"+s.ID, cs, s.Alpha, alphabet.Sanger)

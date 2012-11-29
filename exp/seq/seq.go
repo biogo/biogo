@@ -166,7 +166,7 @@ var DefaultConsensus = func(a Aligned, alpha alphabet.Alphabet, pos int, fill bo
 	}
 }
 
-// Tolerance on float comparison for QConsensify.
+// Tolerance on float comparison for QColumnConsense.
 var FloatTolerance float64 = 1e-10
 
 // A default ConsenseFunc function that takes letter quality into account.

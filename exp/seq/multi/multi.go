@@ -54,9 +54,9 @@ func rows(s seq.Sequence) int {
 
 type Multi struct {
 	seq.Annotation
-	Seq        []seq.Sequence
-	Consensify seq.ConsenseFunc
-	Encode     alphabet.Encoding
+	Seq            []seq.Sequence
+	ColumnConsense seq.ConsenseFunc
+	Encode         alphabet.Encoding
 }
 
 // Create a new Multi sequence.
@@ -74,8 +74,8 @@ func NewMulti(id string, n []seq.Sequence, cons seq.ConsenseFunc) (*Multi, error
 			ID:    id,
 			Alpha: alpha,
 		},
-		Seq:        n,
-		Consensify: cons,
+		Seq:            n,
+		ColumnConsense: cons,
 	}, nil
 }
 
@@ -647,12 +647,12 @@ func (m *Multi) String() string {
 }
 
 // Consensus returns a quality sequence reflecting the consensus of the receiver determined by the
-// Consensify field.
+// ColumnConsense field.
 func (m *Multi) Consensus(includeMissing bool) *linear.QSeq {
 	cm := make([]alphabet.QLetter, 0, m.Len())
 	alpha := m.Alphabet()
 	for i := m.Start(); i < m.End(); i++ {
-		cm = append(cm, m.Consensify(m, alpha, i, includeMissing))
+		cm = append(cm, m.ColumnConsense(m, alpha, i, includeMissing))
 	}
 
 	c := linear.NewQSeq("Consensus:"+m.ID, cm, m.Alpha, m.Encode)

@@ -28,12 +28,12 @@ import (
 // A QSeq is an aligned sequence with quality scores.
 type QSeq struct {
 	seq.Annotation
-	SubIDs     []string
-	Seq        alphabet.QColumns
-	Consensify seq.ConsenseFunc
-	Threshold  alphabet.Qphred // Threshold for returning valid letter.
-	QFilter    seq.QFilter     // How to represent below threshold letter.
-	Encode     alphabet.Encoding
+	SubIDs         []string
+	Seq            alphabet.QColumns
+	ColumnConsense seq.ConsenseFunc
+	Threshold      alphabet.Qphred // Threshold for returning valid letter.
+	QFilter        seq.QFilter     // How to represent below threshold letter.
+	Encode         alphabet.Encoding
 }
 
 // NewSeq creates a new Seq with the given id, letter sequence and alphabet.
@@ -56,12 +56,12 @@ func NewQSeq(id string, subids []string, ql [][]alphabet.QLetter, alpha alphabet
 			ID:    id,
 			Alpha: alpha,
 		},
-		SubIDs:     append([]string(nil), subids...),
-		Seq:        append([][]alphabet.QLetter(nil), ql...),
-		Encode:     enc,
-		Consensify: cons,
-		Threshold:  2,
-		QFilter:    linear.QFilter,
+		SubIDs:         append([]string(nil), subids...),
+		Seq:            append([][]alphabet.QLetter(nil), ql...),
+		Encode:         enc,
+		ColumnConsense: cons,
+		Threshold:      2,
+		QFilter:        linear.QFilter,
 	}, nil
 }
 
@@ -283,12 +283,12 @@ func (s *QSeq) Column(pos int, _ bool) []alphabet.Letter {
 func (s *QSeq) ColumnQL(pos int, _ bool) []alphabet.QLetter { return s.Seq[pos] }
 
 // Consensus returns a quality sequence reflecting the consensus of the receiver determined by the
-// Consensify field.
+// ColumnConsense field.
 func (s *QSeq) Consensus(_ bool) *linear.QSeq {
 	cs := make([]alphabet.QLetter, 0, s.Len())
 	alpha := s.Alphabet()
 	for i := range s.Seq {
-		cs = append(cs, s.Consensify(s, alpha, i, false))
+		cs = append(cs, s.ColumnConsense(s, alpha, i, false))
 	}
 
 	qs := linear.NewQSeq("Consensus:"+s.ID, cs, s.Alpha, alphabet.Sanger)
