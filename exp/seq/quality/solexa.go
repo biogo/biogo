@@ -18,7 +18,6 @@ package quality
 import (
 	"code.google.com/p/biogo/exp/alphabet"
 	"code.google.com/p/biogo/exp/seq"
-	"code.google.com/p/biogo/exp/seq/linear"
 )
 
 // A slice of quality scores that satisfies the alphabet.Slice interface.
@@ -34,7 +33,7 @@ func (q Qsolexas) Append(a alphabet.Slice) alphabet.Slice {
 func (q Qsolexas) Copy(a alphabet.Slice) int { return copy(q, a.(Qsolexas)) }
 
 type Solexa struct {
-	linear.Annotation
+	seq.Annotation
 	Qual   Qsolexas
 	Encode alphabet.Encoding
 }
@@ -42,7 +41,7 @@ type Solexa struct {
 // Create a new scoring type.
 func NewSolexa(id string, q []alphabet.Qsolexa, encode alphabet.Encoding) *Solexa {
 	return &Solexa{
-		Annotation: linear.Annotation{ID: id},
+		Annotation: seq.Annotation{ID: id},
 		Qual:       append([]alphabet.Qsolexa(nil), q...),
 		Encode:     encode,
 	}
