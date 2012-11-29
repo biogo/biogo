@@ -44,7 +44,7 @@ type Alphabeter interface {
 	Alphabet() alphabet.Alphabet
 }
 
-type Filter func(Alphabeter, alphabet.Letter) alphabet.Letter
+type QFilter func(a alphabet.Alphabet, thresh alphabet.Qphred, ql alphabet.QLetter) alphabet.Letter
 
 // A Position holds a sequence position for all sequence types.
 type Position struct {

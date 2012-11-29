@@ -26,10 +26,10 @@ import (
 // A QSeq is a basic linear sequence with Phred quality scores.
 type QSeq struct {
 	seq.Annotation
-	Seq        alphabet.QLetters
-	Threshold  alphabet.Qphred // Threshold for returning valid letter.
-	LowQFilter seq.Filter      // How to represent below threshold letter.
-	Encode     alphabet.Encoding
+	Seq       alphabet.QLetters
+	Threshold alphabet.Qphred // Threshold for returning valid letter.
+	QFilter   seq.QFilter     // How to represent below threshold letter.
+	Encode    alphabet.Encoding
 }
 
 // Interface guarantees
@@ -47,10 +47,10 @@ func NewQSeq(id string, ql []alphabet.QLetter, alpha alphabet.Alphabet, enc alph
 			Alpha:  alpha,
 			Strand: seq.Plus,
 		},
-		Seq:        append(alphabet.QLetters(nil), ql...),
-		Encode:     enc,
-		Threshold:  2,
-		LowQFilter: LowQFilter,
+		Seq:       append(alphabet.QLetters(nil), ql...),
+		Encode:    enc,
+		Threshold: 2,
+		QFilter:   QFilter,
 	}
 }
 
@@ -182,14 +182,9 @@ func (s *QSeq) Reverse() {
 
 // String returns a string representation of the sequence data only.
 func (s *QSeq) String() string {
-	gap := s.Alpha.Gap()
 	cs := make([]alphabet.Letter, 0, len(s.Seq))
 	for _, ql := range s.Seq {
-		if alphabet.Qphred(ql.Q) > s.Threshold || ql.L == gap {
-			cs = append(cs, ql.L)
-		} else {
-			cs = append(cs, s.LowQFilter(s, ql.L))
-		}
+		cs = append(cs, s.QFilter(s.Alpha, s.Threshold, ql))
 	}
 
 	return alphabet.Letters(cs).String()
@@ -234,24 +229,15 @@ func (s *QSeq) Format(fs fmt.State, c rune) {
 	case 's':
 		fmt.Fprintf(fs, "%q ", s.ID)
 		for _, ql := range buf {
-			if ql.Q < s.Threshold {
-				fmt.Fprintf(fs, "%c", s.LowQFilter(s, ql.L))
-			} else {
-				fmt.Fprintf(fs, "%c", ql.L)
-			}
+			fmt.Fprintf(fs, "%c", s.QFilter(s.Alpha, s.Threshold, ql))
 		}
 		if pOk && p < s.Len() {
 			fmt.Fprint(fs, "...")
 		}
 	case 'a':
 		fmt.Fprintf(fs, ">%s %s\n", s.ID, s.Desc)
-		gap := s.Alpha.Gap()
 		for i, ql := range buf {
-			if ql.Q > s.Threshold || ql.L == gap {
-				fmt.Fprintf(fs, "%c", ql.L)
-			} else {
-				fmt.Fprintf(fs, "%c", s.LowQFilter(s, ql.L))
-			}
+			fmt.Fprintf(fs, "%c", s.QFilter(s.Alpha, s.Threshold, ql))
 			if wOk && i < s.Len()-1 && i%w == w-1 {
 				fmt.Fprintln(fs)
 			}
@@ -298,4 +284,9 @@ func (s *QSeq) formatDescLineTo(fs fmt.State, p rune) {
 }
 
 // The default LowQFilter function for QSeq.
-var LowQFilter = func(s seq.Alphabeter, _ alphabet.Letter) alphabet.Letter { return s.Alphabet().Ambiguous() }
+var QFilter = func(a alphabet.Alphabet, thresh alphabet.Qphred, l alphabet.QLetter) alphabet.Letter {
+	if l.L == a.Gap() || l.Q >= thresh {
+		return l.L
+	}
+	return a.Ambiguous()
+}

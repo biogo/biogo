@@ -32,7 +32,7 @@ type QSeq struct {
 	Seq        alphabet.QColumns
 	Consensify seq.ConsenseFunc
 	Threshold  alphabet.Qphred // Threshold for returning valid letter.
-	LowQFilter seq.Filter      // How to represent below threshold letter.
+	QFilter    seq.QFilter     // How to represent below threshold letter.
 	Encode     alphabet.Encoding
 }
 
@@ -61,7 +61,7 @@ func NewQSeq(id string, subids []string, ql [][]alphabet.QLetter, alpha alphabet
 		Encode:     enc,
 		Consensify: cons,
 		Threshold:  2,
-		LowQFilter: linear.LowQFilter,
+		QFilter:    linear.QFilter,
 	}, nil
 }
 
@@ -169,7 +169,7 @@ func (s *QSeq) Reverse() {
 func (s *QSeq) String() string {
 	t := s.Consensus(false)
 	t.Threshold = s.Threshold
-	t.LowQFilter = s.LowQFilter
+	t.QFilter = s.QFilter
 	return t.String()
 }
 
@@ -269,10 +269,10 @@ func (s *QSeq) AppendEach(a [][]alphabet.QLetter) error {
 func (s *QSeq) Column(pos int, _ bool) []alphabet.Letter {
 	c := make([]alphabet.Letter, s.Rows())
 	for i, l := range s.Seq[pos] {
-		if l.Q > s.Threshold {
+		if l.Q >= s.Threshold {
 			c[i] = l.L
 		} else {
-			c[i] = s.LowQFilter(s, 0)
+			c[i] = s.QFilter(s.Alpha, 255, alphabet.QLetter{})
 		}
 	}
 
