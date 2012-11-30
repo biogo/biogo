@@ -61,7 +61,7 @@ func NewQSeq(id string, subids []string, ql [][]alphabet.QLetter, alpha alphabet
 		Encode:         enc,
 		ColumnConsense: cons,
 		Threshold:      2,
-		QFilter:        linear.QFilter,
+		QFilter:        seq.AmbigFilter,
 	}, nil
 }
 

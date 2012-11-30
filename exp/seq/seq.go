@@ -44,7 +44,31 @@ type Alphabeter interface {
 	Alphabet() alphabet.Alphabet
 }
 
+// A QFilter returns a letter based on an alphabet, quality letter and quality threshold.
 type QFilter func(a alphabet.Alphabet, thresh alphabet.Qphred, ql alphabet.QLetter) alphabet.Letter
+
+var (
+	// AmbigFilter is a QFilter function that returns the given alphabet's ambiguous position
+	// letter for quality letters with a quality score below the specified threshold.
+	AmbigFilter QFilter = func(a alphabet.Alphabet, thresh alphabet.Qphred, l alphabet.QLetter) alphabet.Letter {
+		if l.L == a.Gap() || l.Q >= thresh {
+			return l.L
+		}
+		return a.Ambiguous()
+	}
+
+	// CaseFilter is a QFilter function that returns a lower case letter for quality letters
+	// with a quality score below the specified threshold and upper case equal to or above the threshold.
+	CaseFilter QFilter = func(a alphabet.Alphabet, thresh alphabet.Qphred, l alphabet.QLetter) alphabet.Letter {
+		switch {
+		case l.L == a.Gap():
+			return l.L
+		case l.Q >= thresh:
+			return l.L &^ ('a' - 'A')
+		}
+		return l.L | ('a' - 'A')
+	}
+)
 
 // A Position holds a sequence position for all sequence types.
 type Position struct {
@@ -144,7 +168,7 @@ type ConsenseFunc func(a Aligned, alpha alphabet.Alphabet, pos int, fill bool) a
 
 var (
 	// The default ConsenseFunc function.
-	DefaultConsensus = func(a Aligned, alpha alphabet.Alphabet, pos int, fill bool) alphabet.QLetter {
+	DefaultConsensus ConsenseFunc = func(a Aligned, alpha alphabet.Alphabet, pos int, fill bool) alphabet.QLetter {
 		w := make([]int, alpha.Len())
 		c := a.Column(pos, fill)
 
@@ -169,7 +193,7 @@ var (
 
 	// A default ConsenseFunc function that takes letter quality into account.
 	// http://staden.sourceforge.net/manual/gap4_unix_120.html
-	DefaultQConsensus = func(a Aligned, alpha alphabet.Alphabet, pos int, fill bool) alphabet.QLetter {
+	DefaultQConsensus ConsenseFunc = func(a Aligned, alpha alphabet.Alphabet, pos int, fill bool) alphabet.QLetter {
 		w := make([]float64, alpha.Len())
 		for i := range w {
 			w[i] = 1
@@ -222,7 +246,7 @@ var (
 			Q: alphabet.Ephred(1 - max),
 		}
 	}
-
-	// Tolerance on float comparison for DefaultQConsensus.
-	FloatTolerance float64 = 1e-10
 )
+
+// Tolerance on float comparison for DefaultQConsensus.
+var FloatTolerance float64 = 1e-10

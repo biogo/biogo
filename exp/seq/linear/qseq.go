@@ -50,7 +50,7 @@ func NewQSeq(id string, ql []alphabet.QLetter, alpha alphabet.Alphabet, enc alph
 		Seq:       append(alphabet.QLetters(nil), ql...),
 		Encode:    enc,
 		Threshold: 2,
-		QFilter:   QFilter,
+		QFilter:   seq.AmbigFilter,
 	}
 }
 
@@ -281,12 +281,4 @@ func (s *QSeq) formatDescLineTo(fs fmt.State, p rune) {
 		fmt.Fprintf(fs, " %s", s.Desc)
 	}
 	fmt.Fprintln(fs)
-}
-
-// The default LowQFilter function for QSeq.
-var QFilter = func(a alphabet.Alphabet, thresh alphabet.Qphred, l alphabet.QLetter) alphabet.Letter {
-	if l.L == a.Gap() || l.Q >= thresh {
-		return l.L
-	}
-	return a.Ambiguous()
 }
