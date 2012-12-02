@@ -26,14 +26,14 @@ import (
 
 func ExampleNewSeq() {
 	d := NewSeq("example DNA", []alphabet.Letter("ACGCTGACTTGGTGCACGT"), alphabet.DNA)
-	fmt.Println(d, d.Moltype())
+	fmt.Printf("%-s %v\n", d, d.Moltype())
 	// Output:
 	// ACGCTGACTTGGTGCACGT DNA
 }
 
 func ExampleSeq_Validate() {
 	r := NewSeq("example RNA", []alphabet.Letter("ACGCTGACTTGGTGCACGT"), alphabet.RNA)
-	fmt.Println(r, r.Moltype())
+	fmt.Printf("%-s %v\n", r, r.Moltype())
 	if ok, pos := r.Validate(); ok {
 		fmt.Println("valid RNA")
 	} else {
@@ -46,9 +46,9 @@ func ExampleSeq_Validate() {
 
 func ExampleSeq_Truncate_1() {
 	s := NewSeq("example DNA", []alphabet.Letter("ACGCTGACTTGGTGCACGT"), alphabet.DNA)
-	fmt.Println(s)
+	fmt.Printf("%-s\n", s)
 	if err := sequtils.Truncate(s, s, 5, 12); err == nil {
-		fmt.Println(s)
+		fmt.Printf("%-s\n", s)
 	}
 	// Output:
 	// ACGCTGACTTGGTGCACGT
@@ -60,17 +60,17 @@ func ExampleSeq_Truncate_2() {
 
 	s = NewSeq("example DNA", []alphabet.Letter("ACGCTGACTTGGTGCACGT"), alphabet.DNA)
 	s.Conform = feat.Circular
-	fmt.Printf("%s Conformation = %v\n", s, s.Conformation())
+	fmt.Printf("%-s Conformation = %v\n", s, s.Conformation())
 	if err := sequtils.Truncate(s, s, 12, 5); err == nil {
-		fmt.Printf("%s Conformation = %v\n", s, s.Conformation())
+		fmt.Printf("%-s Conformation = %v\n", s, s.Conformation())
 	} else {
 		fmt.Println("Error:", err)
 	}
 
 	s = NewSeq("example DNA", []alphabet.Letter("ACGCTGACTTGGTGCACGT"), alphabet.DNA)
-	fmt.Printf("%s Conformation = %v\n", s, s.Conformation())
+	fmt.Printf("%-s Conformation = %v\n", s, s.Conformation())
 	if err := sequtils.Truncate(s, s, 12, 5); err == nil {
-		fmt.Printf("%s Conformation = %v\n", s, s.Conformation())
+		fmt.Printf("%-s Conformation = %v\n", s, s.Conformation())
 	} else {
 		fmt.Println("Error:", err)
 	}
@@ -83,9 +83,9 @@ func ExampleSeq_Truncate_2() {
 
 func ExampleSeq_RevComp() {
 	s := NewSeq("example DNA", []alphabet.Letter("ATGCtGACTTGGTGCACGT"), alphabet.DNA)
-	fmt.Println(s)
+	fmt.Printf("%-s\n", s)
 	s.RevComp()
-	fmt.Println(s)
+	fmt.Printf("%-s\n", s)
 	// Output:
 	// ATGCtGACTTGGTGCACGT
 	// ACGTGCACCAAGTCaGCAT
@@ -96,15 +96,15 @@ func ExampleSeq_Join() {
 
 	s1 = NewSeq("a", []alphabet.Letter("agctgtgctga"), alphabet.DNA)
 	s2 = NewSeq("b", []alphabet.Letter("CGTGCAGTCATGAGTGA"), alphabet.DNA)
-	fmt.Println(s1, s2)
+	fmt.Printf("%-s %-s\n", s1, s2)
 	if err := sequtils.Join(s1, s2, seq.Start); err == nil {
-		fmt.Println(s1)
+		fmt.Printf("%-s\n", s1)
 	}
 
 	s1 = NewSeq("a", []alphabet.Letter("agctgtgctga"), alphabet.DNA)
 	s2 = NewSeq("b", []alphabet.Letter("CGTGCAGTCATGAGTGA"), alphabet.DNA)
 	if err := sequtils.Join(s1, s2, seq.End); err == nil {
-		fmt.Println(s1)
+		fmt.Printf("%-s\n", s1)
 	}
 	// Output:
 	// agctgtgctga CGTGCAGTCATGAGTGA
@@ -134,9 +134,9 @@ func ExampleSeq_Stitch() {
 		fe{s: 28, e: 37},
 		fe{s: 49, e: s.Len() - 1},
 	}
-	fmt.Println(s)
+	fmt.Printf("%-s\n", s)
 	if err := sequtils.Stitch(s, s, f); err == nil {
-		fmt.Println(s)
+		fmt.Printf("%-s\n", s)
 	}
 	// Output:
 	// aAGTATAAgtcagtgcagtgtctggcagTGCTCGTGCgtagtgaagtagGGTTAGTTTa
@@ -150,9 +150,9 @@ func ExampleSeq_Compose() {
 		fe{s: 1, e: 8, st: -1},
 		fe{s: 28, e: s.Len() - 1},
 	}
-	fmt.Println(s)
+	fmt.Printf("%-s\n", s)
 	if err := sequtils.Compose(s, s, f); err == nil {
-		fmt.Println(s)
+		fmt.Printf("%-s\n", s)
 	}
 	// Output:
 	// aAGTATAAgtcagtgcagtgtctggcag<TS>gtagtgaagtagggttagttta

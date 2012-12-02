@@ -202,7 +202,8 @@ func min(a, b int) int {
 // truncated output via the verb's precision. Fasta format supports sequence line
 // specification via the verb's width field. Fastq format supports optional inclusion
 // of the '+' line descriptor line with the '+' flag. The 'v' verb supports the '#'
-// flag for Go syntax output.
+// flag for Go syntax output. Ths 's' and 'v' formats support the '-' flag for
+// omission of the sequence name.
 func (s *QSeq) Format(fs fmt.State, c rune) {
 	if s == nil {
 		fmt.Fprint(fs, "<nil>")
@@ -227,7 +228,9 @@ func (s *QSeq) Format(fs fmt.State, c rune) {
 		}
 		fallthrough
 	case 's':
-		fmt.Fprintf(fs, "%q ", s.ID)
+		if !fs.Flag('-') {
+			fmt.Fprintf(fs, "%q ", s.ID)
+		}
 		for _, ql := range buf {
 			fmt.Fprintf(fs, "%c", s.QFilter(s.Alpha, s.Threshold, ql))
 		}

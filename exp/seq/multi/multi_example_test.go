@@ -30,7 +30,7 @@ var (
 		start := a.Start()
 		for i := 0; i < a.Rows(); i++ {
 			s := a.Get(i)
-			fmt.Printf("%s%v\n", strings.Repeat(" ", s.Start()-start), s)
+			fmt.Printf("%s%-s\n", strings.Repeat(" ", s.Start()-start), s)
 		}
 		fmt.Println()
 		fmt.Println(a)
@@ -76,7 +76,7 @@ func ExampleNewMulti() {
 
 func ExampleMulti_Add() {
 	var err error
-	fmt.Printf("%v %v\n", m.Rows(), m)
+	fmt.Printf("%v %-s\n", m.Rows(), m)
 	err = m.Add(linear.NewQSeq("example DNA",
 		[]alphabet.QLetter{{'a', 40}, {'c', 39}, {'g', 40}, {'C', 38}, {'t', 35}, {'g', 20}},
 		alphabet.DNA, alphabet.Sanger))
@@ -84,7 +84,7 @@ func ExampleMulti_Add() {
 		fmt.Println(err)
 		return
 	}
-	fmt.Printf("%v %v\n", m.Rows(), m)
+	fmt.Printf("%v %-s\n", m.Rows(), m)
 	err = m.Add(linear.NewQSeq("example RNA",
 		[]alphabet.QLetter{{'a', 40}, {'c', 39}, {'g', 40}, {'C', 38}, {'t', 35}, {'g', 20}},
 		alphabet.RNA, alphabet.Sanger))

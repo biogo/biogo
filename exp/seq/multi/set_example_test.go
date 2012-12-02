@@ -44,7 +44,7 @@ func ExampleSet_AppendEach() {
 	set.AppendEach(as)
 
 	for _, s := range set {
-		fmt.Println(s)
+		fmt.Printf("%-s\n", s)
 	}
 	// Output:
 	// ACGCTGACTTGGTGCACGTAA
@@ -60,7 +60,7 @@ func ExampleSet_Rows() {
 }
 
 func ExampleSet_Get() {
-	fmt.Println(set.Get(2))
+	fmt.Printf("%-s\n", set.Get(2))
 	// Output:
 	// ACGCTGACTGGCCGTGG
 }

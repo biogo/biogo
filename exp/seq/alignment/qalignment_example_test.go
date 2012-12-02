@@ -28,7 +28,7 @@ var (
 	qaligned = func(a *QSeq) {
 		for i := 0; i < a.Rows(); i++ {
 			s := a.Get(i)
-			fmt.Printf("%v\n", s)
+			fmt.Printf("%-s\n", s)
 		}
 		fmt.Println()
 		fmt.Println(a)
