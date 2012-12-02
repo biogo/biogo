@@ -28,7 +28,7 @@ var (
 	m, n    *Seq
 	aligned = func(a *Seq) {
 		for i := 0; i < a.Rows(); i++ {
-			s := a.Get(i)
+			s := a.Row(i).Copy() // FIXME should not need a Copy - require Format method on Row.
 			fmt.Printf("%-s\n", s)
 		}
 		fmt.Println()
@@ -121,7 +121,7 @@ func ExampleSeq_Add() {
 
 func ExampleSeq_Copy() {
 	n = m.Copy().(*Seq)
-	n.Set(seq.Position{Col: 3, Row: 2}, alphabet.QLetter{L: 't'})
+	n.Row(2).Set(3, alphabet.QLetter{L: 't'})
 	aligned(m)
 	fmt.Println()
 	aligned(n)

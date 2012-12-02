@@ -29,7 +29,7 @@ var (
 	aligned = func(a *Multi) {
 		start := a.Start()
 		for i := 0; i < a.Rows(); i++ {
-			s := a.Get(i)
+			s := a.Row(i)
 			fmt.Printf("%s%-s\n", strings.Repeat(" ", s.Start()-start), s)
 		}
 		fmt.Println()
@@ -99,8 +99,8 @@ func ExampleMulti_Add() {
 }
 
 func ExampleMulti_Copy() {
-	n = m.Copy()
-	n.Set(seq.Position{Col: 3, Row: 2}, alphabet.QLetter{L: 't'})
+	n = m.Copy().(*Multi)
+	n.Row(2).Set(3, alphabet.QLetter{L: 't'})
 	aligned(m)
 	fmt.Println()
 	aligned(n)
@@ -127,7 +127,7 @@ func ExampleMulti_Count() {
 }
 
 func ExampleMulti_IsFlush() {
-	m.Get(3).SetOffset(13)
+	m.Row(3).SetOffset(13)
 	aligned(m)
 	fmt.Printf("\nFlush at left: %v\nFlush at right: %v\n", m.IsFlush(seq.Start), m.IsFlush(seq.End))
 	m.Flush(seq.Start, '-')

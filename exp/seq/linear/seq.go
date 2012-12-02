@@ -71,22 +71,16 @@ func (s *Seq) Slice() alphabet.Slice { return s.Seq }
 func (s *Seq) SetSlice(sl alphabet.Slice) { s.Seq = sl.(alphabet.Letters) }
 
 // At returns the letter at position pos.
-func (s *Seq) At(pos seq.Position) alphabet.QLetter {
-	if pos.Row != 0 {
-		panic("linear: index out of range")
-	}
+func (s *Seq) At(i int) alphabet.QLetter {
 	return alphabet.QLetter{
-		L: s.Seq[pos.Col-s.Offset],
+		L: s.Seq[i-s.Offset],
 		Q: seq.DefaultQphred,
 	}
 }
 
 // Set sets the letter at position pos to l.
-func (s *Seq) Set(pos seq.Position, l alphabet.QLetter) {
-	if pos.Row != 0 {
-		panic("linear: index out of range")
-	}
-	s.Seq[pos.Col-s.Offset] = l.L
+func (s *Seq) Set(i int, l alphabet.QLetter) {
+	s.Seq[i-s.Offset] = l.L
 }
 
 // Len returns the length of the sequence.

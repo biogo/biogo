@@ -16,7 +16,6 @@
 package multi
 
 import (
-	"code.google.com/p/biogo/bio"
 	"code.google.com/p/biogo/exp/alphabet"
 	"code.google.com/p/biogo/exp/seq"
 	"code.google.com/p/biogo/util"
@@ -27,54 +26,23 @@ type Set []seq.Sequence
 
 // Interface guarantees
 var (
-	_ seq.Getter         = &Set{}
-	_ seq.GetterAppender = &Set{}
+	_ seq.Rower       = &Set{}
+	_ seq.RowAppender = &Set{}
 )
 
 // Append each []byte in a to the appropriate sequence in the reciever.
 func (s Set) AppendEach(a [][]alphabet.QLetter) (err error) {
 	if len(a) != s.Rows() {
-		return bio.NewError(fmt.Sprintf("Number of sequences does not match Rows(): %d != %d.", len(a), s.Rows()), 0, a)
+		return fmt.Errorf("multi: number of sequences does not match row count: %d != %d.", len(a), s.Rows())
 	}
-	var i int
-	for _, r := range s {
-		if m, ok := r.(seq.GetterAppender); ok {
-			row := m.Rows()
-			if m.AppendEach(a[i:i+row]) != nil {
-				panic("internal size mismatch")
-			}
-			i += row
-		} else {
-			if ap, ok := r.(seq.Appender); ok {
-				ap.AppendQLetters(a[i]...)
-			} else {
-				panic("Non-Multiple Sequence type without Append")
-			}
-			i++
-		}
+	for i, r := range s {
+		r.(seq.Appender).AppendQLetters(a[i]...)
 	}
-
-	return
+	return nil
 }
 
-func (s Set) Get(i int) seq.Sequence {
-	var row int
-	for _, r := range s {
-		if m, ok := r.(seq.Getter); ok {
-			row = m.Rows()
-			if i < row {
-				return m.Get(i)
-			}
-		} else {
-			row = 1
-			if i == 0 {
-				return r
-			}
-		}
-		i -= row
-	}
-
-	panic("index out of range")
+func (s Set) Row(i int) seq.Sequence {
+	return s[i]
 }
 
 func (s Set) Len() int {
@@ -90,15 +58,7 @@ func (s Set) Len() int {
 }
 
 func (s Set) Rows() (c int) {
-	for _, r := range s {
-		if m, ok := r.(rowCounter); ok {
-			c += m.Rows()
-		} else {
-			c++
-		}
-	}
-
-	return
+	return len(s)
 }
 
 func (s Set) Reverse() {

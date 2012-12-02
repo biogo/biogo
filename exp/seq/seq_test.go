@@ -19,6 +19,7 @@ import (
 	"code.google.com/p/biogo/exp/seq"
 	"code.google.com/p/biogo/exp/seq/alignment"
 	"code.google.com/p/biogo/exp/seq/linear"
+	"code.google.com/p/biogo/exp/seq/multi"
 	"testing"
 )
 
@@ -26,10 +27,15 @@ func TestSeq(t *testing.T) {
 	var (
 		_ seq.Sequence = &linear.Seq{}
 		_ seq.Sequence = &linear.QSeq{}
-		_ seq.Sequence = &alignment.Seq{}
-		_ seq.Sequence = &alignment.QSeq{}
+		_ seq.Sequence = &alignment.Row{}
+		_ seq.Sequence = &alignment.QRow{}
 
 		_ seq.Scorer = &linear.QSeq{}
-		_ seq.Scorer = &alignment.QSeq{}
+		_ seq.Scorer = &alignment.QRow{}
+
+		_ seq.Rower = &alignment.Seq{}
+		_ seq.Rower = &alignment.QSeq{}
+		_ seq.Rower = &multi.Multi{}
+		_ seq.Rower = &multi.Set{}
 	)
 }

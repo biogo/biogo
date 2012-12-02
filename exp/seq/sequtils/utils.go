@@ -265,7 +265,7 @@ func Compose(dst, src Sliceable, fs feat.Set) error {
 // the zero'th row position.
 type QualityFeature interface {
 	feat.Feature
-	EAt(seq.Position) float64
+	EAt(int) float64
 }
 
 // Trim uses the modified-Mott trimming function to determine the start and end positions
@@ -273,7 +273,7 @@ type QualityFeature interface {
 func Trim(q QualityFeature, limit float64) (start, end int) {
 	var sum, max float64
 	for i := q.Start(); i < q.End(); i++ {
-		sum += limit - q.EAt(seq.Position{Col: i})
+		sum += limit - q.EAt(i)
 		if sum < 0 {
 			sum, start = 0, i+1
 		}

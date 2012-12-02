@@ -40,17 +40,17 @@ var (
 	joinerRegistry     map[reflect.Type]JoinFunc
 )
 
-type rowCounter interface {
-	Rows() int
-}
+// type rowCounter interface {
+// 	Rows() int
+// }
 
-func rows(s seq.Sequence) int {
-	row := 1
-	if m, ok := s.(rowCounter); ok {
-		row = m.Rows()
-	}
-	return row
-}
+// func rows(s seq.Sequence) int {
+// 	row := 1
+// 	if m, ok := s.(rowCounter); ok {
+// 		row = m.Rows()
+// 	}
+// 	return row
+// }
 
 type Multi struct {
 	seq.Annotation
@@ -80,52 +80,52 @@ func NewMulti(id string, n []seq.Sequence, cons seq.ConsenseFunc) (*Multi, error
 }
 
 // At returns the letter at position pos.
-func (m *Multi) At(pos seq.Position) alphabet.QLetter {
-	for _, r := range m.Seq {
-		row := rows(r)
-		if pos.Row < row {
-			return r.At(pos)
-		}
-		pos.Row -= row
-	}
+// func (m *Multi) At(pos seq.Position) alphabet.QLetter {
+// 	for _, r := range m.Seq {
+// 		row := rows(r)
+// 		if pos.Row < row {
+// 			return r.At(pos)
+// 		}
+// 		pos.Row -= row
+// 	}
 
-	panic("multi: index out of range")
-}
+// 	panic("multi: index out of range")
+// }// 
 
 // Set sets the letter at position pos to l.
-func (m *Multi) Set(pos seq.Position, l alphabet.QLetter) {
-	for _, r := range m.Seq {
-		row := rows(r)
-		if pos.Row < row {
-			r.Set(pos, l)
-			return
-		}
-		pos.Row -= row
-	}
+// func (m *Multi) Set(pos seq.Position, l alphabet.QLetter) {
+// 	for _, r := range m.Seq {
+// 		row := rows(r)
+// 		if pos.Row < row {
+// 			r.Set(pos, l)
+// 			return
+// 		}
+// 		pos.Row -= row
+// 	}
 
-	panic("multi: index out of range")
-}
+// 	panic("multi: index out of range")
+// }// 
 
 // SetE sets the quality at position pos to e to reflect the given p(Error).
-func (m *Multi) SetE(pos seq.Position, q float64) {
-	for _, r := range m.Seq {
-		row := rows(r)
-		if pos.Row < row {
-			if qs, ok := r.(seq.Quality); ok {
-				qs.SetE(pos, q)
-				return
-			}
-		}
-		pos.Row -= row
-	}
+// func (m *Multi) SetE(pos seq.Position, q float64) {
+// 	for _, r := range m.Seq {
+// 		row := rows(r)
+// 		if pos.Row < row {
+// 			if qs, ok := r.(seq.Quality); ok {
+// 				qs.SetE(pos, q)
+// 				return
+// 			}
+// 		}
+// 		pos.Row -= row
+// 	}
 
-	panic("multi: index out of range")
-}
+// 	panic("multi: index out of range")
+// }// 
 
 // QEncode encodes the quality at position pos to a letter based on the sequence encoding setting.
-func (m *Multi) QEncode(pos seq.Position) byte {
-	return m.At(pos).Q.Encode(m.Encode)
-}
+// func (m *Multi) QEncode(pos seq.Position) byte {
+// 	return m.At(pos).Q.Encode(m.Encode)
+// }// 
 
 // Encoding returns the quality encoding scheme.
 func (m *Multi) Encoding() alphabet.Encoding { return m.Encode }
@@ -141,21 +141,21 @@ func (m *Multi) SetEncoding(e alphabet.Encoding) {
 }
 
 // EAt returns the probability of a sequence error at position pos.
-func (m *Multi) EAt(pos seq.Position) float64 {
-	for _, r := range m.Seq {
-		row := rows(r)
-		if pos.Row < row {
-			if qs, ok := r.(seq.Quality); ok {
-				return qs.EAt(pos)
-			} else {
-				return seq.DefaultQphred.ProbE()
-			}
-		}
-		pos.Row -= row
-	}
+// func (m *Multi) EAt(pos seq.Position) float64 {
+// 	for _, r := range m.Seq {
+// 		row := rows(r)
+// 		if pos.Row < row {
+// 			if qs, ok := r.(seq.Quality); ok {
+// 				return qs.EAt(pos)
+// 			} else {
+// 				return seq.DefaultQphred.ProbE()
+// 			}
+// 		}
+// 		pos.Row -= row
+// 	}
 
-	panic("multi: index out of range")
-}
+// 	panic("multi: index out of range")
+// }// 
 
 // Len returns the length of the alignment.
 func (m *Multi) Len() int {
@@ -178,12 +178,7 @@ func (m *Multi) Len() int {
 
 // Rows returns the number of rows in the alignment.
 func (m *Multi) Rows() int {
-	var c int
-	for _, r := range m.Seq {
-		c += rows(r)
-	}
-
-	return c
+	return len(m.Seq)
 }
 
 // SetOffset sets the global offset of the sequence to o.
@@ -219,7 +214,7 @@ func (m *Multi) End() int {
 }
 
 // Copy returns a copy of the sequence.
-func (m *Multi) Copy() *Multi {
+func (m *Multi) Copy() seq.Rower {
 	c := &Multi{}
 	*c = *m
 	c.Seq = make([]seq.Sequence, len(m.Seq))
@@ -279,30 +274,13 @@ func (m *Multi) Add(n ...seq.Sequence) error {
 // TODO
 func (m *Multi) Delete(i int) {}
 
-// Get returns the sequence corresponding to the ith row of the Seq.
-func (m *Multi) Get(i int) seq.Sequence {
-	var row int
-	for _, r := range m.Seq {
-		if m, ok := r.(seq.Getter); ok {
-			row = m.Rows()
-			if i < row {
-				return m.Get(i)
-			}
-		} else {
-			row = 1
-			if i == 0 {
-				return r
-			}
-		}
-		i -= row
-	}
-
-	panic("multi: index out of range")
+func (m *Multi) Row(i int) seq.Sequence {
+	return m.Seq[i]
 }
 
 // Append appends a to the ith sequence in the receiver.
 func (m *Multi) Append(i int, a ...alphabet.QLetter) (err error) {
-	return m.Get(i).(seq.Appender).AppendQLetters(a...)
+	return m.Row(i).(seq.Appender).AppendQLetters(a...)
 }
 
 // Append each byte of each a to the appropriate sequence in the reciever.
@@ -366,7 +344,7 @@ func (m *Multi) Column(pos int, fill bool) []alphabet.Letter {
 			}
 		} else {
 			if r.Start() <= pos && pos < r.End() {
-				c = append(c, r.At(seq.Position{Col: pos}).L)
+				c = append(c, r.At(pos).L)
 			} else if fill {
 				c = append(c, m.Alpha.Gap())
 			}
@@ -398,7 +376,7 @@ func (m *Multi) ColumnQL(pos int, fill bool) []alphabet.QLetter {
 			}
 		} else {
 			if r.Start() <= pos && pos < r.End() {
-				c = append(c, r.At(seq.Position{Col: pos}))
+				c = append(c, r.At(pos))
 			} else if fill {
 				c = append(c, alphabet.QLetter{L: m.Alpha.Gap()})
 			}
@@ -450,8 +428,7 @@ func (m *Multi) Flush(where int, fill alphabet.Letter) {
 	}
 	if where&seq.End != 0 {
 		end := m.End()
-		for i := 0; i < m.Rows(); i++ {
-			r := m.Get(i)
+		for _, r := range m.Seq {
 			if end-r.End() < 1 {
 				continue
 			}
@@ -516,8 +493,8 @@ func (m *Multi) Join(a *Multi, where int) error {
 	}
 
 	for i := 0; i < m.Rows(); i++ {
-		r := m.Get(i)
-		as := a.Get(i)
+		r := m.Row(i)
+		as := a.Row(i)
 		err := joinOne(r, as, where)
 		if err != nil {
 			return err

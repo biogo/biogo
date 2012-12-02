@@ -138,7 +138,7 @@ func NewWriter(w io.Writer, width int) *Writer {
 // Write a single sequence and return the number of bytes written and any error.
 func (self *Writer) Write(s seq.Sequence) (n int, err error) {
 	var (
-		ln, c  int
+		ln     int
 		prefix = append([]byte{'\n'}, self.SeqPrefix...)
 	)
 	id, desc := s.Name(), s.Description()
@@ -159,7 +159,7 @@ func (self *Writer) Write(s seq.Sequence) (n int, err error) {
 					return
 				}
 			}
-			ln, err = self.w.Write([]byte{byte(s.At(seq.Position{Col: i, Row: c}).L)})
+			ln, err = self.w.Write([]byte{byte(s.At(i).L)})
 			if n += ln; err != nil {
 				return
 			}

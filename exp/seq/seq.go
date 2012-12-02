@@ -70,22 +70,17 @@ var (
 	}
 )
 
-// A Position holds a sequence position for all sequence types.
-type Position struct {
-	Col int // The index of a letter within a sequence.
-	Row int // The specific sequence within a multiple sequence.
-}
-
 // A Sequence is a feature that stores sequence information.
 type Sequence interface {
 	Feature
-	At(Position) alphabet.QLetter   // Return the letter at a specific position.
-	Set(Position, alphabet.QLetter) // Set the letter at a specific position.
-	Alphabet() alphabet.Alphabet    // Return the Alphabet being used.
-	RevComp()                       // Reverse complement the sequence.
-	Reverse()                       // Reverse the order of elements in the sequence.
-	New() Sequence                  // Return a pointer to the zero value of the concrete type.
-	Copy() Sequence                 // Return a copy of the Sequence.
+	At(int) alphabet.QLetter     // Return the letter at a specific position.
+	Set(int, alphabet.QLetter)   // Set the letter at a specific position.
+	Alphabet() alphabet.Alphabet // Return the Alphabet being used.
+	RevComp()                    // Reverse complement the sequence.
+	Reverse()                    // Reverse the order of elements in the sequence.
+	New() Sequence               // Return a pointer to the zero value of the concrete type.
+	Copy() Sequence              // Return a copy of the Sequence.
+	CopyAnnotation() *Annotation // Return a copy of the sequence's annotation.
 	Slicer
 	Conformationer
 	ConformationSetter
@@ -116,11 +111,11 @@ type Slicer interface {
 
 // A Scorer is a sequence type that provides Phred-based scoring information.
 type Scorer interface {
-	EAt(Position) float64          // Return the p(Error) for a specific position.
-	SetE(Position, float64)        // Set the p(Error) for a specific position.
+	EAt(int) float64               // Return the p(Error) for a specific position.
+	SetE(int, float64)             // Set the p(Error) for a specific position.
 	Encoding() alphabet.Encoding   // Return the score encoding scheme.
 	SetEncoding(alphabet.Encoding) // Set the score encoding scheme.
-	QEncode(pos Position) byte     // Encode the quality at pos according the the encoding scheme.
+	QEncode(int) byte              // Encode the quality at the specified position according the the encoding scheme.
 }
 
 // A Quality is a feature whose elements are Phred scores.
@@ -129,15 +124,15 @@ type Quality interface {
 	Copy() Quality // Return a copy of the Quality.
 }
 
-// Getter describes the interface for sets of sequences or aligned multiple sequences.
-type Getter interface {
+// Rower describes the interface for sets of sequences or aligned multiple sequences.
+type Rower interface {
 	Rows() int
-	Get(i int) Sequence
+	Row(i int) Sequence
 }
 
-// GetterAppender is a type for sets of sequences or aligned multiple sequences that can append letters to individual or grouped sequences.
-type GetterAppender interface {
-	Getter
+// RowAppender is a type for sets of sequences or aligned multiple sequences that can append letters to individual or grouped sequences.
+type RowAppender interface {
+	Rower
 	AppendEach(a [][]alphabet.QLetter) (err error)
 }
 

@@ -57,22 +57,22 @@ func (q *Solexa) SetSlice(sl alphabet.Slice) { q.Qual = sl.(Qsolexas) }
 func (q *Solexa) Append(a ...alphabet.Qsolexa) { q.Qual = append(q.Qual, a...) }
 
 // Return the raw score at position pos.
-func (q *Solexa) At(pos seq.Position) alphabet.Qsolexa { return q.Qual[pos.Col-q.Offset] }
+func (q *Solexa) At(i int) alphabet.Qsolexa { return q.Qual[i-q.Offset] }
 
 // Return the error probability at position pos.
-func (q *Solexa) EAt(pos seq.Position) float64 { return q.Qual[pos.Col-q.Offset].ProbE() }
+func (q *Solexa) EAt(i int) float64 { return q.Qual[i-q.Offset].ProbE() }
 
 // Set the raw score at position pos to qual.
-func (q *Solexa) Set(pos seq.Position, qual alphabet.Qsolexa) { q.Qual[pos.Col-q.Offset] = qual }
+func (q *Solexa) Set(i int, qual alphabet.Qsolexa) { q.Qual[i-q.Offset] = qual }
 
 // Set the error probability to e at position pos.
-func (q *Solexa) SetE(pos seq.Position, e float64) {
-	q.Qual[pos.Col-q.Offset] = alphabet.Esolexa(e)
+func (q *Solexa) SetE(i int, e float64) {
+	q.Qual[i-q.Offset] = alphabet.Esolexa(e)
 }
 
 // Encode the quality at position pos to a letter based on the sequence Encode setting.
-func (q *Solexa) QEncode(pos seq.Position) byte {
-	return q.Qual[pos.Col-q.Offset].Encode(q.Encode)
+func (q *Solexa) QEncode(i int) byte {
+	return q.Qual[i-q.Offset].Encode(q.Encode)
 }
 
 // Decode a quality letter to a phred score based on the sequence Encode setting.

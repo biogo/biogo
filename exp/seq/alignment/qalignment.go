@@ -28,7 +28,7 @@ import (
 // A QSeq is an aligned sequence with quality scores.
 type QSeq struct {
 	seq.Annotation
-	SubIDs         []string
+	SubAnnotations []seq.Annotation
 	Seq            alphabet.QColumns
 	ColumnConsense seq.ConsenseFunc
 	Threshold      alphabet.Qphred // Threshold for returning valid letter.
@@ -38,13 +38,22 @@ type QSeq struct {
 
 // NewSeq creates a new Seq with the given id, letter sequence and alphabet.
 func NewQSeq(id string, subids []string, ql [][]alphabet.QLetter, alpha alphabet.Alphabet, enc alphabet.Encoding, cons seq.ConsenseFunc) (*QSeq, error) {
-	switch lids, lseq := len(subids), len(ql); {
+	var (
+		lids, lseq = len(subids), len(ql)
+		subann     []seq.Annotation
+	)
+	switch {
 	case lids == 0 && len(ql) == 0:
 	case lseq != 0 && lids == len(ql[0]):
 		if lids == 0 {
-			subids = make([]string, len(ql[0]))
+			subann = make([]seq.Annotation, len(ql[0]))
 			for i := range subids {
-				subids[i] = fmt.Sprintf("%s:%d", id, i)
+				subann[i].ID = fmt.Sprintf("%s:%d", id, i)
+			}
+		} else {
+			subann = make([]seq.Annotation, lids)
+			for i, sid := range subids {
+				subann[i].ID = sid
 			}
 		}
 	default:
@@ -56,7 +65,7 @@ func NewQSeq(id string, subids []string, ql [][]alphabet.QLetter, alpha alphabet
 			ID:    id,
 			Alpha: alpha,
 		},
-		SubIDs:         append([]string(nil), subids...),
+		SubAnnotations: subann,
 		Seq:            append([][]alphabet.QLetter(nil), ql...),
 		Encode:         enc,
 		ColumnConsense: cons,
@@ -68,8 +77,9 @@ func NewQSeq(id string, subids []string, ql [][]alphabet.QLetter, alpha alphabet
 // Interface guarantees
 var (
 	_ feat.Feature = &QSeq{}
-	_ seq.Sequence = &QSeq{}
-	_ seq.Sequence = &QSeq{}
+	_ feat.Feature = QRow{}
+	_ seq.Sequence = QRow{}
+	_ seq.Scorer   = QRow{}
 )
 
 // Slice returns the sequence data as a alphabet.Slice.
@@ -79,36 +89,11 @@ func (s *QSeq) Slice() alphabet.Slice { return s.Seq }
 // is not a QColumns.
 func (s *QSeq) SetSlice(sl alphabet.Slice) { s.Seq = sl.(alphabet.QColumns) }
 
-// At returns the letter at position pos.
-func (s *QSeq) At(pos seq.Position) alphabet.QLetter {
-	return s.Seq[pos.Col-s.Offset][pos.Row]
-}
-
-// Set sets the letter at position pos to l.
-func (s *QSeq) Set(pos seq.Position, l alphabet.QLetter) {
-	s.Seq[pos.Col-s.Offset][pos.Row] = l
-}
-
-// SetE sets the quality at position pos to e to reflect the given p(Error).
-func (s *QSeq) SetE(pos seq.Position, e float64) {
-	s.Seq[pos.Col-s.Offset][pos.Row].Q = alphabet.Ephred(e)
-}
-
-// QEncode encodes the quality at position pos to a letter based on the sequence encoding setting.
-func (s *QSeq) QEncode(pos seq.Position) byte {
-	return s.Seq[pos.Col-s.Offset][pos.Row].Q.Encode(s.Encode)
-}
-
 // Encoding returns the quality encoding scheme.
 func (s *QSeq) Encoding() alphabet.Encoding { return s.Encode }
 
 // SetEncoding sets the quality encoding scheme to e.
 func (s *QSeq) SetEncoding(e alphabet.Encoding) { s.Encode = e }
-
-// EAt returns the probability of a sequence error at position pos.
-func (s *QSeq) EAt(pos seq.Position) float64 {
-	return s.Seq[pos.Col-s.Offset][pos.Row].Q.ProbE()
-}
 
 // Len returns the length of the alignment.
 func (s *QSeq) Len() int { return len(s.Seq) }
@@ -123,7 +108,7 @@ func (s *QSeq) Start() int { return s.Offset }
 func (s *QSeq) End() int { return s.Offset + s.Len() }
 
 // Copy returns a copy of the sequence.
-func (s *QSeq) Copy() seq.Sequence {
+func (s *QSeq) Copy() seq.Rower {
 	c := *s
 	c.Seq = make([][]alphabet.QLetter, len(s.Seq))
 	for i, s := range s.Seq {
@@ -134,7 +119,7 @@ func (s *QSeq) Copy() seq.Sequence {
 }
 
 // Return an empty sequence.
-func (s *QSeq) New() seq.Sequence {
+func (s *QSeq) New() *QSeq {
 	return &QSeq{}
 }
 
@@ -180,19 +165,14 @@ func (s *QSeq) Add(n ...seq.Sequence) error {
 		s.Seq[i] = append(s.Seq[i], s.column(n, i)...)
 	}
 	for i := range n {
-		s.SubIDs = append(s.SubIDs, n[i].Name())
+		s.SubAnnotations = append(s.SubAnnotations, *n[i].CopyAnnotation())
 	}
 
 	return nil
 }
 
 func (s *QSeq) column(m []seq.Sequence, pos int) []alphabet.QLetter {
-	var row int
-	for _, ss := range m {
-		row += rows(ss)
-	}
-
-	c := make([]alphabet.QLetter, 0, row)
+	c := make([]alphabet.QLetter, 0, s.Rows())
 
 	for _, r := range m {
 		if a, ok := r.(seq.Aligned); ok {
@@ -203,7 +183,7 @@ func (s *QSeq) column(m []seq.Sequence, pos int) []alphabet.QLetter {
 			}
 		} else {
 			if r.Start() <= pos && pos < r.End() {
-				c = append(c, r.At(seq.Position{Col: pos}))
+				c = append(c, r.At(pos))
 			} else {
 				c = append(c, alphabet.QLetter{L: s.Alpha.Gap()})
 			}
@@ -216,14 +196,8 @@ func (s *QSeq) column(m []seq.Sequence, pos int) []alphabet.QLetter {
 // TODO
 func (s *QSeq) Delete(i int) {}
 
-// Get returns the sequence corresponding to the ith row of the Seq.
-func (s *QSeq) Get(i int) seq.Sequence {
-	t := make([]alphabet.QLetter, 0, s.Len())
-	for _, c := range s.Seq {
-		t = append(t, c[i])
-	}
-
-	return linear.NewQSeq(s.SubIDs[i], t, s.Alpha, s.Encode)
+func (s *QSeq) Row(i int) seq.Sequence {
+	return QRow{Align: s, Row: i}
 }
 
 // AppendColumns appends each Qletter of each element of a to the appropriate sequence in the reciever.
@@ -298,3 +272,90 @@ func (s *QSeq) Consensus(_ bool) *linear.QSeq {
 
 	return qs
 }
+
+// A Row is a pointer into an alignment that satifies the seq.Sequence and seq.Scorere interfaces.
+type QRow struct {
+	Align *QSeq
+	Row   int
+}
+
+// At returns the letter at position pos.
+func (r QRow) At(i int) alphabet.QLetter {
+	return r.Align.Seq[i-r.Align.Offset][r.Row]
+}
+
+// Set sets the letter at position pos to l.
+func (r QRow) Set(i int, l alphabet.QLetter) {
+	r.Align.Seq[i-r.Align.Offset][r.Row] = l
+}
+
+// Len returns the length of the alignment.
+func (r QRow) Len() int { return len(r.Align.Seq) }
+
+// Start returns the start position of the sequence in global coordinates.
+func (r QRow) Start() int { return r.Align.SubAnnotations[r.Row].Offset }
+
+// End returns the end position of the sequence in global coordinates.
+func (r QRow) End() int { return r.Start() + r.Len() }
+
+// Location returns the feature containing the row's sequence.
+func (r QRow) Location() feat.Feature { return r.Align.SubAnnotations[r.Row].Loc }
+
+// SetE sets the quality at position pos to e to reflect the given p(Error).
+func (r QRow) SetE(i int, e float64) {
+	r.Align.Seq[i-r.Align.Offset][r.Row].Q = alphabet.Ephred(e)
+}
+
+// QEncode encodes the quality at position pos to a letter based on the sequence encoding setting.
+func (r QRow) QEncode(i int) byte {
+	return r.Align.Seq[i-r.Align.Offset][r.Row].Q.Encode(r.Encoding())
+}
+
+// EAt returns the probability of a sequence error at position pos.
+func (r QRow) EAt(i int) float64 {
+	return r.Align.Seq[i-r.Align.Offset][r.Row].Q.ProbE()
+}
+
+func (r QRow) Alphabet() alphabet.Alphabet         { return r.Align.Alpha }
+func (r QRow) Encoding() alphabet.Encoding         { return r.Align.Encoding() }
+func (r QRow) SetEncoding(e alphabet.Encoding)     { r.Align.SetEncoding(e) }
+func (r QRow) Conformation() feat.Conformation     { return r.Align.SubAnnotations[r.Row].Conform }
+func (r QRow) SetConformation(c feat.Conformation) { r.Align.SubAnnotations[r.Row].Conform = c }
+func (r QRow) Name() string                        { return r.Align.SubAnnotations[r.Row].ID }
+func (r QRow) Description() string                 { return r.Align.SubAnnotations[r.Row].Desc }
+func (r QRow) SetOffset(o int)                     { r.Align.SubAnnotations[r.Row].Offset = o }
+
+func (r QRow) RevComp() {
+	rs, comp := r.Align.Seq, r.Alphabet().(alphabet.Complementor).ComplementTable()
+	i, j := 0, len(rs)-1
+	for ; i < j; i, j = i+1, j-1 {
+		rs[i][r.Row].L, rs[j][r.Row].L = comp[rs[j][r.Row].L], comp[rs[i][r.Row].L]
+		rs[i][r.Row].Q, rs[j][r.Row].Q = rs[j][r.Row].Q, rs[i][r.Row].Q
+	}
+	if i == j {
+		rs[i][r.Row].L = comp[rs[i][r.Row].L]
+	}
+	r.Align.SubAnnotations[r.Row].Strand = -r.Align.SubAnnotations[r.Row].Strand
+}
+func (r QRow) Reverse() {
+	l := r.Align.Seq
+	for i, j := 0, len(l)-1; i < j; i, j = i+1, j-1 {
+		l[i][r.Row], l[j][r.Row] = l[j][r.Row], l[i][r.Row]
+	}
+	r.Align.SubAnnotations[r.Row].Strand = seq.None
+}
+func (r QRow) New() seq.Sequence { return QRow{} }
+func (r QRow) Copy() seq.Sequence {
+	b := make([]alphabet.QLetter, r.Len())
+	for i, c := range r.Align.Seq {
+		b[i] = c[r.Row]
+	}
+	return linear.NewQSeq(r.Name(), b, r.Alphabet(), r.Align.Encoding())
+}
+func (r QRow) CopyAnnotation() *seq.Annotation { return r.Align.SubAnnotations[r.Row].CopyAnnotation() }
+
+// SetSlice uncoditionally panics.
+func (r QRow) SetSlice(_ alphabet.Slice) { panic("alignment: cannot alter row slice") }
+
+// Slice uncoditionally panics.
+func (r QRow) Slice() alphabet.Slice { panic("alignment: cannot get row slice") }

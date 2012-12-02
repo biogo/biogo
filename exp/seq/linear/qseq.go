@@ -78,19 +78,13 @@ func (s *QSeq) Slice() alphabet.Slice { return s.Seq }
 func (s *QSeq) SetSlice(sl alphabet.Slice) { s.Seq = sl.(alphabet.QLetters) }
 
 // At returns the letter at position pos.
-func (s *QSeq) At(pos seq.Position) alphabet.QLetter {
-	if pos.Row != 0 {
-		panic("linear: index out of range")
-	}
-	return s.Seq[pos.Col-s.Offset]
+func (s *QSeq) At(i int) alphabet.QLetter {
+	return s.Seq[i-s.Offset]
 }
 
 // QEncode encodes the quality at position pos to a letter based on the sequence encoding setting.
-func (s *QSeq) QEncode(pos seq.Position) byte {
-	if pos.Row != 0 {
-		panic("linear: index out of range")
-	}
-	return s.Seq[pos.Col-s.Offset].Q.Encode(s.Encode)
+func (s *QSeq) QEncode(i int) byte {
+	return s.Seq[i-s.Offset].Q.Encode(s.Encode)
 }
 
 // Encoding returns the quality encoding scheme.
@@ -100,27 +94,18 @@ func (s *QSeq) Encoding() alphabet.Encoding { return s.Encode }
 func (s *QSeq) SetEncoding(e alphabet.Encoding) { s.Encode = e }
 
 // EAt returns the probability of a sequence error at position pos.
-func (s *QSeq) EAt(pos seq.Position) float64 {
-	if pos.Row != 0 {
-		panic("linear: index out of range")
-	}
-	return s.Seq[pos.Col-s.Offset].Q.ProbE()
+func (s *QSeq) EAt(i int) float64 {
+	return s.Seq[i-s.Offset].Q.ProbE()
 }
 
 // Set sets the letter at position pos to l.
-func (s *QSeq) Set(pos seq.Position, l alphabet.QLetter) {
-	if pos.Row != 0 {
-		panic("linear: index out of range")
-	}
-	s.Seq[pos.Col-s.Offset] = l
+func (s *QSeq) Set(i int, l alphabet.QLetter) {
+	s.Seq[i-s.Offset] = l
 }
 
 // SetE sets the quality at position pos to e to reflect the given p(Error).
-func (s *QSeq) SetE(pos seq.Position, e float64) {
-	if pos.Row != 0 {
-		panic("linear: index out of range")
-	}
-	s.Seq[pos.Col-s.Offset].Q = alphabet.Ephred(e)
+func (s *QSeq) SetE(i int, e float64) {
+	s.Seq[i-s.Offset].Q = alphabet.Ephred(e)
 }
 
 // Len returns the length of the sequence.

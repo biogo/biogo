@@ -57,22 +57,22 @@ func (q *Phred) SetSlice(sl alphabet.Slice) { q.Qual = sl.(Qphreds) }
 func (q *Phred) Append(a ...alphabet.Qphred) { q.Qual = append(q.Qual, a...) }
 
 // Return the raw score at position pos.
-func (q *Phred) At(pos seq.Position) alphabet.Qphred { return q.Qual[pos.Col-q.Offset] }
+func (q *Phred) At(i int) alphabet.Qphred { return q.Qual[i-q.Offset] }
 
 // Return the error probability at position pos.
-func (q *Phred) EAt(pos seq.Position) float64 { return q.Qual[pos.Col-q.Offset].ProbE() }
+func (q *Phred) EAt(i int) float64 { return q.Qual[i-q.Offset].ProbE() }
 
 // Set the raw score at position pos to qual.
-func (q *Phred) Set(pos seq.Position, qual alphabet.Qphred) { q.Qual[pos.Col-q.Offset] = qual }
+func (q *Phred) Set(i int, qual alphabet.Qphred) { q.Qual[i-q.Offset] = qual }
 
 // Set the error probability to e at position pos.
-func (q *Phred) SetE(pos seq.Position, e float64) {
-	q.Qual[pos.Col-q.Offset] = alphabet.Ephred(e)
+func (q *Phred) SetE(i int, e float64) {
+	q.Qual[i-q.Offset] = alphabet.Ephred(e)
 }
 
 // Encode the quality at position pos to a letter based on the sequence Encode setting.
-func (q *Phred) QEncode(pos seq.Position) byte {
-	return q.Qual[pos.Col-q.Offset].Encode(q.Encode)
+func (q *Phred) QEncode(i int) byte {
+	return q.Qual[i-q.Offset].Encode(q.Encode)
 }
 
 // Decode a quality letter to a phred score based on the sequence Encode setting.

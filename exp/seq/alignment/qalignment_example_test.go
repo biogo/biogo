@@ -27,7 +27,7 @@ var (
 	qm, qn   *QSeq
 	qaligned = func(a *QSeq) {
 		for i := 0; i < a.Rows(); i++ {
-			s := a.Get(i)
+			s := a.Row(i).Copy()
 			fmt.Printf("%-s\n", s)
 		}
 		fmt.Println()
@@ -122,7 +122,7 @@ func ExampleQSeq_Add() {
 
 func ExampleQSeq_Copy() {
 	qn = qm.Copy().(*QSeq)
-	qn.Set(seq.Position{Col: 3, Row: 2}, alphabet.QLetter{L: 't', Q: 40})
+	qn.Row(2).Set(3, alphabet.QLetter{L: 't', Q: 40})
 	qaligned(qm)
 	fmt.Println()
 	qaligned(qn)
