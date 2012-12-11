@@ -54,7 +54,7 @@ func NewReader(f io.Reader, template seqio.SequenceAppender) *Reader {
 }
 
 // Read a single sequence and return it or an error.
-func (self *Reader) Read() (seq.Sequence, error) {
+func (r *Reader) Read() (seq.Sequence, error) {
 	var (
 		buff, line []byte
 		isPrefix   bool
@@ -63,12 +63,12 @@ func (self *Reader) Read() (seq.Sequence, error) {
 
 	for {
 		var err error
-		if buff, isPrefix, err = self.r.ReadLine(); err != nil {
-			if err != io.EOF || self.working == nil {
+		if buff, isPrefix, err = r.r.ReadLine(); err != nil {
+			if err != io.EOF || r.working == nil {
 				return nil, err
 			}
-			s = self.working
-			self.working = nil
+			s = r.working
+			r.working = nil
 			return s, nil
 		}
 
@@ -83,34 +83,37 @@ func (self *Reader) Read() (seq.Sequence, error) {
 			continue
 		}
 
-		if bytes.HasPrefix(line, self.IDPrefix) {
-			if self.working == nil {
-				self.working = self.header(line)
+		if bytes.HasPrefix(line, r.IDPrefix) {
+			if r.working == nil {
+				r.working = r.header(line)
 				line = nil
 			} else {
-				s = self.working
-				self.working = self.header(line)
+				s = r.working
+				r.working = r.header(line)
 				return s, nil
 			}
-		} else if bytes.HasPrefix(line, self.SeqPrefix) {
-			line = bytes.Join(bytes.Fields(line[len(self.SeqPrefix):]), nil)
-			self.working.AppendLetters(alphabet.BytesToLetters(line)...)
+		} else if bytes.HasPrefix(line, r.SeqPrefix) {
+			if r.working == nil {
+				return nil, fmt.Errorf("fasta: badly formed line %q", line)
+			}
+			line = bytes.Join(bytes.Fields(line[len(r.SeqPrefix):]), nil)
+			r.working.AppendLetters(alphabet.BytesToLetters(line)...)
 			line = nil
 		} else {
-			return nil, fmt.Errorf("fasta: badly formed line %d", line)
+			return nil, fmt.Errorf("fasta: badly formed line %q", line)
 		}
 	}
 
 	panic("cannot reach")
 }
 
-func (self *Reader) header(line []byte) seqio.SequenceAppender {
-	s := self.t.Copy().(seqio.SequenceAppender)
+func (r *Reader) header(line []byte) seqio.SequenceAppender {
+	s := r.t.Copy().(seqio.SequenceAppender)
 	fieldMark := bytes.IndexAny(line, " \t")
 	if fieldMark < 0 {
-		s.SetName(string(line[len(self.IDPrefix):]))
+		s.SetName(string(line[len(r.IDPrefix):]))
 	} else {
-		s.SetName(string(line[len(self.IDPrefix):fieldMark]))
+		s.SetName(string(line[len(r.IDPrefix):fieldMark]))
 		s.SetDescription(string(line[fieldMark+1:]))
 	}
 
@@ -136,35 +139,35 @@ func NewWriter(w io.Writer, width int) *Writer {
 }
 
 // Write a single sequence and return the number of bytes written and any error.
-func (self *Writer) Write(s seq.Sequence) (n int, err error) {
+func (w *Writer) Write(s seq.Sequence) (n int, err error) {
 	var (
 		ln     int
-		prefix = append([]byte{'\n'}, self.SeqPrefix...)
+		prefix = append([]byte{'\n'}, w.SeqPrefix...)
 	)
 	id, desc := s.Name(), s.Description()
-	header := make([]byte, 0, len(self.IDPrefix)+len(id)+len(desc)+1)
-	header = append(header, self.IDPrefix...)
+	header := make([]byte, 0, len(w.IDPrefix)+len(id)+len(desc)+1)
+	header = append(header, w.IDPrefix...)
 	header = append(header, id...)
 	if len(desc) > 0 {
 		header = append(header, ' ')
 		header = append(header, desc...)
 	}
 
-	n, err = self.w.Write(header)
+	n, err = w.w.Write(header)
 	if err == nil {
 		for i := 0; i < s.Len(); i++ {
-			if i%self.Width == 0 {
-				ln, err = self.w.Write(prefix)
+			if i%w.Width == 0 {
+				ln, err = w.w.Write(prefix)
 				if n += ln; err != nil {
 					return
 				}
 			}
-			ln, err = self.w.Write([]byte{byte(s.At(i).L)})
+			ln, err = w.w.Write([]byte{byte(s.At(i).L)})
 			if n += ln; err != nil {
 				return
 			}
 		}
-		ln, err = self.w.Write([]byte{'\n'})
+		ln, err = w.w.Write([]byte{'\n'})
 		if n += ln; err != nil {
 			return
 		}
