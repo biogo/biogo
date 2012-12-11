@@ -71,11 +71,9 @@ func (self *Reader) Read() (seq.Sequence, error) {
 		if buff, isPrefix, err = self.r.ReadLine(); err != nil {
 			return nil, err
 		}
+		line = append(line, buff...)
 		if isPrefix {
-			line = append(line, buff...)
 			continue
-		} else {
-			line = buff
 		}
 
 		line = bytes.TrimSpace(line)
@@ -85,7 +83,7 @@ func (self *Reader) Read() (seq.Sequence, error) {
 		switch {
 		case !inQual && line[0] == '@':
 			t = self.readHeader(line)
-			label, line = line, nil
+			label = line
 		case !inQual && line[0] == '+':
 			if len(label) == 0 {
 				return nil, errors.New("fastq: no header line parsed before +line in fastq format")
@@ -112,6 +110,7 @@ func (self *Reader) Read() (seq.Sequence, error) {
 
 			return t, nil
 		}
+		line = nil
 	}
 
 	panic("cannot reach")

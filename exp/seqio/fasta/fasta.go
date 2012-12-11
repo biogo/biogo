@@ -71,12 +71,9 @@ func (r *Reader) Read() (seq.Sequence, error) {
 			r.working = nil
 			return s, nil
 		}
-
+		line = append(line, buff...)
 		if isPrefix {
-			line = append(line, buff...)
 			continue
-		} else {
-			line = buff
 		}
 		line = bytes.TrimSpace(line)
 		if len(line) == 0 {
