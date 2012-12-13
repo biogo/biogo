@@ -109,8 +109,8 @@ func (s *QSeq) Start() int { return s.Offset }
 // End returns the end position of the sequence in global coordinates.
 func (s *QSeq) End() int { return s.Offset + s.Len() }
 
-// Copy returns a copy of the sequence.
-func (s *QSeq) Copy() seq.Rower {
+// Clone returns a copy of the sequence.
+func (s *QSeq) Clone() seq.Rower {
 	c := *s
 	c.Seq = make([][]alphabet.QLetter, len(s.Seq))
 	for i, s := range s.Seq {
@@ -167,7 +167,7 @@ func (s *QSeq) Add(n ...seq.Sequence) error {
 		s.Seq[i] = append(s.Seq[i], s.column(n, i)...)
 	}
 	for i := range n {
-		s.SubAnnotations = append(s.SubAnnotations, *n[i].CopyAnnotation())
+		s.SubAnnotations = append(s.SubAnnotations, *n[i].CloneAnnotation())
 	}
 
 	return nil
@@ -393,14 +393,16 @@ func (r QRow) Reverse() {
 	r.Align.SubAnnotations[r.Row].Strand = seq.None
 }
 func (r QRow) New() seq.Sequence { return QRow{} }
-func (r QRow) Copy() seq.Sequence {
+func (r QRow) Clone() seq.Sequence {
 	b := make([]alphabet.QLetter, r.Len())
 	for i, c := range r.Align.Seq {
 		b[i] = c[r.Row]
 	}
 	return linear.NewQSeq(r.Name(), b, r.Alphabet(), r.Align.Encoding())
 }
-func (r QRow) CopyAnnotation() *seq.Annotation { return r.Align.SubAnnotations[r.Row].CopyAnnotation() }
+func (r QRow) CloneAnnotation() *seq.Annotation {
+	return r.Align.SubAnnotations[r.Row].CloneAnnotation()
+}
 
 func min(a, b int) int {
 	if a < b {

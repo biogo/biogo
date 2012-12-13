@@ -87,7 +87,7 @@ func ExampleMulti_Add() {
 }
 
 func ExampleMulti_Copy() {
-	n = m.Copy().(*Multi)
+	n = m.Clone().(*Multi)
 	n.Row(2).Set(3, alphabet.QLetter{L: 't'})
 	fmt.Printf("%- s\n\n%-s\n\n%- s\n\n%-s\n",
 		m, m.Consensus(false),

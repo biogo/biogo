@@ -128,8 +128,8 @@ func (s *QSeq) Validate() (bool, int) {
 	return true, -1
 }
 
-// Copy returns a copy of the sequence.
-func (s *QSeq) Copy() seq.Sequence {
+// Clone returns a copy of the sequence.
+func (s *QSeq) Clone() seq.Sequence {
 	c := *s
 	c.Seq = append([]alphabet.QLetter(nil), s.Seq...)
 

@@ -74,14 +74,14 @@ var (
 // A Sequence is a feature that stores sequence information.
 type Sequence interface {
 	Feature
-	At(int) alphabet.QLetter     // Return the letter at a specific position.
-	Set(int, alphabet.QLetter)   // Set the letter at a specific position.
-	Alphabet() alphabet.Alphabet // Return the Alphabet being used.
-	RevComp()                    // Reverse complement the sequence.
-	Reverse()                    // Reverse the order of elements in the sequence.
-	New() Sequence               // Return a pointer to the zero value of the concrete type.
-	Copy() Sequence              // Return a copy of the Sequence.
-	CopyAnnotation() *Annotation // Return a copy of the sequence's annotation.
+	At(int) alphabet.QLetter      // Return the letter at a specific position.
+	Set(int, alphabet.QLetter)    // Set the letter at a specific position.
+	Alphabet() alphabet.Alphabet  // Return the Alphabet being used.
+	RevComp()                     // Reverse complement the sequence.
+	Reverse()                     // Reverse the order of elements in the sequence.
+	New() Sequence                // Return a pointer to the zero value of the concrete type.
+	Clone() Sequence              // Return a copy of the Sequence.
+	CloneAnnotation() *Annotation // Return a copy of the sequence's annotation.
 	Slicer
 	Conformationer
 	ConformationSetter

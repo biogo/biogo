@@ -109,7 +109,7 @@ func ExampleSeq_Add() {
 }
 
 func ExampleSeq_Copy() {
-	n = m.Copy().(*Seq)
+	n = m.Clone().(*Seq)
 	n.Row(2).Set(3, alphabet.QLetter{L: 't'})
 	fmt.Printf("%-s\n\n%-s\n\n", m, m.Consensus(false))
 	fmt.Printf("%-s\n\n%-s\n", n, n.Consensus(false))

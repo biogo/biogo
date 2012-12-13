@@ -97,8 +97,8 @@ func (s *Seq) Start() int { return s.Offset }
 // End returns the end position of the sequence in global coordinates.
 func (s *Seq) End() int { return s.Offset + s.Len() }
 
-// Copy returns a copy of the sequence.
-func (s *Seq) Copy() seq.Rower {
+// Clone returns a copy of the sequence.
+func (s *Seq) Clone() seq.Rower {
 	c := *s
 	c.Seq = make(alphabet.Columns, len(s.Seq))
 	for i, cs := range s.Seq {
@@ -151,7 +151,7 @@ func (s *Seq) Add(n ...seq.Sequence) error {
 		s.Seq[i] = append(s.Seq[i], s.column(n, i)...)
 	}
 	for i := range n {
-		s.SubAnnotations = append(s.SubAnnotations, *n[i].CopyAnnotation())
+		s.SubAnnotations = append(s.SubAnnotations, *n[i].CloneAnnotation())
 	}
 
 	return nil
@@ -372,7 +372,7 @@ func (r Row) Reverse() {
 	r.Align.SubAnnotations[r.Row].Strand = seq.None
 }
 func (r Row) New() seq.Sequence { return Row{} }
-func (r Row) Copy() seq.Sequence {
+func (r Row) Clone() seq.Sequence {
 	b := make([]alphabet.Letter, r.Len())
 	for i, c := range r.Align.Seq {
 		b[i] = c[r.Row]
@@ -388,7 +388,7 @@ func (r Row) Copy() seq.Sequence {
 	}
 	return linear.NewSeq(r.Name(), b, r.Alphabet())
 }
-func (r Row) CopyAnnotation() *seq.Annotation { return r.Align.SubAnnotations[r.Row].CopyAnnotation() }
+func (r Row) CloneAnnotation() *seq.Annotation { return r.Align.SubAnnotations[r.Row].CloneAnnotation() }
 
 // String returns a string representation of the sequence data only.
 func (r Row) String() string { return fmt.Sprintf("%-s", r) }

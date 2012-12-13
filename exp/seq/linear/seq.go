@@ -95,8 +95,8 @@ func (s *Seq) End() int { return s.Offset + s.Len() }
 // Validate validates the letters of the sequence according to the sequence alphabet.
 func (s *Seq) Validate() (bool, int) { return s.Alpha.AllValid(s.Seq) }
 
-// Copy returns a copy of the sequence.
-func (s *Seq) Copy() seq.Sequence {
+// Clone returns a copy of the sequence.
+func (s *Seq) Clone() seq.Sequence {
 	c := *s
 	c.Seq = append([]alphabet.Letter(nil), s.Seq...)
 	return &c

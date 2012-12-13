@@ -110,7 +110,7 @@ func ExampleQSeq_Add() {
 }
 
 func ExampleQSeq_Copy() {
-	qn = qm.Copy().(*QSeq)
+	qn = qm.Clone().(*QSeq)
 	qn.Row(2).Set(3, alphabet.QLetter{L: 't', Q: 40})
 	fmt.Printf("%-s\n\n%-s\n\n", qm, qm.Consensus(false))
 	fmt.Printf("%-s\n\n%-s\n", qn, qn.Consensus(false))

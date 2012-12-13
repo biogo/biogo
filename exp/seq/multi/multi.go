@@ -137,13 +137,13 @@ func (m *Multi) End() int {
 	return end
 }
 
-// Copy returns a copy of the sequence.
-func (m *Multi) Copy() seq.Rower {
+// Clone returns a copy of the sequence.
+func (m *Multi) Clone() seq.Rower {
 	c := &Multi{}
 	*c = *m
 	c.Seq = make([]seq.Sequence, len(m.Seq))
 	for i, r := range m.Seq {
-		c.Seq[i] = r.Copy().(seq.Sequence)
+		c.Seq[i] = r.Clone().(seq.Sequence)
 	}
 
 	return c

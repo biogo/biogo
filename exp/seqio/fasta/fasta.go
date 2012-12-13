@@ -105,7 +105,7 @@ func (r *Reader) Read() (seq.Sequence, error) {
 }
 
 func (r *Reader) header(line []byte) seqio.SequenceAppender {
-	s := r.t.Copy().(seqio.SequenceAppender)
+	s := r.t.Clone().(seqio.SequenceAppender)
 	fieldMark := bytes.IndexAny(line, " \t")
 	if fieldMark < 0 {
 		s.SetName(string(line[len(r.IDPrefix):]))
