@@ -288,7 +288,7 @@ func (p *PALS) Align(complement bool) (dp.DPHits, error) {
 	)
 	if complement {
 		p.notify("Complementing query")
-		working = p.query.Copy().(*linear.Seq)
+		working = p.query.Clone().(*linear.Seq)
 		working.RevComp()
 		p.notify("Complemented query")
 	} else {
