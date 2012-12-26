@@ -28,7 +28,7 @@ func Factors(X, Wo, Ho *sparse.Sparse, tolerance float64, iterations int, limit 
 	gW := W.Dot(H.Dot(hT)).Sub(X.Dot(hT))
 	gH := wT.Dot(W).Dot(H).Sub(wT.Dot(X))
 
-	gradient := gW.Stack(gH.T()).Norm(matrix.Fro)
+	gradient := sparse.Must(gW.Stack(gH.T())).Norm(matrix.Fro)
 	toleranceW := math.Max(0.001, tolerance) * gradient
 	toleranceH := toleranceW
 
@@ -71,7 +71,7 @@ func Factors(X, Wo, Ho *sparse.Sparse, tolerance float64, iterations int, limit 
 }
 
 func subproblem(X, W, Ho *sparse.Sparse, tolerance float64, iterations int) (H, G *sparse.Sparse, i int, ok bool) {
-	H = Ho.Copy()
+	H = Ho.Clone()
 	WtV := W.T().Dot(X)
 	WtW := W.T().Dot(W)
 
@@ -107,7 +107,7 @@ func subproblem(X, W, Ho *sparse.Sparse, tolerance float64, iterations int) (H, 
 		sufficient := 0.99*gd+0.5*dQd < 0
 		if j == 0 {
 			decrease = !sufficient
-			Hp = H.Copy()
+			Hp = H.Clone()
 		}
 		if decrease {
 			if sufficient {
@@ -124,7 +124,7 @@ func subproblem(X, W, Ho *sparse.Sparse, tolerance float64, iterations int) (H, 
 				break
 			} else {
 				alpha /= beta
-				Hp = Hn.Copy()
+				Hp = Hn.Clone()
 			}
 		}
 	}

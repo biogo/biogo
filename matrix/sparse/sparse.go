@@ -8,21 +8,19 @@
 package sparse
 
 import (
+	"bytes"
 	"code.google.com/p/biogo/matrix"
 	"errors"
 	"fmt"
 	"math"
 	"math/rand"
-	"runtime"
-	"strconv"
-	"sync"
 )
 
 var (
-	MaxProcs    int     // Number of goroutines to run concurrently when multiplyin matrices
-	Margin      int = 3 // Number of columns/rows visible returned by String
+	Margin      = 3 // Number of columns/rows visible returned by String
 	workbuffers chan sparsecol
-	BufferLen   int = 100
+	BufferLen   = 100
+	Buffers     = 10 // Number of allocated work buffers.
 )
 
 func init() {
@@ -31,9 +29,8 @@ func init() {
 
 // Initialise goroutine and memory handling
 func Init() {
-	MaxProcs = runtime.GOMAXPROCS(0)
-	workbuffers = make(chan sparsecol, MaxProcs)
-	for i := 0; i < MaxProcs; i++ {
+	workbuffers = make(chan sparsecol, Buffers)
+	for i := 0; i < Buffers; i++ {
 		buffer := make(sparsecol, BufferLen)
 		workbuffers <- buffer
 	}
@@ -45,8 +42,15 @@ type Sparse struct {
 	matrix []sparsecol
 }
 
+func Must(s *Sparse, err error) *Sparse {
+	if err != nil {
+		panic(err)
+	}
+	return s
+}
+
 // Return a sparse matrix based on a slice of float64 slices
-func Matrix(a [][]float64) (m *Sparse) {
+func Matrix(a [][]float64) *Sparse {
 	if len(a) == 0 {
 		panic(errors.New("zero dimension in matrix definition"))
 	}
@@ -58,7 +62,7 @@ func Matrix(a [][]float64) (m *Sparse) {
 		}
 	}
 
-	m = &Sparse{
+	m := &Sparse{
 		r:      len(a),
 		matrix: make([]sparsecol, maxRowLen),
 	}
@@ -80,11 +84,11 @@ func Matrix(a [][]float64) (m *Sparse) {
 		panic(errors.New("zero dimension in matrix definition"))
 	}
 
-	return
+	return m
 }
 
 // Return the O matrix
-func Zero(r, c int) (m *Sparse) {
+func Zero(r, c int) *Sparse {
 	if r < 1 || c < 1 {
 		panic(errors.New("zero dimension in matrix definition"))
 	}
@@ -97,26 +101,32 @@ func Zero(r, c int) (m *Sparse) {
 }
 
 // Return the I matrix
-func Identity(s int) (m *Sparse) {
-	if s < 1 {
+func Identity(size int) *Sparse {
+	if size < 1 {
 		panic(errors.New("zero dimension in matrix definition"))
 	}
 
-	m = &Sparse{
-		r:      s,
-		c:      s,
-		matrix: make([]sparsecol, s),
+	m := &Sparse{
+		r:      size,
+		c:      size,
+		matrix: make([]sparsecol, size),
 	}
 
-	for i := 0; i < s; i++ {
+	for i := 0; i < size; i++ {
 		m.matrix[i] = append(m.matrix[i], elem{r: i, value: 1})
 	}
 
-	return
+	return m
 }
 
-func Random(r, c int, density float64) (m *Sparse) {
-	m = &Sparse{
+type RandFunc func() float64
+
+func Random(r, c int, density float64, fn RandFunc) *Sparse {
+	if r < 1 || c < 1 {
+		panic(errors.New("zero dimension in matrix definition"))
+	}
+
+	m := &Sparse{
 		r:      r,
 		c:      c,
 		matrix: make([]sparsecol, c),
@@ -125,16 +135,16 @@ func Random(r, c int, density float64) (m *Sparse) {
 	for i := 0; i < r; i++ {
 		for j := 0; j < c; j++ {
 			if rand.Float64() < density {
-				m.Set(i, j, rand.Float64())
+				m.Set(i, j, fn())
 			}
 		}
 	}
 
-	return
+	return m
 }
 
 // Return of the non-zero elements of a set of matrices in column major order as a column vector.
-func Elements(mats ...*Sparse) (e *Sparse) {
+func Elements(mats ...*Sparse) *Sparse {
 	var length int
 	for _, m := range mats {
 		for _, col := range m.matrix {
@@ -153,94 +163,94 @@ func Elements(mats ...*Sparse) (e *Sparse) {
 		}
 	}
 
-	e = &Sparse{
+	e := &Sparse{
 		r:      length,
 		c:      1,
 		matrix: []sparsecol{t},
 	}
 
-	return
+	return e
 }
 
 // Return of the non-zero elements of the matrix in column major order as an array.
-func (self *Sparse) Elements() (a []float64) {
-	elements := Elements(self).matrix[0]
-	a = make([]float64, 0, len(elements))
-	for _, e := range Elements(self).matrix[0] {
+func (s *Sparse) Elements() []float64 {
+	elements := Elements(s).matrix[0]
+	a := make([]float64, 0, len(elements))
+	for _, e := range Elements(s).matrix[0] {
 		a = append(a, e.value)
 	}
 
-	return
+	return a
 }
 
 // Return a copy of a matrix
-func (self *Sparse) Copy() (m *Sparse) {
-	m = &Sparse{
-		r:      self.r,
-		c:      self.c,
-		matrix: make([]sparsecol, len(self.matrix)),
+func (s *Sparse) Clone() *Sparse {
+	m := &Sparse{
+		r:      s.r,
+		c:      s.c,
+		matrix: make([]sparsecol, len(s.matrix)),
 	}
 
-	for j, col := range self.matrix {
+	for j, col := range s.matrix {
 		m.matrix[j] = make(sparsecol, len(col))
 		copy(m.matrix[j], col)
 	}
 
-	return
+	return m
 }
 
 // Return the dimensions of a matrix
-func (self *Sparse) Dims() (r, c int) {
-	return self.r, self.c
+func (s *Sparse) Dims() (r, c int) {
+	return s.r, s.c
 }
 
 // Calculate the determinant of a matrix
-func (self *Sparse) Det() (d float64) {
+func (s *Sparse) Det() float64 {
 	panic("not implemented")
 }
 
 // Return the minimum non-zero of a matrix
-func (self *Sparse) Min() (m float64) {
-	m = math.MaxFloat64
-	for _, col := range self.matrix {
+func (s *Sparse) Min() float64 {
+	m := math.MaxFloat64
+	for _, col := range s.matrix {
 		m = math.Min(col.min(), m)
 	}
 
-	return
+	return m
 }
 
 // Return the maximum non-zero of a matrix
-func (self *Sparse) Max() (m float64) {
-	m = -math.MaxFloat64
-	for _, col := range self.matrix {
+func (s *Sparse) Max() float64 {
+	m := -math.MaxFloat64
+	for _, col := range s.matrix {
 		m = math.Max(col.max(), m)
 	}
 
-	return
+	return m
 }
 
 // Set the value at (r, c) to v
-func (self *Sparse) Set(r, c int, v float64) {
-	if r >= self.r || c >= self.c || r < 0 || c < 0 {
-		panic(errors.New("Out of bound"))
+func (s *Sparse) Set(r, c int, v float64) {
+	if r >= s.r || c >= s.c || r < 0 || c < 0 {
+		panic("sparse: index out of bounds")
 	}
 
-	self.set(r, c, v)
+	s.set(r, c, v)
 }
 
-func (self *Sparse) set(r, c int, v float64) {
-	col := self.matrix[c]
+func (s *Sparse) set(r, c int, v float64) {
+	col := s.matrix[c]
 	lo := 0
 	hi := len(col)
 	for {
 		switch curpos := (lo + hi) / 2; {
 		case lo > hi:
 			col.insert(lo, elem{r, v})
-			self.matrix[c] = col
+			s.matrix[c] = col
 			return
 		case col == nil, r > col[len(col)-1].r:
 			col = append(col, elem{r, v})
-			self.matrix[c] = col
+			s.matrix[c] = col
 			return
 		case col[curpos].r == r:
 			col[curpos].value = v
@@ -254,15 +264,15 @@ func (self *Sparse) set(r, c int, v float64) {
 }
 
 // Return the value at (r, c)
-func (self *Sparse) At(r, c int) (v float64) {
-	if r >= self.r || c >= self.c || c < 0 || r < 0 {
-		panic(errors.New("Out of bound"))
+func (s *Sparse) At(r, c int) (v float64) {
+	if r >= s.r || c >= s.c || c < 0 || r < 0 {
+		panic("sparse: index out of bound")
 	}
-	return self.at(r, c)
+	return s.at(r, c)
 }
 
-func (self *Sparse) at(r, c int) float64 {
-	col := self.matrix[c]
+func (s *Sparse) at(r, c int) float64 {
+	col := s.matrix[c]
 
 	lo := 0
 	hi := len(col)
@@ -283,9 +293,10 @@ func (self *Sparse) at(r, c int) float64 {
 }
 
 // Determin a variety of norms
-func (self *Sparse) Norm(ord int) (n float64) {
+func (s *Sparse) Norm(ord int) float64 {
+	var n float64
 	if ord == 0 {
-		for _, c := range self.matrix {
+		for _, c := range s.matrix {
 			for _, e := range c {
 				n += e.value * e.value
 			}
@@ -296,68 +307,56 @@ func (self *Sparse) Norm(ord int) (n float64) {
 	case 2, -2:
 		panic("not implemented - feel free to port an svd function to sparse")
 	case 1:
-		sum := self.SumAxis(matrix.Cols)
+		sum := s.SumAxis(matrix.Cols)
 		for _, e := range sum.matrix[0] {
 			n = math.Max(math.Abs(e.value), n)
 		}
-		return
 	case matrix.Inf:
-		sum := self.SumAxis(matrix.Rows)
+		sum := s.SumAxis(matrix.Rows)
 		for _, e := range sum.matrix[0] {
 			n = math.Max(math.Abs(e.value), n)
 		}
-		return
 	case -1:
 		n = math.MaxFloat64
-		sum := self.SumAxis(matrix.Cols)
+		sum := s.SumAxis(matrix.Cols)
 		for _, e := range sum.matrix[0] {
 			n = math.Min(math.Abs(e.value), n)
 		}
-		return
 	case -matrix.Inf:
 		n = math.MaxFloat64
-		sum := self.SumAxis(matrix.Rows)
+		sum := s.SumAxis(matrix.Rows)
 		for _, e := range sum.matrix[0] {
 			n = math.Min(math.Abs(e.value), n)
 		}
-		return
 	case matrix.Fro:
-		for _, c := range self.matrix {
+		for _, c := range s.matrix {
 			for _, e := range c {
 				n += e.value * e.value
 			}
 		}
 		return math.Sqrt(n)
 	default:
-		panic(errors.New("Invalid norm order for matrix"))
+		panic("sparse: invalid norm order for matrix")
 	}
 
-	panic("cannot reach")
+	return n
 }
 
 // Return a column or row vector holding the sums of rows or columns
-func (self *Sparse) SumAxis(cols bool) (m *Sparse) {
-	m = &Sparse{}
+func (s *Sparse) SumAxis(cols bool) *Sparse {
+	m := &Sparse{}
 	if cols {
-		wg := &sync.WaitGroup{}
-		m.r, m.c, m.matrix = 1, self.c, make([]sparsecol, self.c)
-		for i, c := range self.matrix {
-			wg.Add(1)
-			go func(i int, c sparsecol) {
-				defer func() {
-					wg.Done()
-				}()
-				m.matrix[i] = sparsecol{elem{r: 0, value: c.sum()}}
-			}(i, c)
+		m.r, m.c, m.matrix = 1, s.c, make([]sparsecol, s.c)
+		for i, c := range s.matrix {
+			m.matrix[i] = sparsecol{elem{r: 0, value: c.sum()}}
 		}
-		wg.Wait()
 	} else {
-		m.r, m.c, m.matrix = self.r, 1, make([]sparsecol, 1)
-		data := make([]elem, 0, self.r)
-		for i := 0; i < self.r; i++ {
+		m.r, m.c, m.matrix = s.r, 1, make([]sparsecol, 1)
+		data := make([]elem, 0, s.r)
+		for i := 0; i < s.r; i++ {
 			n := float64(0)
-			for j := 0; j < self.c; j++ {
-				n += self.at(i, j)
+			for j := 0; j < s.c; j++ {
+				n += s.at(i, j)
 			}
 			data = append(data, elem{i, n})
 		}
@@ -365,68 +364,51 @@ func (self *Sparse) SumAxis(cols bool) (m *Sparse) {
 		copy(m.matrix[0], data)
 	}
 
-	return
+	return m
 }
 
 // Return a column or row vector holding the max of rows or columns
-func (self *Sparse) MaxAxis(cols bool) (m *Sparse) {
-	m = &Sparse{}
+func (s *Sparse) MaxAxis(cols bool) *Sparse {
+	m := &Sparse{}
 	if cols {
-		wg := &sync.WaitGroup{}
-		m.r, m.c, m.matrix = 1, self.c, make([]sparsecol, self.c)
-		for i, c := range self.matrix {
-			wg.Add(1)
-			go func(i int, c sparsecol) {
-				defer func() {
-					wg.Done()
-				}()
-				m.matrix[i] = sparsecol{elem{r: 0, value: c.max()}}
-			}(i, c)
+		m.r, m.c, m.matrix = 1, s.c, make([]sparsecol, s.c)
+		for i, c := range s.matrix {
+			m.matrix[i] = sparsecol{elem{r: 0, value: c.max()}}
 		}
-		wg.Wait()
 	} else {
-		m.r, m.c, m.matrix = self.r, 1, make([]sparsecol, 1)
-		data := make([]elem, 0, self.r)
-		for i := 0; i < self.r; i++ {
+		m.r, m.c, m.matrix = s.r, 1, make([]sparsecol, 1)
+		data := make([]elem, 0, s.r)
+		for i := 0; i < s.r; i++ {
 			n := -math.MaxFloat64
-			for j := 0; j < self.c; j++ {
-				if v := self.at(i, j); v > n {
+			for j := 0; j < s.c; j++ {
+				if v := s.at(i, j); v > n {
 					n = v
 				}
 			}
-			fmt.Println(i, n)
 			data = append(data, elem{i, n})
 		}
 		m.matrix[0] = make([]elem, len(data))
 		copy(m.matrix[0], data)
 	}
 
-	return
+	return m
 }
 
 // Return a column or row vector holding the min of rows or columns
-func (self *Sparse) MinAxis(cols bool) (m *Sparse) {
-	m = &Sparse{}
+func (s *Sparse) MinAxis(cols bool) *Sparse {
+	m := &Sparse{}
 	if cols {
-		wg := &sync.WaitGroup{}
-		m.r, m.c, m.matrix = 1, self.c, make([]sparsecol, self.c)
-		for i, c := range self.matrix {
-			wg.Add(1)
-			go func(i int, c sparsecol) {
-				defer func() {
-					wg.Done()
-				}()
-				m.matrix[i] = sparsecol{elem{r: 0, value: c.min()}}
-			}(i, c)
+		m.r, m.c, m.matrix = 1, s.c, make([]sparsecol, s.c)
+		for i, c := range s.matrix {
+			m.matrix[i] = sparsecol{elem{r: 0, value: c.min()}}
 		}
-		wg.Wait()
 	} else {
-		m.r, m.c, m.matrix = self.r, 1, make([]sparsecol, 1)
-		data := make([]elem, 0, self.r)
-		for i := 0; i < self.r; i++ {
+		m.r, m.c, m.matrix = s.r, 1, make([]sparsecol, 1)
+		data := make([]elem, 0, s.r)
+		for i := 0; i < s.r; i++ {
 			n := math.MaxFloat64
-			for j := 0; j < self.c; j++ {
-				if v := self.at(i, j); v < n {
+			for j := 0; j < s.c; j++ {
+				if v := s.at(i, j); v < n {
 					n = v
 				}
 			}
@@ -436,26 +418,27 @@ func (self *Sparse) MinAxis(cols bool) (m *Sparse) {
 		copy(m.matrix[0], data)
 	}
 
-	return
+	return m
 }
 
 // Return the transpose of a matrix
-func (self *Sparse) T() (m *Sparse) {
-	if self.r == 0 || self.c == 0 { // this is a vector
-		m = self.Copy()
+func (s *Sparse) T() *Sparse {
+	var m *Sparse
+	if s.r == 0 || s.c == 0 { // this is a vector
+		m = s.Clone()
 		m.r, m.c = m.c, m.r
-		return
+		return m
 	}
 
 	m = &Sparse{
-		r:      self.c,
-		c:      self.r,
-		matrix: make([]sparsecol, self.r),
+		r:      s.c,
+		c:      s.r,
+		matrix: make([]sparsecol, s.r),
 	}
 	for j, _ := range m.matrix {
 		m.matrix[j] = make(sparsecol, 0, m.r)
 	}
-	for j, col := range self.matrix {
+	for j, col := range s.matrix {
 		for _, e := range col {
 			m.matrix[e.r] = append(m.matrix[e.r], elem{r: j, value: e.value})
 		}
@@ -467,109 +450,62 @@ func (self *Sparse) T() (m *Sparse) {
 		m.matrix[j] = t
 	}
 
-	return
+	return m
 }
 
 // Add one matrix to another
-func (self *Sparse) Add(b *Sparse) (m *Sparse) {
-	m = &Sparse{
-		r:      self.r,
-		c:      self.c,
-		matrix: make([]sparsecol, self.c),
+func (s *Sparse) Add(b *Sparse) *Sparse {
+	m := &Sparse{
+		r:      s.r,
+		c:      s.c,
+		matrix: make([]sparsecol, s.c),
 	}
 
-	wg := &sync.WaitGroup{}
-	for j, col := range self.matrix {
-		wg.Add(1)
-		go func(j int, col sparsecol) {
-			defer func() {
-				wg.Done()
-			}()
-			m.matrix[j] = col.foldadd(b.matrix[j])
-		}(j, col)
+	for j, col := range s.matrix {
+		m.matrix[j] = col.foldadd(b.matrix[j])
 	}
-	wg.Wait()
 
-	return
+	return m
 }
 
 // Subtract one matrix from another
-func (self *Sparse) Sub(b *Sparse) (m *Sparse) {
-	m = &Sparse{
-		r:      self.r,
-		c:      self.c,
-		matrix: make([]sparsecol, self.c),
+func (s *Sparse) Sub(b *Sparse) *Sparse {
+	m := &Sparse{
+		r:      s.r,
+		c:      s.c,
+		matrix: make([]sparsecol, s.c),
 	}
 
-	wg := &sync.WaitGroup{}
-	for j, col := range self.matrix {
-		wg.Add(1)
-		go func(j int, col sparsecol) {
-			defer func() {
-				wg.Done()
-			}()
-			m.matrix[j] = col.foldsub(b.matrix[j])
-		}(j, col)
+	for j, col := range s.matrix {
+		m.matrix[j] = col.foldsub(b.matrix[j])
 	}
-	wg.Wait()
 
-	return
+	return m
 }
 
 // Multiply two matrices element by element
-func (self *Sparse) MulElem(b *Sparse) (m *Sparse) {
-	if self.r != b.r || self.c != b.c {
-		panic(errors.New("Dimension mismatch"))
+func (s *Sparse) MulElem(b *Sparse) *Sparse {
+	if s.r != b.r || s.c != b.c {
+		panic("sparse: dimension mismatch")
 	}
 
-	m = &Sparse{
-		r:      self.r,
-		c:      self.c,
-		matrix: make([]sparsecol, self.c),
+	m := &Sparse{
+		r:      s.r,
+		c:      s.c,
+		matrix: make([]sparsecol, s.c),
 	}
 
-	wg := &sync.WaitGroup{}
-	for j, col := range self.matrix {
-		wg.Add(1)
-		go func(j int, col sparsecol) {
-			defer func() {
-				wg.Done()
-			}()
-			m.matrix[j] = col.foldmul(b.matrix[j])
-		}(j, col)
+	for j, col := range s.matrix {
+		m.matrix[j] = col.foldmul(b.matrix[j])
 	}
-	wg.Wait()
 
-	return
+	return m
 }
 
 // Test for equality of two matrices
-func (self *Sparse) Equals(b *Sparse) bool {
-	equal := make(chan bool)
-
-	for j, col := range self.matrix {
-		go func(j int, col sparsecol) {
-			defer func() {
-				if r := recover(); r != nil {
-					if e, ok := r.(runtime.Error); ok {
-						if e.Error() == "runtime error: send on closed channel" {
-							return
-						}
-					}
-					panic(r)
-				}
-			}()
-			if col.foldequal(b.matrix[j]) {
-				equal <- true
-			} else {
-				equal <- false
-			}
-		}(j, col)
-	}
-
-	for i := 0; i < len(self.matrix); i++ {
-		if !<-equal {
-			close(equal)
+func (s *Sparse) Equals(b *Sparse) bool {
+	for j, col := range s.matrix {
+		if !col.foldequal(b.matrix[j]) {
 			return false
 		}
 	}
@@ -578,32 +514,9 @@ func (self *Sparse) Equals(b *Sparse) bool {
 }
 
 // Test for approximate equality of two matrices, tolerance for equality given by error
-func (self *Sparse) EqualsApprox(b *Sparse, error float64) bool {
-	equal := make(chan bool)
-
-	for j, col := range self.matrix {
-		go func(j int, col sparsecol) {
-			defer func() {
-				if r := recover(); r != nil {
-					if e, ok := r.(runtime.Error); ok {
-						if e.Error() == "runtime error: send on closed channel" {
-							return
-						}
-					}
-					panic(r)
-				}
-			}()
-			if col.foldapprox(b.matrix[j], error) {
-				equal <- true
-			} else {
-				equal <- false
-			}
-		}(j, col)
-	}
-
-	for i := 0; i < len(self.matrix); i++ {
-		if !<-equal {
-			close(equal)
+func (s *Sparse) EqualsApprox(b *Sparse, error float64) bool {
+	for j, col := range s.matrix {
+		if !col.foldapprox(b.matrix[j], error) {
 			return false
 		}
 	}
@@ -612,159 +525,116 @@ func (self *Sparse) EqualsApprox(b *Sparse, error float64) bool {
 }
 
 // Scale a matrix by a factor
-func (self *Sparse) Scalar(f float64) (m *Sparse) {
-	m = &Sparse{
-		r:      self.r,
-		c:      self.c,
-		matrix: make([]sparsecol, self.c),
+func (s *Sparse) Scalar(f float64) *Sparse {
+	m := &Sparse{
+		r:      s.r,
+		c:      s.c,
+		matrix: make([]sparsecol, s.c),
 	}
 
-	wg := &sync.WaitGroup{}
-	for j, col := range self.matrix {
-		wg.Add(1)
-		go func(j int, col sparsecol) {
-			defer func() {
-				wg.Done()
-			}()
-			m.matrix[j] = col.scale(f)
-		}(j, col)
+	for j, col := range s.matrix {
+		m.matrix[j] = col.scale(f)
 	}
-	wg.Wait()
 
-	return
+	return m
 }
 
 // Calculate the sum of a matrix
-func (self *Sparse) Sum() (s float64) {
-	for _, col := range self.matrix {
-		s += col.sum()
+func (s *Sparse) Sum() float64 {
+	var sum float64
+	for _, col := range s.matrix {
+		sum += col.sum()
 	}
 
-	return
+	return sum
 }
 
 // Calculate the inner product of two matrices
-func (self *Sparse) Inner(b *Sparse) (p float64) {
-	if self.r != b.r || self.c != b.c {
-		panic(errors.New("Dimension mismatch"))
+func (s *Sparse) Inner(b *Sparse) float64 {
+	var p float64
+	if s.r != b.r || s.c != b.c {
+		panic("sparse: dimension mismatch")
 	}
 
-	for j, col := range self.matrix {
+	for j, col := range s.matrix {
 		p += col.foldmul(b.matrix[j]).sum()
 	}
 
-	return
+	return p
 }
 
-// Multiply two matrices returning the product - columns calculated concurrently
-func (self *Sparse) Dot(b *Sparse) (p *Sparse) {
+// Multiply two matrices returning the product.
+func (s *Sparse) Dot(b *Sparse) *Sparse {
 	switch {
-	case self.c != b.r:
-		panic(errors.New("Dimension mismatch"))
+	case s.c != b.r:
+		panic("sparse: dimension mismatch")
 	}
 
-	p = &Sparse{
-		r:      self.r,
+	p := &Sparse{
+		r:      s.r,
 		c:      b.c,
 		matrix: make([]sparsecol, b.c),
 	}
 
-	t := self.T()
-
-	wg := &sync.WaitGroup{}
+	t := s.T()
 
 	for j, col := range b.matrix {
-		wg.Add(1)
-		go func(j int, col sparsecol) {
-			defer func() {
-				wg.Done()
-			}()
-			for i, row := range t.matrix {
-				if v := col.foldmul(row).sum(); v != 0 {
-					p.matrix[j] = append(p.matrix[j], elem{r: i, value: v})
-				}
-			}
-		}(j, col)
-	}
-
-	wg.Wait()
-	return
-}
-
-// Join a matrix below self returning the new matrix
-func (self *Sparse) Stack(b *Sparse) (m *Sparse) {
-	defer func() {
-		if r := recover(); r != nil {
-			if err, ok := r.(error); !ok {
-				panic(fmt.Errorf("pkg: %v", r))
-			} else {
-				panic(err)
+		for i, row := range t.matrix {
+			if v := col.foldmul(row).sum(); v != 0 {
+				p.matrix[j] = append(p.matrix[j], elem{r: i, value: v})
 			}
 		}
-	}()
-
-	if self.c != b.c {
-		panic(errors.New("Dimension mismatch"))
 	}
 
-	m = &Sparse{
-		r:      self.r + b.r,
-		c:      self.c,
-		matrix: make([]sparsecol, self.c),
+	return p
+}
+
+// Join a matrix below s returning the new matrix
+func (s *Sparse) Stack(b *Sparse) (*Sparse, error) {
+	if s.c != b.c {
+		return nil, errors.New("sparse: dimension mismatch")
 	}
 
-	wg := &sync.WaitGroup{}
+	m := &Sparse{
+		r:      s.r + b.r,
+		c:      s.c,
+		matrix: make([]sparsecol, s.c),
+	}
+
 	for j, col := range b.matrix {
-		wg.Add(1)
-		go func(j int, col sparsecol) {
-			defer func() {
-				wg.Done()
-			}()
-			m.matrix[j] = make(sparsecol, len(self.matrix[j]), len(self.matrix[j])+len(col))
-			copy(m.matrix[j], self.matrix[j])
-			for _, e := range col {
-				m.matrix[j] = append(m.matrix[j], elem{r: e.r + self.r, value: e.value})
-			}
-		}(j, col)
+		m.matrix[j] = make(sparsecol, len(s.matrix[j]), len(s.matrix[j])+len(col))
+		copy(m.matrix[j], s.matrix[j])
+		for _, e := range col {
+			m.matrix[j] = append(m.matrix[j], elem{r: e.r + s.r, value: e.value})
+		}
 	}
-	wg.Wait()
 
-	return
+	return m, nil
 }
 
-// Join a matrix to the right of self returning the new matrix
-func (self *Sparse) Augment(b *Sparse) (m *Sparse) {
-	defer func() {
-		if r := recover(); r != nil {
-			if err, ok := r.(error); !ok {
-				panic(fmt.Errorf("pkg: %v", r))
-			} else {
-				panic(err)
-			}
-		}
-	}()
-
-	if self.r != b.r {
-		panic(errors.New("Dimension mismatch"))
+// Join a matrix to the right of s returning the new matrix
+func (s *Sparse) Augment(b *Sparse) (*Sparse, error) {
+	if s.r != b.r {
+		return nil, errors.New("sparse: dimension mismatch")
 	}
 
-	m = self.Copy()
-	m.matrix = append(m.matrix, b.Copy().matrix...)
-	m.c = self.c + b.c
+	m := s.Clone()
+	m.matrix = append(m.matrix, b.Clone().matrix...)
+	m.c = s.c + b.c
 
-	return
+	return m, nil
 }
 
 // Return a matrix with all elements at (r, c) set to zero where FilterFunc(r, c) returns false
-func (self *Sparse) Filter(f matrix.FilterFunc) (m *Sparse) {
-	m = &Sparse{
-		r:      self.r,
-		c:      self.c,
-		matrix: make([]sparsecol, len(self.matrix)),
+func (s *Sparse) Filter(f matrix.FilterFunc) *Sparse {
+	m := &Sparse{
+		r:      s.r,
+		c:      s.c,
+		matrix: make([]sparsecol, len(s.matrix)),
 	}
 
-	t := make(sparsecol, 0, len(self.matrix[0]))
-	for j, col := range self.matrix {
+	t := make(sparsecol, 0, len(s.matrix[0]))
+	for j, col := range s.matrix {
 		for i, e := range col {
 			if f(i, j, e.value) {
 				t = append(t, e)
@@ -775,12 +645,12 @@ func (self *Sparse) Filter(f matrix.FilterFunc) (m *Sparse) {
 		t = t[:0]
 	}
 
-	return
+	return m
 }
 
 // Apply a function to non-zero elements of the matrix
-func (self *Sparse) Apply(f matrix.ApplyFunc) (m *Sparse) {
-	m = self.Copy()
+func (s *Sparse) Apply(f matrix.ApplyFunc) *Sparse {
+	m := s.Clone()
 	for j, col := range m.matrix {
 		for i, e := range col {
 			if v := f(i, j, e.value); v != e.value {
@@ -789,12 +659,12 @@ func (self *Sparse) Apply(f matrix.ApplyFunc) (m *Sparse) {
 		}
 	}
 
-	return
+	return m
 }
 
 // Apply a function to all elements of the matrix
-func (self *Sparse) ApplyAll(f matrix.ApplyFunc) (m *Sparse) {
-	m = self.Copy()
+func (s *Sparse) ApplyAll(f matrix.ApplyFunc) *Sparse {
+	m := s.Clone()
 	for j := 0; j < m.c; j++ {
 		for i := 0; i < m.r; i++ {
 			old := m.at(i, j)
@@ -805,19 +675,19 @@ func (self *Sparse) ApplyAll(f matrix.ApplyFunc) (m *Sparse) {
 		}
 	}
 
-	return
+	return m
 }
 
 // Clean zero elements from a matrix
-func (self *Sparse) Clean() (m *Sparse) {
-	m = &Sparse{
-		r:      self.r,
-		c:      self.c,
-		matrix: make([]sparsecol, len(self.matrix)),
+func (s *Sparse) Clean() *Sparse {
+	m := &Sparse{
+		r:      s.r,
+		c:      s.c,
+		matrix: make([]sparsecol, len(s.matrix)),
 	}
 
-	t := make(sparsecol, 0, len(self.matrix[0]))
-	for j, col := range self.matrix {
+	t := make(sparsecol, 0, len(s.matrix[0]))
+	for j, col := range s.matrix {
 		for _, e := range col {
 			if e.value != 0 {
 				t = append(t, e)
@@ -828,21 +698,21 @@ func (self *Sparse) Clean() (m *Sparse) {
 		t = t[:0]
 	}
 
-	return
+	return m
 }
 
-// Clean elements within error of zero from a matrix
-func (self *Sparse) CleanError(error float64) (m *Sparse) {
-	m = &Sparse{
-		r:      self.r,
-		c:      self.c,
-		matrix: make([]sparsecol, len(self.matrix)),
+// Clean elements within epsilon of zero from a matrix
+func (s *Sparse) CleanError(epsilon float64) *Sparse {
+	m := &Sparse{
+		r:      s.r,
+		c:      s.c,
+		matrix: make([]sparsecol, len(s.matrix)),
 	}
 
-	t := make(sparsecol, 0, len(self.matrix[0]))
-	for j, col := range self.matrix {
+	t := make(sparsecol, 0, len(s.matrix[0]))
+	for j, col := range s.matrix {
 		for _, e := range col {
-			if math.Abs(e.value) > error {
+			if math.Abs(e.value) > epsilon {
 				t = append(t, e)
 			}
 		}
@@ -851,58 +721,70 @@ func (self *Sparse) CleanError(error float64) (m *Sparse) {
 		t = t[:0]
 	}
 
-	return
+	return m
 }
 
-func (self *Sparse) String() (s string) {
+func (s *Sparse) String() string {
 	pc := Margin
 	if Margin < 0 {
 		var c int
-		pc, c = self.Dims()
+		pc, c = s.Dims()
 		if c > pc {
 			pc = c
 		}
 	}
-	if self.r > 2*pc || self.c > 2*pc {
-		r, c := self.Dims()
-		s = fmt.Sprintf("Dims(%v, %v)\n", r, c)
+	b := &bytes.Buffer{}
+	if s.r > 2*pc || s.c > 2*pc {
+		r, c := s.Dims()
+		fmt.Fprintf(b, "Dims(%v, %v)\n", r, c)
 	}
-	for i := 0; i < self.r; i++ {
-		var l string
-		for j := 0; j < self.c; j++ {
-			if j >= pc && j < self.c-pc {
-				j = self.c - pc - 1
-				if i == 0 || i == self.r-1 {
-					l += "...  ...  "
+	format := fmt.Sprintf("%% -*.*%c", matrix.Format)
+	for i := 0; i < s.r; i++ {
+		switch {
+		case s.r == 1:
+			fmt.Fprint(b, "[")
+		case i == 0:
+			fmt.Fprint(b, "⎡")
+		case i < s.r-1:
+			fmt.Fprint(b, "⎢")
+		default:
+			fmt.Fprint(b, "⎣")
+		}
+
+		for j := 0; j < s.c; j++ {
+			if j >= pc && j < s.c-pc {
+				j = s.c - pc - 1
+				if i == 0 || i == s.r-1 {
+					fmt.Fprint(b, "...  ...  ")
 				} else {
-					l += "          "
+					fmt.Fprint(b, "          ")
 				}
 				continue
 			}
 
-			if j < self.c-1 {
-				l += fmt.Sprintf("%-*s", matrix.Precision+matrix.Pad[matrix.Format]+2, strconv.FormatFloat(self.at(i, j), matrix.Format, matrix.Precision, 64))
-			} else {
-				l += fmt.Sprintf("%-*s", matrix.Precision+matrix.Pad[matrix.Format], strconv.FormatFloat(self.at(i, j), matrix.Format, matrix.Precision, 64))
+			fmt.Fprintf(b, format, matrix.Precision+matrix.Pad[matrix.Format], matrix.Precision, s.at(i, j))
+			if j < s.c-1 {
+				fmt.Fprint(b, "  ")
 			}
 		}
+
 		switch {
-		case self.r == 1:
-			s += "[" + l + "]\n"
+		case s.r == 1:
+			fmt.Fprintln(b, "]")
 		case i == 0:
-			s += "⎡" + l + "⎤\n"
-		case i < self.r-1:
-			s += "⎢" + l + "⎥\n"
+			fmt.Fprintln(b, "⎤")
+		case i < s.r-1:
+			fmt.Fprintln(b, "⎥")
 		default:
-			s += "⎣" + l + "⎦\n"
+			fmt.Fprintln(b, "⎦")
 		}
 
-		if i >= pc-1 && i < self.r-pc && 2*pc < self.r {
-			i = self.r - pc - 1
-			s += " .\n .\n .\n"
+		if i >= pc-1 && i < s.r-pc && 2*pc < s.r {
+			i = s.r - pc - 1
+			fmt.Fprint(b, " .\n .\n .\n")
 			continue
 		}
 	}
 
-	return
+	return b.String()
 }

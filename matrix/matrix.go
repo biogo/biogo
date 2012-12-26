@@ -22,7 +22,7 @@ type FilterFunc func(r, c int, v float64) bool
 type ApplyFunc func(r, c int, v float64) float64
 
 type Matrix interface {
-	Copy() Matrix
+	Clone() Matrix
 	Dims() (int, int)
 	Set(r, c int, v float64) error
 	At(r, c int) (float64, error)
