@@ -2,22 +2,22 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// Implementation of NMF by alternative non-negative least squares using projected gradients
-//
-// Chih-Jen Lin (2007) Projected Gradient Methods for Nonnegative Matrix Factorization. Neural Computation 19:2756. 
-package nmf
+package matrix
 
 import (
-	"code.google.com/p/biogo/matrix"
-	"code.google.com/p/biogo/matrix/sparse"
 	"math"
 	"time"
 )
 
 // Default inner loop size for subproblem
-var InnerLoop = 20
+var NmfInnerLoop = 20
 
-func Factors(X, Wo, Ho *sparse.Sparse, tolerance float64, iterations int, limit time.Duration) (W, H *sparse.Sparse, ok bool) {
+// Factors is an implementation of NMF by alternative non-negative least
+// squares using projected gradients according to:
+//
+// Chih-Jen Lin (2007) Projected Gradient Methods for Nonnegative Matrix
+// Factorization. Neural Computation 19:2756. 
+func Factors(X, Wo, Ho Matrix, tolerance float64, iterations int, limit time.Duration) (W, H Matrix, ok bool) {
 	W = Wo
 	H = Ho
 	to := time.Now()
@@ -28,7 +28,7 @@ func Factors(X, Wo, Ho *sparse.Sparse, tolerance float64, iterations int, limit 
 	gW := W.Dot(H.Dot(hT)).Sub(X.Dot(hT))
 	gH := wT.Dot(W).Dot(H).Sub(wT.Dot(X))
 
-	gradient := sparse.Must(gW.Stack(gH.T())).Norm(matrix.Fro)
+	gradient := gW.Stack(gH.T()).Norm(Fro)
 	toleranceW := math.Max(0.001, tolerance) * gradient
 	toleranceH := toleranceW
 
@@ -48,7 +48,7 @@ func Factors(X, Wo, Ho *sparse.Sparse, tolerance float64, iterations int, limit 
 	ok = true
 
 	for i := 1; i < iterations; i++ {
-		projection := sparse.Elements(gW.Filter(wFilter), (gH.Filter(hFilter))).Norm(matrix.Fro)
+		projection := Norm(ElementsVector(gW.Filter(wFilter), gH.Filter(hFilter)), Fro)
 		if projection < tolerance*gradient || time.Now().Sub(to) > limit {
 			break
 		}
@@ -70,7 +70,7 @@ func Factors(X, Wo, Ho *sparse.Sparse, tolerance float64, iterations int, limit 
 	return
 }
 
-func subproblem(X, W, Ho *sparse.Sparse, tolerance float64, iterations int) (H, G *sparse.Sparse, i int, ok bool) {
+func subproblem(X, W, Ho Matrix, tolerance float64, iterations int) (H, G Matrix, i int, ok bool) {
 	H = Ho.Clone()
 	WtV := W.T().Dot(X)
 	WtW := W.T().Dot(W)
@@ -84,17 +84,17 @@ func subproblem(X, W, Ho *sparse.Sparse, tolerance float64, iterations int) (H, 
 			h := H.At(r, c)
 			return v < 0 || h > 0 // filter called with G as receiver, so v, _ = G.At(r, c)
 		}
-		if projection := G.Filter(filter).Norm(matrix.Fro); projection < tolerance {
+		if projection := G.Filter(filter).Norm(Fro); projection < tolerance {
 			break
 		}
 	}
 
 	var (
 		decrease bool
-		Hp       *sparse.Sparse
+		Hp       Matrix
 	)
 
-	for j := 0; j < InnerLoop; j++ {
+	for j := 0; j < NmfInnerLoop; j++ {
 		Hn := H.Sub(G.Scalar(alpha))
 		filter := func(r, c int, v float64) bool {
 			return v > 0 // filter called with Hn as receiver, so v, _ = Hn.At(r, c)
