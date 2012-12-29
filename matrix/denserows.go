@@ -5,6 +5,7 @@
 package matrix
 
 import (
+	"github.com/ziutek/blas"
 	"math"
 )
 
@@ -74,12 +75,12 @@ func (r denseRow) foldMul(a denseRow) denseRow {
 }
 
 func (r denseRow) foldMulSum(a denseRow) float64 {
-	var s float64
-	for i, e := range r {
-		s += e * a[i]
-	}
-
-	return s
+	// var s float64
+	// for i, e := range r {
+	// 	s += e * a[i]
+	// }
+	// return s
+	return blas.Ddot(len(r), r, 1, a, 1)
 }
 
 func (r denseRow) foldEqual(a denseRow) bool {
