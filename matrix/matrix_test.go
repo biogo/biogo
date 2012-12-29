@@ -401,6 +401,11 @@ func (s *S) TestDot(c *check.C) {
 			[][]float64{{1, 2}, {3, 4}, {5, 6}},
 			[][]float64{{22, 28}, {49, 64}},
 		},
+		{
+			[][]float64{{0, 1, 1}, {0, 1, 1}, {0, 1, 1}},
+			[][]float64{{0, 1, 1}, {0, 1, 1}, {0, 1, 1}},
+			[][]float64{{0, 2, 2}, {0, 2, 2}, {0, 2, 2}},
+		},
 	} {
 		{
 			a, err := NewSparse(test.a)
@@ -619,11 +624,12 @@ func (s *S) TestStackAugment(c *check.C) {
 // a.MaxAxis(matrix.Rows))
 // a.SumAxis(matrix.Cols))
 // a.SumAxis(matrix.Rows))
-func BenchmarkDotDense100Half(b *testing.B)       { denseDotBench(b, 100, 0.5) }
-func BenchmarkDotDense100Tenth(b *testing.B)      { denseDotBench(b, 100, 0.1) }
-func BenchmarkDotDense1000Half(b *testing.B)      { denseDotBench(b, 1000, 0.5) }
-func BenchmarkDotDense1000Tenth(b *testing.B)     { denseDotBench(b, 1000, 0.1) }
-func BenchmarkDotDense1000Hundredth(b *testing.B) { denseDotBench(b, 1000, 0.01) }
+func BenchmarkDotDense100Half(b *testing.B)        { denseDotBench(b, 100, 0.5) }
+func BenchmarkDotDense100Tenth(b *testing.B)       { denseDotBench(b, 100, 0.1) }
+func BenchmarkDotDense1000Half(b *testing.B)       { denseDotBench(b, 1000, 0.5) }
+func BenchmarkDotDense1000Tenth(b *testing.B)      { denseDotBench(b, 1000, 0.1) }
+func BenchmarkDotDense1000Hundredth(b *testing.B)  { denseDotBench(b, 1000, 0.01) }
+func BenchmarkDotDense1000Thousandth(b *testing.B) { denseDotBench(b, 1000, 0.001) }
 func denseDotBench(b *testing.B, size int, rho float64) {
 	b.StopTimer()
 	a := Must(FuncDense(size, size, rho, rand.NormFloat64))
@@ -635,11 +641,12 @@ func denseDotBench(b *testing.B, size int, rho float64) {
 
 }
 
-func BenchmarkDotSparse100Half(b *testing.B)       { sparseDotBench(b, 100, 0.5) }
-func BenchmarkDotSparse100Tenth(b *testing.B)      { sparseDotBench(b, 100, 0.1) }
-func BenchmarkDotSparse1000Half(b *testing.B)      { sparseDotBench(b, 1000, 0.5) }
-func BenchmarkDotSparse1000Tenth(b *testing.B)     { sparseDotBench(b, 1000, 0.1) }
-func BenchmarkDotSparse1000Hundredth(b *testing.B) { sparseDotBench(b, 1000, 0.01) }
+func BenchmarkDotSparse100Half(b *testing.B)        { sparseDotBench(b, 100, 0.5) }
+func BenchmarkDotSparse100Tenth(b *testing.B)       { sparseDotBench(b, 100, 0.1) }
+func BenchmarkDotSparse1000Half(b *testing.B)       { sparseDotBench(b, 1000, 0.5) }
+func BenchmarkDotSparse1000Tenth(b *testing.B)      { sparseDotBench(b, 1000, 0.1) }
+func BenchmarkDotSparse1000Hundredth(b *testing.B)  { sparseDotBench(b, 1000, 0.01) }
+func BenchmarkDotSparse1000Thousandth(b *testing.B) { sparseDotBench(b, 1000, 0.001) }
 func sparseDotBench(b *testing.B, size int, rho float64) {
 	b.StopTimer()
 	a := Must(FuncSparse(size, size, rho, rand.NormFloat64))

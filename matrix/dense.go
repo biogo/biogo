@@ -554,12 +554,19 @@ func (d *Dense) DotDense(b *Dense) *Dense {
 
 	var t []float64
 	for i := 0; i < b.cols; i++ {
+		var nonZero bool
 		for j := 0; j < b.rows; j++ {
-			t = append(t, b.at(j, i))
+			v := b.at(j, i)
+			if v != 0 {
+				nonZero = true
+			}
+			t = append(t, v)
 		}
-		for j := 0; j < d.rows; j++ {
-			row := d.matrix[j*d.cols : (j+1)*d.cols]
-			p.set(j, i, row.foldMulSum(t))
+		if nonZero {
+			for j := 0; j < d.rows; j++ {
+				row := d.matrix[j*d.cols : (j+1)*d.cols]
+				p.set(j, i, row.foldMulSum(t))
+			}
 		}
 		t = t[:0]
 	}
