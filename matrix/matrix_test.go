@@ -620,102 +620,34 @@ func (s *S) TestStackAugment(c *check.C) {
 // a.SumAxis(matrix.Cols))
 // a.SumAxis(matrix.Rows))
 
-func BenchmarkDotDense100Half(b *testing.B) {
+func BenchmarkDotDense100Half(b *testing.B)       { denseDotBench(b, 100, 0.5) }
+func BenchmarkDotDense100Tenth(b *testing.B)      { denseDotBench(b, 100, 0.1) }
+func BenchmarkDotDense1000Half(b *testing.B)      { denseDotBench(b, 1000, 0.5) }
+func BenchmarkDotDense1000Tenth(b *testing.B)     { denseDotBench(b, 1000, 0.1) }
+func BenchmarkDotDense1000Hundredth(b *testing.B) { denseDotBench(b, 1000, 0.01) }
+func denseDotBench(b *testing.B, size int, rho float64) {
 	b.StopTimer()
-	a := Must(FuncDense(100, 100, 0.5, rand.NormFloat64))
-	d := Must(FuncDense(100, 100, 0.5, rand.NormFloat64))
+	a := Must(FuncDense(size, size, rho, rand.NormFloat64))
+	d := Must(FuncDense(size, size, rho, rand.NormFloat64))
 	b.StartTimer()
 	for i := 0; i < b.N; i++ {
 		_ = a.Dot(d)
 	}
+
 }
 
-func BenchmarkDotSparse100Half(b *testing.B) {
+func BenchmarkDotSparse100Half(b *testing.B)       { sparseDotBench(b, 100, 0.5) }
+func BenchmarkDotSparse100Tenth(b *testing.B)      { sparseDotBench(b, 100, 0.1) }
+func BenchmarkDotSparse1000Half(b *testing.B)      { sparseDotBench(b, 1000, 0.5) }
+func BenchmarkDotSparse1000Tenth(b *testing.B)     { sparseDotBench(b, 1000, 0.1) }
+func BenchmarkDotSparse1000Hundredth(b *testing.B) { sparseDotBench(b, 1000, 0.01) }
+func sparseDotBench(b *testing.B, size int, rho float64) {
 	b.StopTimer()
-	a := Must(FuncSparse(100, 100, 0.5, rand.NormFloat64))
-	d := Must(FuncSparse(100, 100, 0.5, rand.NormFloat64))
+	a := Must(FuncSparse(size, size, rho, rand.NormFloat64))
+	d := Must(FuncSparse(size, size, rho, rand.NormFloat64))
 	b.StartTimer()
 	for i := 0; i < b.N; i++ {
 		_ = a.Dot(d)
 	}
-}
 
-func BenchmarkDotDense100Tenth(b *testing.B) {
-	b.StopTimer()
-	a := Must(FuncDense(100, 100, 0.1, rand.NormFloat64))
-	d := Must(FuncDense(100, 100, 0.1, rand.NormFloat64))
-	b.StartTimer()
-	for i := 0; i < b.N; i++ {
-		_ = a.Dot(d)
-	}
-}
-
-func BenchmarkDotSparse100Tenth(b *testing.B) {
-	b.StopTimer()
-	a := Must(FuncSparse(100, 100, 0.1, rand.NormFloat64))
-	d := Must(FuncSparse(100, 100, 0.1, rand.NormFloat64))
-	b.StartTimer()
-	for i := 0; i < b.N; i++ {
-		_ = a.Dot(d)
-	}
-}
-
-func BenchmarkDotDense1000Half(b *testing.B) {
-	b.StopTimer()
-	a := Must(FuncDense(1000, 1000, 0.5, rand.NormFloat64))
-	d := Must(FuncDense(1000, 1000, 0.5, rand.NormFloat64))
-	b.StartTimer()
-	for i := 0; i < b.N; i++ {
-		_ = a.Dot(d)
-	}
-}
-
-func BenchmarkDotSparse1000Half(b *testing.B) {
-	b.StopTimer()
-	a := Must(FuncSparse(1000, 1000, 0.5, rand.NormFloat64))
-	d := Must(FuncSparse(1000, 1000, 0.5, rand.NormFloat64))
-	b.StartTimer()
-	for i := 0; i < b.N; i++ {
-		_ = a.Dot(d)
-	}
-}
-
-func BenchmarkDotDense1000Tenth(b *testing.B) {
-	b.StopTimer()
-	a := Must(FuncDense(1000, 1000, 0.1, rand.NormFloat64))
-	d := Must(FuncDense(1000, 1000, 0.1, rand.NormFloat64))
-	b.StartTimer()
-	for i := 0; i < b.N; i++ {
-		_ = a.Dot(d)
-	}
-}
-
-func BenchmarkDotSparse1000Tenth(b *testing.B) {
-	b.StopTimer()
-	a := Must(FuncSparse(1000, 1000, 0.1, rand.NormFloat64))
-	d := Must(FuncSparse(1000, 1000, 0.1, rand.NormFloat64))
-	b.StartTimer()
-	for i := 0; i < b.N; i++ {
-		_ = a.Dot(d)
-	}
-}
-
-func BenchmarkDotDense1000Hundredth(b *testing.B) {
-	b.StopTimer()
-	a := Must(FuncDense(1000, 1000, 0.01, rand.NormFloat64))
-	d := Must(FuncDense(1000, 1000, 0.01, rand.NormFloat64))
-	b.StartTimer()
-	for i := 0; i < b.N; i++ {
-		_ = a.Dot(d)
-	}
-}
-
-func BenchmarkDotSparse1000Hundredth(b *testing.B) {
-	b.StopTimer()
-	a := Must(FuncSparse(1000, 1000, 0.01, rand.NormFloat64))
-	d := Must(FuncSparse(1000, 1000, 0.01, rand.NormFloat64))
-	b.StartTimer()
-	for i := 0; i < b.N; i++ {
-		_ = a.Dot(d)
-	}
 }
