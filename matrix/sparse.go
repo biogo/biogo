@@ -918,9 +918,9 @@ func (s *Sparse) ApplyAll(f ApplyFunc) Matrix { return s.ApplyAllSparse(f) }
 // Apply a function to all elements of the matrix
 func (s *Sparse) ApplyAllSparse(f ApplyFunc) *Sparse {
 	m := s.CloneSparse()
-	for j, row := range s.matrix {
-		for i := 0; i < m.rows; i++ {
-			old := row.at(i)
+	for i, row := range s.matrix {
+		for j := 0; j < m.cols; j++ {
+			old := row.at(j)
 			v := f(i, j, old)
 			if v != old {
 				m.set(i, j, v)
@@ -982,7 +982,7 @@ func (s *Sparse) Format(fs fmt.State, c rune) {
 		fmt.Fprintf(fs, "&%#v", *s)
 		return
 	}
-	Format(s, s.Margin, fs, c)
+	Format(s, s.Margin, '.', fs, c)
 }
 
 func (s *Sparse) String() string {

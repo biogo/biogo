@@ -666,7 +666,7 @@ func (d *Dense) Format(fs fmt.State, c rune) {
 		fmt.Fprintf(fs, "&%#v", *d)
 		return
 	}
-	Format(d, d.Margin, fs, c)
+	Format(d, d.Margin, '.', fs, c)
 }
 
 func (d *Dense) String() string {
