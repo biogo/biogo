@@ -104,27 +104,19 @@ func (p *Pivot) ClonePivot() *Pivot {
 }
 
 // Sparse returns a copy of the matrix represented as a Sparse.
-func (p *Pivot) Sparse() *Sparse {
-	s := &Sparse{
-		rows:   len(p.matrix),
-		cols:   len(p.matrix),
-		matrix: make([]sparseRow, len(p.matrix)),
-	}
+func (p *Pivot) Sparse(s *Sparse) *Sparse {
+	s = s.reallocate(len(p.matrix), len(p.matrix))
 
 	for r, c := range p.xirtam {
-		s.matrix[r] = append(s.matrix[r], sparseElem{index: c, value: 1})
+		s.matrix[r] = sparseRow{sparseElem{index: c, value: 1}}
 	}
 
 	return s
 }
 
 // Dense returns a copy of the matrix represented as a Dense.
-func (p *Pivot) Dense() *Dense {
-	d := &Dense{
-		rows:   len(p.matrix),
-		cols:   len(p.matrix),
-		matrix: make(denseRow, len(p.matrix)*len(p.matrix)),
-	}
+func (p *Pivot) Dense(d *Dense) *Dense {
+	d.reallocate(len(p.matrix), len(p.matrix))
 
 	for r, c := range p.xirtam {
 		d.set(r, c, 1)
@@ -281,43 +273,41 @@ func (p *Pivot) MinAxis(cols bool) *Dense {
 }
 
 // U returns the upper triangular matrix of the matrix.
-func (p *Pivot) U() Matrix { return p.USparse() }
+func (p *Pivot) U(c Matrix) Matrix {
+	cc, _ := c.(*Sparse)
+	return p.USparse(cc)
+}
 
 // USparse returns the upper triangular matrix of the matrix represented as a sparse matrix.
-func (p *Pivot) USparse() *Sparse {
-	s := &Sparse{
-		rows:   len(p.matrix),
-		cols:   len(p.matrix),
-		matrix: make([]sparseRow, len(p.matrix)),
-	}
-	for r, c := range p.xirtam {
-		if r >= c {
-			s.matrix[r] = append(s.matrix[r], sparseElem{index: c, value: 1})
+func (p *Pivot) USparse(c *Sparse) *Sparse {
+	c = c.reallocate(len(p.matrix), len(p.matrix))
+	for row, col := range p.xirtam {
+		if row >= col {
+			c.matrix[row] = append(c.matrix[row], sparseElem{index: col, value: 1})
 		}
 	}
-	return s
+	return c
 }
 
 // L returns the lower triangular matrix of the matrix.
-func (p *Pivot) L() Matrix { return p.LSparse() }
+func (p *Pivot) L(c Matrix) Matrix {
+	cc, _ := c.(*Sparse)
+	return p.LSparse(cc)
+}
 
 // LDense returns the lower triangular matrix of the matrix represented as a sparse matrix.
-func (p *Pivot) LSparse() *Sparse {
-	s := &Sparse{
-		rows:   len(p.matrix),
-		cols:   len(p.matrix),
-		matrix: make([]sparseRow, len(p.matrix)),
-	}
-	for r, c := range p.xirtam {
-		if r <= c {
-			s.matrix[r] = append(s.matrix[r], sparseElem{index: c, value: 1})
+func (p *Pivot) LSparse(c *Sparse) *Sparse {
+	c = c.reallocate(len(p.matrix), len(p.matrix))
+	for row, col := range p.xirtam {
+		if row <= col {
+			c.matrix[row] = append(c.matrix[row], sparseElem{index: col, value: 1})
 		}
 	}
-	return s
+	return c
 }
 
 // T returns the transpose of the matrix.
-func (p *Pivot) T() Matrix { return p.TPivot() }
+func (p *Pivot) T(_ Matrix) Matrix { return p.TPivot() }
 
 // TPivot returns the transpose of the matrix retaining the concrete type of the matrix.
 func (p *Pivot) TPivot() *Pivot {
@@ -331,10 +321,11 @@ func (p *Pivot) TPivot() *Pivot {
 
 // Add returns the sum of the matrix and the parameter. Add will panic with ErrShape if the
 // two matrices do not have the same dimensions.
-func (p *Pivot) Add(b Matrix) Matrix {
+func (p *Pivot) Add(b, c Matrix) Matrix {
 	switch b := b.(type) {
 	case *Pivot:
-		return p.AddPivot(b)
+		cc, _ := c.(*Sparse)
+		return p.AddPivot(b, cc)
 	case *Sparse:
 		panic("not implemented")
 	case *Dense:
@@ -348,20 +339,23 @@ func (p *Pivot) Add(b Matrix) Matrix {
 
 // AddPivot returns a sparse matrix which is the sum of the matrix and the parameter. AddPivot will
 // panic with ErrShape if the two matrices do not have the same dimensions.
-func (p *Pivot) AddPivot(b *Pivot) *Sparse {
+func (p *Pivot) AddPivot(b *Pivot, c *Sparse) *Sparse {
 	if len(p.matrix) != len(b.matrix) {
 		panic(ErrShape)
 	}
+
+	c = c.reallocate(p.Dims())
 
 	return nil
 }
 
 // Sub returns the result of subtraction of the parameter from the matrix. Sub will panic with ErrShape
 // if the two matrices do not have the same dimensions.
-func (p *Pivot) Sub(b Matrix) Matrix {
+func (p *Pivot) Sub(b, c Matrix) Matrix {
 	switch b := b.(type) {
 	case *Pivot:
-		return p.SubPivot(b)
+		cc, _ := c.(*Sparse)
+		return p.SubPivot(b, cc)
 	case *Sparse:
 		panic("not implemented")
 	case *Dense:
@@ -375,20 +369,23 @@ func (p *Pivot) Sub(b Matrix) Matrix {
 
 // SubPivot returns the result a dense matrics which is the result of subtraction of the parameter from the matrix.
 // SubPivot will panic with ErrShape if the two matrices do not have the same dimensions.
-func (p *Pivot) SubPivot(b *Pivot) *Sparse {
+func (p *Pivot) SubPivot(b *Pivot, c *Sparse) *Sparse {
 	if len(p.matrix) != len(b.matrix) {
 		panic(ErrShape)
 	}
+
+	c = c.reallocate(p.Dims())
 
 	return nil
 }
 
 // MulElem returns the element-wise multiplication of the matrix and the parameter. MulElem will panic with ErrShape
 // if the two matrices do not have the same dimensions.
-func (p *Pivot) MulElem(b Matrix) Matrix {
+func (p *Pivot) MulElem(b, c Matrix) Matrix {
 	switch b := b.(type) {
 	case *Pivot:
-		return p.MulElemPivot(b)
+		cc, _ := c.(*Sparse)
+		return p.MulElemPivot(b, cc)
 	case *Sparse:
 		panic("not implemented")
 	case *Dense:
@@ -402,10 +399,12 @@ func (p *Pivot) MulElem(b Matrix) Matrix {
 
 // MulElemPivot returns a dense matrix which is the result of element-wise multiplication of the matrix and the parameter.
 // MulElemPivot will panic with ErrShape if the two matrices do not have the same dimensions.
-func (p *Pivot) MulElemPivot(b *Pivot) *Sparse {
+func (p *Pivot) MulElemPivot(b *Pivot, c *Sparse) *Sparse {
 	if len(p.matrix) != len(b.matrix) {
 		panic(ErrShape)
 	}
+
+	c = c.reallocate(p.Dims())
 
 	return nil
 }
@@ -470,19 +469,18 @@ func (p *Pivot) EqualsApproxPivot(b *Pivot, epsilon float64) bool {
 }
 
 // Scalar returns the scalar product of the matrix and f.
-func (p *Pivot) Scalar(f float64) Matrix { return p.ScalarSparse(f) }
+func (p *Pivot) Scalar(f float64, c Matrix) Matrix {
+	cc, _ := c.(*Sparse)
+	return p.ScalarSparse(f, cc)
+}
 
 // ScalarSparse returns the scalar product of the matrix and f as a Dense.
-func (p *Pivot) ScalarSparse(f float64) *Sparse {
-	s := &Sparse{
-		rows:   len(p.matrix),
-		cols:   len(p.matrix),
-		matrix: make([]sparseRow, len(p.matrix)),
+func (p *Pivot) ScalarSparse(f float64, c *Sparse) *Sparse {
+	c = c.reallocate(p.Dims())
+	for row, col := range p.xirtam {
+		c.matrix[row] = append(c.matrix[row], sparseElem{index: col, value: 1 * f})
 	}
-	for r, c := range p.xirtam {
-		s.matrix[r] = append(s.matrix[r], sparseElem{index: c, value: 1 * f})
-	}
-	return s
+	return c
 }
 
 // Sum returns the sum of elements in the matrix.
@@ -524,14 +522,17 @@ func (p *Pivot) InnerPivot(b *Pivot) float64 {
 
 // Dot returns the matrix product of the matrix and the parameter. Dot will panic with ErrShape if
 // the column dimension of the receiver does not equal the row dimension of the parameter.
-func (p *Pivot) Dot(b Matrix) Matrix {
+func (p *Pivot) Dot(b, c Matrix) Matrix {
 	switch b := b.(type) {
 	case *Pivot:
-		return p.DotPivot(b)
+		cc, _ := c.(*Pivot)
+		return p.DotPivot(b, cc)
 	case *Sparse:
-		return p.DotSparse(b)
+		cc, _ := c.(*Sparse)
+		return p.DotSparse(b, cc)
 	case *Dense:
-		return p.DotDense(b)
+		cc, _ := c.(*Dense)
+		return p.DotDense(b, cc)
 	default:
 		panic("not implemented")
 	}
@@ -541,7 +542,7 @@ func (p *Pivot) Dot(b Matrix) Matrix {
 
 // DotPivot returns the matrix product of the matrix and the parameter as a dense matrix. DotDense will panic
 // with ErrShape if the column dimension of the receiver does not equal the row dimension of the parameter.
-func (p *Pivot) DotPivot(b *Pivot) *Pivot {
+func (p *Pivot) DotPivot(b, c *Pivot) *Pivot {
 	if len(p.matrix) != len(b.matrix) {
 		panic(ErrShape)
 	}
@@ -563,15 +564,17 @@ func (p *Pivot) DotPivot(b *Pivot) *Pivot {
 
 // DotSparse returns the matrix product of the matrix and the parameter as a dense matrix. DotDense will panic
 // with ErrShape if the column dimension of the receiver does not equal the row dimension of the parameter.
-func (p *Pivot) DotSparse(b *Sparse) *Sparse {
+func (p *Pivot) DotSparse(b, c *Sparse) *Sparse {
 	if len(p.matrix) != b.rows {
 		panic(ErrShape)
 	}
-	c := &Sparse{
-		rows:   b.rows,
-		cols:   b.cols,
-		matrix: make([]sparseRow, len(b.matrix)),
+
+	// FIXME This is a workaround until I figure out a safe way to do swaps in place.
+	if c == b {
+		c = nil
 	}
+	c = c.reallocate(b.Dims())
+
 	for from, to := range p.matrix {
 		c.matrix[to] = append(c.matrix[to], b.matrix[from]...)
 	}
@@ -580,15 +583,17 @@ func (p *Pivot) DotSparse(b *Sparse) *Sparse {
 
 // DotDense returns the matrix product of the matrix and the parameter as a dense matrix. DotDense will panic
 // with ErrShape if the column dimension of the receiver does not equal the row dimension of the parameter.
-func (p *Pivot) DotDense(b *Dense) *Dense {
+func (p *Pivot) DotDense(b, c *Dense) *Dense {
 	if len(p.matrix) != b.rows {
 		panic(ErrShape)
 	}
-	c := &Dense{
-		rows:   b.rows,
-		cols:   b.cols,
-		matrix: make(denseRow, len(b.matrix)),
+
+	// FIXME This is a workaround until I figure out a safe way to do swaps in place.
+	if c == b {
+		c = nil
 	}
+	c = c.reallocate(b.Dims())
+
 	for from, to := range p.matrix {
 		copy(c.matrix[to*b.cols:(to+1)*b.cols], b.matrix[from*b.cols:(from+1)*b.cols])
 	}
@@ -597,10 +602,11 @@ func (p *Pivot) DotDense(b *Dense) *Dense {
 
 // Augment returns the augmentation of the receiver with the parameter. Augment will panic with
 // ErrColLength if the column dimensions of the two matrices do not match.
-func (p *Pivot) Augment(b Matrix) Matrix {
+func (p *Pivot) Augment(b, c Matrix) Matrix {
 	switch b := b.(type) {
 	case *Pivot:
-		return p.AugmentPivot(b)
+		cc, _ := c.(*Sparse)
+		return p.AugmentPivot(b, cc)
 	case *Sparse:
 		panic("not implemented")
 	case *Dense:
@@ -614,29 +620,27 @@ func (p *Pivot) Augment(b Matrix) Matrix {
 
 // AugmentPivot returns the augmentation of the receiver with the parameter as a sparse matrix.
 // AugmentPivot will panic with ErrColLength if the column dimensions of the two matrices do not match.
-func (p *Pivot) AugmentPivot(b *Pivot) *Sparse {
+func (p *Pivot) AugmentPivot(b *Pivot, c *Sparse) *Sparse {
 	if len(p.matrix) != len(b.matrix) {
 		panic(ErrColLength)
 	}
-	s := &Sparse{
-		rows:   len(p.matrix) + len(b.matrix),
-		cols:   len(p.matrix),
-		matrix: make([]sparseRow, len(p.matrix)+len(b.matrix)),
+	c = c.reallocate(len(p.matrix), len(p.matrix)*2)
+	for row, col := range p.xirtam {
+		c.matrix[row] = append(c.matrix[row], sparseElem{index: col, value: 1}, sparseElem{index: b.xirtam[row] + len(p.matrix), value: 1})
 	}
-	for r, c := range p.xirtam {
-		s.matrix[r] = append(s.matrix[r], sparseElem{index: c, value: 1}, sparseElem{index: b.xirtam[r] + len(p.matrix), value: 1})
-	}
-	return s
+	return c
 }
 
 // Stack returns the stacking of the receiver with the parameter. Stack will panic with
 // ErrRowLength if the column dimensions of the two matrices do not match.
-func (p *Pivot) Stack(b Matrix) Matrix {
+func (p *Pivot) Stack(b, c Matrix) Matrix {
 	switch b := b.(type) {
 	case *Pivot:
-		return p.StackPivot(b)
+		cc, _ := c.(*Sparse)
+		return p.StackPivot(b, cc)
 	case *Sparse:
-		return p.StackSparse(b)
+		cc, _ := c.(*Sparse)
+		return p.StackSparse(b, cc)
 	case *Dense:
 		panic("not implemented")
 	default:
@@ -648,50 +652,51 @@ func (p *Pivot) Stack(b Matrix) Matrix {
 
 // StackSparse returns the augmentation of the receiver with the parameter as a sparse matrix.
 // StackSparse will panic with ErrRowLength if the column dimensions of the two matrices do not match.
-func (p *Pivot) StackPivot(b *Pivot) *Sparse {
+func (p *Pivot) StackPivot(b *Pivot, c *Sparse) *Sparse {
 	if len(p.matrix) != len(b.matrix) {
 		panic(ErrRowLength)
 	}
-	s := &Sparse{
-		rows:   len(p.matrix),
-		cols:   len(p.matrix) + len(b.matrix),
-		matrix: make([]sparseRow, len(p.matrix)+len(b.matrix)),
+	c = c.reallocate(len(p.matrix)*2, len(p.matrix))
+	for row, col := range p.xirtam {
+		c.matrix[row] = append(c.matrix[row], sparseElem{index: col, value: 1})
 	}
-	for r, c := range p.xirtam {
-		s.matrix[r] = append(s.matrix[r], sparseElem{index: c, value: 1})
+	for row, col := range b.xirtam {
+		c.matrix[row+len(p.matrix)] = append(c.matrix[row+len(p.matrix)], sparseElem{index: col, value: 1})
 	}
-	for r, c := range b.xirtam {
-		s.matrix[r+len(p.matrix)] = append(s.matrix[r+len(p.matrix)], sparseElem{index: c, value: 1})
-	}
-	return s
+	return c
 }
 
 // StackDense returns the augmentation of the receiver with the parameter as a dense matrix.
 // StackDense will panic with ErrRowLength if the column dimensions of the two matrices do not match.
-func (p *Pivot) StackSparse(b *Sparse) *Sparse {
+func (p *Pivot) StackSparse(b *Sparse, c *Sparse) *Sparse {
 	if len(p.matrix) != b.cols {
 		panic(ErrRowLength)
 	}
-	s := &Sparse{
-		rows:   len(p.matrix),
-		cols:   len(p.matrix) + len(b.matrix),
-		matrix: make([]sparseRow, len(p.matrix)+len(b.matrix)),
+	c = c.reallocate(len(p.matrix)*2, len(p.matrix))
+	for row, col := range p.xirtam {
+		c.matrix[row] = append(c.matrix[row], sparseElem{index: col, value: 1})
 	}
-	for r, c := range p.xirtam {
-		s.matrix[r] = append(s.matrix[r], sparseElem{index: c, value: 1})
+	for row, col := range b.matrix {
+		c.matrix[row+len(p.matrix)] = append(c.matrix[row+len(p.matrix)], col...)
 	}
-	for r, c := range b.matrix {
-		s.matrix[r+len(p.matrix)] = append(s.matrix[r+len(p.matrix)], c...)
-	}
-	return s
+	return c
 }
 
 // Filter return a matrix with all elements at (r, c) set to zero where FilterFunc(r, c, v) returns false.
-func (p *Pivot) Filter(f FilterFunc) Matrix { return p.FilterSparse(f) }
+func (p *Pivot) Filter(f FilterFunc, c Matrix) Matrix {
+	cc, _ := c.(*Sparse)
+	return p.FilterSparse(f, cc)
+}
 
 // FilterSparse return a sparse matrix with all elements at (r, c) set to zero where FilterFunc(r, c, v) returns false.
-func (p *Pivot) FilterSparse(f FilterFunc) *Sparse {
-	return nil
+func (p *Pivot) FilterSparse(f FilterFunc, c *Sparse) *Sparse {
+	c = c.reallocate(len(p.matrix), len(p.matrix))
+	for row, col := range p.xirtam {
+		if f(row, col, 1) {
+			c.matrix[row] = sparseRow{sparseElem{index: col, value: 1}}
+		}
+	}
+	return c
 }
 
 // Format satisfies the fmt.Formatter interface.

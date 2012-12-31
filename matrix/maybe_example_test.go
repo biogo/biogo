@@ -11,7 +11,7 @@ import (
 
 func ExampleMaybe() {
 	fmt.Println(matrix.Maybe(func() matrix.Matrix {
-		return matrix.Must(matrix.IdentityDense(10)).Dot(matrix.Must(matrix.IdentityDense(2)))
+		return matrix.Must(matrix.IdentityDense(10)).Dot(matrix.Must(matrix.IdentityDense(2)), nil)
 	}))
 
 	// Output:

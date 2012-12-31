@@ -28,29 +28,30 @@ type Matrix interface {
 	Dims() (int, int)
 	At(r, c int) float64
 	Norm(int) float64
-	T() Matrix
+	T(c Matrix) Matrix
 	Det() float64
-	Add(b Matrix) Matrix
-	Sub(b Matrix) Matrix
-	MulElem(b Matrix) Matrix
+	Add(b, c Matrix) Matrix
+	Sub(b, c Matrix) Matrix
+	MulElem(b, c Matrix) Matrix
 	Equals(b Matrix) bool
 	EqualsApprox(b Matrix, epsilon float64) bool
-	Scalar(f float64) Matrix
+	Scalar(f float64, c Matrix) Matrix
 	Sum() (s float64)
-	Dot(b Matrix) Matrix
+	Dot(b, c Matrix) Matrix
 	Inner(b Matrix) float64
-	Stack(b Matrix) Matrix
-	Augment(b Matrix) Matrix
-	Filter(f FilterFunc) Matrix
+	Stack(b, c Matrix) Matrix
+	Augment(b, c Matrix) Matrix
+	Filter(f FilterFunc, c Matrix) Matrix
 	Trace() float64
-	U() Matrix
-	L() Matrix
-	Sparse() *Sparse
-	Dense() *Dense
+	U(Matrix) Matrix
+	L(Matrix) Matrix
+	Sparse(*Sparse) *Sparse
+	Dense(*Dense) *Dense
 }
 
 type Mutable interface {
 	Matrix
+	New(r, c int) (Matrix, error)
 	Set(r, c int, v float64)
 }
 

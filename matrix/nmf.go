@@ -22,13 +22,13 @@ func Factors(V, Wo, Ho Matrix, tolerance float64, iterations int, limit time.Dur
 	H = Ho
 	to := time.Now()
 
-	hT := H.T()
-	wT := W.T()
+	hT := H.T(nil)
+	wT := W.T(nil)
 
-	gW := W.Dot(H.Dot(hT)).Sub(V.Dot(hT))
-	gH := wT.Dot(W).Dot(H).Sub(wT.Dot(V))
+	gW := W.Dot(H.Dot(hT, nil), nil).Sub(V.Dot(hT, nil), nil)
+	gH := wT.Dot(W, nil).Dot(H, nil).Sub(wT.Dot(V, nil), nil)
 
-	gradient := gW.Stack(gH.T()).Norm(Fro)
+	gradient := gW.Stack(gH.T(nil), nil).Norm(Fro)
 	toleranceW := math.Max(0.001, tolerance) * gradient
 	toleranceH := toleranceW
 
@@ -46,19 +46,19 @@ func Factors(V, Wo, Ho Matrix, tolerance float64, iterations int, limit time.Dur
 
 	for i := 0; i < iterations; i++ {
 		ok = true
-		projection := Norm(ElementsVector(gW.Filter(wFilter), gH.Filter(hFilter)), Fro)
+		projection := Norm(ElementsVector(gW.Filter(wFilter, gW), gH.Filter(hFilter, gH)), Fro)
 		if projection < tolerance*gradient || time.Now().Sub(to) > limit {
 			break
 		}
-		W, gW, iW, subOk = subproblem(V.T(), H.T(), W.T(), toleranceW, iterations)
+		W, gW, iW, subOk = subproblem(V.T(nil), H.T(nil), W.T(nil), toleranceW, iterations)
 		if iW == 0 {
 			toleranceW *= 0.1
 		}
 		ok = ok && subOk
-		W = W.T()
-		gW = gW.T()
+		W = W.T(nil)
+		gW = gW.T(nil)
 
-		H, gH, iH, subOk = subproblem(V, W, H, toleranceH, 1000)
+		H, gH, iH, subOk = subproblem(V, W, H, toleranceH, iterations)
 		if iH == 0 {
 			toleranceH *= 0.1
 		}
@@ -70,8 +70,8 @@ func Factors(V, Wo, Ho Matrix, tolerance float64, iterations int, limit time.Dur
 
 func subproblem(V, W, Ho Matrix, tolerance float64, iterations int) (H, G Matrix, i int, ok bool) {
 	H = Ho.Clone()
-	WtV := W.T().Dot(V)
-	WtW := W.T().Dot(W)
+	WtV := W.T(nil).Dot(V, nil)
+	WtW := W.T(nil).Dot(W, nil)
 
 	var alpha, beta float64 = 1, 0.1
 
@@ -83,8 +83,8 @@ func subproblem(V, W, Ho Matrix, tolerance float64, iterations int) (H, G Matrix
 	}
 
 	for i = 0; i < iterations; i++ {
-		G = WtW.Dot(H).Sub(WtV)
-		if projection := G.Filter(ghFilter).Norm(Fro); projection < tolerance {
+		G = WtW.Dot(H, nil).Sub(WtV, G)
+		if projection := G.Filter(ghFilter, G).Norm(Fro); projection < tolerance {
 			break
 		}
 
@@ -94,11 +94,13 @@ func subproblem(V, W, Ho Matrix, tolerance float64, iterations int) (H, G Matrix
 		)
 
 		for j := 0; j < NmfInnerLoop; j++ {
-			Hn := H.Sub(G.Scalar(alpha)).Filter(hFilter)
+			Hn := G.Scalar(alpha, nil)
+			Hn = H.Sub(Hn, Hn)
+			Hn = Hn.Filter(hFilter, Hn)
 
-			d := Hn.Sub(H)
-			gd := G.MulElem(d).Sum()
-			dQd := WtW.Dot(d).MulElem(d).Sum()
+			d := Hn.Sub(H, nil)
+			gd := G.MulElem(d, nil).Sum()
+			dQd := WtW.Dot(d, nil).MulElem(d, d).Sum()
 			sufficient := 0.99*gd+0.5*dQd < 0
 			if j == 0 {
 				decrease = !sufficient
@@ -123,7 +125,7 @@ func subproblem(V, W, Ho Matrix, tolerance float64, iterations int) (H, G Matrix
 			}
 		}
 	}
-	H = H.Filter(hFilter)
+	H = H.Filter(hFilter, H)
 
 	return
 }

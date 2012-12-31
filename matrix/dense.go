@@ -45,6 +45,26 @@ func MustDense(d *Dense, err error) *Dense {
 	return d
 }
 
+func (d *Dense) reallocate(r, c int) *Dense {
+	if d == nil {
+		d = &Dense{
+			rows:   r,
+			cols:   c,
+			matrix: make(denseRow, r*c),
+		}
+	} else {
+		l := r * c
+		if cap(d.matrix) < l {
+			d.matrix = make(denseRow, l)
+		} else {
+			d.matrix = d.matrix[:l]
+		}
+		d.rows = r
+		d.cols = c
+	}
+	return d
+}
+
 // NewDense returns a dense matrix based on a slice of float64 slices. An error is returned
 // if either dimension is zero or rows are not of equal length.
 func NewDense(a [][]float64) (*Dense, error) {
@@ -68,6 +88,11 @@ func NewDense(a [][]float64) (*Dense, error) {
 	}
 
 	return &m, nil
+}
+
+// New returns a new dense r by c matrix.
+func (d *Dense) New(r, c int) (Matrix, error) {
+	return ZeroDense(r, c)
 }
 
 // ZeroDense returns an r row by c column O matrix. An error is returned if either dimension
@@ -177,17 +202,14 @@ func (d *Dense) CloneDense() *Dense {
 }
 
 // Dense returns the matrix as a Dense. The returned matrix is not a copy.
-func (d *Dense) Dense() *Dense { return d }
+func (d *Dense) Dense(_ *Dense) *Dense { return d }
 
 // Sparse returns a copy of the matrix represented as a Sparse.
-func (d *Dense) Sparse() *Sparse {
-	s := &Sparse{
-		rows:   d.rows,
-		cols:   d.cols,
-		matrix: make([]sparseRow, d.rows),
-	}
+func (d *Dense) Sparse(s *Sparse) *Sparse {
+	s = s.reallocate(d.Dims())
 
 	for r := 0; r < d.rows; r++ {
+		s.matrix[r] = s.matrix[r][:0]
 		for c := 0; c < d.cols; c++ {
 			if v := d.at(r, c); v != 0 {
 				s.matrix[r] = append(s.matrix[r], sparseElem{index: c, value: v})
@@ -401,78 +423,88 @@ func (d *Dense) MinAxis(cols bool) *Dense {
 
 // U returns the upper triangular matrix of the matrix. U will panic with ErrSquare if the matrix is not
 // square.
-func (d *Dense) U() Matrix { return d.UDense() }
+func (d *Dense) U(c Matrix) Matrix {
+	cc, _ := c.(*Dense)
+	return d.UDense(cc)
+}
 
 // UDense returns the upper triangular matrix of the matrix retaining the concrete type of the matrix.
 // UDense will panic with ErrSquare if the matrix is not square.
-func (d *Dense) UDense() *Dense {
+func (d *Dense) UDense(c *Dense) *Dense {
 	if d.rows != d.cols {
 		panic(ErrSquare)
 	}
-	m := &Dense{
-		rows:   d.rows,
-		cols:   d.cols,
-		matrix: make(denseRow, len(d.matrix)),
+	if c == d {
+		for i := 1; i < d.rows; i++ {
+			d.matrix[i*d.cols : i*d.cols+i].zero()
+		}
+		return d
 	}
+	c = c.reallocate(d.Dims())
 	for i := 0; i < d.rows; i++ {
-		copy(m.matrix[i*d.cols+i:(i+1)*d.cols], d.matrix[i*d.cols+i:(i+1)*d.cols])
+		copy(c.matrix[i*d.cols+i:(i+1)*d.cols], d.matrix[i*d.cols+i:(i+1)*d.cols])
 	}
-	return m
+	return c
 }
 
 // L returns the lower triangular matrix of the matrix. L will panic with ErrSquare if the matrix is not
 // square.
-func (d *Dense) L() Matrix { return d.LDense() }
+func (d *Dense) L(c Matrix) Matrix {
+	cc, _ := c.(*Dense)
+	return d.LDense(cc)
+}
 
 // LDense returns the lower triangular matrix of the matrix retaining the concrete type of the matrix.
 // LDense will panic with ErrSquare if the matrix is not square.
-func (d *Dense) LDense() *Dense {
+func (d *Dense) LDense(c *Dense) *Dense {
 	if d.rows != d.cols {
 		panic(ErrSquare)
 	}
-	m := &Dense{
-		rows:   d.rows,
-		cols:   d.cols,
-		matrix: make(denseRow, len(d.matrix)),
+	if c == d {
+		for i := 0; i < d.rows-1; i++ {
+			d.matrix[i*d.cols+i+1 : (i+1)*d.cols].zero()
+		}
+		return d
 	}
+	c = c.reallocate(d.Dims())
 	for i := 0; i < d.rows; i++ {
-		copy(m.matrix[i*d.cols:i*d.cols+i+1], d.matrix[i*d.cols:i*d.cols+i+1])
+		copy(c.matrix[i*d.cols:i*d.cols+i+1], d.matrix[i*d.cols:i*d.cols+i+1])
 	}
-	return m
+	return c
 }
 
 // T returns the transpose of the matrix.
-func (d *Dense) T() Matrix { return d.TDense() }
+func (d *Dense) T(c Matrix) Matrix {
+	cc, _ := c.(*Dense)
+	return d.TDense(cc)
+}
 
 // TDense returns the transpose of the matrix retaining the concrete type of the matrix.
-func (d *Dense) TDense() *Dense {
-	var m *Dense
+func (d *Dense) TDense(c *Dense) *Dense {
 	if d.rows == 0 || d.cols == 0 { // this is a vector
-		m = d.CloneDense()
-		m.rows, m.cols = m.cols, m.rows
-		return m
+		c = d.CloneDense()
+		c.rows, c.cols = c.cols, c.rows
+		return c
 	}
 
-	m = &Dense{
-		rows:   d.cols,
-		cols:   d.rows,
-		matrix: make(denseRow, len(d.matrix)),
-	}
+	cols, rows := d.Dims()
+	c = c.reallocate(rows, cols)
 	for i := 0; i < d.cols; i++ {
 		for j := 0; j < d.rows; j++ {
-			m.set(i, j, d.at(j, i))
+			c.set(i, j, d.at(j, i))
 		}
 	}
 
-	return m
+	return c
 }
 
 // Add returns the sum of the matrix and the parameter. Add will panic with ErrShape if the
 // two matrices do not have the same dimensions.
-func (d *Dense) Add(b Matrix) Matrix {
+func (d *Dense) Add(b, c Matrix) Matrix {
 	switch b := b.(type) {
 	case *Dense:
-		return d.AddDense(b)
+		cc, _ := c.(*Dense)
+		return d.AddDense(b, cc)
 	case *Sparse:
 		panic("not implemented")
 	case *Pivot:
@@ -486,24 +518,26 @@ func (d *Dense) Add(b Matrix) Matrix {
 
 // AddDense returns a dense matrix which is the sum of the matrix and the parameter. AddDense will
 // panic with ErrShape if the two matrices do not have the same dimensions.
-func (d *Dense) AddDense(b *Dense) *Dense {
+func (d *Dense) AddDense(b, c *Dense) *Dense {
 	if d.rows != b.rows || d.cols != b.cols {
 		panic(ErrShape)
 	}
 
-	return &Dense{
-		rows:   d.rows,
-		cols:   d.cols,
-		matrix: d.matrix.foldAdd(b.matrix),
+	if c != d && c != b {
+		c = c.reallocate(d.Dims())
 	}
+	c.matrix = d.matrix.foldAdd(b.matrix, c.matrix)
+
+	return c
 }
 
 // Sub returns the result of subtraction of the parameter from the matrix. Sub will panic with ErrShape
 // if the two matrices do not have the same dimensions.
-func (d *Dense) Sub(b Matrix) Matrix {
+func (d *Dense) Sub(b, c Matrix) Matrix {
 	switch b := b.(type) {
 	case *Dense:
-		return d.SubDense(b)
+		cc, _ := c.(*Dense)
+		return d.SubDense(b, cc)
 	case *Sparse:
 		panic("not implemented")
 	case *Pivot:
@@ -517,24 +551,25 @@ func (d *Dense) Sub(b Matrix) Matrix {
 
 // SubDense returns the result a dense matrics which is the result of subtraction of the parameter from the matrix.
 // SubDense will panic with ErrShape if the two matrices do not have the same dimensions.
-func (d *Dense) SubDense(b *Dense) *Dense {
+func (d *Dense) SubDense(b, c *Dense) *Dense {
 	if d.rows != b.rows || d.cols != b.cols {
 		panic(ErrShape)
 	}
-
-	return &Dense{
-		rows:   d.rows,
-		cols:   d.cols,
-		matrix: d.matrix.foldSub(b.matrix),
+	if c != d && c != b {
+		c = c.reallocate(d.Dims())
 	}
+	c.matrix = d.matrix.foldSub(b.matrix, c.matrix)
+
+	return c
 }
 
 // MulElem returns the element-wise multiplication of the matrix and the parameter. MulElem will panic with ErrShape
 // if the two matrices do not have the same dimensions.
-func (d *Dense) MulElem(b Matrix) Matrix {
+func (d *Dense) MulElem(b, c Matrix) Matrix {
 	switch b := b.(type) {
 	case *Dense:
-		return d.MulElemDense(b)
+		cc, _ := c.(*Dense)
+		return d.MulElemDense(b, cc)
 	case *Sparse:
 		panic("not implemented")
 	case *Pivot:
@@ -548,16 +583,17 @@ func (d *Dense) MulElem(b Matrix) Matrix {
 
 // MulElemDense returns a dense matrix which is the result of element-wise multiplication of the matrix and the parameter.
 // MulElemDense will panic with ErrShape if the two matrices do not have the same dimensions.
-func (d *Dense) MulElemDense(b *Dense) *Dense {
+func (d *Dense) MulElemDense(b, c *Dense) *Dense {
 	if d.rows != b.rows || d.cols != b.cols {
 		panic(ErrShape)
 	}
 
-	return &Dense{
-		rows:   d.rows,
-		cols:   d.cols,
-		matrix: d.matrix.foldMul(b.matrix),
+	if c != d && c != b {
+		c = c.reallocate(d.Dims())
 	}
+	c.matrix = d.matrix.foldMul(b.matrix, c.matrix)
+
+	return c
 }
 
 // Equals returns the equality of two matrices.
@@ -611,15 +647,18 @@ func (d *Dense) EqualsApproxDense(b *Dense, epsilon float64) bool {
 }
 
 // Scalar returns the scalar product of the matrix and f.
-func (d *Dense) Scalar(f float64) Matrix { return d.ScalarDense(f) }
+func (d *Dense) Scalar(f float64, c Matrix) Matrix {
+	cc, _ := c.(*Dense)
+	return d.ScalarDense(f, cc)
+}
 
 // ScalarDense returns the scalar product of the matrix and f as a Dense.
-func (d *Dense) ScalarDense(f float64) *Dense {
-	return &Dense{
-		rows:   d.rows,
-		cols:   d.cols,
-		matrix: d.matrix.scale(f),
+func (d *Dense) ScalarDense(f float64, c *Dense) *Dense {
+	if c != d {
+		c = c.reallocate(d.Dims())
 	}
+	c.matrix = d.matrix.scale(f, c.matrix)
+	return c
 }
 
 // Sum returns the sum of elements in the matrix.
@@ -655,10 +694,11 @@ func (d *Dense) InnerDense(b *Dense) float64 {
 
 // Dot returns the matrix product of the matrix and the parameter. Dot will panic with ErrShape if
 // the column dimension of the receiver does not equal the row dimension of the parameter.
-func (d *Dense) Dot(b Matrix) Matrix {
+func (d *Dense) Dot(b, c Matrix) Matrix {
 	switch b := b.(type) {
 	case *Dense:
-		return d.DotDense(b)
+		cc, _ := c.(*Dense)
+		return d.DotDense(b, cc)
 	case *Sparse:
 		panic("not implemented")
 	case *Pivot:
@@ -672,18 +712,18 @@ func (d *Dense) Dot(b Matrix) Matrix {
 
 // DotDense returns the matrix product of the matrix and the parameter as a dense matrix. DotDense will panic
 // with ErrShape if the column dimension of the receiver does not equal the row dimension of the parameter.
-func (d *Dense) DotDense(b *Dense) *Dense {
+func (d *Dense) DotDense(b, c *Dense) *Dense {
 	if d.cols != b.rows {
 		panic(ErrShape)
 	}
 
-	p := &Dense{
-		rows:   d.rows,
-		cols:   b.cols,
-		matrix: make(denseRow, d.rows*b.cols),
+	// FIXME: This is a workaround until I can figure out if overwriting the operands partway through the operation is workable.
+	if c == b || c == d {
+		c = nil
 	}
+	c = c.reallocate(d.rows, b.cols)
 
-	var t []float64
+	t := make([]float64, b.rows)
 	for i := 0; i < b.cols; i++ {
 		var nonZero bool
 		for j := 0; j < b.rows; j++ {
@@ -691,26 +731,26 @@ func (d *Dense) DotDense(b *Dense) *Dense {
 			if v != 0 {
 				nonZero = true
 			}
-			t = append(t, v)
+			t[j] = v
 		}
 		if nonZero {
 			for j := 0; j < d.rows; j++ {
 				row := d.matrix[j*d.cols : (j+1)*d.cols]
-				p.set(j, i, row.foldMulSum(t))
+				c.set(j, i, row.foldMulSum(t))
 			}
 		}
-		t = t[:0]
 	}
 
-	return p
+	return c
 }
 
 // Augment returns the augmentation of the receiver with the parameter. Augment will panic with
 // ErrColLength if the column dimensions of the two matrices do not match.
-func (d *Dense) Augment(b Matrix) Matrix {
+func (d *Dense) Augment(b, c Matrix) Matrix {
 	switch b := b.(type) {
 	case *Dense:
-		return d.AugmentDense(b)
+		cc, _ := c.(*Dense)
+		return d.AugmentDense(b, cc)
 	case *Sparse:
 		panic("not implemented")
 	case *Pivot:
@@ -724,31 +764,27 @@ func (d *Dense) Augment(b Matrix) Matrix {
 
 // AugmentDense returns the augmentation of the receiver with the parameter as a dense matrix.
 // AugmentDense will panic with ErrColLength if the column dimensions of the two matrices do not match.
-func (d *Dense) AugmentDense(b *Dense) *Dense {
+func (d *Dense) AugmentDense(b, c *Dense) *Dense {
 	if d.rows != b.rows {
 		panic(ErrColLength)
 	}
 
-	m := &Dense{
-		rows:   d.cols,
-		cols:   d.cols + b.cols,
-		matrix: make(denseRow, len(d.matrix)+len(b.matrix)),
+	c = c.reallocate(d.rows, d.cols+b.cols)
+	for i := 0; i < c.rows; i++ {
+		copy(c.matrix[i*c.cols:i*c.cols+d.cols], d.matrix[i*d.cols:(i+1)*d.cols])
+		copy(c.matrix[i*c.cols+d.cols:(i+1)*c.cols], b.matrix[i*b.cols:(i+1)*b.cols])
 	}
 
-	for i := 0; i < m.rows; i++ {
-		copy(m.matrix[i*m.cols:i*m.cols+d.cols], d.matrix[i*d.cols:(i+1)*d.cols])
-		copy(m.matrix[i*m.cols+d.cols:(i+1)*m.cols], b.matrix[i*b.cols:(i+1)*b.cols])
-	}
-
-	return m
+	return c
 }
 
 // Stack returns the stacking of the receiver with the parameter. Stack will panic with
 // ErrRowLength if the column dimensions of the two matrices do not match.
-func (d *Dense) Stack(b Matrix) Matrix {
+func (d *Dense) Stack(b, c Matrix) Matrix {
 	switch b := b.(type) {
 	case *Dense:
-		return d.StackDense(b)
+		cc, _ := c.(*Dense)
+		return d.StackDense(b, cc)
 	case *Sparse:
 		panic("not implemented")
 	case *Pivot:
@@ -762,40 +798,45 @@ func (d *Dense) Stack(b Matrix) Matrix {
 
 // StackDense returns the augmentation of the receiver with the parameter as a dense matrix.
 // StackDense will panic with ErrRowLength if the column dimensions of the two matrices do not match.
-func (d *Dense) StackDense(b *Dense) *Dense {
+func (d *Dense) StackDense(b, c *Dense) *Dense {
 	if d.cols != b.cols {
 		panic(ErrRowLength)
 	}
 
-	m := &Dense{
-		rows:   d.rows + b.rows,
-		cols:   d.cols,
-		matrix: make(denseRow, len(d.matrix)+len(b.matrix)),
-	}
-	copy(m.matrix, d.matrix)
-	copy(m.matrix[len(d.matrix):], b.matrix)
+	c = c.reallocate(d.rows+b.rows, d.cols)
+	copy(c.matrix, d.matrix)
+	copy(c.matrix[len(d.matrix):], b.matrix)
 
-	return m
+	return c
 }
 
 // Filter return a matrix with all elements at (r, c) set to zero where FilterFunc(r, c, v) returns false.
-func (d *Dense) Filter(f FilterFunc) Matrix { return d.FilterDense(f) }
+func (d *Dense) Filter(f FilterFunc, c Matrix) Matrix {
+	cc, _ := c.(*Dense)
+	return d.FilterDense(f, cc)
+}
 
 // FilterDense return a dense matrix with all elements at (r, c) set to zero where FilterFunc(r, c, v) returns false.
-func (d *Dense) FilterDense(f FilterFunc) *Dense {
-	m := &Dense{
-		rows:   d.rows,
-		cols:   d.cols,
-		matrix: make(denseRow, len(d.matrix)),
+func (d *Dense) FilterDense(f FilterFunc, c *Dense) *Dense {
+	if c == d {
+		for i, e := range d.matrix {
+			if f(i/d.cols, i%d.cols, e) {
+				c.matrix[i] = e
+			} else {
+				c.matrix[i] = 0
+			}
+		}
+		return c
 	}
-
+	c = c.reallocate(d.Dims())
+	c.matrix.zero()
 	for i, e := range d.matrix {
 		if f(i/d.cols, i%d.cols, e) {
-			m.matrix[i] = e
+			c.matrix[i] = e
 		}
 	}
 
-	return m
+	return c
 }
 
 // Apply returns a matrix which has had a function applied to all elements of the matrix.

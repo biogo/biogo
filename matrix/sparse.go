@@ -60,6 +60,28 @@ func MustSparse(s *Sparse, err error) *Sparse {
 	return s
 }
 
+func (s *Sparse) reallocate(r, c int) *Sparse {
+	if s == nil {
+		s = &Sparse{
+			rows:   r,
+			cols:   c,
+			matrix: make([]sparseRow, r),
+		}
+	} else {
+		if cap(s.matrix) < r {
+			s.matrix = make([]sparseRow, r)
+		} else {
+			s.matrix = s.matrix[:r]
+			for row := range s.matrix {
+				s.matrix[row] = s.matrix[row][:0]
+			}
+		}
+		s.rows = r
+		s.cols = c
+	}
+	return s
+}
+
 // NewSparse returns a sparse matrix based on a slice of float64 slices. An error is returned
 // if either dimension is zero or rows are not of equal length.
 func NewSparse(a [][]float64) (*Sparse, error) {
@@ -85,6 +107,11 @@ func NewSparse(a [][]float64) (*Sparse, error) {
 	}
 
 	return m, nil
+}
+
+// New returns a new dense r by c matrix.
+func (s *Sparse) New(r, c int) (Matrix, error) {
+	return ZeroSparse(r, c)
 }
 
 // ZeroSparse returns an r row by c column O matrix. An error is returned if either dimension
@@ -227,15 +254,11 @@ func (s *Sparse) CloneSparse() *Sparse {
 }
 
 // Sparse returns the matrix as a Sparse. The returned matrix is not a copy.
-func (s *Sparse) Sparse() *Sparse { return s }
+func (s *Sparse) Sparse(_ *Sparse) *Sparse { return s }
 
 // Dense returns a copy of the matrix represented as a Dense.
-func (s *Sparse) Dense() *Dense {
-	d := &Dense{
-		rows:   s.rows,
-		cols:   s.cols,
-		matrix: make(denseRow, s.rows*s.cols),
-	}
+func (s *Sparse) Dense(d *Dense) *Dense {
+	d = d.reallocate(s.Dims())
 
 	for i, row := range s.matrix {
 		for j, e := range row {
@@ -521,97 +544,117 @@ func (s *Sparse) MinAxis(cols bool) *Sparse {
 
 // U returns the upper triangular matrix of the matrix. U will panic with ErrSquare if the matrix is not
 // square.
-func (s *Sparse) U() Matrix { return s.USparse() }
+func (s *Sparse) U(c Matrix) Matrix {
+	cc, _ := c.(*Sparse)
+	return s.USparse(cc)
+}
 
 // USparse returns the upper triangular matrix of the matrix retaining the concrete type of the matrix.
 // USparse will panic with ErrSquare if the matrix is not square.
-func (s *Sparse) USparse() *Sparse {
+func (s *Sparse) USparse(c *Sparse) *Sparse {
 	if s.rows != s.cols {
 		panic(ErrSquare)
 	}
-	m := &Sparse{
-		rows:   s.rows,
-		cols:   s.cols,
-		matrix: make([]sparseRow, s.rows),
+	if c == s {
+		for i, row := range s.matrix {
+			c.matrix[i] = c.matrix[i][:0]
+			for j, e := range row {
+				if e.index >= i {
+					c.matrix[i] = row[:len(row)-j]
+					copy(c.matrix[i], row[j:])
+					break
+				}
+			}
+		}
+		return s
 	}
+	c = c.reallocate(s.Dims())
 	for i, row := range s.matrix {
 		for j, e := range row {
 			if e.index >= i {
-				m.matrix[i] = append(m.matrix[i], row[j:]...)
+				c.matrix[i] = append(c.matrix[i], row[j:]...)
 				break
 			}
 		}
 	}
-	return m
+	return c
 }
 
 // L returns the lower triangular matrix of the matrix. L will panic with ErrSquare if the matrix is not
 // square.
-func (s *Sparse) L() Matrix { return s.LSparse() }
+func (s *Sparse) L(c Matrix) Matrix {
+	cc, _ := c.(*Sparse)
+	return s.LSparse(cc)
+}
 
 // LSparse returns the lower triangular matrix of the matrix retaining the concrete type of the matrix.
 // LSparse will panic with ErrSquare if the matrix is not square.
-func (s *Sparse) LSparse() *Sparse {
+func (s *Sparse) LSparse(c *Sparse) *Sparse {
 	if s.rows != s.cols {
 		panic(ErrSquare)
 	}
-	m := &Sparse{
-		rows:   s.rows,
-		cols:   s.cols,
-		matrix: make([]sparseRow, s.rows),
+	if c == s {
+		for i, row := range s.matrix {
+			c.matrix[i] = c.matrix[i][:0]
+			for j := len(row) - 1; j >= 0; j-- {
+				if row[j].index <= i {
+					c.matrix[i] = row[:j+1]
+					break
+				}
+			}
+		}
+		return c
 	}
+	c = c.reallocate(s.Dims())
 	for i, row := range s.matrix {
 		for j := len(row) - 1; j >= 0; j-- {
 			if row[j].index <= i {
-				m.matrix[i] = append(m.matrix[i], row[:j+1]...)
+				c.matrix[i] = append(c.matrix[i], row[:j+1]...)
 				break
 			}
 		}
 	}
-	return m
+	return c
 }
 
 // T returns the transpose of the matrix.
-func (s *Sparse) T() Matrix { return s.TSparse() }
+func (s *Sparse) T(c Matrix) Matrix {
+	cc, _ := c.(*Sparse)
+	return s.TSparse(cc)
+}
 
 // TSparse returns the transpose of the matrix retaining the concrete type of the matrix.
-func (s *Sparse) TSparse() *Sparse {
-	var m *Sparse
+func (s *Sparse) TSparse(c *Sparse) *Sparse {
 	if s.rows == 0 || s.cols == 0 { // this is a vector
-		m = s.CloneSparse()
-		m.rows, m.cols = m.cols, m.rows
-		return m
+		c = s.CloneSparse()
+		c.rows, c.cols = c.cols, c.rows
+		return c
 	}
 
-	m = &Sparse{
-		rows:   s.cols,
-		cols:   s.rows,
-		matrix: make([]sparseRow, s.cols),
-	}
-	for j, _ := range m.matrix {
-		m.matrix[j] = make(sparseRow, 0, m.rows)
-	}
+	cols, rows := s.Dims()
+	c = c.reallocate(rows, cols)
 	for j, row := range s.matrix {
 		for _, e := range row {
-			m.matrix[e.index] = append(m.matrix[e.index], sparseElem{index: j, value: e.value})
+			c.matrix[e.index] = append(c.matrix[e.index], sparseElem{index: j, value: e.value})
 		}
 	}
 
-	for j, _ := range m.matrix {
-		t := make(sparseRow, len(m.matrix[j]))
-		copy(t, m.matrix[j])
-		m.matrix[j] = t
+	for j, _ := range c.matrix {
+		t := make(sparseRow, len(c.matrix[j]))
+		copy(t, c.matrix[j])
+		c.matrix[j] = t
 	}
 
-	return m
+	return c
 }
 
 // Add returns the sum of the matrix and the parameter. Add will panic with ErrShape if the
 // two matrices do not have the same dimensions.
-func (s *Sparse) Add(b Matrix) Matrix {
+func (s *Sparse) Add(b, c Matrix) Matrix {
 	switch b := b.(type) {
 	case *Sparse:
-		return s.AddSparse(b)
+		cc, _ := c.(*Sparse)
+		return s.AddSparse(b, cc)
 	case *Dense:
 		panic("not implemented")
 	case *Pivot:
@@ -625,30 +668,28 @@ func (s *Sparse) Add(b Matrix) Matrix {
 
 // AddSparse returns a dense matrix which is the sum of the matrix and the parameter. AddSparse will
 // panic with ErrShape if the two matrices do not have the same dimensions.
-func (s *Sparse) AddSparse(b *Sparse) *Sparse {
+func (s *Sparse) AddSparse(b, c *Sparse) *Sparse {
 	if s.rows != b.rows || s.cols != b.cols {
 		panic(ErrShape)
 	}
 
-	m := &Sparse{
-		rows:   s.rows,
-		cols:   s.cols,
-		matrix: make([]sparseRow, s.rows),
+	if c != s && c != b {
+		c = c.reallocate(s.Dims())
 	}
-
 	for j, row := range s.matrix {
-		m.matrix[j] = row.foldAdd(b.matrix[j])
+		c.matrix[j] = row.foldAdd(b.matrix[j], c.matrix[j])
 	}
 
-	return m
+	return c
 }
 
 // Sub returns the result of subtraction of the parameter from the matrix. Sub will panic with ErrShape
 // if the two matrices do not have the same dimensions.
-func (s *Sparse) Sub(b Matrix) Matrix {
+func (s *Sparse) Sub(b, c Matrix) Matrix {
 	switch b := b.(type) {
 	case *Sparse:
-		return s.SubSparse(b)
+		cc, _ := c.(*Sparse)
+		return s.SubSparse(b, cc)
 	case *Dense:
 		panic("not implemented")
 	case *Pivot:
@@ -662,30 +703,28 @@ func (s *Sparse) Sub(b Matrix) Matrix {
 
 // SubSparse returns the result a dense matrics which is the result of subtraction of the parameter from the matrix.
 // SubSparse will panic with ErrShape if the two matrices do not have the same dimensions.
-func (s *Sparse) SubSparse(b *Sparse) *Sparse {
+func (s *Sparse) SubSparse(b, c *Sparse) *Sparse {
 	if s.rows != b.rows || s.cols != b.cols {
 		panic(ErrShape)
 	}
 
-	m := &Sparse{
-		rows:   s.rows,
-		cols:   s.cols,
-		matrix: make([]sparseRow, s.rows),
+	if c != s && c != b {
+		c = c.reallocate(s.Dims())
 	}
-
 	for j, row := range s.matrix {
-		m.matrix[j] = row.foldSub(b.matrix[j])
+		c.matrix[j] = row.foldSub(b.matrix[j], c.matrix[j])
 	}
 
-	return m
+	return c
 }
 
 // MulElem returns the element-wise multiplication of the matrix and the parameter. MulElem will panic with ErrShape
 // if the two matrices do not have the same dimensions.
-func (s *Sparse) MulElem(b Matrix) Matrix {
+func (s *Sparse) MulElem(b, c Matrix) Matrix {
 	switch b := b.(type) {
 	case *Sparse:
-		return s.MulElemSparse(b)
+		cc, _ := c.(*Sparse)
+		return s.MulElemSparse(b, cc)
 	case *Dense:
 		panic("not implemented")
 	case *Pivot:
@@ -699,22 +738,19 @@ func (s *Sparse) MulElem(b Matrix) Matrix {
 
 // MulElemSparse returns a dense matrix which is the result of element-wise multiplication of the matrix and the parameter.
 // MulElemSparse will panic with ErrShape if the two matrices do not have the same dimensions.
-func (s *Sparse) MulElemSparse(b *Sparse) *Sparse {
+func (s *Sparse) MulElemSparse(b, c *Sparse) *Sparse {
 	if s.rows != b.rows || s.cols != b.cols {
 		panic(ErrShape)
 	}
 
-	m := &Sparse{
-		rows:   s.rows,
-		cols:   s.cols,
-		matrix: make([]sparseRow, s.rows),
+	if c != s && c != b {
+		c = c.reallocate(s.Dims())
 	}
-
 	for j, row := range s.matrix {
-		m.matrix[j] = row.foldMul(b.matrix[j])
+		c.matrix[j] = row.foldMul(b.matrix[j], c.matrix[j])
 	}
 
-	return m
+	return c
 }
 
 // Equals returns the equality of two matrices.
@@ -782,21 +818,21 @@ func (s *Sparse) EqualsApproxSparse(b *Sparse, epsilon float64) bool {
 }
 
 // Scalar returns the scalar product of the matrix and f.
-func (s *Sparse) Scalar(f float64) Matrix { return s.ScalarSparse(f) }
+func (s *Sparse) Scalar(f float64, c Matrix) Matrix {
+	cc, _ := c.(*Sparse)
+	return s.ScalarSparse(f, cc)
+}
 
 // Scalar returns the scalar product of the matrix and f as a Sparse.
-func (s *Sparse) ScalarSparse(f float64) *Sparse {
-	m := &Sparse{
-		rows:   s.rows,
-		cols:   s.cols,
-		matrix: make([]sparseRow, s.rows),
+func (s *Sparse) ScalarSparse(f float64, c *Sparse) *Sparse {
+	if c != s {
+		c = c.reallocate(s.Dims())
 	}
-
 	for j, row := range s.matrix {
-		m.matrix[j] = row.scale(f)
+		c.matrix[j] = row.scale(f, c.matrix[j])
 	}
 
-	return m
+	return c
 }
 
 // Sum returns the sum of elements in the matrix.
@@ -843,10 +879,11 @@ func (s *Sparse) InnerSparse(b *Sparse) float64 {
 
 // Dot returns the matrix product of the matrix and the parameter. Dot will panic with ErrShape if
 // the column dimension of the receiver does not equal the row dimension of the parameter.
-func (s *Sparse) Dot(b Matrix) Matrix {
+func (s *Sparse) Dot(b, c Matrix) Matrix {
 	switch b := b.(type) {
 	case *Sparse:
-		return s.DotSparse(b)
+		cc, _ := c.(*Sparse)
+		return s.DotSparse(b, cc)
 	case *Dense:
 		panic("not implemented")
 	case *Pivot:
@@ -860,16 +897,16 @@ func (s *Sparse) Dot(b Matrix) Matrix {
 
 // DotSparse returns the matrix product of the matrix and the parameter as a dense matrix. DotSparse will panic
 // with ErrShape if the column dimension of the receiver does not equal the row dimension of the parameter.
-func (s *Sparse) DotSparse(b *Sparse) *Sparse {
+func (s *Sparse) DotSparse(b, c *Sparse) *Sparse {
 	if s.cols != b.rows {
 		panic(ErrShape)
 	}
 
-	p := &Sparse{
-		rows:   s.rows,
-		cols:   b.cols,
-		matrix: make([]sparseRow, s.rows),
+	// FIXME: This is a workaround until I can figure out if overwriting the operands partway through the operation is workable.
+	if c == s || c == b {
+		c = nil
 	}
+	c = c.reallocate(s.rows, b.cols)
 
 	t := <-workbuffers
 	for i := 0; i < b.cols; i++ {
@@ -880,22 +917,23 @@ func (s *Sparse) DotSparse(b *Sparse) *Sparse {
 		}
 		for j, row := range s.matrix {
 			if v := row.foldMulSum(t); v != 0 {
-				p.matrix[j] = append(p.matrix[j], sparseElem{index: i, value: v})
+				c.matrix[j] = append(c.matrix[j], sparseElem{index: i, value: v})
 			}
 		}
 		t = t[:0]
 	}
 	workbuffers <- t
 
-	return p
+	return c
 }
 
 // Augment returns the augmentation of the receiver with the parameter. Augment will panic with
 // ErrColLength if the column dimensions of the two matrices do not match.
-func (s *Sparse) Augment(b Matrix) Matrix {
+func (s *Sparse) Augment(b, c Matrix) Matrix {
 	switch b := b.(type) {
 	case *Sparse:
-		return s.AugmentSparse(b)
+		cc, _ := c.(*Sparse)
+		return s.AugmentSparse(b, cc)
 	case *Dense:
 		panic("not implemented")
 	case *Pivot:
@@ -909,34 +947,30 @@ func (s *Sparse) Augment(b Matrix) Matrix {
 
 // AugmentSparse returns the augmentation of the receiver with the parameter as a dense matrix.
 // AugmentSparse will panic with ErrColLength if the column dimensions of the two matrices do not match.
-func (s *Sparse) AugmentSparse(b *Sparse) *Sparse {
+func (s *Sparse) AugmentSparse(b, c *Sparse) *Sparse {
 	if s.rows != b.rows {
 		panic(ErrColLength)
 	}
 
-	m := &Sparse{
-		rows:   s.rows,
-		cols:   s.cols + b.cols,
-		matrix: make([]sparseRow, s.rows),
-	}
-
+	c = c.reallocate(s.rows, s.cols+b.cols)
 	for j, row := range b.matrix {
-		m.matrix[j] = make(sparseRow, len(s.matrix[j]), len(s.matrix[j])+len(row))
-		copy(m.matrix[j], s.matrix[j])
+		c.matrix[j] = make(sparseRow, len(s.matrix[j]), len(s.matrix[j])+len(row))
+		copy(c.matrix[j], s.matrix[j])
 		for _, e := range row {
-			m.matrix[j] = append(m.matrix[j], sparseElem{index: e.index + s.cols, value: e.value})
+			c.matrix[j] = append(c.matrix[j], sparseElem{index: e.index + s.cols, value: e.value})
 		}
 	}
 
-	return m
+	return c
 }
 
 // Stack returns the stacking of the receiver with the parameter. Stack will panic with
 // ErrRowLength if the column dimensions of the two matrices do not match.
-func (s *Sparse) Stack(b Matrix) Matrix {
+func (s *Sparse) Stack(b, c Matrix) Matrix {
 	switch b := b.(type) {
 	case *Sparse:
-		return s.StackSparse(b)
+		cc, _ := c.(*Sparse)
+		return s.StackSparse(b, cc)
 	case *Dense:
 		panic("not implemented")
 	case *Pivot:
@@ -950,32 +984,27 @@ func (s *Sparse) Stack(b Matrix) Matrix {
 
 // StackSparse returns the augmentation of the receiver with the parameter as a dense matrix.
 // StackSparse will panic with ErrRowLength if the column dimensions of the two matrices do not match.
-func (s *Sparse) StackSparse(b *Sparse) *Sparse {
+func (s *Sparse) StackSparse(b, c *Sparse) *Sparse {
 	if s.cols != b.cols {
 		panic(ErrRowLength)
 	}
 
-	m := &Sparse{
-		rows:   s.rows + b.rows,
-		cols:   s.cols,
-		matrix: make([]sparseRow, len(s.matrix)+len(b.matrix)),
-	}
-	copy(m.matrix, s.CloneSparse().matrix)
-	copy(m.matrix[len(s.matrix):], b.CloneSparse().matrix)
+	c = c.reallocate(s.rows+b.rows, s.cols)
+	copy(c.matrix, s.CloneSparse().matrix)
+	copy(c.matrix[len(s.matrix):], b.CloneSparse().matrix)
 
-	return m
+	return c
 }
 
 // Filter return a matrix with all elements at (r, c) set to zero where FilterFunc(r, c, v) returns false.
-func (s *Sparse) Filter(f FilterFunc) Matrix { return s.FilterSparse(f) }
+func (s *Sparse) Filter(f FilterFunc, c Matrix) Matrix {
+	cc, _ := c.(*Sparse)
+	return s.FilterSparse(f, cc)
+}
 
 // FilterSparse return a sparse matrix with all elements at (r, c) set to zero where FilterFunc(r, c, v) returns false.
-func (s *Sparse) FilterSparse(f FilterFunc) *Sparse {
-	m := &Sparse{
-		rows:   s.rows,
-		cols:   s.cols,
-		matrix: make([]sparseRow, len(s.matrix)),
-	}
+func (s *Sparse) FilterSparse(f FilterFunc, c *Sparse) *Sparse {
+	c = c.reallocate(s.Dims())
 
 	t := make(sparseRow, 0, len(s.matrix[0]))
 	for j, row := range s.matrix {
@@ -984,12 +1013,11 @@ func (s *Sparse) FilterSparse(f FilterFunc) *Sparse {
 				t = append(t, e)
 			}
 		}
-		m.matrix[j] = make(sparseRow, len(t))
-		copy(m.matrix[j], t)
+		c.matrix[j] = append(c.matrix[j][:0], t...)
 		t = t[:0]
 	}
 
-	return m
+	return c
 }
 
 // Apply returns a matrix which has had a function applied to all non-zero elements of the matrix.

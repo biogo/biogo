@@ -11,6 +11,13 @@ import (
 
 type denseRow []float64
 
+func (r denseRow) zero() {
+	r[0] = 0
+	for i := 1; i < len(r); {
+		i += copy(r[i:], r[:i])
+	}
+}
+
 func (r denseRow) sum() float64 {
 	var s float64
 	for _, e := range r {
@@ -38,37 +45,39 @@ func (r denseRow) max() float64 {
 	return n
 }
 
-func (r denseRow) scale(beta float64) denseRow {
-	b := make(denseRow, 0, len(r))
-	for _, e := range r {
-		b = append(b, e*beta)
+func (r denseRow) scale(beta float64, b denseRow) denseRow {
+	if b == nil || cap(b) < len(r) {
+		b = make(denseRow, 0, len(r))
+		for _, e := range r {
+			b = append(b, e*beta)
+		}
+		return b
+	}
+	for i, e := range r {
+		b[i] = e * beta
+	}
+	return b[:len(r)]
+}
+
+func (r denseRow) foldAdd(a, b denseRow) denseRow {
+	for i, e := range r {
+		b[i] = e + a[i]
 	}
 
 	return b
 }
 
-func (r denseRow) foldAdd(a denseRow) denseRow {
-	b := make(denseRow, 0, len(r))
+func (r denseRow) foldSub(a, b denseRow) denseRow {
 	for i, e := range r {
-		b = append(b, e+a[i])
+		b[i] = e - a[i]
 	}
 
 	return b
 }
 
-func (r denseRow) foldSub(a denseRow) denseRow {
-	b := make(denseRow, 0, len(r))
+func (r denseRow) foldMul(a, b denseRow) denseRow {
 	for i, e := range r {
-		b = append(b, e-a[i])
-	}
-
-	return b
-}
-
-func (r denseRow) foldMul(a denseRow) denseRow {
-	b := make(denseRow, 0, len(r))
-	for i, e := range r {
-		b = append(b, e*a[i])
+		b[i] = e * a[i]
 	}
 
 	return b

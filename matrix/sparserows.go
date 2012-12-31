@@ -17,6 +17,13 @@ type sparseElem struct {
 
 var GrowFraction int = 10
 
+func (r sparseRow) zero() {
+	r[0] = sparseElem{}
+	for i := 1; i < len(r); {
+		i += copy(r[i:], r[:i])
+	}
+}
+
 func (r sparseRow) at(col int) float64 {
 	lo := 0
 	hi := len(r)
@@ -120,16 +127,21 @@ func (r sparseRow) maxNonZero() (float64, bool) {
 	return n, ok
 }
 
-func (r sparseRow) scale(beta float64) sparseRow {
-	b := make(sparseRow, 0, len(r))
-	for _, e := range r {
-		b = append(b, sparseElem{index: e.index, value: e.value * beta})
+func (r sparseRow) scale(beta float64, b sparseRow) sparseRow {
+	if b == nil || cap(b) < len(r) {
+		b = make(sparseRow, 0, len(r))
+		for _, e := range r {
+			b = append(b, sparseElem{index: e.index, value: e.value * beta})
+		}
+		return b
 	}
-
-	return b
+	for i, e := range r {
+		b[i].value = e.value * beta
+	}
+	return b[:len(r)]
 }
 
-func (r sparseRow) foldAdd(a sparseRow) sparseRow {
+func (r sparseRow) foldAdd(a, b sparseRow) sparseRow {
 	if len(r) > 0 && len(a) > 0 {
 		// safely determine no merging to do
 		switch {
@@ -172,7 +184,11 @@ func (r sparseRow) foldAdd(a sparseRow) sparseRow {
 		t = append(t, a[j:]...)
 	}
 
-	b := make(sparseRow, len(t))
+	if len(b) < len(t) {
+		b = make(sparseRow, len(t))
+	} else {
+		b = b[:len(t)]
+	}
 	copy(b, t)
 
 	workbuffers <- t[:0] // clear the buffer and send for next user
@@ -180,7 +196,7 @@ func (r sparseRow) foldAdd(a sparseRow) sparseRow {
 	return b
 }
 
-func (r sparseRow) foldSub(a sparseRow) sparseRow {
+func (r sparseRow) foldSub(a, b sparseRow) sparseRow {
 	if len(r) > 0 && len(a) > 0 {
 		// safely determine no merging to do
 		switch {
@@ -233,7 +249,11 @@ func (r sparseRow) foldSub(a sparseRow) sparseRow {
 		}
 	}
 
-	b := make(sparseRow, len(t))
+	if len(b) < len(t) {
+		b = make(sparseRow, len(t))
+	} else {
+		b = b[:len(t)]
+	}
 	copy(b, t)
 
 	workbuffers <- t[:0] // clear the buffer and send for next user
@@ -241,7 +261,7 @@ func (r sparseRow) foldSub(a sparseRow) sparseRow {
 	return b
 }
 
-func (r sparseRow) foldMul(a sparseRow) sparseRow {
+func (r sparseRow) foldMul(a, b sparseRow) sparseRow {
 	t := <-workbuffers          // get a buffer from the queue
 	if cap(t) < len(r)+len(a) { // if it's not long enough make a new one
 		t = make(sparseRow, 0, len(r)+len(a))
@@ -262,7 +282,11 @@ func (r sparseRow) foldMul(a sparseRow) sparseRow {
 		}
 	}
 
-	b := make(sparseRow, len(t))
+	if len(b) < len(t) {
+		b = make(sparseRow, len(t))
+	} else {
+		b = b[:len(t)]
+	}
 	copy(b, t)
 
 	workbuffers <- t[:0] // clear the buffer and send for next user

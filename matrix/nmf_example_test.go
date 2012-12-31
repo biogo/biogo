@@ -30,12 +30,12 @@ func ExampleFactors() {
 
 	W, H, ok := matrix.Factors(V, Wo, Ho, tolerance, iterations, limit)
 
-	P := W.Dot(H)
+	P := W.Dot(H, nil)
 
 	fmt.Printf("Successfully factorised: %v\n\n", ok)
 	fmt.Printf("W =\n%.3f\n\nH =\n%.3f\n\n", W, H)
 	fmt.Printf("P =\n%.3f\n\n", P)
-	fmt.Printf("delta = %.3f\n", V.Sub(P).Norm(matrix.Fro))
+	fmt.Printf("delta = %.3f\n", V.Sub(P, nil).Norm(matrix.Fro))
 
 	// Output:
 	// V =
