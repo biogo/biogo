@@ -41,7 +41,7 @@ func (r denseRow) max() float64 {
 func (r denseRow) scale(beta float64) denseRow {
 	b := make(denseRow, 0, len(r))
 	for _, e := range r {
-		b = append(b, e*e)
+		b = append(b, e*beta)
 	}
 
 	return b

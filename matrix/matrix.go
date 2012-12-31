@@ -19,6 +19,7 @@ const (
 	Fro = -Inf - 1
 )
 
+type FloatFunc func() float64
 type FilterFunc func(r, c int, v float64) bool
 type ApplyFunc func(r, c int, v float64) float64
 
@@ -44,6 +45,8 @@ type Matrix interface {
 	Trace() float64
 	U() Matrix
 	L() Matrix
+	Sparse() *Sparse
+	Dense() *Dense
 }
 
 type Mutable interface {
@@ -54,6 +57,21 @@ type Mutable interface {
 type Panicker func() Matrix
 
 func Maybe(fn Panicker) (m Matrix, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			var ok bool
+			if err, ok = r.(Error); ok {
+				return
+			}
+			panic(r)
+		}
+	}()
+	return fn(), nil
+}
+
+type FloatPanicker func() float64
+
+func MaybeFloat(fn FloatPanicker) (f float64, err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			if e, ok := r.(Error); ok {
@@ -78,14 +96,55 @@ type Error string
 func (err Error) Error() string { return string(err) }
 
 const (
-	ErrIndexOutOfBounds = Error("matrix: index out of bounds")
-	ErrZeroLength       = Error("matrix: zero length in matrix definition")
-	ErrRowLength        = Error("matrix: row length mismatch")
-	ErrColLength        = Error("matrix: col length mismatch")
-	ErrSquare           = Error("matrix: expect square matrix")
-	ErrNormOrder        = Error("matrix: invalid norm order for matrix")
-	ErrShape            = Error("matrix: dimension mismatch")
+	ErrIndexOutOfRange = Error("matrix: index out of range")
+	ErrZeroLength      = Error("matrix: zero length in matrix definition")
+	ErrRowLength       = Error("matrix: row length mismatch")
+	ErrColLength       = Error("matrix: col length mismatch")
+	ErrSquare          = Error("matrix: expect square matrix")
+	ErrNormOrder       = Error("matrix: invalid norm order for matrix")
+	ErrShape           = Error("matrix: dimension mismatch")
+	ErrPivot           = Error("matrix: malformed pivot list")
 )
+
+// ElementsVector returns the matrix's elements concatenated, row-wise, into a float slice.
+func ElementsVector(mats ...Matrix) []float64 {
+	var length int
+	for _, m := range mats {
+		switch m := m.(type) {
+		case *Dense:
+			length += len(m.matrix)
+		case *Sparse:
+			for _, row := range m.matrix {
+				length += len(row)
+			}
+		}
+	}
+
+	v := make([]float64, 0, length)
+	for _, m := range mats {
+		switch m := m.(type) {
+		case *Dense:
+			v = append(v, m.matrix...)
+		case *Sparse:
+			for _, row := range m.matrix {
+				for _, e := range row {
+					if e.value != 0 {
+						v = append(v, e.value)
+					}
+				}
+			}
+		case Matrix:
+			rows, cols := m.Dims()
+			for r := 0; r < rows; r++ {
+				for c := 0; c < cols; c++ {
+					v = append(v, m.At(r, c))
+				}
+			}
+		}
+	}
+
+	return v
+}
 
 // Determine a variety of norms on a vector.
 func Norm(v []float64, ord int) float64 {

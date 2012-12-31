@@ -624,6 +624,7 @@ func (s *S) TestStackAugment(c *check.C) {
 // a.MaxAxis(matrix.Rows))
 // a.SumAxis(matrix.Cols))
 // a.SumAxis(matrix.Rows))
+
 func BenchmarkDotDense100Half(b *testing.B)        { denseDotBench(b, 100, 0.5) }
 func BenchmarkDotDense100Tenth(b *testing.B)       { denseDotBench(b, 100, 0.1) }
 func BenchmarkDotDense1000Half(b *testing.B)       { denseDotBench(b, 1000, 0.5) }

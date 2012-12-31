@@ -20,6 +20,7 @@ func max(a, b int) int {
 // specifies the numerical representation of of elements; valid values are those for float64
 // specified in the fmt package, with their associated flags. In addition to this, a '#' for
 // all valid verbs except 'v' indicates that zero values be represented by the dot character.
+// The '#' associated with the 'v' verb formats the matrix with Go syntax representation.
 // The printed range of the matrix can be limited by specifying a positive value for margin;
 // If margin is greater than zero, only the first and last margin rows/columns of the matrix
 // are output.

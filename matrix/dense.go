@@ -5,20 +5,39 @@
 package matrix
 
 import (
-	"bytes"
 	"fmt"
 	"math"
 	"math/rand"
 	"unsafe"
 )
 
-// Dense represent a dense matrix type.
+// Type Dense represents a dense matrix.
 type Dense struct {
-	Margin     int
+	Margin     int // The number of cells in from the edge of the matrix to format.
 	rows, cols int
 	matrix     denseRow
 }
 
+// A DensePanicker is a function that returns a dense matrix and may panic.
+type DensePanicker func() *Dense
+
+// MaybeDense will recover a panic with a type matrix.Error from fn, and return this error.
+// Any other error is re-panicked.
+func MaybeDense(fn DensePanicker) (d *Dense, err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			var ok bool
+			if err, ok = r.(Error); ok {
+				return
+			}
+			panic(r)
+		}
+	}()
+	return fn(), nil
+}
+
+// MustDense can be used to wrap a function returning a dense matrix and an error.
+// If the returned error is not nil, MustDense will panic.
 func MustDense(d *Dense, err error) *Dense {
 	if err != nil {
 		panic(err)
@@ -26,7 +45,8 @@ func MustDense(d *Dense, err error) *Dense {
 	return d
 }
 
-// Return a sparse matrix based on a slice of float64 slices
+// NewDense returns a dense matrix based on a slice of float64 slices. An error is returned
+// if either dimension is zero or rows are not of equal length.
 func NewDense(a [][]float64) (*Dense, error) {
 	if len(a) == 0 || len(a[0]) == 0 {
 		return nil, ErrZeroLength
@@ -50,7 +70,8 @@ func NewDense(a [][]float64) (*Dense, error) {
 	return &m, nil
 }
 
-// Return the O matrix
+// ZeroDense returns an r row by c column O matrix. An error is returned if either dimension
+// is zero.
 func ZeroDense(r, c int) (*Dense, error) {
 	if r < 1 || c < 1 {
 		return nil, ErrZeroLength
@@ -63,7 +84,7 @@ func ZeroDense(r, c int) (*Dense, error) {
 	}, nil
 }
 
-// Return the I matrix
+// IdentityDense returns the a size by size I matrix. An error is returned if size is zero.
 func IdentityDense(size int) (*Dense, error) {
 	if size < 1 {
 		return nil, ErrZeroLength
@@ -82,7 +103,9 @@ func IdentityDense(size int) (*Dense, error) {
 	return m, nil
 }
 
-func FuncDense(r, c int, density float64, fn FloatFunc) (*Dense, error) {
+// FuncDense returns a dense matrix filled with the returned values of fn with a matrix density of rho.
+// An error is returned if either dimension is zero.
+func FuncDense(r, c int, rho float64, fn FloatFunc) (*Dense, error) {
 	if r < 1 || c < 1 {
 		return nil, ErrZeroLength
 	}
@@ -94,7 +117,7 @@ func FuncDense(r, c int, density float64, fn FloatFunc) (*Dense, error) {
 	}
 
 	for i := range m.matrix {
-		if rand.Float64() < density {
+		if rand.Float64() < rho {
 			m.matrix[i] = fn()
 		}
 	}
@@ -102,7 +125,7 @@ func FuncDense(r, c int, density float64, fn FloatFunc) (*Dense, error) {
 	return m, nil
 }
 
-// Return of the elements of a set of matrices in row major order as a row vector.
+// ElementsDense returns the elements of mats concatenated, row-wise, into a row vector.
 func ElementsDense(mats ...Matrix) *Dense {
 	var length int
 	for _, m := range mats {
@@ -136,14 +159,15 @@ func ElementsDense(mats ...Matrix) *Dense {
 	return e
 }
 
-// Return of the elements of the matrix in column major order as a Slice.
+// ElementsVector returns the matrix's elements concatenated, row-wise, into a float slice.
 func (d *Dense) ElementsVector() []float64 {
 	return append([]float64(nil), *(*[]float64)(unsafe.Pointer(&d.matrix))...)
 }
 
+// Clone returns a copy of the matrix.
 func (d *Dense) Clone() Matrix { return d.CloneDense() }
 
-// Return a copy of a matrix
+// Clone returns a copy of the matrix, retaining its concrete type.
 func (d *Dense) CloneDense() *Dense {
 	return &Dense{
 		rows:   d.rows,
@@ -152,30 +176,72 @@ func (d *Dense) CloneDense() *Dense {
 	}
 }
 
-// Return the dimensions of a matrix
+// Dense returns the matrix as a Dense. The returned matrix is not a copy.
+func (d *Dense) Dense() *Dense { return d }
+
+// Sparse returns a copy of the matrix represented as a Sparse.
+func (d *Dense) Sparse() *Sparse {
+	s := &Sparse{
+		rows:   d.rows,
+		cols:   d.cols,
+		matrix: make([]sparseRow, d.rows),
+	}
+
+	for r := 0; r < d.rows; r++ {
+		for c := 0; c < d.cols; c++ {
+			if v := d.at(r, c); v != 0 {
+				s.matrix[r] = append(s.matrix[r], sparseElem{index: c, value: v})
+			}
+		}
+	}
+
+	return s
+}
+
+// Dims return the dimensions of the matrix.
 func (d *Dense) Dims() (r, c int) {
 	return d.rows, d.cols
 }
 
-// Calculate the determinant of a matrix
+// Reshape, returns a shallow copy of with the dimensions set to r and c. Reshape will
+// panic with ErrShape if r x c does not equal the number of elements in the matrix.
+func (d *Dense) Reshape(r, c int) Matrix { return d.ReshapeDense(r, c) }
+
+// ReshapeDense, returns a shallow copy of with the dimensions set to r and c, retaining the concrete
+// type of the matrix. ReshapeDense will panic with ErrShape if r x c does not equal the number of
+// elements in the matrix.
+func (d *Dense) ReshapeDense(r, c int) *Dense {
+	if r*c != d.rows*d.cols {
+		panic(ErrShape)
+	}
+	return &Dense{
+		rows:   r,
+		cols:   c,
+		matrix: d.matrix,
+	}
+}
+
+// Det returns the determinant of the matrix.
+// TODO: implement
 func (d *Dense) Det() float64 {
 	panic("not implemented")
 }
 
-// Return the minimum non-zero of a matrix
+// Min returns the value of the minimum element value of the matrix.
 func (d *Dense) Min() float64 {
 	return d.matrix.min()
 }
 
-// Return the maximum non-zero of a matrix
+// Max returns the value of the maximum element value of the matrix.
 func (d *Dense) Max() float64 {
 	return d.matrix.max()
 }
 
-// Set the value at (r, c) to v
+// Set sets the value of the element at (r, c) to v. Set will panic with ErrIndexOutOfRange
+// if r or c are not legal indices.
 func (d *Dense) Set(r, c int, v float64) {
 	if r >= d.rows || c >= d.cols || r < 0 || c < 0 {
-		panic(ErrIndexOutOfBounds)
+		panic(ErrIndexOutOfRange)
 	}
 
 	d.set(r, c, v)
@@ -185,10 +251,11 @@ func (d *Dense) set(r, c int, v float64) {
 	d.matrix[r*d.cols+c] = v
 }
 
-// Return the value at (r, c)
+// At return the value of the element at (r, c). At will panic with ErrIndexOutOfRange if
+// r or c are not legal indices.
 func (d *Dense) At(r, c int) (v float64) {
 	if r >= d.rows || c >= d.cols || c < 0 || r < 0 {
-		panic(ErrIndexOutOfBounds)
+		panic(ErrIndexOutOfRange)
 	}
 	return d.at(r, c)
 }
@@ -197,6 +264,8 @@ func (d *Dense) at(r, c int) float64 {
 	return d.matrix[r*d.cols+c]
 }
 
+// Trace returns the trace of a square matrix. Trace will panic with ErrSquare if the matrix
+// is not square.
 func (d *Dense) Trace() float64 {
 	if d.rows != d.cols {
 		panic(ErrSquare)
@@ -208,14 +277,21 @@ func (d *Dense) Trace() float64 {
 	return t
 }
 
-// Determin a variety of norms
+// Norm returns a variety of norms for the matrix.
+//
+// Valid ord values are:
+//
+// 	          1 - max of the sum of the absolute values of columns
+// 	         -1 - min of the sum of the absolute values of columns
+// 	 matrix.Inf - max of the sum of the absolute values of rows
+// 	-matrix.Inf - min of the sum of the absolute values of rows
+// 	 matrix.Fro - Frobenius norm (0 is an alias to this)
+//
+// Norm will panic with ErrNormOrder if an illegal norm order is specified.
 func (d *Dense) Norm(ord int) float64 {
 	var n float64
 	if ord == 0 {
-		for _, e := range d.matrix {
-			n += e * e
-		}
-		return math.Sqrt(n)
+		ord = Fro
 	}
 	switch ord {
 	case 2, -2:
@@ -254,7 +330,7 @@ func (d *Dense) Norm(ord int) float64 {
 	return n
 }
 
-// Return a column or row vector holding the sums of rows or columns
+// SumAxis return a column or row vector holding the sums of rows or columns.
 func (d *Dense) SumAxis(cols bool) *Dense {
 	m := &Dense{}
 	if !cols {
@@ -277,7 +353,7 @@ func (d *Dense) SumAxis(cols bool) *Dense {
 	return m
 }
 
-// Return a column or row vector holding the max of rows or columns
+// MaxAxis return a column or row vector holding the maximum of rows or columns.
 func (d *Dense) MaxAxis(cols bool) *Dense {
 	m := &Dense{}
 	if !cols {
@@ -300,7 +376,7 @@ func (d *Dense) MaxAxis(cols bool) *Dense {
 	return m
 }
 
-// Return a column or row vector holding the min of rows or columns
+// MinAxis return a column or row vector holding the minimum of rows or columns.
 func (d *Dense) MinAxis(cols bool) *Dense {
 	m := &Dense{}
 	if !cols {
@@ -323,9 +399,12 @@ func (d *Dense) MinAxis(cols bool) *Dense {
 	return m
 }
 
+// U returns the upper triangular matrix of the matrix. U will panic with ErrSquare if the matrix is not
+// square.
 func (d *Dense) U() Matrix { return d.UDense() }
 
-// Return the transpose of a matrix
+// UDense returns the upper triangular matrix of the matrix retaining the concrete type of the matrix.
+// UDense will panic with ErrSquare if the matrix is not square.
 func (d *Dense) UDense() *Dense {
 	if d.rows != d.cols {
 		panic(ErrSquare)
@@ -341,9 +420,12 @@ func (d *Dense) UDense() *Dense {
 	return m
 }
 
+// L returns the lower triangular matrix of the matrix. L will panic with ErrSquare if the matrix is not
+// square.
 func (d *Dense) L() Matrix { return d.LDense() }
 
-// Return the lower triangular matrix
+// LDense returns the lower triangular matrix of the matrix retaining the concrete type of the matrix.
+// LDense will panic with ErrSquare if the matrix is not square.
 func (d *Dense) LDense() *Dense {
 	if d.rows != d.cols {
 		panic(ErrSquare)
@@ -359,9 +441,10 @@ func (d *Dense) LDense() *Dense {
 	return m
 }
 
+// T returns the transpose of the matrix.
 func (d *Dense) T() Matrix { return d.TDense() }
 
-// Return the upper triangular matrix
+// TDense returns the transpose of the matrix retaining the concrete type of the matrix.
 func (d *Dense) TDense() *Dense {
 	var m *Dense
 	if d.rows == 0 || d.cols == 0 { // this is a vector
@@ -384,10 +467,16 @@ func (d *Dense) TDense() *Dense {
 	return m
 }
 
+// Add returns the sum of the matrix and the parameter. Add will panic with ErrShape if the
+// two matrices do not have the same dimensions.
 func (d *Dense) Add(b Matrix) Matrix {
 	switch b := b.(type) {
 	case *Dense:
 		return d.AddDense(b)
+	case *Sparse:
+		panic("not implemented")
+	case *Pivot:
+		panic("not implemented")
 	default:
 		panic("not implemented")
 	}
@@ -395,7 +484,8 @@ func (d *Dense) Add(b Matrix) Matrix {
 	panic("cannot reach")
 }
 
-// Add one matrix to another
+// AddDense returns a dense matrix which is the sum of the matrix and the parameter. AddDense will
+// panic with ErrShape if the two matrices do not have the same dimensions.
 func (d *Dense) AddDense(b *Dense) *Dense {
 	if d.rows != b.rows || d.cols != b.cols {
 		panic(ErrShape)
@@ -408,10 +498,16 @@ func (d *Dense) AddDense(b *Dense) *Dense {
 	}
 }
 
+// Sub returns the result of subtraction of the parameter from the matrix. Sub will panic with ErrShape
+// if the two matrices do not have the same dimensions.
 func (d *Dense) Sub(b Matrix) Matrix {
 	switch b := b.(type) {
 	case *Dense:
 		return d.SubDense(b)
+	case *Sparse:
+		panic("not implemented")
+	case *Pivot:
+		panic("not implemented")
 	default:
 		panic("not implemented")
 	}
@@ -419,7 +515,8 @@ func (d *Dense) Sub(b Matrix) Matrix {
 	panic("cannot reach")
 }
 
-// Subtract one matrix from another
+// SubDense returns the result a dense matrics which is the result of subtraction of the parameter from the matrix.
+// SubDense will panic with ErrShape if the two matrices do not have the same dimensions.
 func (d *Dense) SubDense(b *Dense) *Dense {
 	if d.rows != b.rows || d.cols != b.cols {
 		panic(ErrShape)
@@ -432,10 +529,16 @@ func (d *Dense) SubDense(b *Dense) *Dense {
 	}
 }
 
+// MulElem returns the element-wise multiplication of the matrix and the parameter. MulElem will panic with ErrShape
+// if the two matrices do not have the same dimensions.
 func (d *Dense) MulElem(b Matrix) Matrix {
 	switch b := b.(type) {
 	case *Dense:
 		return d.MulElemDense(b)
+	case *Sparse:
+		panic("not implemented")
+	case *Pivot:
+		panic("not implemented")
 	default:
 		panic("not implemented")
 	}
@@ -443,7 +546,8 @@ func (d *Dense) MulElem(b Matrix) Matrix {
 	panic("cannot reach")
 }
 
-// Multiply two matrices element by element
+// MulElemDense returns a dense matrix which is the result of element-wise multiplication of the matrix and the parameter.
+// MulElemDense will panic with ErrShape if the two matrices do not have the same dimensions.
 func (d *Dense) MulElemDense(b *Dense) *Dense {
 	if d.rows != b.rows || d.cols != b.cols {
 		panic(ErrShape)
@@ -456,10 +560,15 @@ func (d *Dense) MulElemDense(b *Dense) *Dense {
 	}
 }
 
+// Equals returns the equality of two matrices.
 func (d *Dense) Equals(b Matrix) bool {
 	switch b := b.(type) {
 	case *Dense:
 		return d.EqualsDense(b)
+	case *Sparse:
+		panic("not implemented")
+	case *Pivot:
+		panic("not implemented")
 	default:
 		panic("not implemented")
 	}
@@ -467,7 +576,7 @@ func (d *Dense) Equals(b Matrix) bool {
 	panic("cannot reach")
 }
 
-// Test for equality of two matrices
+// EqualsDense returns the equality of two dense matrices.
 func (d *Dense) EqualsDense(b *Dense) bool {
 	if d.rows != b.rows || d.cols != b.cols {
 		return false
@@ -475,10 +584,16 @@ func (d *Dense) EqualsDense(b *Dense) bool {
 	return d.matrix.foldEqual(b.matrix)
 }
 
+// EqualsApprox returns the approximate equality of two matrices, tolerance for elemen-wise equality is
+// given by epsilon.
 func (d *Dense) EqualsApprox(b Matrix, epsilon float64) bool {
 	switch b := b.(type) {
 	case *Dense:
 		return d.EqualsApproxDense(b, epsilon)
+	case *Sparse:
+		panic("not implemented")
+	case *Pivot:
+		panic("not implemented")
 	default:
 		panic("not implemented")
 	}
@@ -486,7 +601,8 @@ func (d *Dense) EqualsApprox(b Matrix, epsilon float64) bool {
 	panic("cannot reach")
 }
 
-// Test for approximate equality of two matrices, tolerance for equality given by error
+// EqualsApproxDense returns the approximate equality of two dense matrices, tolerance for element-wise
+// equality is given by epsilon.
 func (d *Dense) EqualsApproxDense(b *Dense, epsilon float64) bool {
 	if d.rows != b.rows || d.cols != b.cols {
 		return false
@@ -494,10 +610,11 @@ func (d *Dense) EqualsApproxDense(b *Dense, epsilon float64) bool {
 	return d.matrix.foldApprox(b.matrix, epsilon)
 }
 
-func (d *Dense) Scalar(f float64) Matrix { return d.ScalarSparse(f) }
+// Scalar returns the scalar product of the matrix and f.
+func (d *Dense) Scalar(f float64) Matrix { return d.ScalarDense(f) }
 
-// Scale a matrix by a factor
-func (d *Dense) ScalarSparse(f float64) *Dense {
+// ScalarDense returns the scalar product of the matrix and f as a Dense.
+func (d *Dense) ScalarDense(f float64) *Dense {
 	return &Dense{
 		rows:   d.rows,
 		cols:   d.cols,
@@ -505,15 +622,21 @@ func (d *Dense) ScalarSparse(f float64) *Dense {
 	}
 }
 
-// Calculate the sum of a matrix
+// Sum returns the sum of elements in the matrix.
 func (d *Dense) Sum() float64 {
 	return d.matrix.sum()
 }
 
+// Inner returns the sum of element-wise multiplication of the matrix and the parameter. Inner will
+// panic with ErrShape if the two matrices do not have the same dimensions.
 func (d *Dense) Inner(b Matrix) float64 {
 	switch b := b.(type) {
 	case *Dense:
 		return d.InnerDense(b)
+	case *Sparse:
+		panic("not implemented")
+	case *Pivot:
+		panic("not implemented")
 	default:
 		panic("not implemented")
 	}
@@ -521,7 +644,8 @@ func (d *Dense) Inner(b Matrix) float64 {
 	panic("cannot reach")
 }
 
-// Calculate the inner product of two matrices
+// InnerDense returns a dense matrix which is the result of element-wise multiplication of the matrix and the parameter.
+// InnerDense will panic with ErrShape if the two matrices do not have the same dimensions.
 func (d *Dense) InnerDense(b *Dense) float64 {
 	if d.rows != b.rows || d.cols != b.cols {
 		panic(ErrShape)
@@ -529,10 +653,16 @@ func (d *Dense) InnerDense(b *Dense) float64 {
 	return d.matrix.foldMulSum(b.matrix)
 }
 
+// Dot returns the matrix product of the matrix and the parameter. Dot will panic with ErrShape if
+// the column dimension of the receiver does not equal the row dimension of the parameter.
 func (d *Dense) Dot(b Matrix) Matrix {
 	switch b := b.(type) {
 	case *Dense:
 		return d.DotDense(b)
+	case *Sparse:
+		panic("not implemented")
+	case *Pivot:
+		panic("not implemented")
 	default:
 		panic("not implemented")
 	}
@@ -540,7 +670,8 @@ func (d *Dense) Dot(b Matrix) Matrix {
 	panic("cannot reach")
 }
 
-// Multiply two matrices returning the product.
+// DotDense returns the matrix product of the matrix and the parameter as a dense matrix. DotDense will panic
+// with ErrShape if the column dimension of the receiver does not equal the row dimension of the parameter.
 func (d *Dense) DotDense(b *Dense) *Dense {
 	if d.cols != b.rows {
 		panic(ErrShape)
@@ -574,10 +705,16 @@ func (d *Dense) DotDense(b *Dense) *Dense {
 	return p
 }
 
+// Augment returns the augmentation of the receiver with the parameter. Augment will panic with
+// ErrColLength if the column dimensions of the two matrices do not match.
 func (d *Dense) Augment(b Matrix) Matrix {
 	switch b := b.(type) {
 	case *Dense:
 		return d.AugmentDense(b)
+	case *Sparse:
+		panic("not implemented")
+	case *Pivot:
+		panic("not implemented")
 	default:
 		panic("not implemented")
 	}
@@ -585,7 +722,8 @@ func (d *Dense) Augment(b Matrix) Matrix {
 	panic("cannot reach")
 }
 
-// Join a matrix to the right of d returning the new matrix
+// AugmentDense returns the augmentation of the receiver with the parameter as a dense matrix.
+// AugmentDense will panic with ErrColLength if the column dimensions of the two matrices do not match.
 func (d *Dense) AugmentDense(b *Dense) *Dense {
 	if d.rows != b.rows {
 		panic(ErrColLength)
@@ -605,10 +743,16 @@ func (d *Dense) AugmentDense(b *Dense) *Dense {
 	return m
 }
 
+// Stack returns the stacking of the receiver with the parameter. Stack will panic with
+// ErrRowLength if the column dimensions of the two matrices do not match.
 func (d *Dense) Stack(b Matrix) Matrix {
 	switch b := b.(type) {
 	case *Dense:
 		return d.StackDense(b)
+	case *Sparse:
+		panic("not implemented")
+	case *Pivot:
+		panic("not implemented")
 	default:
 		panic("not implemented")
 	}
@@ -616,7 +760,8 @@ func (d *Dense) Stack(b Matrix) Matrix {
 	panic("cannot reach")
 }
 
-// Join a matrix below d returning the new matrix
+// StackDense returns the augmentation of the receiver with the parameter as a dense matrix.
+// StackDense will panic with ErrRowLength if the column dimensions of the two matrices do not match.
 func (d *Dense) StackDense(b *Dense) *Dense {
 	if d.cols != b.cols {
 		panic(ErrRowLength)
@@ -633,9 +778,10 @@ func (d *Dense) StackDense(b *Dense) *Dense {
 	return m
 }
 
+// Filter return a matrix with all elements at (r, c) set to zero where FilterFunc(r, c, v) returns false.
 func (d *Dense) Filter(f FilterFunc) Matrix { return d.FilterDense(f) }
 
-// Return a matrix with all elements at (r, c) set to zero where FilterFunc(r, c) returns false
+// FilterDense return a dense matrix with all elements at (r, c) set to zero where FilterFunc(r, c, v) returns false.
 func (d *Dense) FilterDense(f FilterFunc) *Dense {
 	m := &Dense{
 		rows:   d.rows,
@@ -652,9 +798,10 @@ func (d *Dense) FilterDense(f FilterFunc) *Dense {
 	return m
 }
 
+// Apply returns a matrix which has had a function applied to all elements of the matrix.
 func (d *Dense) Apply(f ApplyFunc) Matrix { return d.ApplyDense(f) }
 
-// Apply a function to non-zero elements of the matrix
+// ApplyDense returns a dense matrix which has had a function applied to all elements of the matrix.
 func (d *Dense) ApplyDense(f ApplyFunc) *Dense {
 	m := d.CloneDense()
 	for i, e := range m.matrix {
@@ -666,18 +813,17 @@ func (d *Dense) ApplyDense(f ApplyFunc) *Dense {
 	return m
 }
 
+// ApplyAll returns a matrix which has had a function applied to all elements of the matrix.
 func (d *Dense) ApplyAll(f ApplyFunc) Matrix { return d.ApplyDense(f) }
 
+// ApplyAllDense returns a matrix which has had a function applied to all elements of the matrix.
+func (d *Dense) ApplyAllDense(f ApplyFunc) Matrix { return d.ApplyDense(f) }
+
+// Format satisfies the fmt.Formatter interface.
 func (d *Dense) Format(fs fmt.State, c rune) {
 	if c == 'v' && fs.Flag('#') {
 		fmt.Fprintf(fs, "&%#v", *d)
 		return
 	}
 	Format(d, d.Margin, '.', fs, c)
-}
-
-func (d *Dense) String() string {
-	b := &bytes.Buffer{}
-	fmt.Fprintf(b, "%6.4e", d)
-	return b.String()
 }
