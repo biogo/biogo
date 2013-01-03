@@ -47,7 +47,7 @@ func MustPivot(p *Pivot, err error) *Pivot {
 // NewPivot returns a permutation matrix based on a slice of ints representing column indices of non-zero
 // elements. An error is returned if the slice length is zero or column indices do not appear exactly once
 // or column indices are out of range.
-func NewPivot(p []int, sign float64) (*Pivot, error) {
+func NewPivot(p []int) (*Pivot, error) {
 	if len(p) == 0 {
 		return nil, ErrZeroLength
 	}
@@ -68,10 +68,27 @@ func NewPivot(p []int, sign float64) (*Pivot, error) {
 	}
 
 	return &Pivot{
-		sign:   sign,
+		sign:   sign(p),
 		matrix: p,
 		xirtam: x,
 	}, nil
+}
+
+func sign(a []int) float64 {
+	b := make([]bool, len(a))
+	var swaps int
+	for col, row := range a {
+		for row != col && !b[col] {
+			if b[col] {
+				continue
+			}
+			b[col] = true
+			swaps++
+			col = a[col]
+		}
+		b[col] = true
+	}
+	return float64(1 - (swaps&1)<<1)
 }
 
 // IdentityPivot returns the a size by size I matrix. An error is returned if size is zero.
