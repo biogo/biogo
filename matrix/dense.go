@@ -5,6 +5,7 @@
 package matrix
 
 import (
+	"code.google.com/p/biogo.blas"
 	"fmt"
 	"math"
 	"math/rand"
@@ -717,29 +718,38 @@ func (d *Dense) DotDense(b, c *Dense) *Dense {
 		panic(ErrShape)
 	}
 
-	// FIXME: This is a workaround until I can figure out if overwriting the operands partway through the operation is workable.
 	if c == b || c == d {
 		c = nil
 	}
 	c = c.reallocate(d.rows, b.cols)
 
-	t := make([]float64, b.rows)
-	for i := 0; i < b.cols; i++ {
-		var nonZero bool
-		for j := 0; j < b.rows; j++ {
-			v := b.at(j, i)
-			if v != 0 {
-				nonZero = true
-			}
-			t[j] = v
-		}
-		if nonZero {
-			for j := 0; j < d.rows; j++ {
-				row := d.matrix[j*d.cols : (j+1)*d.cols]
-				c.set(j, i, row.foldMulSum(t))
-			}
-		}
-	}
+	blas.Dgemm(blas.CblasRowMajor, blas.CblasNoTrans, blas.CblasNoTrans,
+		d.rows, b.cols, d.cols,
+		1.,
+		d.matrix, d.cols,
+		b.matrix, b.cols,
+		0.,
+		c.matrix, c.cols,
+	)
+
+	// Pure Go implementation replaces call to blas above, with 1.5-3.2 fold time cost increase.
+	// t := make([]float64, b.rows)
+	// for i := 0; i < b.cols; i++ {
+	// 	var nonZero bool
+	// 	for j := 0; j < b.rows; j++ {
+	// 		v := b.at(j, i)
+	// 		if v != 0 {
+	// 			nonZero = true
+	// 		}
+	// 		t[j] = v
+	// 	}
+	// 	if nonZero {
+	// 		for j := 0; j < d.rows; j++ {
+	// 			row := d.matrix[j*d.cols : (j+1)*d.cols]
+	// 			c.set(j, i, row.foldMulSum(t))
+	// 		}
+	// 	}
+	// }
 
 	return c
 }

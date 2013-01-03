@@ -883,7 +883,6 @@ func (s *Sparse) DotSparse(b, c *Sparse) *Sparse {
 		panic(ErrShape)
 	}
 
-	// FIXME: This is a workaround until I can figure out if overwriting the operands partway through the operation is workable.
 	if c == s || c == b {
 		c = nil
 	}
