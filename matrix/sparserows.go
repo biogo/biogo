@@ -154,10 +154,7 @@ func (r sparseRow) foldAdd(a, b sparseRow) sparseRow {
 		}
 	}
 
-	t := <-workbuffers          // get a buffer from the queue
-	if cap(t) < len(r)+len(a) { // if it's not long enough make a new one
-		t = make(sparseRow, 0, len(r)+len(a))
-	}
+	t := make(sparseRow, 0, len(r)+len(a))
 
 	// merge overlapping regions
 	var i, j int
@@ -191,8 +188,6 @@ func (r sparseRow) foldAdd(a, b sparseRow) sparseRow {
 	}
 	copy(b, t)
 
-	workbuffers <- t[:0] // clear the buffer and send for next user
-
 	return b
 }
 
@@ -217,10 +212,7 @@ func (r sparseRow) foldSub(a, b sparseRow) sparseRow {
 		}
 	}
 
-	t := <-workbuffers          // get a buffer from the queue
-	if cap(t) < len(r)+len(a) { // if it's not long enough make a new one
-		t = make(sparseRow, 0, len(r)+len(a))
-	}
+	t := make(sparseRow, 0, len(r)+len(a))
 
 	// merge overlapping regions
 	var i, j int
@@ -256,16 +248,11 @@ func (r sparseRow) foldSub(a, b sparseRow) sparseRow {
 	}
 	copy(b, t)
 
-	workbuffers <- t[:0] // clear the buffer and send for next user
-
 	return b
 }
 
 func (r sparseRow) foldMul(a, b sparseRow) sparseRow {
-	t := <-workbuffers          // get a buffer from the queue
-	if cap(t) < len(r)+len(a) { // if it's not long enough make a new one
-		t = make(sparseRow, 0, len(r)+len(a))
-	}
+	t := make(sparseRow, 0, min(len(r), len(a)))
 
 	// merge overlapping regions
 	var i, j int
@@ -288,8 +275,6 @@ func (r sparseRow) foldMul(a, b sparseRow) sparseRow {
 		b = b[:len(t)]
 	}
 	copy(b, t)
-
-	workbuffers <- t[:0] // clear the buffer and send for next user
 
 	return b
 }

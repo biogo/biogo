@@ -10,25 +10,6 @@ import (
 	"math/rand"
 )
 
-var (
-	workbuffers chan sparseRow
-	BufferLen   = 100
-	Buffers     = 10 // Number of allocated work buffers.
-)
-
-func init() {
-	Init()
-}
-
-// Initialise sparse memory handling
-func Init() {
-	workbuffers = make(chan sparseRow, Buffers)
-	for i := 0; i < Buffers; i++ {
-		buffer := make(sparseRow, 0, BufferLen)
-		workbuffers <- buffer
-	}
-}
-
 // Sparse matrix type
 type Sparse struct {
 	Margin     int
@@ -908,7 +889,7 @@ func (s *Sparse) DotSparse(b, c *Sparse) *Sparse {
 	}
 	c = c.reallocate(s.rows, b.cols)
 
-	t := <-workbuffers
+	var t sparseRow
 	for i := 0; i < b.cols; i++ {
 		for j := 0; j < b.rows; j++ {
 			if v := b.matrix[j].at(i); v != 0 {
@@ -922,7 +903,6 @@ func (s *Sparse) DotSparse(b, c *Sparse) *Sparse {
 		}
 		t = t[:0]
 	}
-	workbuffers <- t
 
 	return c
 }

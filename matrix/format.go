@@ -9,13 +9,6 @@ import (
 	"strconv"
 )
 
-func max(a, b int) int {
-	if a > b {
-		return a
-	}
-	return b
-}
-
 // Format prints a pretty representation of m to the fs io.Writer. The format character c
 // specifies the numerical representation of of elements; valid values are those for float64
 // specified in the fmt package, with their associated flags. In addition to this, a '#' for

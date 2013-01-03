@@ -180,3 +180,17 @@ func Norm(v []float64, ord int) float64 {
 	}
 	return n
 }
+
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
+}
+
+func max(a, b int) int {
+	if a > b {
+		return a
+	}
+	return b
+}
