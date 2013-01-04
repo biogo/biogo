@@ -76,19 +76,16 @@ func NewPivot(p []int) (*Pivot, error) {
 
 func sign(a []int) float64 {
 	b := make([]bool, len(a))
-	var swaps int
+	sign := 1.
 	for col, row := range a {
 		for row != col && !b[col] {
-			if b[col] {
-				continue
-			}
 			b[col] = true
-			swaps++
+			sign = -sign
 			col = a[col]
 		}
 		b[col] = true
 	}
-	return float64(1 - (swaps&1)<<1)
+	return sign
 }
 
 // IdentityPivot returns the a size by size I matrix. An error is returned if size is zero.
