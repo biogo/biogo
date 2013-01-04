@@ -7,6 +7,7 @@ package matrix_test
 import (
 	"code.google.com/p/biogo/matrix"
 	"fmt"
+	"math"
 	"math/rand"
 	"time"
 )
@@ -19,8 +20,9 @@ func ExampleFactors() {
 
 	rows, cols := V.Dims()
 	rand.Seed(1)
-	Wo := matrix.Must(matrix.FuncDense(rows, categories, 1, rand.NormFloat64))
-	Ho := matrix.Must(matrix.FuncDense(categories, cols, 1, rand.NormFloat64))
+	posNorm := func() float64 { return math.Abs(rand.NormFloat64()) }
+	Wo := matrix.Must(matrix.FuncDense(rows, categories, 1, posNorm))
+	Ho := matrix.Must(matrix.FuncDense(categories, cols, 1, posNorm))
 
 	var (
 		tolerance  = 1e-5
@@ -46,21 +48,21 @@ func ExampleFactors() {
 	// Successfully factorised: true
 	//
 	// W =
-	// ⎡ 0.000  23.860   0.000  18.962   0.000⎤
-	// ⎢19.343   0.000   0.000   0.000  11.348⎥
-	// ⎣32.072   0.000   0.000   2.743   7.030⎦
+	// ⎡ 0.000   0.000  15.891   0.000   0.000⎤
+	// ⎢16.693   1.603   0.000   0.000   0.000⎥
+	// ⎣ 0.000   4.017   0.000   4.155   0.000⎦
 	//
 	// H =
-	// ⎡0.000  0.004  0.052  0.270⎤
-	// ⎢0.838  0.000  0.000  0.000⎥
-	// ⎢0.927  0.972  0.510  0.251⎥
-	// ⎢0.000  0.000  1.582  0.000⎥
-	// ⎣0.000  1.402  0.000  0.333⎦
+	// ⎡0.000  0.868  0.030  0.393⎤
+	// ⎢0.000  0.938  0.309  1.523⎥
+	// ⎢1.259  0.000  1.888  0.000⎥
+	// ⎢0.000  1.500  1.145  1.175⎥
+	// ⎣0.776  1.420  0.330  0.247⎦
 	//
 	// P =
 	// ⎡20.000   0.000  30.000   0.000⎤
-	// ⎢ 0.000  16.000   1.001   9.000⎥
-	// ⎣ 0.000  10.000   5.999  11.000⎦
+	// ⎢ 0.000  16.000   1.000   9.000⎥
+	// ⎣ 0.000  10.000   6.000  11.000⎦
 	//
-	// delta = 0.001
+	// delta = 0.000
 }

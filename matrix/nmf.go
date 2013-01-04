@@ -15,8 +15,11 @@ var NmfInnerLoop = 20
 // Factors is an implementation of non-negative matrix factorisation by alternative non-negative least
 // squares using projected gradients according to:
 //
-// Chih-Jen Lin (2007) 'Projected Gradient Methods for Non-negative Matrix
-// Factorization.' Neural Computation 19:2756. 
+// Chih-Jen Lin (2007) 'Projected Gradient Methods for Non-negative Matrix Factorization.'
+// Neural Computation 19:2756.
+//
+// Factors returns matrices W and H that are non-negative factors of V within the specified tolerance,
+// given initial non-negative solutions Wo and Ho.
 func Factors(V, Wo, Ho Matrix, tolerance float64, iterations int, limit time.Duration) (W, H Matrix, ok bool) {
 	W = Wo
 	H = Ho
@@ -125,7 +128,6 @@ func subproblem(V, W, Ho Matrix, tolerance float64, iterations int) (H, G Matrix
 			}
 		}
 	}
-	H = H.Filter(hFilter, H)
 
 	return
 }
