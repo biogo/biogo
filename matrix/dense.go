@@ -551,7 +551,7 @@ func (d *Dense) Sub(b, c Matrix) Matrix {
 	panic("cannot reach")
 }
 
-// SubDense returns the result a dense matrics which is the result of subtraction of the parameter from the matrix.
+// SubDense returns the result a dense matrix which is the result of subtraction of the parameter from the matrix.
 // SubDense will panic with ErrShape if the two matrices do not have the same dimensions.
 func (d *Dense) SubDense(b, c *Dense) *Dense {
 	if d.rows != b.rows || d.cols != b.cols {
@@ -685,7 +685,7 @@ func (d *Dense) Inner(b Matrix) float64 {
 	panic("cannot reach")
 }
 
-// InnerDense returns a dense matrix which is the result of element-wise multiplication of the matrix and the parameter.
+// InnerDense returns the sum of element-wise multiplication of the matrix and the parameter.
 // InnerDense will panic with ErrShape if the two matrices do not have the same dimensions.
 func (d *Dense) InnerDense(b *Dense) float64 {
 	if d.rows != b.rows || d.cols != b.cols {

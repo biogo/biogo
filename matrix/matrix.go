@@ -57,8 +57,11 @@ type Mutable interface {
 	Set(r, c int, v float64)
 }
 
+// A Panicker is a function that returns a matrix and may panic.
 type Panicker func() Matrix
 
+// Maybe will recover a panic with a type matrix.Error from fn, and return this error.
+// Any other error is re-panicked.
 func Maybe(fn Panicker) (m Matrix, err error) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -72,8 +75,11 @@ func Maybe(fn Panicker) (m Matrix, err error) {
 	return fn(), nil
 }
 
+// A FloatPanicker is a function that returns a float64 and may panic.
 type FloatPanicker func() float64
 
+// MaybeFloat will recover a panic with a type matrix.Error from fn, and return this error.
+// Any other error is re-panicked.
 func MaybeFloat(fn FloatPanicker) (f float64, err error) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -87,6 +93,8 @@ func MaybeFloat(fn FloatPanicker) (f float64, err error) {
 	return fn(), nil
 }
 
+// Must can be used to wrap a function returning a matrix and an error.
+// If the returned error is not nil, Must will panic.
 func Must(m Matrix, err error) Matrix {
 	if err != nil {
 		panic(err)
@@ -94,6 +102,7 @@ func Must(m Matrix, err error) Matrix {
 	return m
 }
 
+// Type Error represents matrix package errors. These errors can be recovered by Maybe wrappers.
 type Error string
 
 func (err Error) Error() string { return string(err) }
