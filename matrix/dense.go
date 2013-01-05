@@ -23,8 +23,8 @@ type Dense struct {
 // interconversion with other matrix formats.
 type UnsafeDense struct {
 	Rows, Cols int
-	Stride     int
 	Data       []float64
+	Stride     int
 }
 
 // Dense returns a dense matrix, checking that dimensions are valid.
