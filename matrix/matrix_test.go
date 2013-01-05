@@ -259,7 +259,7 @@ func (s *S) TestAdd(c *check.C) {
 			c.Check(err, check.Equals, nil, check.Commentf("Test %d", i))
 			c.Check(a.Add(b, nil).Equals(r), check.Equals, true, check.Commentf("Test %d: %v add %v", i, test.a, test.b))
 			c.Check(a.Add(b, tempSparse).Equals(r), check.Equals, true, check.Commentf("Test %d: %v add %v", i, test.a, test.b))
-			t := a.CloneSparse()
+			t := a.CloneSparse(nil)
 			c.Check(a.Add(b, a).Equals(r), check.Equals, true, check.Commentf("Test %d: %v sub %v", i, test.a, test.b))
 			a = t
 			c.Check(a.Add(b, b).Equals(r), check.Equals, true, check.Commentf("Test %d: %v sub %v", i, test.a, test.b))
@@ -274,7 +274,7 @@ func (s *S) TestAdd(c *check.C) {
 			c.Check(err, check.Equals, nil, check.Commentf("Test %d", i))
 			c.Check(a.Add(b, nil).Equals(r), check.Equals, true, check.Commentf("Test %d: %v add %v", i, test.a, test.b))
 			c.Check(a.Add(b, tempDense).Equals(r), check.Equals, true, check.Commentf("Test %d: %v add %v", i, test.a, test.b))
-			t := a.CloneDense()
+			t := a.CloneDense(nil)
 			c.Check(a.Add(b, a).Equals(r), check.Equals, true, check.Commentf("Test %d: %v sub %v", i, test.a, test.b))
 			a = t
 			c.Check(a.Add(b, b).Equals(r), check.Equals, true, check.Commentf("Test %d: %v sub %v", i, test.a, test.b))
@@ -325,7 +325,7 @@ func (s *S) TestSub(c *check.C) {
 			c.Check(err, check.Equals, nil, check.Commentf("Test %d", i))
 			c.Check(a.Sub(b, nil).Equals(r), check.Equals, true, check.Commentf("Test %d: %v sub %v", i, test.a, test.b))
 			c.Check(a.Sub(b, tempSparse).Equals(r), check.Equals, true, check.Commentf("Test %d: %v sub %v", i, test.a, test.b))
-			t := a.CloneSparse()
+			t := a.CloneSparse(nil)
 			c.Check(a.Sub(b, a).Equals(r), check.Equals, true, check.Commentf("Test %d: %v sub %v", i, test.a, test.b))
 			a = t
 			c.Check(a.Sub(b, b).Equals(r), check.Equals, true, check.Commentf("Test %d: %v sub %v", i, test.a, test.b))
@@ -340,7 +340,7 @@ func (s *S) TestSub(c *check.C) {
 			c.Check(err, check.Equals, nil, check.Commentf("Test %d", i))
 			c.Check(a.Sub(b, nil).Equals(r), check.Equals, true, check.Commentf("Test %d: %v sub %v", i, test.a, test.b))
 			c.Check(a.Sub(b, tempDense).Equals(r), check.Equals, true, check.Commentf("Test %d: %v sub %v", i, test.a, test.b))
-			t := a.CloneDense()
+			t := a.CloneDense(nil)
 			c.Check(a.Sub(b, a).Equals(r), check.Equals, true, check.Commentf("Test %d: %v sub %v", i, test.a, test.b))
 			a = t
 			c.Check(a.Sub(b, b).Equals(r), check.Equals, true, check.Commentf("Test %d: %v sub %v", i, test.a, test.b))
@@ -391,7 +391,7 @@ func (s *S) TestMulElem(c *check.C) {
 			c.Check(err, check.Equals, nil, check.Commentf("Test %d", i))
 			c.Check(a.MulElem(b, nil).Equals(r), check.Equals, true, check.Commentf("Test %d: %v mulelem %v", i, test.a, test.b))
 			c.Check(a.MulElem(b, tempSparse).Equals(r), check.Equals, true, check.Commentf("Test %d: %v mulelem %v", i, test.a, test.b))
-			t := a.CloneSparse()
+			t := a.CloneSparse(nil)
 			c.Check(a.MulElem(b, a).Equals(r), check.Equals, true, check.Commentf("Test %d: %v sub %v", i, test.a, test.b))
 			a = t
 			c.Check(a.MulElem(b, b).Equals(r), check.Equals, true, check.Commentf("Test %d: %v sub %v", i, test.a, test.b))
@@ -406,7 +406,7 @@ func (s *S) TestMulElem(c *check.C) {
 			c.Check(err, check.Equals, nil, check.Commentf("Test %d", i))
 			c.Check(a.MulElem(b, nil).Equals(r), check.Equals, true, check.Commentf("Test %d: %v dot %v", i, test.a, test.b))
 			c.Check(a.MulElem(b, tempDense).Equals(r), check.Equals, true, check.Commentf("Test %d: %v dot %v", i, test.a, test.b))
-			t := a.CloneDense()
+			t := a.CloneDense(nil)
 			c.Check(a.MulElem(b, a).Equals(r), check.Equals, true, check.Commentf("Test %d: %v sub %v", i, test.a, test.b))
 			a = t
 			c.Check(a.MulElem(b, b).Equals(r), check.Equals, true, check.Commentf("Test %d: %v sub %v", i, test.a, test.b))
@@ -519,10 +519,10 @@ func (s *S) TestLU(c *check.C) {
 			c.Check(r.Equals(u.Add(l.Sub(d, nil), nil)), check.Equals, true, check.Commentf("Test %d: type: %T", i, r))
 			c.Check(d.Equals(l.MulElem(I, nil)), check.Equals, true, check.Commentf("Test %d: type: %T", i, r))
 			c.Check(d.Equals(u.MulElem(I, nil)), check.Equals, true, check.Commentf("Test %d: type: %T", i, r))
-			t := r.Clone()
+			t := r.Clone(nil)
 			r.U(r)
 			c.Check(r.Equals(u), check.Equals, true, check.Commentf("Test %d: type: %T\ninput =\n%#.3f\n\nobtained =\n%#.3f\n\nexpected =\n%#.3f", i, r, t, r, u))
-			r, t = t, t.Clone()
+			r, t = t, t.Clone(nil)
 			r.L(r)
 			c.Check(r.Equals(l), check.Equals, true, check.Commentf("Test %d: type: %T\ninput =\n%#.3f\n\nobtained =\n%#.3f\n\nexpected =\n%#.3f", i, r, t, r, l))
 		}

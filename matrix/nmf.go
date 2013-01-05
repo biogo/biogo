@@ -72,7 +72,7 @@ func Factors(V, Wo, Ho Matrix, tolerance float64, iterations int, limit time.Dur
 }
 
 func subproblem(V, W, Ho Matrix, tolerance float64, iterations int) (H, G Matrix, i int, ok bool) {
-	H = Ho.Clone()
+	H = Ho.Clone(nil)
 	WtV := W.T(nil).Dot(V, nil)
 	WtW := W.T(nil).Dot(W, nil)
 

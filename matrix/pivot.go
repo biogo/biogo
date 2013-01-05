@@ -107,7 +107,7 @@ func IdentityPivot(size int) (*Pivot, error) {
 }
 
 // Clone returns a copy of the matrix.
-func (p *Pivot) Clone() Matrix { return p.ClonePivot() }
+func (p *Pivot) Clone(_ Matrix) Matrix { return p.ClonePivot() }
 
 // Clone returns a copy of the matrix, retaining its concrete type.
 func (p *Pivot) ClonePivot() *Pivot {
@@ -704,12 +704,51 @@ func (p *Pivot) Filter(f FilterFunc, c Matrix) Matrix {
 
 // FilterSparse return a sparse matrix with all elements at (r, c) set to zero where FilterFunc(r, c, v) returns false.
 func (p *Pivot) FilterSparse(f FilterFunc, c *Sparse) *Sparse {
-	c = c.reallocate(len(p.matrix), len(p.matrix))
+	c = c.reallocate(p.Dims())
 	for row, col := range p.xirtam {
 		if f(row, col, 1) {
 			c.matrix[row] = sparseRow{sparseElem{index: col, value: 1}}
 		}
 	}
+	return c
+}
+
+// Apply returns a matrix which has had a function applied to all non-zero elements of the matrix.
+func (p *Pivot) Apply(f ApplyFunc, c Matrix) Matrix {
+	cc, _ := c.(*Sparse)
+	return p.ApplySparse(f, cc)
+}
+
+// ApplySparse returns a dense matrix which has had a function applied to all non-zero elements of the matrix.
+func (p *Pivot) ApplySparse(f ApplyFunc, c *Sparse) *Sparse {
+	c = c.reallocate(p.Dims())
+	for row, col := range p.xirtam {
+		if v := f(row, col, 1); v != 0 {
+			c.matrix[row] = append(c.matrix[row], sparseElem{index: col, value: v})
+		}
+	}
+	return c
+}
+
+// ApplyAll returns a matrix which has had a function applied to all elements of the matrix.
+func (p *Pivot) ApplyAll(f ApplyFunc, c Matrix) Matrix {
+	cc, _ := c.(*Sparse)
+	return p.ApplyAllSparse(f, cc)
+}
+
+// ApplyAllSparse returns a matrix which has had a function applied to all elements of the matrix.
+func (p *Pivot) ApplyAllSparse(f ApplyFunc, c *Sparse) *Sparse {
+	c = c.reallocate(p.Dims())
+	for i := 0; i < len(p.matrix); i++ {
+		for j := 0; j < len(p.matrix); j++ {
+			old := p.at(i, j)
+			v := f(i, j, old)
+			if v != old {
+				c.set(i, j, v)
+			}
+		}
+	}
+
 	return c
 }
 

@@ -216,22 +216,25 @@ func (s *Sparse) ElementsVector() []float64 {
 }
 
 // Clone returns a copy of the matrix.
-func (s *Sparse) Clone() Matrix { return s.CloneSparse() }
+func (s *Sparse) Clone(c Matrix) Matrix {
+	cc, _ := c.(*Sparse)
+	return s.CloneSparse(cc)
+}
 
 // Clone returns a copy of the matrix, retaining its concrete type.
-func (s *Sparse) CloneSparse() *Sparse {
-	m := &Sparse{
-		rows:   s.rows,
-		cols:   s.cols,
-		matrix: make([]sparseRow, len(s.matrix)),
-	}
+func (s *Sparse) CloneSparse(c *Sparse) *Sparse {
+	c = c.reallocate(s.Dims())
 
 	for j, row := range s.matrix {
-		m.matrix[j] = make(sparseRow, len(row))
-		copy(m.matrix[j], row)
+		if cap(c.matrix[j]) < len(row) {
+			c.matrix[j] = make(sparseRow, len(row))
+		} else {
+			c.matrix[j] = c.matrix[j][:len(row)]
+		}
+		copy(c.matrix[j], row)
 	}
 
-	return m
+	return c
 }
 
 // Sparse returns the matrix as a Sparse. The returned matrix is not a copy.
@@ -607,7 +610,7 @@ func (s *Sparse) T(c Matrix) Matrix {
 // TSparse returns the transpose of the matrix retaining the concrete type of the matrix.
 func (s *Sparse) TSparse(c *Sparse) *Sparse {
 	if s.rows == 0 || s.cols == 0 { // this is a vector
-		c = s.CloneSparse()
+		c = s.CloneSparse(c)
 		c.rows, c.cols = c.cols, c.rows
 		return c
 	}
@@ -969,8 +972,8 @@ func (s *Sparse) StackSparse(b, c *Sparse) *Sparse {
 	}
 
 	c = c.reallocate(s.rows+b.rows, s.cols)
-	copy(c.matrix, s.CloneSparse().matrix)
-	copy(c.matrix[len(s.matrix):], b.CloneSparse().matrix)
+	copy(c.matrix, s.CloneSparse(nil).matrix)
+	copy(c.matrix[len(s.matrix):], b.CloneSparse(nil).matrix)
 
 	return c
 }
@@ -1000,39 +1003,45 @@ func (s *Sparse) FilterSparse(f FilterFunc, c *Sparse) *Sparse {
 }
 
 // Apply returns a matrix which has had a function applied to all non-zero elements of the matrix.
-func (s *Sparse) Apply(f ApplyFunc) Matrix { return s.ApplySparse(f) }
+func (s *Sparse) Apply(f ApplyFunc, c Matrix) Matrix {
+	cc, _ := c.(*Sparse)
+	return s.ApplySparse(f, cc)
+}
 
 // ApplySparse returns a dense matrix which has had a function applied to all non-zero elements of the matrix.
-func (s *Sparse) ApplySparse(f ApplyFunc) *Sparse {
-	m := s.CloneSparse()
-	for j, row := range m.matrix {
+func (s *Sparse) ApplySparse(f ApplyFunc, c *Sparse) *Sparse {
+	c = s.CloneSparse(c)
+	for j, row := range c.matrix {
 		for i, e := range row {
 			if v := f(i, j, e.value); v != e.value {
-				m.matrix[j][i] = sparseElem{index: e.index, value: v}
+				c.matrix[j][i] = sparseElem{index: e.index, value: v}
 			}
 		}
 	}
 
-	return m
+	return c
 }
 
 // ApplyAll returns a matrix which has had a function applied to all elements of the matrix.
-func (s *Sparse) ApplyAll(f ApplyFunc) Matrix { return s.ApplyAllSparse(f) }
+func (s *Sparse) ApplyAll(f ApplyFunc, c Matrix) Matrix {
+	cc, _ := c.(*Sparse)
+	return s.ApplyAllSparse(f, cc)
+}
 
 // ApplyAllSparse returns a matrix which has had a function applied to all elements of the matrix.
-func (s *Sparse) ApplyAllSparse(f ApplyFunc) *Sparse {
-	m := s.CloneSparse()
+func (s *Sparse) ApplyAllSparse(f ApplyFunc, c *Sparse) *Sparse {
+	c = s.CloneSparse(c)
 	for i, row := range s.matrix {
-		for j := 0; j < m.cols; j++ {
+		for j := 0; j < c.cols; j++ {
 			old := row.at(j)
 			v := f(i, j, old)
 			if v != old {
-				m.set(i, j, v)
+				c.set(i, j, v)
 			}
 		}
 	}
 
-	return m
+	return c
 }
 
 // Clean zero elements from a matrix

@@ -24,7 +24,7 @@ type FilterFunc func(r, c int, v float64) bool
 type ApplyFunc func(r, c int, v float64) float64
 
 type Matrix interface {
-	Clone() Matrix
+	Clone(c Matrix) Matrix
 	Dims() (int, int)
 	At(r, c int) float64
 	Norm(int) float64
@@ -41,6 +41,8 @@ type Matrix interface {
 	Inner(b Matrix) float64
 	Stack(b, c Matrix) Matrix
 	Augment(b, c Matrix) Matrix
+	Apply(f ApplyFunc, c Matrix) Matrix
+	ApplyAll(f ApplyFunc, c Matrix) Matrix
 	Filter(f FilterFunc, c Matrix) Matrix
 	Trace() float64
 	U(Matrix) Matrix

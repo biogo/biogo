@@ -191,15 +191,16 @@ func (d *Dense) ElementsVector() []float64 {
 }
 
 // Clone returns a copy of the matrix.
-func (d *Dense) Clone() Matrix { return d.CloneDense() }
+func (d *Dense) Clone(c Matrix) Matrix {
+	cc, _ := c.(*Dense)
+	return d.CloneDense(cc)
+}
 
 // Clone returns a copy of the matrix, retaining its concrete type.
-func (d *Dense) CloneDense() *Dense {
-	return &Dense{
-		rows:   d.rows,
-		cols:   d.cols,
-		matrix: append(denseRow(nil), d.matrix...),
-	}
+func (d *Dense) CloneDense(c *Dense) *Dense {
+	c = c.reallocate(d.Dims())
+	copy(c.matrix, d.matrix)
+	return c
 }
 
 // Dense returns the matrix as a Dense. The returned matrix is not a copy.
@@ -483,7 +484,7 @@ func (d *Dense) T(c Matrix) Matrix {
 // TDense returns the transpose of the matrix retaining the concrete type of the matrix.
 func (d *Dense) TDense(c *Dense) *Dense {
 	if d.rows == 0 || d.cols == 0 { // this is a vector
-		c = d.CloneDense()
+		c = d.CloneDense(c)
 		c.rows, c.cols = c.cols, c.rows
 		return c
 	}
@@ -850,25 +851,31 @@ func (d *Dense) FilterDense(f FilterFunc, c *Dense) *Dense {
 }
 
 // Apply returns a matrix which has had a function applied to all elements of the matrix.
-func (d *Dense) Apply(f ApplyFunc) Matrix { return d.ApplyDense(f) }
+func (d *Dense) Apply(f ApplyFunc, c Matrix) Matrix {
+	cc, _ := c.(*Dense)
+	return d.ApplyDense(f, cc)
+}
 
 // ApplyDense returns a dense matrix which has had a function applied to all elements of the matrix.
-func (d *Dense) ApplyDense(f ApplyFunc) *Dense {
-	m := d.CloneDense()
-	for i, e := range m.matrix {
+func (d *Dense) ApplyDense(f ApplyFunc, c *Dense) *Dense {
+	c = d.CloneDense(c)
+	for i, e := range c.matrix {
 		if v := f(i/d.cols, i%d.cols, e); v != e {
-			m.matrix[i] = v
+			c.matrix[i] = v
 		}
 	}
 
-	return m
+	return c
 }
 
 // ApplyAll returns a matrix which has had a function applied to all elements of the matrix.
-func (d *Dense) ApplyAll(f ApplyFunc) Matrix { return d.ApplyDense(f) }
+func (d *Dense) ApplyAll(f ApplyFunc, c Matrix) Matrix {
+	cc, _ := c.(*Dense)
+	return d.ApplyDense(f, cc)
+}
 
 // ApplyAllDense returns a matrix which has had a function applied to all elements of the matrix.
-func (d *Dense) ApplyAllDense(f ApplyFunc) Matrix { return d.ApplyDense(f) }
+func (d *Dense) ApplyAllDense(f ApplyFunc, c *Dense) Matrix { return d.ApplyDense(f, c) }
 
 // Format satisfies the fmt.Formatter interface.
 func (d *Dense) Format(fs fmt.State, c rune) {

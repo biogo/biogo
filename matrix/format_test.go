@@ -63,7 +63,7 @@ func (s *S) TestFormat(c *check.C) {
 			},
 		},
 		{
-			MustDense(NewDense([][]float64{{0, 1, 2}, {3, 4, 5}})).ApplyAll(sqrt),
+			MustDense(NewDense([][]float64{{0, 1, 2}, {3, 4, 5}})).ApplyAll(sqrt, nil),
 			[]rp{
 				{"%v", "⎡                 0                   1  1.4142135623730951⎤\n⎣1.7320508075688772                   2    2.23606797749979⎦"},
 				{"%#f", "⎡                 .                   1  1.4142135623730951⎤\n⎣1.7320508075688772                   2    2.23606797749979⎦"},
@@ -71,7 +71,7 @@ func (s *S) TestFormat(c *check.C) {
 			},
 		},
 		{
-			MustDense(NewDense([][]float64{{0, 1}, {2, 3}, {4, 5}})).ApplyAll(sqrt),
+			MustDense(NewDense([][]float64{{0, 1}, {2, 3}, {4, 5}})).ApplyAll(sqrt, nil),
 			[]rp{
 				{"%v", "⎡                 0                   1⎤\n⎢1.4142135623730951  1.7320508075688772⎥\n⎣                 2    2.23606797749979⎦"},
 				{"%#f", "⎡                 .                   1⎤\n⎢1.4142135623730951  1.7320508075688772⎥\n⎣                 2    2.23606797749979⎦"},
@@ -148,7 +148,7 @@ func (s *S) TestFormat(c *check.C) {
 			},
 		},
 		{
-			MustSparse(NewSparse([][]float64{{0, 1, 2}, {3, 4, 5}})).ApplyAll(sqrt),
+			MustSparse(NewSparse([][]float64{{0, 1, 2}, {3, 4, 5}})).ApplyAll(sqrt, nil),
 			[]rp{
 				{"%v", "⎡                 0                   1  1.4142135623730951⎤\n⎣1.7320508075688772                   2    2.23606797749979⎦"},
 				{"%#f", "⎡                 .                   1  1.4142135623730951⎤\n⎣1.7320508075688772                   2    2.23606797749979⎦"},
@@ -156,7 +156,7 @@ func (s *S) TestFormat(c *check.C) {
 			},
 		},
 		{
-			MustSparse(NewSparse([][]float64{{0, 1}, {2, 3}, {4, 5}})).ApplyAll(sqrt),
+			MustSparse(NewSparse([][]float64{{0, 1}, {2, 3}, {4, 5}})).ApplyAll(sqrt, nil),
 			[]rp{
 				{"%v", "⎡                 0                   1⎤\n⎢1.4142135623730951  1.7320508075688772⎥\n⎣                 2    2.23606797749979⎦"},
 				{"%#f", "⎡                 .                   1⎤\n⎢1.4142135623730951  1.7320508075688772⎥\n⎣                 2    2.23606797749979⎦"},
