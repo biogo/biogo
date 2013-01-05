@@ -483,13 +483,16 @@ func (d *Dense) T(c Matrix) Matrix {
 
 // TDense returns the transpose of the matrix retaining the concrete type of the matrix.
 func (d *Dense) TDense(c *Dense) *Dense {
-	if d.rows == 0 || d.cols == 0 { // this is a vector
+	if d.rows == 1 || d.cols == 1 {
 		c = d.CloneDense(c)
 		c.rows, c.cols = c.cols, c.rows
 		return c
 	}
 
 	cols, rows := d.Dims()
+	if c == d {
+		c = nil
+	}
 	c = c.reallocate(rows, cols)
 	for i := 0; i < d.cols; i++ {
 		for j := 0; j < d.rows; j++ {

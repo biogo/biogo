@@ -610,13 +610,10 @@ func (s *Sparse) T(c Matrix) Matrix {
 
 // TSparse returns the transpose of the matrix retaining the concrete type of the matrix.
 func (s *Sparse) TSparse(c *Sparse) *Sparse {
-	if s.rows == 0 || s.cols == 0 { // this is a vector
-		c = s.CloneSparse(c)
-		c.rows, c.cols = c.cols, c.rows
-		return c
-	}
-
 	cols, rows := s.Dims()
+	if c == s {
+		c = nil
+	}
 	c = c.reallocate(rows, cols)
 	for j, row := range s.matrix {
 		for _, e := range row {
