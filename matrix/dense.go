@@ -18,6 +18,42 @@ type Dense struct {
 	matrix     denseRow
 }
 
+// Type UnsafeDense represents the matrix data stored in a Dense with no arithmetic methods associated,
+// but with the structure exposed. This type allows more low level operations to be constructed and
+// interconversion with other matrix formats.
+type UnsafeDense struct {
+	Rows, Cols int
+	Stride     int
+	Data       []float64
+}
+
+// Dense returns a dense matrix, checking that dimensions are valid.
+func (u UnsafeDense) Dense() (*Dense, error) {
+	if u.Rows*u.Cols != len(u.Data) {
+		return nil, ErrShape
+	}
+	if u.Stride != u.Cols { // While submatrices do not yet exist.
+		return nil, ErrIllegalStride
+	}
+	return &Dense{
+		rows:   u.Rows,
+		cols:   u.Cols,
+		matrix: u.Data,
+	}, nil
+}
+
+// Unsafe returns a shallow copy the dense matrix as an UnsafeDense. Changes to the stride and
+// matrix dimensions are not reflected in the original matrix, however changes in the Data slice
+// are reflected in the original matrix.
+func (d *Dense) Unsafe() UnsafeDense {
+	return UnsafeDense{
+		Rows:   d.rows,
+		Cols:   d.cols,
+		Stride: d.cols,
+		Data:   d.matrix,
+	}
+}
+
 // A DensePanicker is a function that returns a dense matrix and may panic.
 type DensePanicker func() *Dense
 
@@ -916,7 +952,7 @@ func (d *Dense) Dot(b, c Matrix) Matrix {
 	case *Dense:
 		return d.DotDense(b, cc)
 	case *Sparse:
-		panic("not implemented")
+		return d.dotSparse(b, cc)
 	case *Pivot:
 		return d.DotPivot(b, cc)
 	default:
@@ -965,6 +1001,37 @@ func (d *Dense) DotDense(b, c *Dense) *Dense {
 	// 		}
 	// 	}
 	// }
+
+	return c
+}
+
+func (d *Dense) dotSparse(b *Sparse, c *Dense) *Dense {
+	if d.cols != b.rows {
+		panic(ErrShape)
+	}
+
+	if c == d {
+		c = nil
+	}
+	c = c.reallocate(d.rows, b.cols)
+
+	t := make([]float64, b.rows)
+	for i := 0; i < b.cols; i++ {
+		var nonZero bool
+		for j, row := range b.matrix {
+			v := row.at(i)
+			if v != 0 {
+				nonZero = true
+			}
+			t[j] = v
+		}
+		if nonZero {
+			for j := 0; j < d.rows; j++ {
+				row := d.matrix[j*d.cols : (j+1)*d.cols]
+				c.set(j, i, row.foldMulSum(t))
+			}
+		}
+	}
 
 	return c
 }
