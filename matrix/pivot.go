@@ -130,7 +130,7 @@ func (p *Pivot) Sparse(s *Sparse) *Sparse {
 
 // Dense returns a copy of the matrix represented as a Dense.
 func (p *Pivot) Dense(d *Dense) *Dense {
-	d.reallocate(len(p.matrix), len(p.matrix))
+	d = d.reallocate(len(p.matrix), len(p.matrix))
 
 	for r, c := range p.xirtam {
 		d.set(r, c, 1)
