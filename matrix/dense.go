@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"math"
 	"math/rand"
-	"unsafe"
 )
 
 // Type Dense represents a dense matrix.
@@ -187,7 +186,7 @@ func ElementsDense(mats ...Matrix) *Dense {
 
 // ElementsVector returns the matrix's elements concatenated, row-wise, into a float slice.
 func (d *Dense) ElementsVector() []float64 {
-	return append([]float64(nil), *(*[]float64)(unsafe.Pointer(&d.matrix))...)
+	return append([]float64(nil), d.matrix...)
 }
 
 // Clone returns a copy of the matrix.
