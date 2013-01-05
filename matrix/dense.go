@@ -503,14 +503,14 @@ func (d *Dense) TDense(c *Dense) *Dense {
 // Add returns the sum of the matrix and the parameter. Add will panic with ErrShape if the
 // two matrices do not have the same dimensions.
 func (d *Dense) Add(b, c Matrix) Matrix {
+	cc, _ := c.(*Dense)
 	switch b := b.(type) {
 	case *Dense:
-		cc, _ := c.(*Dense)
 		return d.AddDense(b, cc)
 	case *Sparse:
-		panic("not implemented")
+		return d.addSparse(b, cc)
 	case *Pivot:
-		panic("not implemented")
+		return d.addPivot(b, cc)
 	default:
 		panic("not implemented")
 	}
@@ -533,17 +533,52 @@ func (d *Dense) AddDense(b, c *Dense) *Dense {
 	return c
 }
 
+func (d *Dense) addSparse(b *Sparse, c *Dense) *Dense {
+	if d.rows != b.rows || d.cols != b.cols {
+		panic(ErrShape)
+	}
+
+	if c != d {
+		c = c.reallocate(d.Dims())
+		copy(c.matrix, d.matrix)
+	}
+	for r, row := range b.matrix {
+		for _, e := range row {
+			c.matrix[r*c.cols+e.index] += e.value
+		}
+	}
+
+	return c
+}
+
+func (d *Dense) addPivot(b *Pivot, c *Dense) *Dense {
+	if d.rows != len(b.matrix) || d.cols != len(b.matrix) {
+		panic(ErrShape)
+	}
+
+	if c != d {
+		c = c.reallocate(d.Dims())
+		copy(c.matrix, d.matrix)
+	}
+
+	for row, col := range b.xirtam {
+		c.matrix[row*c.cols+col]++
+	}
+
+	return c
+}
+
 // Sub returns the result of subtraction of the parameter from the matrix. Sub will panic with ErrShape
 // if the two matrices do not have the same dimensions.
 func (d *Dense) Sub(b, c Matrix) Matrix {
+	cc, _ := c.(*Dense)
 	switch b := b.(type) {
 	case *Dense:
-		cc, _ := c.(*Dense)
 		return d.SubDense(b, cc)
 	case *Sparse:
-		panic("not implemented")
+		return d.subSparse(b, cc)
 	case *Pivot:
-		panic("not implemented")
+		return d.subPivot(b, cc)
 	default:
 		panic("not implemented")
 	}
@@ -565,17 +600,52 @@ func (d *Dense) SubDense(b, c *Dense) *Dense {
 	return c
 }
 
+func (d *Dense) subSparse(b *Sparse, c *Dense) *Dense {
+	if d.rows != b.rows || d.cols != b.cols {
+		panic(ErrShape)
+	}
+
+	if c != d {
+		c = c.reallocate(d.Dims())
+		copy(c.matrix, d.matrix)
+	}
+	for r, row := range b.matrix {
+		for _, e := range row {
+			c.matrix[r*c.cols+e.index] -= e.value
+		}
+	}
+
+	return c
+}
+
+func (d *Dense) subPivot(b *Pivot, c *Dense) *Dense {
+	if d.rows != len(b.matrix) || d.cols != len(b.matrix) {
+		panic(ErrShape)
+	}
+
+	if c != d {
+		c = c.reallocate(d.Dims())
+		copy(c.matrix, d.matrix)
+	}
+
+	for row, col := range b.xirtam {
+		c.matrix[row*c.cols+col]--
+	}
+
+	return c
+}
+
 // MulElem returns the element-wise multiplication of the matrix and the parameter. MulElem will panic with ErrShape
 // if the two matrices do not have the same dimensions.
 func (d *Dense) MulElem(b, c Matrix) Matrix {
+	cc, _ := c.(*Dense)
 	switch b := b.(type) {
 	case *Dense:
-		cc, _ := c.(*Dense)
 		return d.MulElemDense(b, cc)
 	case *Sparse:
-		panic("not implemented")
+		return d.mulElemSparse(b, cc)
 	case *Pivot:
-		panic("not implemented")
+		return d.mulElemPivot(b, cc)
 	default:
 		panic("not implemented")
 	}
@@ -598,15 +668,58 @@ func (d *Dense) MulElemDense(b, c *Dense) *Dense {
 	return c
 }
 
+func (d *Dense) mulElemSparse(b *Sparse, c *Dense) *Dense {
+	if d.rows != b.rows || d.cols != b.cols {
+		panic(ErrShape)
+	}
+
+	if c != d {
+		c = c.reallocate(d.Dims())
+		copy(c.matrix, d.matrix)
+	}
+	var curr, last int
+	for r, row := range b.matrix {
+		for _, e := range row {
+			curr = r*c.cols + e.index
+			c.matrix[last:curr].zero()
+			c.matrix[curr] *= e.value
+			last = curr + 1
+		}
+	}
+
+	return c
+}
+
+func (d *Dense) mulElemPivot(b *Pivot, c *Dense) *Dense {
+	if d.rows != len(b.matrix) || d.cols != len(b.matrix) {
+		panic(ErrShape)
+	}
+
+	vals := make([]float64, len(b.matrix))
+	if c != d {
+		c = c.reallocate(d.Dims())
+	}
+
+	for row, col := range b.xirtam {
+		vals[row] = d.matrix[row*d.cols+col]
+	}
+	c.matrix.zero()
+	for row, col := range b.xirtam {
+		c.matrix[row*c.cols+col] = vals[row]
+	}
+
+	return c
+}
+
 // Equals returns the equality of two matrices.
 func (d *Dense) Equals(b Matrix) bool {
 	switch b := b.(type) {
 	case *Dense:
 		return d.EqualsDense(b)
 	case *Sparse:
-		panic("not implemented")
+		return d.equalsSparse(b)
 	case *Pivot:
-		panic("not implemented")
+		return d.equalsPivot(b)
 	default:
 		panic("not implemented")
 	}
@@ -622,16 +735,52 @@ func (d *Dense) EqualsDense(b *Dense) bool {
 	return d.matrix.foldEqual(b.matrix)
 }
 
-// EqualsApprox returns the approximate equality of two matrices, tolerance for elemen-wise equality is
+func (d *Dense) equalsSparse(b *Sparse) bool {
+	if d.rows != b.rows || d.cols != b.cols {
+		return false
+	}
+	var curr, last int
+	for r, row := range b.matrix {
+		for _, e := range row {
+			curr = r*d.cols + e.index
+			for _, v := range d.matrix[last:curr] {
+				if v != 0 {
+					return false
+				}
+			}
+			if d.matrix[curr] != e.value {
+				return false
+			}
+			last = curr + 1
+		}
+	}
+	return true
+}
+
+func (d *Dense) equalsPivot(b *Pivot) bool {
+	if d.rows != len(b.matrix) || d.cols != len(b.matrix) {
+		return false
+	}
+	for i, v := range d.matrix {
+		if v != 0 && (v != 1 || b.matrix[i%d.cols] != i/d.cols) {
+			return false
+
+		}
+	}
+
+	return true
+}
+
+// EqualsApprox returns the approximate equality of two matrices, tolerance for element-wise equality is
 // given by epsilon.
 func (d *Dense) EqualsApprox(b Matrix, epsilon float64) bool {
 	switch b := b.(type) {
 	case *Dense:
 		return d.EqualsApproxDense(b, epsilon)
 	case *Sparse:
-		panic("not implemented")
+		return d.equalsApproxSparse(b, epsilon)
 	case *Pivot:
-		panic("not implemented")
+		return d.equalsApproxPivot(b, epsilon)
 	default:
 		panic("not implemented")
 	}
@@ -646,6 +795,41 @@ func (d *Dense) EqualsApproxDense(b *Dense, epsilon float64) bool {
 		return false
 	}
 	return d.matrix.foldApprox(b.matrix, epsilon)
+}
+
+func (d *Dense) equalsApproxSparse(b *Sparse, epsilon float64) bool {
+	if d.rows != b.rows || d.cols != b.cols {
+		return false
+	}
+	var curr, last int
+	for r, row := range b.matrix {
+		for _, e := range row {
+			curr = r*d.cols + e.index
+			for _, v := range d.matrix[last:curr] {
+				if math.Abs(v) > epsilon {
+					return false
+				}
+			}
+			if math.Abs(d.matrix[curr]-e.value) > epsilon {
+				return false
+			}
+			last = curr + 1
+		}
+	}
+	return true
+}
+
+func (d *Dense) equalsApproxPivot(b *Pivot, epsilon float64) bool {
+	if d.rows != len(b.matrix) || d.cols != len(b.matrix) {
+		return false
+	}
+	for i, v := range d.matrix {
+		if math.Abs(v) > epsilon && (math.Abs(v-1) > epsilon || b.matrix[i%d.cols] != i/d.cols) {
+			return false
+		}
+	}
+
+	return true
 }
 
 // Scalar returns the scalar product of the matrix and f.
@@ -675,9 +859,9 @@ func (d *Dense) Inner(b Matrix) float64 {
 	case *Dense:
 		return d.InnerDense(b)
 	case *Sparse:
-		panic("not implemented")
+		return d.innerSparse(b)
 	case *Pivot:
-		panic("not implemented")
+		return d.innerPivot(b)
 	default:
 		panic("not implemented")
 	}
@@ -694,17 +878,45 @@ func (d *Dense) InnerDense(b *Dense) float64 {
 	return d.matrix.foldMulSum(b.matrix)
 }
 
+func (d *Dense) innerSparse(b *Sparse) float64 {
+	if d.rows != b.rows || d.cols != b.cols {
+		panic(ErrShape)
+	}
+
+	var sum float64
+	for r, row := range b.matrix {
+		for _, e := range row {
+			sum += d.matrix[r*d.cols+e.index] * e.value
+		}
+	}
+
+	return sum
+}
+
+func (d *Dense) innerPivot(b *Pivot) float64 {
+	if d.rows != len(b.matrix) || d.cols != len(b.matrix) {
+		panic(ErrShape)
+	}
+
+	var sum float64
+	for row, col := range b.xirtam {
+		sum += d.matrix[row*d.cols+col]
+	}
+
+	return sum
+}
+
 // Dot returns the matrix product of the matrix and the parameter. Dot will panic with ErrShape if
 // the column dimension of the receiver does not equal the row dimension of the parameter.
 func (d *Dense) Dot(b, c Matrix) Matrix {
+	cc, _ := c.(*Dense)
 	switch b := b.(type) {
 	case *Dense:
-		cc, _ := c.(*Dense)
 		return d.DotDense(b, cc)
 	case *Sparse:
 		panic("not implemented")
 	case *Pivot:
-		panic("not implemented")
+		return d.DotPivot(b, cc)
 	default:
 		panic("not implemented")
 	}
@@ -755,17 +967,44 @@ func (d *Dense) DotDense(b, c *Dense) *Dense {
 	return c
 }
 
+// swap columns of a dense matrix
+func (d *Dense) DotPivot(b *Pivot, c *Dense) *Dense {
+	if d.cols != len(b.matrix) {
+		panic(ErrShape)
+	}
+
+	if c != d {
+		c = c.reallocate(d.rows, d.cols)
+		for to, from := range b.xirtam {
+			blas.Dcopy(d.rows, d.matrix[from:], d.cols, c.matrix[to:], c.cols)
+		}
+		return c
+	}
+
+	visit := make([]bool, len(b.xirtam))
+	for to, from := range b.xirtam {
+		for to != from && !visit[from] {
+			visit[from] = true
+			blas.Dswap(d.rows, d.matrix[from:], d.cols, c.matrix[to:], c.cols)
+			from = b.xirtam[from]
+		}
+		visit[from] = true
+	}
+
+	return c
+}
+
 // Augment returns the augmentation of the receiver with the parameter. Augment will panic with
 // ErrColLength if the column dimensions of the two matrices do not match.
 func (d *Dense) Augment(b, c Matrix) Matrix {
+	cc, _ := c.(*Dense)
 	switch b := b.(type) {
 	case *Dense:
-		cc, _ := c.(*Dense)
 		return d.AugmentDense(b, cc)
 	case *Sparse:
-		panic("not implemented")
+		return d.augmentSparse(b, cc)
 	case *Pivot:
-		panic("not implemented")
+		return d.augmentPivot(b, cc)
 	default:
 		panic("not implemented")
 	}
@@ -789,17 +1028,51 @@ func (d *Dense) AugmentDense(b, c *Dense) *Dense {
 	return c
 }
 
+func (d *Dense) augmentSparse(b *Sparse, c *Dense) *Dense {
+	if d.rows != b.rows {
+		panic(ErrColLength)
+	}
+
+	c = c.reallocate(d.rows, d.cols+b.cols)
+	c.matrix.zero()
+	for i := 0; i < c.rows; i++ {
+		copy(c.matrix[i*c.cols:i*c.cols+d.cols], d.matrix[i*d.cols:(i+1)*d.cols])
+		for _, e := range b.matrix[i] {
+			c.set(i, d.cols+e.index, e.value)
+		}
+	}
+
+	return c
+}
+
+func (d *Dense) augmentPivot(b *Pivot, c *Dense) *Dense {
+	if d.rows != len(b.matrix) {
+		panic(ErrColLength)
+	}
+
+	c = c.reallocate(d.rows, d.cols+len(b.matrix))
+	c.matrix.zero()
+	for i := 0; i < c.rows; i++ {
+		copy(c.matrix[i*c.cols:i*c.cols+d.cols], d.matrix[i*d.cols:(i+1)*d.cols])
+	}
+	for i, j := range b.xirtam {
+		c.set(i, d.cols+j, 1)
+	}
+
+	return c
+}
+
 // Stack returns the stacking of the receiver with the parameter. Stack will panic with
 // ErrRowLength if the column dimensions of the two matrices do not match.
 func (d *Dense) Stack(b, c Matrix) Matrix {
+	cc, _ := c.(*Dense)
 	switch b := b.(type) {
 	case *Dense:
-		cc, _ := c.(*Dense)
 		return d.StackDense(b, cc)
 	case *Sparse:
-		panic("not implemented")
+		return d.stackSparse(b, cc)
 	case *Pivot:
-		panic("not implemented")
+		return d.stackPivot(b, cc)
 	default:
 		panic("not implemented")
 	}
@@ -817,6 +1090,38 @@ func (d *Dense) StackDense(b, c *Dense) *Dense {
 	c = c.reallocate(d.rows+b.rows, d.cols)
 	copy(c.matrix, d.matrix)
 	copy(c.matrix[len(d.matrix):], b.matrix)
+
+	return c
+}
+
+func (d *Dense) stackSparse(b *Sparse, c *Dense) *Dense {
+	if d.cols != b.cols {
+		panic(ErrRowLength)
+	}
+
+	c = c.reallocate(d.rows+b.rows, d.cols)
+	copy(c.matrix, d.matrix)
+	c.matrix[d.rows*d.cols:].zero()
+	for i, row := range b.matrix {
+		for _, e := range row {
+			c.set(d.rows+i, e.index, e.value)
+		}
+	}
+
+	return c
+}
+
+func (d *Dense) stackPivot(b *Pivot, c *Dense) *Dense {
+	if d.cols != len(b.matrix) {
+		panic(ErrColLength)
+	}
+
+	c = c.reallocate(d.rows+len(b.matrix), d.cols)
+	copy(c.matrix, d.matrix)
+	c.matrix[d.rows*d.cols:].zero()
+	for i, j := range b.xirtam {
+		c.set(d.rows+i, j, 1)
+	}
 
 	return c
 }

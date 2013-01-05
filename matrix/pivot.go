@@ -5,6 +5,7 @@
 package matrix
 
 import (
+	"code.google.com/p/biogo.blas"
 	"fmt"
 	"math"
 )
@@ -343,7 +344,8 @@ func (p *Pivot) Add(b, c Matrix) Matrix {
 	case *Sparse:
 		panic("not implemented")
 	case *Dense:
-		panic("not implemented")
+		cc, _ := c.(*Dense)
+		return b.addPivot(p, cc)
 	default:
 		panic("not implemented")
 	}
@@ -373,7 +375,8 @@ func (p *Pivot) Sub(b, c Matrix) Matrix {
 	case *Sparse:
 		panic("not implemented")
 	case *Dense:
-		panic("not implemented")
+		cc, _ := c.(*Dense)
+		return p.subDense(b, cc)
 	default:
 		panic("not implemented")
 	}
@@ -393,6 +396,23 @@ func (p *Pivot) SubPivot(b *Pivot, c *Sparse) *Sparse {
 	return nil
 }
 
+func (p *Pivot) subDense(b, c *Dense) *Dense {
+	if len(p.matrix) != b.rows || len(p.matrix) != b.cols {
+		panic(ErrShape)
+	}
+
+	if c != b {
+		c = c.reallocate(p.Dims())
+		copy(c.matrix, b.matrix)
+		blas.Dscal(len(c.matrix), -1, c.matrix, 1)
+	}
+	for row, col := range p.xirtam {
+		c.matrix[row*c.cols+col]++
+	}
+
+	return c
+}
+
 // MulElem returns the element-wise multiplication of the matrix and the parameter. MulElem will panic with ErrShape
 // if the two matrices do not have the same dimensions.
 func (p *Pivot) MulElem(b, c Matrix) Matrix {
@@ -403,7 +423,8 @@ func (p *Pivot) MulElem(b, c Matrix) Matrix {
 	case *Sparse:
 		panic("not implemented")
 	case *Dense:
-		panic("not implemented")
+		cc, _ := c.(*Dense)
+		return b.mulElemPivot(p, cc)
 	default:
 		panic("not implemented")
 	}
@@ -431,7 +452,7 @@ func (p *Pivot) Equals(b Matrix) bool {
 	case *Sparse:
 		panic("not implemented")
 	case *Dense:
-		panic("not implemented")
+		return b.equalsPivot(p)
 	default:
 		panic("not implemented")
 	}
@@ -452,7 +473,7 @@ func (p *Pivot) EqualsPivot(b *Pivot) bool {
 	return true
 }
 
-// EqualsApprox returns the approximate equality of two matrices, tolerance for elemen-wise equality is
+// EqualsApprox returns the approximate equality of two matrices, tolerance for element-wise equality is
 // given by epsilon.
 func (p *Pivot) EqualsApprox(b Matrix, epsilon float64) bool {
 	switch b := b.(type) {
@@ -461,7 +482,7 @@ func (p *Pivot) EqualsApprox(b Matrix, epsilon float64) bool {
 	case *Sparse:
 		panic("not implemented")
 	case *Dense:
-		panic("not implemented")
+		return b.equalsApproxPivot(p, epsilon)
 	default:
 		panic("not implemented")
 	}
@@ -511,7 +532,7 @@ func (p *Pivot) Inner(b Matrix) float64 {
 	case *Sparse:
 		panic("not implemented")
 	case *Dense:
-		panic("not implemented")
+		return b.innerPivot(p)
 	default:
 		panic("not implemented")
 	}
@@ -583,34 +604,51 @@ func (p *Pivot) DotSparse(b, c *Sparse) *Sparse {
 		panic(ErrShape)
 	}
 
-	// FIXME This is a workaround until I figure out a safe way to do swaps in place.
-	if c == b {
-		c = nil
+	if c != b {
+		c = c.reallocate(b.rows, b.cols)
+		for to, from := range p.matrix {
+			c.matrix[to] = append(c.matrix[to], b.matrix[from]...)
+		}
+		return c
 	}
-	c = c.reallocate(b.Dims())
 
-	for from, to := range p.matrix {
-		c.matrix[to] = append(c.matrix[to], b.matrix[from]...)
+	visit := make([]bool, len(p.matrix))
+	for to, from := range p.matrix {
+		for to != from && !visit[from] {
+			visit[from] = true
+			b.matrix[from], b.matrix[to] = c.matrix[to], c.matrix[from]
+			from = p.matrix[from]
+		}
+		visit[from] = true
 	}
+
 	return c
 }
 
-// DotDense returns the matrix product of the matrix and the parameter as a dense matrix. DotDense will panic
-// with ErrShape if the column dimension of the receiver does not equal the row dimension of the parameter.
-func (p *Pivot) DotDense(b, c *Dense) *Dense {
+// swap rows of a dense matrix
+func (p *Pivot) DotDense(b *Dense, c *Dense) *Dense {
 	if len(p.matrix) != b.rows {
 		panic(ErrShape)
 	}
 
-	// FIXME This is a workaround until I figure out a safe way to do swaps in place.
-	if c == b {
-		c = nil
+	if c != b {
+		c = c.reallocate(b.rows, b.cols)
+		for to, from := range p.matrix {
+			blas.Dcopy(b.cols, b.matrix[from*b.cols:], 1, c.matrix[to*c.cols:], 1)
+		}
+		return c
 	}
-	c = c.reallocate(b.Dims())
 
-	for from, to := range p.matrix {
-		copy(c.matrix[to*b.cols:(to+1)*b.cols], b.matrix[from*b.cols:(from+1)*b.cols])
+	visit := make([]bool, len(p.matrix))
+	for to, from := range p.matrix {
+		for to != from && !visit[from] {
+			visit[from] = true
+			blas.Dswap(b.cols, b.matrix[from*b.cols:], 1, c.matrix[to*c.cols:], 1)
+			from = p.matrix[from]
+		}
+		visit[from] = true
 	}
+
 	return c
 }
 
@@ -680,8 +718,8 @@ func (p *Pivot) StackPivot(b *Pivot, c *Sparse) *Sparse {
 	return c
 }
 
-// StackDense returns the augmentation of the receiver with the parameter as a dense matrix.
-// StackDense will panic with ErrRowLength if the column dimensions of the two matrices do not match.
+// StackSparse returns the augmentation of the receiver with the parameter as a sparse matrix.
+// StackSparse will panic with ErrRowLength if the column dimensions of the two matrices do not match.
 func (p *Pivot) StackSparse(b *Sparse, c *Sparse) *Sparse {
 	if len(p.matrix) != b.cols {
 		panic(ErrRowLength)

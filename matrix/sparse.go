@@ -5,6 +5,7 @@
 package matrix
 
 import (
+	"code.google.com/p/biogo.blas"
 	"fmt"
 	"math"
 	"math/rand"
@@ -640,7 +641,8 @@ func (s *Sparse) Add(b, c Matrix) Matrix {
 		cc, _ := c.(*Sparse)
 		return s.AddSparse(b, cc)
 	case *Dense:
-		panic("not implemented")
+		cc, _ := c.(*Dense)
+		return b.addSparse(s, cc)
 	case *Pivot:
 		panic("not implemented")
 	default:
@@ -675,7 +677,8 @@ func (s *Sparse) Sub(b, c Matrix) Matrix {
 		cc, _ := c.(*Sparse)
 		return s.SubSparse(b, cc)
 	case *Dense:
-		panic("not implemented")
+		cc, _ := c.(*Dense)
+		return s.subDense(b, cc)
 	case *Pivot:
 		panic("not implemented")
 	default:
@@ -702,6 +705,25 @@ func (s *Sparse) SubSparse(b, c *Sparse) *Sparse {
 	return c
 }
 
+func (s *Sparse) subDense(b, c *Dense) *Dense {
+	if s.rows != b.rows || s.cols != b.cols {
+		panic(ErrShape)
+	}
+
+	if c != b {
+		c = c.reallocate(s.Dims())
+		copy(c.matrix, b.matrix)
+		blas.Dscal(len(c.matrix), -1, c.matrix, 1)
+	}
+	for r, row := range s.matrix {
+		for _, e := range row {
+			c.matrix[r*c.cols+e.index] += e.value
+		}
+	}
+
+	return c
+}
+
 // MulElem returns the element-wise multiplication of the matrix and the parameter. MulElem will panic with ErrShape
 // if the two matrices do not have the same dimensions.
 func (s *Sparse) MulElem(b, c Matrix) Matrix {
@@ -710,9 +732,11 @@ func (s *Sparse) MulElem(b, c Matrix) Matrix {
 		cc, _ := c.(*Sparse)
 		return s.MulElemSparse(b, cc)
 	case *Dense:
-		panic("not implemented")
+		cc, _ := c.(*Dense)
+		return b.mulElemSparse(s, cc)
 	case *Pivot:
-		panic("not implemented")
+		cc, _ := c.(*Sparse)
+		return b.Filter(func(row, col int, _ float64) bool { return b.xirtam[row] == col }, cc)
 	default:
 		panic("not implemented")
 	}
@@ -743,7 +767,7 @@ func (s *Sparse) Equals(b Matrix) bool {
 	case *Sparse:
 		return s.EqualsSparse(b)
 	case *Dense:
-		panic("not implemented")
+		return b.equalsSparse(s)
 	case *Pivot:
 		panic("not implemented")
 	default:
@@ -768,14 +792,14 @@ func (s *Sparse) EqualsSparse(b *Sparse) bool {
 	return true
 }
 
-// EqualsApprox returns the approximate equality of two matrices, tolerance for elemen-wise equality is
+// EqualsApprox returns the approximate equality of two matrices, tolerance for element-wise equality is
 // given by epsilon.
 func (s *Sparse) EqualsApprox(b Matrix, epsilon float64) bool {
 	switch b := b.(type) {
 	case *Sparse:
 		return s.EqualsApproxSparse(b, epsilon)
 	case *Dense:
-		panic("not implemented")
+		return b.equalsApproxSparse(s, epsilon)
 	case *Pivot:
 		panic("not implemented")
 	default:
@@ -836,7 +860,7 @@ func (s *Sparse) Inner(b Matrix) float64 {
 	case *Sparse:
 		return s.InnerSparse(b)
 	case *Dense:
-		panic("not implemented")
+		return b.innerSparse(s)
 	case *Pivot:
 		panic("not implemented")
 	default:
