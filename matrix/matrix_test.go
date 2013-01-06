@@ -683,6 +683,177 @@ func (s *S) TestStackAugment(c *check.C) {
 	}
 }
 
+func (s *S) TestApply(c *check.C) {
+	var (
+		tempSparse *Sparse
+		tempDense  *Dense
+		identity   = func(r, c int, v float64) float64 { return v }
+	)
+	for i, test := range []struct {
+		a, t [][]float64
+		fn   ApplyFunc
+	}{
+		{
+			[][]float64{{0, 0, 0}, {0, 0, 0}, {0, 0, 0}},
+			[][]float64{{0, 0, 0}, {0, 0, 0}, {0, 0, 0}},
+			identity,
+		},
+		{
+			[][]float64{{1, 1, 1}, {1, 1, 1}, {1, 1, 1}},
+			[][]float64{{1, 1, 1}, {1, 1, 1}, {1, 1, 1}},
+			identity,
+		},
+		{
+			[][]float64{{1, 0, 0}, {0, 1, 0}, {0, 0, 1}},
+			[][]float64{{1, 0, 0}, {0, 1, 0}, {0, 0, 1}},
+			identity,
+		},
+		{
+			[][]float64{{-1, 0, 0}, {0, -1, 0}, {0, 0, -1}},
+			[][]float64{{-1, 0, 0}, {0, -1, 0}, {0, 0, -1}},
+			identity,
+		},
+		{
+			[][]float64{{1, 2, 3}, {4, 5, 6}},
+			[][]float64{{1, 2, 3}, {4, 5, 6}},
+			identity,
+		},
+		{
+			[][]float64{{1, 2, 3}, {4, 5, 6}},
+			[][]float64{{2, 4, 6}, {8, 10, 12}},
+			func(r, c int, v float64) float64 { return v * 2 },
+		},
+		{
+			[][]float64{{1, 2, 3}, {4, 5, 6}},
+			[][]float64{{0, 2, 0}, {0, 5, 0}},
+			func(r, c int, v float64) float64 {
+				if c == 1 {
+					return v
+				}
+				return 0
+			},
+		},
+		{
+			[][]float64{{1, 2, 3}, {4, 5, 6}},
+			[][]float64{{0, 0, 0}, {4, 5, 6}},
+			func(r, c int, v float64) float64 {
+				if r == 1 {
+					return v
+				}
+				return 0
+			},
+		},
+	} {
+		{
+			a, err := NewSparse(test.a)
+			c.Check(err, check.Equals, nil, check.Commentf("Test %d", i))
+			t, err := NewSparse(test.t)
+			c.Check(err, check.Equals, nil, check.Commentf("Test %d", i))
+			c.Check(a.Apply(test.fn, nil).Equals(t), check.Equals, true, check.Commentf("Test %d", i))
+			c.Check(a.Apply(test.fn, tempSparse).Equals(t), check.Equals, true, check.Commentf("Test %d", i))
+			c.Check(a.Apply(test.fn, a).Equals(t), check.Equals, true, check.Commentf("Test %d", i))
+		}
+
+		{
+			a, err := NewSparse(test.a)
+			c.Check(err, check.Equals, nil, check.Commentf("Test %d", i))
+			t, err := NewSparse(test.t)
+			c.Check(err, check.Equals, nil, check.Commentf("Test %d", i))
+			c.Check(a.ApplyAll(test.fn, nil).Equals(t), check.Equals, true, check.Commentf("Test %d", i))
+			c.Check(a.ApplyAll(test.fn, tempSparse).Equals(t), check.Equals, true, check.Commentf("Test %d", i))
+			c.Check(a.ApplyAll(test.fn, a).Equals(t), check.Equals, true, check.Commentf("Test %d %v", i, a))
+		}
+
+		{
+			a, err := NewDense(test.a)
+			c.Check(err, check.Equals, nil, check.Commentf("Test %d", i))
+			t, err := NewDense(test.t)
+			c.Check(err, check.Equals, nil, check.Commentf("Test %d", i))
+			c.Check(a.Apply(test.fn, nil).Equals(t), check.Equals, true, check.Commentf("Test %d", i))
+			c.Check(a.Apply(test.fn, tempDense).Equals(t), check.Equals, true, check.Commentf("Test %d", i))
+			c.Check(a.Apply(test.fn, a).Equals(t), check.Equals, true, check.Commentf("Test %d", i))
+		}
+	}
+}
+
+func (s *S) TestFilter(c *check.C) {
+	var (
+		tempSparse *Sparse
+		tempDense  *Dense
+		identity   = func(r, c int, v float64) bool { return true }
+	)
+	for i, test := range []struct {
+		a, t [][]float64
+		fn   FilterFunc
+	}{
+		{
+			[][]float64{{0, 0, 0}, {0, 0, 0}, {0, 0, 0}},
+			[][]float64{{0, 0, 0}, {0, 0, 0}, {0, 0, 0}},
+			identity,
+		},
+		{
+			[][]float64{{1, 1, 1}, {1, 1, 1}, {1, 1, 1}},
+			[][]float64{{1, 1, 1}, {1, 1, 1}, {1, 1, 1}},
+			identity,
+		},
+		{
+			[][]float64{{1, 0, 0}, {0, 1, 0}, {0, 0, 1}},
+			[][]float64{{1, 0, 0}, {0, 1, 0}, {0, 0, 1}},
+			identity,
+		},
+		{
+			[][]float64{{-1, 0, 0}, {0, -1, 0}, {0, 0, -1}},
+			[][]float64{{-1, 0, 0}, {0, -1, 0}, {0, 0, -1}},
+			identity,
+		},
+		{
+			[][]float64{{1, 2, 3}, {4, 5, 6}},
+			[][]float64{{1, 2, 3}, {4, 5, 6}},
+			identity,
+		},
+		{
+			[][]float64{{1, 2, 3}, {4, 5, 6}},
+			[][]float64{{0, 2, 0}, {0, 5, 0}},
+			func(r, c int, v float64) bool {
+				if c == 1 {
+					return true
+				}
+				return false
+			},
+		},
+		{
+			[][]float64{{1, 2, 3}, {4, 5, 6}},
+			[][]float64{{0, 0, 0}, {4, 5, 6}},
+			func(r, c int, v float64) bool {
+				if r == 1 {
+					return true
+				}
+				return false
+			},
+		},
+	} {
+		{
+			a, err := NewSparse(test.a)
+			c.Check(err, check.Equals, nil, check.Commentf("Test %d", i))
+			t, err := NewSparse(test.t)
+			c.Check(err, check.Equals, nil, check.Commentf("Test %d", i))
+			c.Check(a.Filter(test.fn, nil).Equals(t), check.Equals, true, check.Commentf("Test %d", i))
+			c.Check(a.Filter(test.fn, tempSparse).Equals(t), check.Equals, true, check.Commentf("Test %d", i))
+			c.Check(a.Filter(test.fn, a).Equals(t), check.Equals, true, check.Commentf("Test %d", i))
+		}
+
+		{
+			a, err := NewDense(test.a)
+			c.Check(err, check.Equals, nil, check.Commentf("Test %d", i))
+			t, err := NewDense(test.t)
+			c.Check(err, check.Equals, nil, check.Commentf("Test %d", i))
+			c.Check(a.Filter(test.fn, nil).Equals(t), check.Equals, true, check.Commentf("Test %d", i))
+			c.Check(a.Filter(test.fn, tempDense).Equals(t), check.Equals, true, check.Commentf("Test %d", i))
+			c.Check(a.Filter(test.fn, a).Equals(t), check.Equals, true, check.Commentf("Test %d", i))
+		}
+	}
+}
+
 // TODO:
 // a.MinAxis(matrix.Cols))
 // a.MaxAxis(matrix.Cols))

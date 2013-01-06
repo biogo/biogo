@@ -1205,9 +1205,7 @@ func (d *Dense) Filter(f FilterFunc, c Matrix) Matrix {
 func (d *Dense) FilterDense(f FilterFunc, c *Dense) *Dense {
 	if c == d {
 		for i, e := range d.matrix {
-			if f(i/d.cols, i%d.cols, e) {
-				c.matrix[i] = e
-			} else {
+			if !f(i/d.cols, i%d.cols, e) {
 				c.matrix[i] = 0
 			}
 		}
@@ -1232,11 +1230,11 @@ func (d *Dense) Apply(f ApplyFunc, c Matrix) Matrix {
 
 // ApplyDense returns a dense matrix which has had a function applied to all elements of the matrix.
 func (d *Dense) ApplyDense(f ApplyFunc, c *Dense) *Dense {
-	c = d.CloneDense(c)
-	for i, e := range c.matrix {
-		if v := f(i/d.cols, i%d.cols, e); v != e {
-			c.matrix[i] = v
-		}
+	if c != d {
+		c = c.reallocate(d.Dims())
+	}
+	for i, e := range d.matrix {
+		c.matrix[i] = f(i/d.cols, i%d.cols, e)
 	}
 
 	return c

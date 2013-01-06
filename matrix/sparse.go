@@ -1007,12 +1007,22 @@ func (s *Sparse) Filter(f FilterFunc, c Matrix) Matrix {
 
 // FilterSparse return a sparse matrix with all elements at (r, c) set to zero where FilterFunc(r, c, v) returns false.
 func (s *Sparse) FilterSparse(f FilterFunc, c *Sparse) *Sparse {
-	c = c.reallocate(s.Dims())
+	if c == s {
+		for j, row := range s.matrix {
+			for i, e := range row {
+				if !f(j, e.index, e.value) {
+					row[i].value = 0
+				}
+			}
+		}
 
+		return c
+	}
+	c = c.reallocate(s.Dims())
 	t := make(sparseRow, 0, len(s.matrix[0]))
 	for j, row := range s.matrix {
-		for i, e := range row {
-			if f(i, j, e.value) {
+		for _, e := range row {
+			if f(j, e.index, e.value) {
 				t = append(t, e)
 			}
 		}
@@ -1031,11 +1041,20 @@ func (s *Sparse) Apply(f ApplyFunc, c Matrix) Matrix {
 
 // ApplySparse returns a dense matrix which has had a function applied to all non-zero elements of the matrix.
 func (s *Sparse) ApplySparse(f ApplyFunc, c *Sparse) *Sparse {
+	if c == s {
+		for j, row := range c.matrix {
+			for i, e := range row {
+				row[i].value = f(j, e.index, e.value)
+			}
+		}
+
+		return c
+	}
 	c = s.CloneSparse(c)
 	for j, row := range c.matrix {
 		for i, e := range row {
-			if v := f(i, j, e.value); v != e.value {
-				c.matrix[j][i] = sparseElem{index: e.index, value: v}
+			if v := f(j, e.index, e.value); v != e.value {
+				row[i] = sparseElem{index: e.index, value: v}
 			}
 		}
 	}
@@ -1051,6 +1070,19 @@ func (s *Sparse) ApplyAll(f ApplyFunc, c Matrix) Matrix {
 
 // ApplyAllSparse returns a matrix which has had a function applied to all elements of the matrix.
 func (s *Sparse) ApplyAllSparse(f ApplyFunc, c *Sparse) *Sparse {
+	if c == s {
+		for i, row := range s.matrix {
+			for j := 0; j < c.cols; j++ {
+				old := row.at(j)
+				v := f(i, j, old)
+				if v != old {
+					c.set(i, j, v)
+				}
+			}
+		}
+
+		return c
+	}
 	c = s.CloneSparse(c)
 	for i, row := range s.matrix {
 		for j := 0; j < c.cols; j++ {
