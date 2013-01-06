@@ -115,6 +115,7 @@ const (
 	ErrSquare          = Error("matrix: expect square matrix")
 	ErrNormOrder       = Error("matrix: invalid norm order for matrix")
 	ErrShape           = Error("matrix: dimension mismatch")
+	ErrIllegalStride   = Error("matrix: illegal stride")
 	ErrPivot           = Error("matrix: malformed pivot list")
 )
 
