@@ -216,6 +216,54 @@ func (s *S) TestNewSparse(c *check.C) {
 	}
 }
 
+func (s *S) TestRowColumn(c *check.C) {
+	for i, af := range [][][]float64{
+		{{1, 2, 3}, {4, 5, 6}, {7, 8, 9}},
+		{{1, 2, 3}, {4, 5, 6}, {7, 8, 9}, {10, 11, 12}},
+		{{1, 2, 3, 4}, {5, 6, 7, 8}, {9, 10, 11, 12}},
+	} {
+		a, err := NewDense(af)
+		c.Check(err, check.Equals, nil, check.Commentf("Test %d", i))
+		for ri, row := range af {
+			c.Check(a.Row(ri), check.DeepEquals, row, check.Commentf("Test %d", i))
+		}
+		for ci := range af[0] {
+			col := make([]float64, a.rows)
+			for j := range col {
+				col[j] = float64(ci + 1 + j*a.cols)
+			}
+			c.Check(a.Column(ci), check.DeepEquals, col, check.Commentf("Test %d", i))
+		}
+	}
+}
+
+func (s *S) TestSetRowColumn(c *check.C) {
+	for i, as := range [][][]float64{
+		{{1, 2, 3}, {4, 5, 6}, {7, 8, 9}},
+		{{1, 2, 3}, {4, 5, 6}, {7, 8, 9}, {10, 11, 12}},
+		{{1, 2, 3, 4}, {5, 6, 7, 8}, {9, 10, 11, 12}},
+	} {
+		for ri, row := range as {
+			a, err := NewDense(as)
+			c.Check(err, check.Equals, nil, check.Commentf("Test %d", i))
+			t := a.Clone(nil)
+			a.SetRow(ri, make([]float64, a.cols))
+			c.Check(t.Sub(a, nil).Norm(Fro), check.Equals, Norm(row, Fro))
+		}
+		for ci := range as[0] {
+			a, err := NewDense(as)
+			c.Check(err, check.Equals, nil, check.Commentf("Test %d", i))
+			t := a.Clone(nil)
+			a.SetColumn(ci, make([]float64, a.rows))
+			col := make([]float64, a.rows)
+			for j := range col {
+				col[j] = float64(ci + 1 + j*a.cols)
+			}
+			c.Check(t.Sub(a, nil).Norm(Fro), check.Equals, Norm(col, Fro))
+		}
+	}
+}
+
 func (s *S) TestAdd(c *check.C) {
 	var (
 		tempSparse *Sparse

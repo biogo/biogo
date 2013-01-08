@@ -323,6 +323,54 @@ func (d *Dense) at(r, c int) float64 {
 	return d.matrix[r*d.cols+c]
 }
 
+// Column returns a slice of float64 that is a copy of the values at column c of the matrix.
+// Column will panic with ErrIndexOutOfRange is c is not a valid column index.
+func (d *Dense) Column(c int) []float64 {
+	if c >= d.cols || c < 0 {
+		panic(ErrIndexOutOfRange)
+	}
+	col := make([]float64, d.rows)
+	blas.Dcopy(d.rows, d.matrix[c:], d.cols, col, 1)
+	return col
+}
+
+// SetColumn sets the values at column c of the matrix to the values of the slice v. SetColumn
+// will panic with ErrIndexOutOfRange is c is not a valid column index and ErrColLength if the
+// length of v does not match the matrix column length.
+func (d *Dense) SetColumn(c int, v []float64) {
+	if c >= d.cols || c < 0 {
+		panic(ErrIndexOutOfRange)
+	}
+	if len(v) != d.rows {
+		panic(ErrColLength)
+	}
+	blas.Dcopy(d.rows, v, 1, d.matrix[c:], d.cols)
+}
+
+// Row returns a slice of float64 that is a copy of the values at row r of the matrix.
+// Row will panic with ErrIndexOutOfRange is r is not a valid row index.
+func (d *Dense) Row(r int) []float64 {
+	if r >= d.rows || r < 0 {
+		panic(ErrIndexOutOfRange)
+	}
+	row := make([]float64, d.cols)
+	blas.Dcopy(d.cols, d.matrix[r*d.cols:], 1, row, 1)
+	return row
+}
+
+// SetRow sets the values at row r of the matrix to the values of the slice v. SetRow will panic
+// with ErrIndexOutOfRange is r is not a valid row index and ErrRowLength if the length of v does
+// not match the matrix row length.
+func (d *Dense) SetRow(r int, v []float64) {
+	if r >= d.rows || r < 0 {
+		panic(ErrIndexOutOfRange)
+	}
+	if len(v) != d.cols {
+		panic(ErrRowLength)
+	}
+	blas.Dcopy(d.cols, v, 1, d.matrix[r*d.cols:], 1)
+}
+
 // Trace returns the trace of a square matrix. Trace will panic with ErrSquare if the matrix
 // is not square.
 func (d *Dense) Trace() float64 {
