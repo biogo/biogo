@@ -43,6 +43,25 @@ func (r sparseRow) at(col int) float64 {
 	panic("cannot reach")
 }
 
+func (r sparseRow) atInd(col int) (float64, int) {
+	lo := 0
+	hi := len(r)
+	for {
+		switch curpos := (lo + hi) / 2; {
+		case len(r) == 0, col > r[len(r)-1].index, lo > hi:
+			return 0, -1
+		case r[curpos].index == col:
+			return r[curpos].value, curpos
+		case col < r[curpos].index:
+			hi = curpos - 1
+		case col > r[curpos].index:
+			lo = curpos + 1
+		}
+	}
+
+	panic("cannot reach")
+}
+
 func (r *sparseRow) insert(pos int, val sparseElem) {
 	switch length := len(*r); {
 	case pos >= length:
@@ -295,6 +314,16 @@ func (r sparseRow) foldMulSum(a sparseRow) float64 {
 		case r[i].index > a[j].index:
 			j++
 		}
+	}
+
+	return s
+}
+
+func (r sparseRow) scatter(a denseRow) float64 {
+	var s float64
+
+	for _, e := range r {
+		s += e.value * a[e.index]
 	}
 
 	return s

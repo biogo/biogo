@@ -641,7 +641,8 @@ func (s *Sparse) Add(b, c Matrix) Matrix {
 		cc, _ := c.(*Dense)
 		return b.addSparse(s, cc)
 	case *Pivot:
-		panic("not implemented")
+		cc, _ := c.(*Sparse)
+		return s.addPivot(b, cc)
 	default:
 		panic("not implemented")
 	}
@@ -649,7 +650,7 @@ func (s *Sparse) Add(b, c Matrix) Matrix {
 	panic("cannot reach")
 }
 
-// AddSparse returns a dense matrix which is the sum of the matrix and the parameter. AddSparse will
+// AddSparse returns a sparse matrix which is the sum of the matrix and the parameter. AddSparse will
 // panic with ErrShape if the two matrices do not have the same dimensions.
 func (s *Sparse) AddSparse(b, c *Sparse) *Sparse {
 	if s.rows != b.rows || s.cols != b.cols {
@@ -666,6 +667,26 @@ func (s *Sparse) AddSparse(b, c *Sparse) *Sparse {
 	return c
 }
 
+func (s *Sparse) addPivot(b *Pivot, c *Sparse) *Sparse {
+	if s.rows != len(b.matrix) || s.cols != len(b.matrix) {
+		panic(ErrShape)
+	}
+
+	if c != s {
+		c = s.CloneSparse(c)
+	}
+	for row, col := range b.xirtam {
+		_, i := s.matrix[row].atInd(col)
+		if i < 0 {
+			s.set(row, col, 1)
+			continue
+		}
+		s.matrix[row][i].value++
+	}
+
+	return c
+}
+
 // Sub returns the result of subtraction of the parameter from the matrix. Sub will panic with ErrShape
 // if the two matrices do not have the same dimensions.
 func (s *Sparse) Sub(b, c Matrix) Matrix {
@@ -677,7 +698,8 @@ func (s *Sparse) Sub(b, c Matrix) Matrix {
 		cc, _ := c.(*Dense)
 		return s.subDense(b, cc)
 	case *Pivot:
-		panic("not implemented")
+		cc, _ := c.(*Sparse)
+		return s.subPivot(b, cc)
 	default:
 		panic("not implemented")
 	}
@@ -685,7 +707,7 @@ func (s *Sparse) Sub(b, c Matrix) Matrix {
 	panic("cannot reach")
 }
 
-// SubSparse returns the result a dense matrics which is the result of subtraction of the parameter from the matrix.
+// SubSparse returns the result a sparse matrix which is the result of subtraction of the parameter from the matrix.
 // SubSparse will panic with ErrShape if the two matrices do not have the same dimensions.
 func (s *Sparse) SubSparse(b, c *Sparse) *Sparse {
 	if s.rows != b.rows || s.cols != b.cols {
@@ -721,6 +743,26 @@ func (s *Sparse) subDense(b, c *Dense) *Dense {
 	return c
 }
 
+func (s *Sparse) subPivot(b *Pivot, c *Sparse) *Sparse {
+	if s.rows != len(b.matrix) || s.cols != len(b.matrix) {
+		panic(ErrShape)
+	}
+
+	if c != s {
+		c = s.CloneSparse(c)
+	}
+	for row, col := range b.xirtam {
+		_, i := c.matrix[row].atInd(col)
+		if i < 0 {
+			c.set(row, col, -1)
+			continue
+		}
+		c.matrix[row][i].value--
+	}
+
+	return c
+}
+
 // MulElem returns the element-wise multiplication of the matrix and the parameter. MulElem will panic with ErrShape
 // if the two matrices do not have the same dimensions.
 func (s *Sparse) MulElem(b, c Matrix) Matrix {
@@ -733,7 +775,7 @@ func (s *Sparse) MulElem(b, c Matrix) Matrix {
 		return b.mulElemSparse(s, cc)
 	case *Pivot:
 		cc, _ := c.(*Sparse)
-		return b.Filter(func(row, col int, _ float64) bool { return b.xirtam[row] == col }, cc)
+		return s.Filter(func(row, col int, _ float64) bool { return b.xirtam[row] == col }, cc)
 	default:
 		panic("not implemented")
 	}
@@ -741,7 +783,7 @@ func (s *Sparse) MulElem(b, c Matrix) Matrix {
 	panic("cannot reach")
 }
 
-// MulElemSparse returns a dense matrix which is the result of element-wise multiplication of the matrix and the parameter.
+// MulElemSparse returns a sparse matrix which is the result of element-wise multiplication of the matrix and the parameter.
 // MulElemSparse will panic with ErrShape if the two matrices do not have the same dimensions.
 func (s *Sparse) MulElemSparse(b, c *Sparse) *Sparse {
 	if s.rows != b.rows || s.cols != b.cols {
@@ -766,7 +808,7 @@ func (s *Sparse) Equals(b Matrix) bool {
 	case *Dense:
 		return b.equalsSparse(s)
 	case *Pivot:
-		panic("not implemented")
+		return s.equalsPivot(b)
 	default:
 		panic("not implemented")
 	}
@@ -789,6 +831,22 @@ func (s *Sparse) EqualsSparse(b *Sparse) bool {
 	return true
 }
 
+func (s *Sparse) equalsPivot(b *Pivot) bool {
+	if s.rows != len(b.matrix) || s.cols != len(b.matrix) {
+		return false
+	}
+
+	for i, row := range s.matrix {
+		for _, e := range row {
+			if e.value != 0 && (e.value != 1 || b.xirtam[i] != e.index) {
+				return false
+			}
+		}
+	}
+
+	return true
+}
+
 // EqualsApprox returns the approximate equality of two matrices, tolerance for element-wise equality is
 // given by epsilon.
 func (s *Sparse) EqualsApprox(b Matrix, epsilon float64) bool {
@@ -798,7 +856,7 @@ func (s *Sparse) EqualsApprox(b Matrix, epsilon float64) bool {
 	case *Dense:
 		return b.equalsApproxSparse(s, epsilon)
 	case *Pivot:
-		panic("not implemented")
+		return s.equalsApproxPivot(b, epsilon)
 	default:
 		panic("not implemented")
 	}
@@ -816,6 +874,22 @@ func (s *Sparse) EqualsApproxSparse(b *Sparse, epsilon float64) bool {
 	for j, row := range s.matrix {
 		if !row.foldApprox(b.matrix[j], epsilon) {
 			return false
+		}
+	}
+
+	return true
+}
+
+func (s *Sparse) equalsApproxPivot(b *Pivot, epsilon float64) bool {
+	if s.rows != len(b.matrix) || s.cols != len(b.matrix) {
+		return false
+	}
+
+	for i, row := range s.matrix {
+		for _, e := range row {
+			if math.Abs(e.value) > epsilon && (math.Abs(e.value-1) > epsilon || b.xirtam[i] != e.index) {
+				return false
+			}
 		}
 	}
 
@@ -859,7 +933,7 @@ func (s *Sparse) Inner(b Matrix) float64 {
 	case *Dense:
 		return b.innerSparse(s)
 	case *Pivot:
-		panic("not implemented")
+		return s.innerPivot(b)
 	default:
 		panic("not implemented")
 	}
@@ -867,16 +941,33 @@ func (s *Sparse) Inner(b Matrix) float64 {
 	panic("cannot reach")
 }
 
-// InnerSparse returns a dense matrix which is the result of element-wise multiplication of the matrix and the parameter.
+// InnerSparse returns a sparse matrix which is the result of element-wise multiplication of the matrix and the parameter.
 // InnerSparse will panic with ErrShape if the two matrices do not have the same dimensions.
 func (s *Sparse) InnerSparse(b *Sparse) float64 {
-	var p float64
 	if s.rows != b.rows || s.cols != b.cols {
 		panic(ErrShape)
 	}
 
+	var p float64
 	for j, row := range s.matrix {
 		p += row.foldMulSum(b.matrix[j])
+	}
+
+	return p
+}
+
+func (s *Sparse) innerPivot(b *Pivot) float64 {
+	if s.rows != len(b.matrix) || s.cols != len(b.matrix) {
+		panic(ErrShape)
+	}
+
+	var p float64
+	for i, row := range s.matrix {
+		for _, e := range row {
+			if b.xirtam[i] != e.index {
+				p += e.value
+			}
+		}
 	}
 
 	return p
@@ -890,7 +981,8 @@ func (s *Sparse) Dot(b, c Matrix) Matrix {
 		cc, _ := c.(*Sparse)
 		return s.DotSparse(b, cc)
 	case *Dense:
-		panic("not implemented")
+		cc, _ := c.(*Dense)
+		return s.dotDense(b, cc)
 	case *Pivot:
 		panic("not implemented")
 	default:
@@ -925,6 +1017,36 @@ func (s *Sparse) DotSparse(b, c *Sparse) *Sparse {
 			}
 		}
 		t = t[:0]
+	}
+
+	return c
+}
+
+func (s *Sparse) dotDense(b, c *Dense) *Dense {
+	if s.cols != b.rows {
+		panic(ErrShape)
+	}
+
+	if c == b {
+		c = nil
+	}
+	c = c.reallocate(s.rows, b.cols)
+
+	t := make([]float64, b.rows)
+	for i := 0; i < b.cols; i++ {
+		var nonZero bool
+		for j := 0; j < b.rows; j++ {
+			v := b.at(j, i)
+			if v != 0 {
+				nonZero = true
+			}
+			t[j] = v
+		}
+		if nonZero {
+			for j, row := range s.matrix {
+				c.set(j, i, row.scatter(t))
+			}
+		}
 	}
 
 	return c

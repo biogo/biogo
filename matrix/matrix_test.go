@@ -909,9 +909,6 @@ func (s *S) TestFilter(c *check.C) {
 // a.MaxAxis(matrix.Rows))
 // a.SumAxis(matrix.Cols))
 // a.SumAxis(matrix.Rows))
-// a.Filter(f, c)
-// a.Apply(f, c)
-// a.ApplyAll(f, c)
 
 var (
 	workDense  *Dense

@@ -342,7 +342,8 @@ func (p *Pivot) Add(b, c Matrix) Matrix {
 		cc, _ := c.(*Sparse)
 		return p.AddPivot(b, cc)
 	case *Sparse:
-		panic("not implemented")
+		cc, _ := c.(*Sparse)
+		return b.addPivot(p, cc)
 	case *Dense:
 		cc, _ := c.(*Dense)
 		return b.addPivot(p, cc)
@@ -373,7 +374,8 @@ func (p *Pivot) Sub(b, c Matrix) Matrix {
 		cc, _ := c.(*Sparse)
 		return p.SubPivot(b, cc)
 	case *Sparse:
-		panic("not implemented")
+		cc, _ := c.(*Sparse)
+		return p.subSparse(b, cc)
 	case *Dense:
 		cc, _ := c.(*Dense)
 		return p.subDense(b, cc)
@@ -413,6 +415,26 @@ func (p *Pivot) subDense(b, c *Dense) *Dense {
 	return c
 }
 
+func (p *Pivot) subSparse(b, c *Sparse) *Sparse {
+	if b.rows != len(p.matrix) || b.cols != len(p.matrix) {
+		panic(ErrShape)
+	}
+
+	if c != b {
+		c = b.CloneSparse(c)
+	}
+	for row, col := range p.xirtam {
+		_, i := c.matrix[row].atInd(col)
+		if i < 0 {
+			c.set(row, col, 1)
+			continue
+		}
+		c.matrix[row][i].value = 1 - c.matrix[row][i].value
+	}
+
+	return c
+}
+
 // MulElem returns the element-wise multiplication of the matrix and the parameter. MulElem will panic with ErrShape
 // if the two matrices do not have the same dimensions.
 func (p *Pivot) MulElem(b, c Matrix) Matrix {
@@ -421,7 +443,8 @@ func (p *Pivot) MulElem(b, c Matrix) Matrix {
 		cc, _ := c.(*Sparse)
 		return p.MulElemPivot(b, cc)
 	case *Sparse:
-		panic("not implemented")
+		cc, _ := c.(*Sparse)
+		return b.Filter(func(row, col int, _ float64) bool { return p.xirtam[row] == col }, cc)
 	case *Dense:
 		cc, _ := c.(*Dense)
 		return b.mulElemPivot(p, cc)
@@ -450,7 +473,7 @@ func (p *Pivot) Equals(b Matrix) bool {
 	case *Pivot:
 		return p.EqualsPivot(b)
 	case *Sparse:
-		panic("not implemented")
+		return b.equalsPivot(p)
 	case *Dense:
 		return b.equalsPivot(p)
 	default:
@@ -480,7 +503,7 @@ func (p *Pivot) EqualsApprox(b Matrix, epsilon float64) bool {
 	case *Pivot:
 		return p.EqualsApproxPivot(b, epsilon)
 	case *Sparse:
-		panic("not implemented")
+		return b.equalsApproxPivot(p, epsilon)
 	case *Dense:
 		return b.equalsApproxPivot(p, epsilon)
 	default:
@@ -530,7 +553,7 @@ func (p *Pivot) Inner(b Matrix) float64 {
 	case *Pivot:
 		return p.InnerPivot(b)
 	case *Sparse:
-		panic("not implemented")
+		return b.innerPivot(p)
 	case *Dense:
 		return b.innerPivot(p)
 	default:
