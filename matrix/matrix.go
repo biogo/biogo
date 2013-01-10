@@ -8,9 +8,13 @@ package matrix
 import (
 	"log"
 	"math"
+	"time"
 )
 
 func init() {
+	if time.Now().After(time.Date(2013, 2, 1, 0, 0, 0, 0, time.UTC)) {
+		log.Panic("FATAL: Development of this package has moved to <code.google.com/p/biogo.matrix>.")
+	}
 	log.Println("WARNING: Development of this package has moved to <code.google.com/p/biogo.matrix>.")
 	log.Println("WARNING: This init warning will be replace with a panic at the start of February 2013.")
 }
