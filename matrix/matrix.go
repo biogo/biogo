@@ -6,8 +6,14 @@
 package matrix
 
 import (
+	"log"
 	"math"
 )
+
+func init() {
+	log.Println("WARNING: Development of this package has moved to <code.google.com/p/biogo.matrix>.")
+	log.Println("WARNING: This init warning will be replace with a panic at the start of February 2013.")
+}
 
 const (
 	Cols = true
