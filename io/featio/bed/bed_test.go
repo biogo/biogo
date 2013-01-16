@@ -5,33 +5,104 @@
 package bed
 
 import (
-	"code.google.com/p/biogo/bio"
-	"code.google.com/p/biogo/feat"
-	"io"
-	"io/ioutil"
+	"bytes"
+	"code.google.com/p/biogo/exp/feat"
+	"code.google.com/p/biogo/exp/seq"
+	"fmt"
+	"image/color"
 	check "launchpad.net/gocheck"
-	"os"
 	"strings"
 	"testing"
 )
 
-type bedTest struct {
-	bName string
-	bType int
-}
-
 var (
-	B = []bedTest{
-		{"../../testdata/test3.bed", 3},
-		{"../../testdata/test4.bed", 4},
-		{"../../testdata/test5.bed", 5},
-		{"../../testdata/test6.bed", 6},
-		{"../../testdata/test12.bed", 12},
+	validBeds = []int{3, 4, 5, 6, 12}
+	bedTests  = []struct {
+		fields    int
+		line      string
+		skipWrite bool // We do not trail with commas on lists, but we do handle them on read.
+		beds      []Bed
+	}{
+		{
+			3, "chr1	11873	14409\n", false,
+			[]Bed{
+				&Bed3{"chr1", 11873, 14409},
+			},
+		},
+		{
+			4, "chr1	11873	14409	uc001aaa.3\n", false,
+			[]Bed{
+				&Bed3{"chr1", 11873, 14409},
+				&Bed4{"chr1", 11873, 14409, "uc001aaa.3"},
+			},
+		},
+		{
+			5, "chr1	11873	14409	uc001aaa.3	3\n", false,
+			[]Bed{
+				&Bed3{"chr1", 11873, 14409},
+				&Bed4{"chr1", 11873, 14409, "uc001aaa.3"},
+				&Bed5{"chr1", 11873, 14409, "uc001aaa.3", 3},
+			},
+		},
+		{
+			6, "chr1	11873	14409	uc001aaa.3	3	+\n", false,
+			[]Bed{
+				&Bed3{"chr1", 11873, 14409},
+				&Bed4{"chr1", 11873, 14409, "uc001aaa.3"},
+				&Bed5{"chr1", 11873, 14409, "uc001aaa.3", 3},
+				&Bed6{"chr1", 11873, 14409, "uc001aaa.3", 3, seq.Plus},
+			},
+		},
+		{
+			6, "chr1	11873	14409	uc001aaa.3	3	-\n", false,
+			[]Bed{
+				&Bed3{"chr1", 11873, 14409},
+				&Bed4{"chr1", 11873, 14409, "uc001aaa.3"},
+				&Bed5{"chr1", 11873, 14409, "uc001aaa.3", 3},
+				&Bed6{"chr1", 11873, 14409, "uc001aaa.3", 3, seq.Minus},
+			},
+		},
+		{
+			6, "chr1	11873	14409	uc001aaa.3	3	.\n", false,
+			[]Bed{
+				&Bed3{"chr1", 11873, 14409},
+				&Bed4{"chr1", 11873, 14409, "uc001aaa.3"},
+				&Bed5{"chr1", 11873, 14409, "uc001aaa.3", 3},
+				&Bed6{"chr1", 11873, 14409, "uc001aaa.3", 3, seq.None},
+			},
+		},
+		{
+			12, "chr1	11873	14409	uc001aaa.3	3	+	11873	11873	0	3	354,109,1189,	0,739,1347,\n", true,
+			[]Bed{
+				&Bed3{"chr1", 11873, 14409},
+				&Bed4{"chr1", 11873, 14409, "uc001aaa.3"},
+				&Bed5{"chr1", 11873, 14409, "uc001aaa.3", 3},
+				&Bed6{"chr1", 11873, 14409, "uc001aaa.3", 3, seq.Plus},
+				&Bed12{"chr1", 11873, 14409, "uc001aaa.3", 3, seq.Plus, 11873, 11873, color.RGBA{}, 3, []int{354, 109, 1189}, []int{0, 739, 1347}},
+			},
+		},
+		{
+			12, "chr1	11873	14409	uc001aaa.3	3	+	11873	11873	255,128,0	3	354,109,1189,	0,739,1347,\n", true,
+			[]Bed{
+				&Bed3{"chr1", 11873, 14409},
+				&Bed4{"chr1", 11873, 14409, "uc001aaa.3"},
+				&Bed5{"chr1", 11873, 14409, "uc001aaa.3", 3},
+				&Bed6{"chr1", 11873, 14409, "uc001aaa.3", 3, seq.Plus},
+				&Bed12{"chr1", 11873, 14409, "uc001aaa.3", 3, seq.Plus, 11873, 11873, color.RGBA{255, 128, 0, 255}, 3, []int{354, 109, 1189}, []int{0, 739, 1347}},
+			},
+		},
+		{
+			12, "chr1	11873	14409	uc001aaa.3	3	+	11873	11873	0	3	354,109,1189	0,739,1347\n", false,
+			[]Bed{
+				&Bed3{"chr1", 11873, 14409},
+				&Bed4{"chr1", 11873, 14409, "uc001aaa.3"},
+				&Bed5{"chr1", 11873, 14409, "uc001aaa.3", 3},
+				&Bed6{"chr1", 11873, 14409, "uc001aaa.3", 3, seq.Plus},
+				&Bed12{"chr1", 11873, 14409, "uc001aaa.3", 3, seq.Plus, 11873, 11873, color.RGBA{}, 3, []int{354, 109, 1189}, []int{0, 739, 1347}},
+			},
+		},
 	}
 )
-
-// Helpers
-func floatPtr(f float64) *float64 { return &f }
 
 // Tests
 func Test(t *testing.T) { check.TestingT(t) }
@@ -40,103 +111,205 @@ type S struct{}
 
 var _ = check.Suite(&S{})
 
-var (
-	expect [][]feat.Feature = [][]feat.Feature{
-		{
-			{ID: "chr1:11873..14409", Source: "", Location: "chr1", Start: 11873, End: 14409, Feature: "", Score: nil, Probability: nil, Attributes: "", Comments: "", Frame: 0, Strand: 0, Moltype: 0, Meta: interface{}(nil)},
-		},
-		{
-			{ID: "uc001aaa.3", Source: "", Location: "chr1", Start: 11873, End: 14409, Feature: "", Score: nil, Probability: nil, Attributes: "", Comments: "", Frame: 0, Strand: 0, Moltype: 0, Meta: interface{}(nil)},
-		},
-		{
-			{ID: "uc001aaa.3", Source: "", Location: "chr1", Start: 11873, End: 14409, Feature: "", Score: floatPtr(3), Probability: nil, Attributes: "", Comments: "", Frame: 0, Strand: 0, Moltype: 0, Meta: interface{}(nil)},
-		},
-		{
-			{ID: "uc001aaa.3", Source: "", Location: "chr1", Start: 11873, End: 14409, Feature: "", Score: floatPtr(3), Probability: nil, Attributes: "", Comments: "", Frame: 0, Strand: 1, Moltype: 0, Meta: interface{}(nil)},
-		},
-		{
-			{ID: "uc001aaa.3", Source: "", Location: "chr1", Start: 11873, End: 14409, Feature: "", Score: floatPtr(3), Probability: nil, Attributes: "", Comments: "", Frame: 0, Strand: 1, Moltype: 0, Meta: interface{}(nil)},
-		},
-	}
-)
-
 func (s *S) TestReadBed(c *check.C) {
-	obtain := []*feat.Feature{}
-	for k, b := range B {
-		if r, err := NewReaderName(b.bName, b.bType); err != nil {
-			c.Fatalf("Failed to open %q: %s", b.bName, err)
-		} else {
-			for i := 0; i < 3; i++ {
-				for {
-					if f, err := r.Read(); err != nil {
-						if err == io.EOF {
-							break
-						} else {
-							c.Fatalf("Failed to read %q: %s", b.bName, err)
-						}
-					} else {
-						obtain = append(obtain, f)
-					}
-				}
-				if c.Failed() {
-					break
-				}
-				if len(obtain) == len(expect[k]) {
-					for j := range obtain {
-						c.Check(*obtain[j], check.DeepEquals, expect[k][j])
-					}
-				} else {
-					c.Log(k, b)
-					c.Check(len(obtain), check.Equals, len(expect[k]))
-				}
-				if err = r.Rewind(); err != nil {
-					c.Fatalf("Failed to Rewind: %s", err)
-				}
-				obtain = nil
+	for i, b := range bedTests {
+		for j, typ := range validBeds {
+			buf := strings.NewReader(b.line)
+			r := NewReader(buf, typ)
+			f, err := r.Read()
+			if typ <= b.fields {
+				c.Check(f, check.DeepEquals, b.beds[j], check.Commentf("Test: %d type: Bed%d", i, typ))
+				c.Check(err, check.Equals, nil)
+			} else {
+				c.Check(f, check.Equals, nil)
+				c.Check(err, check.ErrorMatches, fmt.Sprintf("%s.*", ErrBadBedType), check.Commentf("Test: %d type: Bed%d", i, typ))
 			}
-			r.Close()
 		}
 	}
 }
 
 func (s *S) TestWriteBed(c *check.C) {
-	bio.Precision = 0
-	o := c.MkDir()
-	for k, b := range B {
-		if w, err := NewWriterName(o+"/b", b.bType); err != nil {
-			c.Fatalf("Failed to open %q for write: %s", o+"/b", err)
-		} else {
-			for i := range expect[k] {
-				if _, err = w.Write(&expect[k][i]); err != nil {
-					c.Fatalf("Failed to write %q: %s", o+"/b", err)
+	for i, b := range bedTests {
+		for _, typ := range validBeds {
+			buf := &bytes.Buffer{}
+			w := NewWriter(buf, typ)
+			_, err := w.Write(b.beds[len(b.beds)-1])
+			w.Close()
+			if typ <= b.fields {
+				trunc := strings.Join(strings.Split(b.line, "\t")[:typ], "\t")
+				if trunc[len(trunc)-1] != '\n' {
+					trunc += "\n"
 				}
-			}
-
-			if err = w.Close(); err != nil {
-				c.Fatalf("Failed to Close %q: %s", o+"/b", err)
-			}
-
-			var (
-				of, gf *os.File
-				ob, gb []byte
-			)
-			if of, err = os.Open(b.bName); err != nil {
-				c.Fatalf("Failed to Open %q: %s", b.bName, err)
-			}
-			if gf, err = os.Open(o + "/b"); err != nil {
-				c.Fatalf("Failed to Open %q: %s", o+"/b", err)
-			}
-			if ob, err = ioutil.ReadAll(of); err != nil {
-				c.Fatalf("Failed to read %q: %s", b.bName, err)
-			}
-			if gb, err = ioutil.ReadAll(gf); err != nil {
-				c.Fatalf("Failed to read %q: %s", o+"/b", err)
-			}
-			if b.bType < 12 {
-				c.Check(string(gb), check.Equals, string(ob))
+				c.Check(err, check.Equals, nil)
+				if !b.skipWrite {
+					c.Check(buf.String(), check.Equals, trunc, check.Commentf("Test: %d type: Bed%d", i, typ))
+				}
 			} else {
-				c.Check(strings.Split(string(gb), "\t")[:6], check.DeepEquals, strings.Split(string(ob), "\t")[:6])
+				c.Check(buf.String(), check.Equals, "")
+				c.Check(err, check.ErrorMatches, fmt.Sprintf("%s.*", ErrBadBedType), check.Commentf("Test: %d type: Bed%d", i, typ))
 			}
 		}
+	}
+}
+
+type tf struct {
+	chrom      feat.Feature
+	start, end int
+	name       string
+}
+
+func (f *tf) Start() int { return f.start }
+func (f *tf) End() int   { return f.end }
+func (f *tf) Len() int   { return f.end - f.start }
+func (f *tf) Name() string {
+	if f.name == "" {
+		return fmt.Sprintf("%s", f.chrom)
+	}
+	return f.name
+}
+func (f *tf) Description() string    { return "test feat" }
+func (f *tf) Location() feat.Feature { return f.chrom }
+
+type sctf struct {
+	tf
+	score int
+}
+
+func (f *sctf) Score() int { return f.score }
+
+type sttf struct {
+	tf
+	strand seq.Strand
+}
+
+func (f *sttf) Orientation() feat.Orientation { return feat.Orientation(f.strand) }
+
+type ctf struct {
+	tf
+	score  int
+	strand seq.Strand
+}
+
+func (f *ctf) Score() int                    { return f.score }
+func (f *ctf) Orientation() feat.Orientation { return feat.Orientation(f.strand) }
+
+func (s *S) TestWriteFeature(c *check.C) {
+	for i, f := range []struct {
+		feat feat.Feature
+		typ  int
+		line string
+		err  error
+	}{
+		// Vanilla feature.
+		{
+			&tf{chrom: Chrom("test chrom"), start: 1, end: 99}, 3,
+			"test chrom\t1\t99\n", nil,
+		},
+		{
+			&tf{chrom: Chrom("test chrom"), start: 1, end: 99, name: "test feat"}, 3,
+			"test chrom\t1\t99\n", nil,
+		},
+		{
+			&tf{chrom: Chrom("test chrom"), start: 1, end: 99, name: "test feat"}, 4,
+			"test chrom\t1\t99\ttest feat\n", nil,
+		},
+		{
+			&tf{chrom: Chrom("test chrom"), start: 1, end: 99, name: "test feat"}, 5,
+			"test chrom\t1\t99\ttest feat\t0\n", nil,
+		},
+		{
+			&tf{chrom: Chrom("test chrom"), start: 1, end: 99, name: "test feat"}, 6,
+			"test chrom\t1\t99\ttest feat\t0\t.\n", nil,
+		},
+		{
+			&tf{chrom: Chrom("test chrom"), start: 1, end: 99, name: "test feat"}, 12,
+			"test chrom\t1\t99\ttest feat\t0\t.\n", ErrBadBedType,
+		},
+
+		// Scorer.
+		{
+			&sctf{tf: tf{chrom: Chrom("test chrom"), start: 1, end: 99}, score: 100}, 3,
+			"test chrom\t1\t99\n", nil,
+		},
+		{
+			&sctf{tf: tf{chrom: Chrom("test chrom"), start: 1, end: 99, name: "test feat"}, score: 100}, 3,
+			"test chrom\t1\t99\n", nil,
+		},
+		{
+			&sctf{tf: tf{chrom: Chrom("test chrom"), start: 1, end: 99, name: "test feat"}, score: 100}, 4,
+			"test chrom\t1\t99\ttest feat\n", nil,
+		},
+		{
+			&sctf{tf: tf{chrom: Chrom("test chrom"), start: 1, end: 99, name: "test feat"}, score: 100}, 5,
+			"test chrom\t1\t99\ttest feat\t100\n", nil,
+		},
+		{
+			&sctf{tf: tf{chrom: Chrom("test chrom"), start: 1, end: 99, name: "test feat"}, score: 100}, 6,
+			"test chrom\t1\t99\ttest feat\t100\t.\n", nil,
+		},
+		{
+			&sctf{tf: tf{chrom: Chrom("test chrom"), start: 1, end: 99, name: "test feat"}, score: 100}, 12,
+			"test chrom\t1\t99\ttest feat\t100\t.\n", ErrBadBedType,
+		},
+
+		// feat.Orientater.
+		{
+			&sttf{tf: tf{chrom: Chrom("test chrom"), start: 1, end: 99}, strand: +1}, 3,
+			"test chrom\t1\t99\n", nil,
+		},
+		{
+			&sttf{tf: tf{chrom: Chrom("test chrom"), start: 1, end: 99, name: "test feat"}, strand: +1}, 3,
+			"test chrom\t1\t99\n", nil,
+		},
+		{
+			&sttf{tf: tf{chrom: Chrom("test chrom"), start: 1, end: 99, name: "test feat"}, strand: +1}, 4,
+			"test chrom\t1\t99\ttest feat\n", nil,
+		},
+		{
+			&sttf{tf: tf{chrom: Chrom("test chrom"), start: 1, end: 99, name: "test feat"}, strand: +1}, 5,
+			"test chrom\t1\t99\ttest feat\t0\n", nil,
+		},
+		{
+			&sttf{tf: tf{chrom: Chrom("test chrom"), start: 1, end: 99, name: "test feat"}, strand: +1}, 6,
+			"test chrom\t1\t99\ttest feat\t0\t+\n", nil,
+		},
+		{
+			&sttf{tf: tf{chrom: Chrom("test chrom"), start: 1, end: 99, name: "test feat"}, strand: +1}, 12,
+			"test chrom\t1\t99\ttest feat\t0\t+\n", ErrBadBedType,
+		},
+
+		// Complete.
+		{
+			&ctf{tf: tf{chrom: Chrom("test chrom"), start: 1, end: 99}, score: 100, strand: +1}, 3,
+			"test chrom\t1\t99\n", nil,
+		},
+		{
+			&ctf{tf: tf{chrom: Chrom("test chrom"), start: 1, end: 99, name: "test feat"}, score: 100, strand: +1}, 3,
+			"test chrom\t1\t99\n", nil,
+		},
+		{
+			&ctf{tf: tf{chrom: Chrom("test chrom"), start: 1, end: 99, name: "test feat"}, score: 100, strand: +1}, 4,
+			"test chrom\t1\t99\ttest feat\n", nil,
+		},
+		{
+			&ctf{tf: tf{chrom: Chrom("test chrom"), start: 1, end: 99, name: "test feat"}, score: 100, strand: +1}, 5,
+			"test chrom\t1\t99\ttest feat\t100\n", nil,
+		},
+		{
+			&ctf{tf: tf{chrom: Chrom("test chrom"), start: 1, end: 99, name: "test feat"}, score: 100, strand: +1}, 6,
+			"test chrom\t1\t99\ttest feat\t100\t+\n", nil,
+		},
+		{
+			&ctf{tf: tf{chrom: Chrom("test chrom"), start: 1, end: 99, name: "test feat"}, score: 100, strand: +1}, 12,
+			"test chrom\t1\t99\ttest feat\t100\t+\n", ErrBadBedType,
+		},
+	} {
+		buf := &bytes.Buffer{}
+		w := NewWriter(buf, f.typ)
+		_, err := w.Write(f.feat)
+		w.Close()
+
+		c.Check(err, check.Equals, f.err)
+		c.Check(buf.String(), check.Equals, f.line, check.Commentf("Test: %d type: Bed%d", i, f.typ))
 	}
 }

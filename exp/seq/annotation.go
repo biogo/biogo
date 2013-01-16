@@ -22,11 +22,11 @@ const (
 func (s Strand) String() string {
 	switch s {
 	case Plus:
-		return "(+)"
+		return "+"
 	case None:
 		return "."
 	case Minus:
-		return "(-)"
+		return "-"
 	}
 	return "undefined"
 }
