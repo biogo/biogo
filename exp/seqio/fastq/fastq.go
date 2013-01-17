@@ -16,6 +16,11 @@ import (
 	"io"
 )
 
+var (
+	_ seqio.Reader = &Reader{}
+	_ seqio.Writer = &Writer{}
+)
+
 type Encoder interface {
 	Encoding() alphabet.Encoding
 }

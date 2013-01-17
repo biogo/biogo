@@ -1,50 +1,53 @@
-// Copyright ©2011-2012 The bíogo Authors. All rights reserved.
+// Copyright ©2011-2013 The bíogo Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// Package for reading and writing multiple sequence alignment files
+// Package alignio for reading and writing multiple sequence alignment files
 package alignio
 
 import (
-	"code.google.com/p/biogo/io/seqio"
-	"code.google.com/p/biogo/seq"
+	"code.google.com/p/biogo/exp/seq/multi"
+	"code.google.com/p/biogo/exp/seqio"
+
 	"io"
 )
 
 // Reader implements multiple sequence reading from a seqio.Reader.
 type Reader struct {
-	seqio.Reader
+	r seqio.Reader
+	m *multi.Multi
 }
 
-// Return a new Reader.
-func NewReader(r seqio.Reader) *Reader {
-	return &Reader{r}
+// NewReader return a new Reader that will read sequences from r into m.
+func NewReader(r seqio.Reader, m *multi.Multi) *Reader {
+	return &Reader{r, m}
 }
 
-// Read the contents of the embedded seqio.Reader into a seq.Alignment.
+// Read the contents of the embedded seqio.Reader into a seq.Sequence.
 // Returns the Alignment, or nil and an error if an error occurs.
-func (self *Reader) Read() (a seq.Alignment, err error) {
-	var s *seq.Seq
-	a = seq.Alignment{}
+func (r *Reader) Read() (*multi.Multi, error) {
 	for {
-		s, err = self.Reader.Read()
+		s, err := r.r.Read()
 		if err == nil {
-			a = append(a, s)
-		} else {
 			if err == io.EOF {
-				return a, nil
+				break
 			} else {
 				return nil, err
 			}
 		}
+		r.m.Add(s)
 	}
 
-	panic("cannot reach")
+	m, t := r.m, *r.m
+	t.Seq = nil
+	r.m = &t
+
+	return m, nil
 }
 
 // Writer implements multiple sequence writing to a seqio.Writer.
 type Writer struct {
-	seqio.Writer
+	w seqio.Writer
 }
 
 // Return a new Writer.
@@ -52,17 +55,17 @@ func NewWriter(w seqio.Writer) *Writer {
 	return &Writer{w}
 }
 
-// Write a seq.Alignment to the embedded seqio.Reader.
+// Write a multi.Multi to the embedded seqio.Writer.
 // Returns the number of bytes written and any error. 
-func (self *Writer) Write(a seq.Alignment) (n int, err error) {
+func (w *Writer) Write(m *multi.Multi) (n int, err error) {
 	var c int
-	for _, s := range a {
-		c, err = self.Writer.Write(s)
+	for _, s := range m.Seq {
+		c, err = w.w.Write(s)
 		n += c
 		if err != nil {
-			return
+			break
 		}
 	}
 
-	panic("cannot reach")
+	return
 }
