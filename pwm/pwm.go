@@ -1,4 +1,4 @@
-// Copyright ©2011-2012 The bíogo Authors. All rights reserved.
+// Copyright ©2011-2013 The bíogo Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -11,7 +11,7 @@ import (
 	"code.google.com/p/biogo/exp/feat"
 	"code.google.com/p/biogo/exp/seq"
 	"code.google.com/p/biogo/exp/seq/sequtils"
-	ofeat "code.google.com/p/biogo/feat"
+
 	"fmt"
 	"math"
 	"sort"
@@ -28,6 +28,28 @@ type probTable []*probs
 func (m probTable) Len() int           { return len(m) }
 func (m probTable) Less(i, j int) bool { return m[i].score > m[j].score }
 func (m probTable) Swap(i, j int)      { m[i], m[j] = m[j], m[i] }
+
+type Feature struct {
+	MotifLocation feat.Feature
+	MotifStart    int
+	MotifEnd      int
+	MotifScore    float64
+	MotifProb     float64
+	MotifSeq      seq.Sequence
+	MotifOrient   feat.Orientation
+	Moltype       bio.Moltype
+}
+
+func (f *Feature) Start() int { return f.MotifStart }
+func (f *Feature) End() int   { return f.MotifEnd }
+func (f *Feature) Len() int   { return f.MotifEnd - f.MotifStart }
+func (f *Feature) Name() string {
+	return fmt.Sprintf("%s:[%d,%d)", f.Location().Name(), f.MotifStart, f.MotifEnd)
+}
+func (f *Feature) Description() string           { return "PWM motif" }
+func (f *Feature) Location() feat.Feature        { return f.MotifLocation }
+func (f *Feature) MolType() bio.Moltype          { return f.Moltype }
+func (f *Feature) Orientation() feat.Orientation { return f.MotifOrient }
 
 type PWM struct {
 	matrix    [][]float64
@@ -119,7 +141,7 @@ type Sequence interface {
 	Orientation() feat.Orientation
 }
 
-func (m *PWM) Search(s Sequence, start, end int, minScore float64) []*ofeat.Feature {
+func (m *PWM) Search(s Sequence, start, end int, minScore float64) []feat.Feature {
 	if minScore < m.minScore {
 		m.table = make(probTable, 0)
 		m.genTable(minScore, 0, 0, make([]byte, len(m.matrix)))
@@ -135,9 +157,7 @@ func (m *PWM) Search(s Sequence, start, end int, minScore float64) []*ofeat.Feat
 
 		diff = 1 / float64(length)
 
-		format = "%-s " + m.Format
-		mot    = s.New()
-		f      []*ofeat.Feature
+		f []feat.Feature
 	)
 
 LOOP:
@@ -185,16 +205,17 @@ LOOP:
 			prob += sp
 		}
 
-		sequtils.Truncate(mot, s, pos, pos+length) // FIXME Should use Slice for non-allocating path.
-		f = append(f, &ofeat.Feature{
-			Location:   fmt.Sprintf("%s %s", s.Name(), s.Description()),
-			Start:      pos,
-			End:        pos + length,
-			Score:      &score,
-			Attributes: fmt.Sprintf(format, mot, prob),
-			Strand:     int8(s.Orientation()),
-			Moltype:    s.Moltype(),
-			Frame:      -1,
+		mot := s.New()
+		sequtils.Truncate(mot, s, pos, pos+length)
+		f = append(f, &Feature{
+			MotifLocation: s,
+			MotifStart:    pos,
+			MotifEnd:      pos + length,
+			MotifScore:    score,
+			MotifProb:     prob,
+			MotifSeq:      mot,
+			MotifOrient:   s.Orientation(),
+			Moltype:       s.Moltype(),
 		})
 	}
 
