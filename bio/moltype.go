@@ -4,6 +4,10 @@
 
 package bio
 
+import (
+	"strings"
+)
+
 const (
 	Undefined Moltype = iota - 1
 	DNA
@@ -20,6 +24,7 @@ var (
 
 func init() {
 	for m, s := range moltypeToString {
+		stringToMoltype[strings.ToLower(s)] = Moltype(m)
 		stringToMoltype[s] = Moltype(m)
 	}
 }

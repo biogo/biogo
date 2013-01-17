@@ -5,13 +5,14 @@
 package pals
 
 import (
-	"bytes"
 	"code.google.com/p/biogo/align/pals/dp"
 	"code.google.com/p/biogo/align/pals/filter"
 	"code.google.com/p/biogo/exp/alphabet"
 	"code.google.com/p/biogo/exp/seq"
 	"code.google.com/p/biogo/exp/seq/linear"
 	"code.google.com/p/biogo/util"
+
+	"bytes"
 	"fmt"
 	check "launchpad.net/gocheck"
 	"math"
@@ -159,7 +160,7 @@ func (s *S) TestFeaturise(c *check.C) {
 
 func (s *S) TestWrite(c *check.C) {
 	b := &B{&bytes.Buffer{}}
-	w := NewWriter(b, 0, 60, false)
+	w := NewWriter(b, 4, 60, false)
 	for _, t := range T {
 		if f1, err := ps.feature(t.start, t.end, false); err != nil {
 			c.Fatal(err)

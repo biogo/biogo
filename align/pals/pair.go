@@ -7,7 +7,9 @@ package pals
 import (
 	"code.google.com/p/biogo/align/pals/dp"
 	"code.google.com/p/biogo/exp/feat"
-	gff "code.google.com/p/biogo/feat"
+	"code.google.com/p/biogo/exp/seq"
+	"code.google.com/p/biogo/io/featio/gff"
+
 	"fmt"
 	"strconv"
 	"strings"
@@ -16,9 +18,9 @@ import (
 // A Pair holds a pair of features with additional information relating the two.
 type Pair struct {
 	A, B   feat.Feature
-	Score  int     // Score of alignment between features.
-	Error  float64 // Identity difference between feature sequences.
-	Strand int8    // Strand relationship: positive indicates same strand, negative indicates opposite strand.
+	Score  int        // Score of alignment between features.
+	Error  float64    // Identity difference between feature sequences.
+	Strand seq.Strand // Strand relationship: seq.Plus indicates same strand, seq.Minus indicates opposite strand.
 }
 
 func (fp *Pair) String() string {
@@ -39,7 +41,7 @@ func NewPair(target, query *Packed, hit dp.DPHit, comp bool) (*Pair, error) {
 		return nil, err
 	}
 
-	var strand int8
+	var strand seq.Strand
 	if comp {
 		strand = -1
 	} else {
@@ -58,10 +60,11 @@ func NewPair(target, query *Packed, hit dp.DPHit, comp bool) (*Pair, error) {
 // ExpandFeature converts an old-style *feat.Feature (package temporarily renamed to gff for collision avoidance) containing a PALS-type feature attribute
 // into a Pair.
 func ExpandFeature(f *gff.Feature) (*Pair, error) {
-	if len(f.Attributes) < 7 || f.Attributes[:7] != "Target " {
+	targ := f.FeatAttributes.Get("Target")
+	if targ == "" {
 		return nil, fmt.Errorf("pals: not a feature pair")
 	}
-	fields := strings.Fields(f.Attributes)
+	fields := strings.Fields(targ)
 	if len(fields) != 6 {
 		return nil, fmt.Errorf("pals: not a feature pair")
 	}
@@ -83,23 +86,24 @@ func ExpandFeature(f *gff.Feature) (*Pair, error) {
 
 	fp := &Pair{
 		A: &Feature{
-			ID:   f.ID,
-			Loc:  Contig(f.Location),
-			From: f.Start,
-			To:   f.End,
+			ID:   fmt.Sprintf("%s:%d..%d", f.SeqName, f.FeatStart, f.FeatEnd),
+			Loc:  Contig(f.SeqName),
+			From: f.FeatStart,
+			To:   f.FeatEnd,
 		},
 		B: &Feature{
 			ID:   fmt.Sprintf("%s:%d..%d", fields[1], s, e),
 			Loc:  Contig(fields[1]),
 			From: s,
-			To:   e},
-		Score:  int(*f.Score),
+			To:   e,
+		},
+		Score:  int(*f.FeatScore),
 		Error:  maxe,
-		Strand: f.Strand,
+		Strand: f.FeatStrand,
 	}
-	f.Score = nil
-	f.Attributes = ""
-	f.Strand = 0
+	f.FeatScore = nil
+	f.FeatAttributes = nil
+	f.FeatStrand = seq.None
 
 	return fp, nil
 }

@@ -5,25 +5,28 @@
 package gff
 
 import (
+	"bytes"
 	"code.google.com/p/biogo/bio"
-	"code.google.com/p/biogo/feat"
-	"code.google.com/p/biogo/seq"
+	"code.google.com/p/biogo/exp/alphabet"
+	"code.google.com/p/biogo/exp/feat"
+	"code.google.com/p/biogo/exp/seq"
+	"code.google.com/p/biogo/exp/seq/linear"
 	"io"
-	"io/ioutil"
 	check "launchpad.net/gocheck"
-	"os"
+	"strings"
 	"testing"
-)
-
-var (
-	G = []string{
-		"../../testdata/test.gff",
-		"../../testdata/metaline.gff",
-	}
+	"time"
 )
 
 // Helpers
 func floatPtr(f float64) *float64 { return &f }
+
+func mustTime(t time.Time, err error) time.Time {
+	if err != nil {
+		panic(err)
+	}
+	return t
+}
 
 // Tests
 func Test(t *testing.T) { check.TestingT(t) }
@@ -33,190 +36,151 @@ type S struct{}
 var _ = check.Suite(&S{})
 
 var (
-	expect []feat.Feature = []feat.Feature{
-		{ID: "SEQ1:102..105", Source: "EMBL", Location: "SEQ1", Start: 102, End: 105, Feature: "atg", Score: nil, Probability: nil, Attributes: "", Comments: "", Frame: 0, Strand: 1, Moltype: 0x0, Meta: interface{}(nil)},
-		{ID: "SEQ1:102..172", Source: "EMBL", Location: "SEQ1", Start: 102, End: 172, Feature: "exon", Score: nil, Probability: nil, Attributes: "", Comments: "", Frame: 0, Strand: 1, Moltype: 0x0, Meta: interface{}(nil)},
-		{ID: "SEQ1:171..173", Source: "EMBL", Location: "SEQ1", Start: 171, End: 173, Feature: "splice5", Score: nil, Probability: nil, Attributes: "", Comments: "", Frame: -1, Strand: 1, Moltype: 0x0, Meta: interface{}(nil)},
-		{ID: "SEQ1:171..173", Source: "netgene", Location: "SEQ1", Start: 171, End: 173, Feature: "splice5", Score: floatPtr(0.94), Probability: nil, Attributes: "", Comments: "", Frame: -1, Strand: 1, Moltype: 0x0, Meta: interface{}(nil)},
-		{ID: "SEQ1:162..182", Source: "genie", Location: "SEQ1", Start: 162, End: 182, Feature: "sp5-20", Score: floatPtr(2.3), Probability: nil, Attributes: "", Comments: "", Frame: -1, Strand: 1, Moltype: 0x0, Meta: interface{}(nil)},
-		{ID: "SEQ1:167..177", Source: "genie", Location: "SEQ1", Start: 167, End: 177, Feature: "sp5-10", Score: floatPtr(2.1), Probability: nil, Attributes: "", Comments: "", Frame: -1, Strand: 1, Moltype: 0x0, Meta: interface{}(nil)},
-		{ID: "SEQ2:16..19", Source: "grail", Location: "SEQ2", Start: 16, End: 19, Feature: "ATG", Score: floatPtr(2.1), Probability: nil, Attributes: "", Comments: "", Frame: 0, Strand: -1, Moltype: 0x0, Meta: interface{}(nil)},
+	gffTests = []struct {
+		gff  string
+		feat []*Feature
+	}{
+		{
+			gff: `SEQ1	EMBL	atg	103	105	.	+	0
+SEQ1	EMBL	exon	103	172	.	+	0
+SEQ1	EMBL	splice5	172	173	.	+	.
+SEQ1	netgene	splice5	172	173	0.94	+	.
+SEQ1	genie	sp5-20	163	182	2.3	+	.
+SEQ1	genie	sp5-10	168	177	2.1	+	.
+SEQ2	grail	ATG	17	19	2.1	-	0
+`,
+			feat: []*Feature{
+				{SeqName: "SEQ1", Source: "EMBL", Feature: "atg", FeatStart: 102, FeatEnd: 105, FeatScore: nil, FeatFrame: Frame0, FeatStrand: seq.Plus},
+				{SeqName: "SEQ1", Source: "EMBL", Feature: "exon", FeatStart: 102, FeatEnd: 172, FeatScore: nil, FeatFrame: Frame0, FeatStrand: seq.Plus},
+				{SeqName: "SEQ1", Source: "EMBL", Feature: "splice5", FeatStart: 171, FeatEnd: 173, FeatScore: nil, FeatFrame: NoFrame, FeatStrand: seq.Plus},
+				{SeqName: "SEQ1", Source: "netgene", Feature: "splice5", FeatStart: 171, FeatEnd: 173, FeatScore: floatPtr(0.94), FeatFrame: NoFrame, FeatStrand: seq.Plus},
+				{SeqName: "SEQ1", Source: "genie", Feature: "sp5-20", FeatStart: 162, FeatEnd: 182, FeatScore: floatPtr(2.3), FeatFrame: NoFrame, FeatStrand: seq.Plus},
+				{SeqName: "SEQ1", Source: "genie", Feature: "sp5-10", FeatStart: 167, FeatEnd: 177, FeatScore: floatPtr(2.1), FeatFrame: NoFrame, FeatStrand: seq.Plus},
+				{SeqName: "SEQ2", Source: "grail", Feature: "ATG", FeatStart: 16, FeatEnd: 19, FeatScore: floatPtr(2.1), FeatFrame: Frame0, FeatStrand: seq.Minus},
+			},
+		},
 	}
-	expectMeta []interface{} = []interface{}{
-		&seq.Seq{ID: "<seqname>", Seq: []byte("acggctcggattggcgctggatgatagatcagacgac..."), Offset: 0, Strand: 1, Circular: false, Moltype: 0x0, Quality: (*seq.Quality)(nil), Inplace: false, Meta: interface{}(nil)},
-		&seq.Seq{ID: "<seqname>", Seq: []byte("acggcucggauuggcgcuggaugauagaucagacgac..."), Offset: 0, Strand: 1, Circular: false, Moltype: 0x1, Quality: (*seq.Quality)(nil), Inplace: false, Meta: interface{}(nil)},
-		&seq.Seq{ID: "<seqname>", Seq: []byte("MVLSPADKTNVKAAWGKVGAHAGEYGAEALERMFLSF..."), Offset: 0, Strand: 1, Circular: false, Moltype: 0x2, Quality: (*seq.Quality)(nil), Inplace: false, Meta: interface{}(nil)},
-		&feat.Feature{ID: "<seqname>", Source: "", Location: "", Start: 0, End: 5, Feature: "", Score: nil, Probability: nil, Attributes: "", Comments: "", Frame: 0, Strand: 0, Moltype: 0x0, Meta: interface{}(nil)},
-	}
-	writeMeta []interface{} = []interface{}{
-		"gff-version 2",
-		"source-version <source> <version-text>",
-		"date Mon Jan 2 15:04:05 MST 2006",
-		"Type <type> <seqname>",
-		&seq.Seq{ID: "<seqname>", Seq: []byte("acggctcggattggcgctggatgatagatcagacgac..."), Offset: 0, Strand: 1, Circular: false, Moltype: 0x0, Quality: (*seq.Quality)(nil), Inplace: false, Meta: interface{}(nil)},
-		&seq.Seq{ID: "<seqname>", Seq: []byte("acggcucggauuggcgcuggaugauagaucagacgac..."), Offset: 0, Strand: 1, Circular: false, Moltype: 0x1, Quality: (*seq.Quality)(nil), Inplace: false, Meta: interface{}(nil)},
-		&seq.Seq{ID: "<seqname>", Seq: []byte("MVLSPADKTNVKAAWGKVGAHAGEYGAEALERMFLSF..."), Offset: 0, Strand: 1, Circular: false, Moltype: 0x2, Quality: (*seq.Quality)(nil), Inplace: false, Meta: interface{}(nil)},
-		&feat.Feature{ID: "<seqname>", Source: "", Location: "", Start: 0, End: 5, Feature: "", Score: floatPtr(0), Probability: floatPtr(0), Attributes: "", Comments: "", Frame: 0, Strand: 0, Moltype: 0x0, Meta: interface{}(nil)},
+
+	metaTests = []struct {
+		date          string
+		format        string
+		sourceVersion string
+		version       int
+		name          string
+		molType       bio.Moltype
+		gff           string
+		feat          []feat.Feature
+		write         []interface{}
+	}{
+		{
+			date:          "1997-11-08",
+			format:        Astronomical,
+			sourceVersion: "<source> <version-text>",
+			version:       2,
+			name:          "<seqname>",
+			molType:       bio.DNA,
+
+			gff: `##gff-version 2
+##source-version <source> <version-text>
+##date 1997-11-08
+##Type DNA <seqname>
+##DNA <seqname>
+##acggctcggattggcgctggatgatagatcagacgac
+##...
+##end-DNA
+##RNA <seqname>
+##acggcucggauuggcgcuggaugauagaucagacgac
+##...
+##end-RNA
+##Protein <seqname>
+##MVLSPADKTNVKAAWGKVGAHAGEYGAEALERMFLSF
+##...
+##end-Protein
+##sequence-region <seqname> 1 5
+`,
+			feat: []feat.Feature{
+				linear.NewSeq("<seqname>", alphabet.BytesToLetters([]byte("acggctcggattggcgctggatgatagatcagacgac...")), alphabet.DNA),
+				linear.NewSeq("<seqname>", alphabet.BytesToLetters([]byte("acggcucggauuggcgcuggaugauagaucagacgac...")), alphabet.RNA),
+				linear.NewSeq("<seqname>", alphabet.BytesToLetters([]byte("MVLSPADKTNVKAAWGKVGAHAGEYGAEALERMFLSF...")), alphabet.Protein),
+				&Region{Sequence: Sequence{SeqName: "<seqname>", Type: bio.DNA}, RegionStart: 0, RegionEnd: 5},
+			},
+			write: []interface{}{
+				2,
+				"source-version <source> <version-text>",
+				mustTime(time.Parse(Astronomical, "1997-11-08")),
+				Sequence{SeqName: "<seqname>", Type: bio.DNA},
+				linear.NewSeq("<seqname>", alphabet.BytesToLetters([]byte("acggctcggattggcgctggatgatagatcagacgac...")), alphabet.DNA),
+				linear.NewSeq("<seqname>", alphabet.BytesToLetters([]byte("acggcucggauuggcgcuggaugauagaucagacgac...")), alphabet.RNA),
+				linear.NewSeq("<seqname>", alphabet.BytesToLetters([]byte("MVLSPADKTNVKAAWGKVGAHAGEYGAEALERMFLSF...")), alphabet.Protein),
+				&Region{Sequence: Sequence{SeqName: "<seqname>"}, RegionStart: 0, RegionEnd: 5},
+			},
+		},
 	}
 )
 
 func (s *S) TestReadGFF(c *check.C) {
-	obtain := []*feat.Feature{}
-	if r, err := NewReaderName(G[0]); err != nil {
-		c.Fatalf("Failed to open %q: %s", G[0], err)
-	} else {
-		for i := 0; i < 3; i++ {
-			for {
-				if f, err := r.Read(); err != nil {
-					if err == io.EOF {
-						break
-					} else {
-						c.Fatalf("Failed to read %q: %s", G[0], err)
-					}
-				} else {
-					obtain = append(obtain, f)
-				}
-			}
-			if c.Failed() {
+	for i, g := range gffTests {
+		buf := strings.NewReader(g.gff)
+		r := NewReader(buf)
+		for j := 0; ; j++ {
+			f, err := r.Read()
+			if err == io.EOF {
+				c.Check(j, check.Equals, len(g.feat))
 				break
 			}
-			if len(obtain) == len(expect) {
-				for j := range obtain {
-					c.Check(*obtain[j], check.DeepEquals, expect[j])
-				}
-			} else {
-				c.Check(len(obtain), check.Equals, len(expect))
-			}
+			c.Check(f, check.DeepEquals, g.feat[j], check.Commentf("Test: %d Line: %d", i, j+1))
+			c.Check(err, check.Equals, nil)
 		}
-		c.Check(r.Type, check.Equals, bio.Moltype(0))
-		r.Close()
 	}
 }
 
 func (s *S) TestReadMetaline(c *check.C) {
-	obtain := []interface{}{}
-	if r, err := NewReaderName(G[1]); err != nil {
-		c.Fatalf("Failed to open %q: %s", G[1], err)
-	} else {
-		r.TimeFormat = "Mon Jan _2 15:04:05 MST 2006"
-		for i := 0; i < 3; i++ {
-			for {
-				if f, err := r.Read(); err != nil {
-					if err == io.EOF {
-						break
-					} else {
-						c.Fatalf("Failed to read %q: %s", G[1], err)
-					}
-				} else {
-					obtain = append(obtain, f.Meta)
-				}
-			}
-			if c.Failed() {
+	for i, g := range metaTests {
+		buf := strings.NewReader(g.gff)
+		r := NewReader(buf)
+		for j := 0; ; j++ {
+			f, err := r.Read()
+			if err == io.EOF {
+				c.Check(j, check.Equals, len(g.feat))
 				break
 			}
-			if len(obtain) == len(expectMeta) {
-				for j := range obtain {
-					c.Check(obtain[j], check.DeepEquals, expectMeta[j])
-				}
-			} else {
-				c.Check(len(obtain), check.Equals, len(expectMeta))
-			}
-			obtain = nil
-			if err = r.Rewind(); err != nil {
-				c.Fatalf("Failed to rewind %s", err)
-			}
+			c.Check(f, check.DeepEquals, g.feat[j], check.Commentf("Test: %d Line: %d", i, j+1))
+			c.Check(err, check.Equals, nil)
 		}
-		c.Check(r.SourceVersion, check.Equals, "<source> <version-text>")
-		c.Check(r.Date.Format(r.TimeFormat), check.Equals, "Mon Jan  2 15:04:05 MST 2006")
-		c.Check(r.Type, check.Equals, bio.Undefined)
-		r.Close()
+		c.Check(r.Version, check.Equals, g.version)
+		date, err := time.Parse(g.format, g.date)
+		c.Assert(err, check.Equals, nil)
+		c.Check(r.Name, check.Equals, g.name)
+		c.Check(r.Type, check.Equals, g.molType)
+		c.Check(r.Date, check.Equals, date)
+		c.Check(r.SourceVersion, check.Equals, g.sourceVersion)
 	}
 }
 
-func (s *S) TestWriteGFF(c *check.C) {
-	bio.Precision = -1
-	g := G[0]
-	o := c.MkDir()
-	expectSize := 224
-	var total int
-	if w, err := NewWriterName(o+"/g", 2, 60, false); err != nil {
-		c.Fatalf("Failed to open %q for write: %s", o+"/g", err)
-	} else {
-		for i := range expect {
-			if n, err := w.Write(&expect[i]); err != nil {
-				c.Fatalf("Failed to write %q: %s", o+"/g", err)
-			} else {
-				total += n
-			}
-		}
+const width = 37 // Not the normal fasta width - this matches the examples from the GFF spec page.
 
-		if err = w.Close(); err != nil {
-			c.Fatalf("Failed to Close %q: %s", o+"/g", err)
+func (s *S) TestWriteGff(c *check.C) {
+	for i, g := range gffTests {
+		buf := &bytes.Buffer{}
+		w := NewWriter(buf, width, false)
+		for _, f := range g.feat {
+			_, err := w.Write(f)
+			c.Check(err, check.Equals, nil)
 		}
-		c.Check(total, check.Equals, expectSize)
-		total = 0
-
-		var (
-			of, gf *os.File
-			ob, gb []byte
-		)
-		if of, err = os.Open(g); err != nil {
-			c.Fatalf("Failed to Open %q: %s", g, err)
-		}
-		if gf, err = os.Open(o + "/g"); err != nil {
-			c.Fatalf("Failed to Open %q: %s", o+"/g", err)
-		}
-		if ob, err = ioutil.ReadAll(of); err != nil {
-			c.Fatalf("Failed to read %q: %s", g, err)
-		}
-		if gb, err = ioutil.ReadAll(gf); err != nil {
-			c.Fatalf("Failed to read %q: %s", o+"/g", err)
-		}
-
-		c.Check(string(gb), check.Equals, string(ob))
+		w.Close()
+		c.Check(buf.String(), check.Equals, g.gff, check.Commentf("Test: %d", i))
 	}
 }
 
-func (s *S) TestWriteMetaline(c *check.C) {
-	bio.Precision = -1
-	g := G[1]
-	o := c.MkDir()
-	expectSize := 372
-	var total int
-	if w, err := NewWriterName(o+"/g", 2, 37, false); err != nil { // 37 magic number enforces linebreaks on sequence to match examples from http://www.sanger.ac.uk/resources/software/gff/spec.html
-		c.Fatalf("Failed to open %q for write: %s", o+"/g", err)
-	} else {
-		for i := range writeMeta {
-			if n, err := w.WriteMetaData(writeMeta[i]); err != nil {
-				c.Fatalf("Failed to write %q: %s", o+"/g", err)
-			} else {
-				total += n
-			}
+func (s *S) TestWriteMetadata(c *check.C) {
+	for i, g := range metaTests {
+		buf := &bytes.Buffer{}
+		w := NewWriter(buf, width, false)
+		for _, d := range g.write {
+			_, err := w.WriteMetaData(d)
+			c.Check(err, check.Equals, nil)
 		}
-
-		if err = w.Close(); err != nil {
-			c.Fatalf("Failed to Close %q: %s", o+"/g", err)
-		}
-		c.Check(total, check.Equals, expectSize)
-		total = 0
-
-		var (
-			of, gf *os.File
-			ob, gb []byte
-		)
-		if of, err = os.Open(g); err != nil {
-			c.Fatalf("Failed to Open %q: %s", g, err)
-		}
-		if gf, err = os.Open(o + "/g"); err != nil {
-			c.Fatalf("Failed to Open %q: %s", o+"/g", err)
-		}
-		if ob, err = ioutil.ReadAll(of); err != nil {
-			c.Fatalf("Failed to read %q: %s", g, err)
-		}
-		if gb, err = ioutil.ReadAll(gf); err != nil {
-			c.Fatalf("Failed to read %q: %s", o+"/g", err)
-		}
-
-		c.Check(string(gb), check.Equals, string(ob))
+		w.Close()
+		c.Check(buf.String(), check.Equals, g.gff, check.Commentf("Test: %d", i))
 	}
 }
