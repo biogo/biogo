@@ -2,15 +2,16 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// Package to read and write FASTA format files
+// Package fasta provides types to read and write FASTA format files.
 package fasta
 
 import (
-	"bufio"
-	"bytes"
 	"code.google.com/p/biogo/exp/alphabet"
 	"code.google.com/p/biogo/exp/seq"
 	"code.google.com/p/biogo/exp/seqio"
+
+	"bufio"
+	"bytes"
 	"fmt"
 	"io"
 )
