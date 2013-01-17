@@ -14,10 +14,11 @@ import (
 	"code.google.com/p/biogo/exp/feat"
 	"code.google.com/p/biogo/exp/seq"
 	"code.google.com/p/biogo/exp/seq/linear"
+	"code.google.com/p/biogo/exp/seqio/fasta"
+	"code.google.com/p/biogo/io/featio"
 
 	"bufio"
 	"bytes"
-	"code.google.com/p/biogo/exp/seqio/fasta"
 	"errors"
 	"fmt"
 	"io"
@@ -26,6 +27,11 @@ import (
 	"time"
 	"unicode"
 	"unsafe"
+)
+
+var (
+	_ featio.Reader = &Reader{}
+	_ featio.Writer = &Writer{}
 )
 
 // Version is the GFF version that is read and written.

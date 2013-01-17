@@ -11,6 +11,7 @@ package bed
 import (
 	"code.google.com/p/biogo/exp/feat"
 	"code.google.com/p/biogo/exp/seq"
+	"code.google.com/p/biogo/io/featio"
 
 	"bufio"
 	"bytes"
@@ -49,6 +50,9 @@ const (
 )
 
 var (
+	_ featio.Reader = &Reader{}
+	_ featio.Writer = &Writer{}
+
 	_ feat.Feature = &Bed3{}
 	_ feat.Feature = &Bed4{}
 	_ feat.Feature = &Bed5{}
