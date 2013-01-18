@@ -7,6 +7,8 @@ package pals
 import (
 	"code.google.com/p/biogo.graph"
 	"code.google.com/p/biogo/exp/feat"
+	"code.google.com/p/biogo/exp/seq"
+
 	"fmt"
 )
 
@@ -61,7 +63,7 @@ func (f *Feature) String() string {
 type Pile struct {
 	From   int
 	To     int
-	Strand int8
+	Strand seq.Strand
 	Loc    feat.Feature
 	Images []*Pair
 	graph.Node
