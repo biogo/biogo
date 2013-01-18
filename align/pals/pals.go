@@ -1,4 +1,4 @@
-// Copyright ©2011-2012 The bíogo Authors. All rights reserved.
+// Copyright ©2011-2013 The bíogo Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -13,6 +13,7 @@ import (
 	"code.google.com/p/biogo/index/kmerindex"
 	"code.google.com/p/biogo/morass"
 	"code.google.com/p/biogo/util"
+
 	"io"
 	"os"
 	"unsafe"
@@ -245,14 +246,14 @@ func (p *PALS) MemRequired(filterParams *filter.Params) uintptr {
 // Build the kmerindex for filtering.
 func (p *PALS) BuildIndex() error {
 	p.notify("Indexing")
-	index, err := kmerindex.New(p.FilterParams.WordSize, p.target)
+	ki, err := kmerindex.New(p.FilterParams.WordSize, p.target)
 	if err != nil {
 		return err
 	} else {
-		index.Build()
+		ki.Build()
 		p.notify("Indexed")
 	}
-	p.index = index
+	p.index = ki
 	p.hitFilter = filter.New(p.index, p.FilterParams)
 
 	return nil

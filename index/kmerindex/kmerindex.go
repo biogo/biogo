@@ -1,4 +1,4 @@
-// Copyright ©2011-2012 The bíogo Authors. All rights reserved.
+// Copyright ©2011-2013 The bíogo Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -253,12 +253,12 @@ func (ki *Index) ForEachKmerOf(s *linear.Seq, start, end int, f Eval) (err error
 }
 
 // Return the Kmer length of the Index.
-func (ki *Index) GetK() int {
+func (ki *Index) K() int {
 	return ki.k
 }
 
 // Returns a pointer to the indexed seq.Seq.
-func (ki *Index) GetSeq() *linear.Seq {
+func (ki *Index) Seq() *linear.Seq {
 	return ki.seq
 }
 

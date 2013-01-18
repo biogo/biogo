@@ -1,4 +1,4 @@
-// Copyright ©2011-2012 The bíogo Authors. All rights reserved.
+// Copyright ©2011-2013 The bíogo Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -9,6 +9,7 @@ import (
 	"code.google.com/p/biogo/graphics/color"
 	"code.google.com/p/biogo/index/kmerindex"
 	"code.google.com/p/biogo/util"
+
 	"image"
 	imagecolor "image/color"
 )
@@ -83,21 +84,21 @@ type KmerRainbow struct {
 }
 
 // Create a new KmerRainbow defined by the rectangle r, kmerindex index and background color.
-func NewKmerRainbow(r image.Rectangle, index *kmerindex.Index, background color.HSVA) *KmerRainbow { // should generalise the BG color
+func NewKmerRainbow(r image.Rectangle, ki *kmerindex.Index, background color.HSVA) *KmerRainbow { // should generalise the BG color
 	h := r.Dy()
 	kmers := make([]int, h)
-	kmask := util.Pow4(index.GetK())
+	kmask := util.Pow4(ki.K())
 	kmaskf := float64(kmask)
-	f := func(index *kmerindex.Index, _, kmer int) {
+	f := func(ki *kmerindex.Index, _, kmer int) {
 		kmers[int(float64(kmer)*float64(h)/kmaskf)]++
 	}
-	s := index.GetSeq()
-	index.ForEachKmerOf(s, 0, s.Len(), f)
+	s := ki.Seq()
+	ki.ForEachKmerOf(s, 0, s.Len(), f)
 	max := util.Max(kmers...)
 
 	return &KmerRainbow{
 		RGBA:       image.NewRGBA(r),
-		Index:      index,
+		Index:      ki,
 		Max:        max,
 		BackGround: background,
 	}
@@ -122,12 +123,12 @@ func (kr *KmerRainbow) SubImage(r image.Rectangle) image.Image {
 func (kr *KmerRainbow) Paint(vary int, block, size, left, right int) (i *image.RGBA, err error) {
 	right = util.Min(right, kr.Rect.Dx())
 	kmers := make([]uint32, kr.RGBA.Rect.Dy())
-	kmask := util.Pow4(kr.Index.GetK())
+	kmask := util.Pow4(kr.Index.K())
 	kmaskf := float64(kmask)
-	f := func(index *kmerindex.Index, _, kmer int) {
+	f := func(ki *kmerindex.Index, _, kmer int) {
 		kmers[int(float64(kmer)*float64(kr.RGBA.Rect.Dy())/kmaskf)]++
 	}
-	kr.Index.ForEachKmerOf(kr.Index.GetSeq(), block*size, (block+1)*size-1, f)
+	kr.Index.ForEachKmerOf(kr.Index.Seq(), block*size, (block+1)*size-1, f)
 	c := color.HSVA{}
 	lf := float64(len(kmers)) / 360
 	var val float64
@@ -169,21 +170,21 @@ func (kr *KmerRainbow) Paint(vary int, block, size, left, right int) (i *image.R
 type CGR KmerRainbow
 
 // Create a new CGR defined by the kmerindex index and background color.
-func NewCGR(index *kmerindex.Index, background color.HSVA) *CGR { // should generalise the BG color
+func NewCGR(ki *kmerindex.Index, background color.HSVA) *CGR { // should generalise the BG color
 	max := 0
-	f := func(index *kmerindex.Index, _, kmer int) {
-		if freq := index.FingerAt(kmer); freq > max {
+	f := func(ki *kmerindex.Index, _, kmer int) {
+		if freq := ki.FingerAt(kmer); freq > max {
 			max = freq
 		}
 	}
-	s := index.GetSeq()
-	index.ForEachKmerOf(s, 0, s.Len(), f)
+	s := ki.Seq()
+	ki.ForEachKmerOf(s, 0, s.Len(), f)
 
-	k := uint(index.GetK())
+	k := uint(ki.K())
 
 	return &CGR{
 		RGBA:       image.NewRGBA(image.Rect(0, 0, 1<<k, 1<<k)),
-		Index:      index,
+		Index:      ki,
 		Max:        max,
 		BackGround: background,
 	}
@@ -207,14 +208,14 @@ func (cg *CGR) SubImage(r image.Rectangle) image.Image {
 // Vary specifies which color values change in response to kmer frequency. Setting desch to true 
 // specifies using the ordering described in Deschavanne (1999).
 func (cg *CGR) Paint(vary int, desch bool, block, size int) (i *image.RGBA, err error) {
-	k := cg.Index.GetK()
+	k := cg.Index.K()
 
 	kmask := util.Pow4(k)
 	kmers := make([]uint, kmask)
-	f := func(index *kmerindex.Index, _, kmer int) {
+	f := func(ki *kmerindex.Index, _, kmer int) {
 		kmers[kmer]++
 	}
-	cg.Index.ForEachKmerOf(cg.Index.GetSeq(), block*size, (block+1)*size-1, f)
+	cg.Index.ForEachKmerOf(cg.Index.Seq(), block*size, (block+1)*size-1, f)
 
 	c := &color.HSVA{}
 	max := util.UMax(kmers...)

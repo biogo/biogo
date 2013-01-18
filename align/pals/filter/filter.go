@@ -1,4 +1,4 @@
-// Copyright ©2011-2012 The bíogo Authors. All rights reserved.
+// Copyright ©2011-2013 The bíogo Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -48,8 +48,8 @@ type Filter struct {
 func New(ki *kmerindex.Index, params *Params) (f *Filter) {
 	f = &Filter{
 		ki:         ki,
-		target:     ki.GetSeq(),
-		k:          ki.GetK(),
+		target:     ki.Seq(),
+		k:          ki.K(),
 		minMatch:   params.MinMatch,
 		maxError:   params.MaxError,
 		tubeOffset: params.TubeOffset,
@@ -65,7 +65,7 @@ func (f *Filter) Filter(query *linear.Seq, selfAlign, complement bool, morass *m
 	f.selfAlign = selfAlign
 	f.complement = complement
 	f.morass = morass
-	f.k = f.ki.GetK()
+	f.k = f.ki.K()
 
 	// Ukonnen's Lemma
 	f.minKmersPerHit = MinWordsPerFilterHit(f.minMatch, f.k, f.maxError)

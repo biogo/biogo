@@ -1,4 +1,4 @@
-// Copyright ©2011-2012 The bíogo Authors. All rights reserved.
+// Copyright ©2011-2013 The bíogo Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -45,17 +45,17 @@ func NewMerger(ki *kmerindex.Index, query *linear.Seq, filterParams *Params, max
 	}
 
 	return &Merger{
-		target:         ki.GetSeq(),
+		target:         ki.Seq(),
 		filterParams:   filterParams,
 		maxIGap:        maxIGap,
 		query:          query,
 		selfComparison: selfCompare,
-		bottomPadding:  ki.GetK() + 2,
+		bottomPadding:  ki.K() + 2,
 		leftPadding:    leftPadding,
 		binWidth:       binWidth,
 		eoTerm:         eoTerm,
 		trapOrder:      eoTerm,
-		valueToCode:    ki.GetSeq().Alpha.LetterIndex(),
+		valueToCode:    ki.Seq().Alpha.LetterIndex(),
 	}
 }
 
