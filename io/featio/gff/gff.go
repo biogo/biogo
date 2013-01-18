@@ -19,7 +19,6 @@ import (
 
 	"bufio"
 	"bytes"
-	"errors"
 	"fmt"
 	"io"
 	"math"
@@ -40,18 +39,22 @@ const Version = 2
 // "Astronomical" time format is the format specified in the GFF specification
 const Astronomical = "2006-01-02"
 
+type Error string
+
+func (e Error) Error() string { return string(e) }
+
 var (
-	ErrBadStrandField = errors.New("gff: bad strand field")
-	ErrBadStrand      = errors.New("gff: invalid strand")
-	ErrClosed         = errors.New("gff: writer closed")
-	ErrBadTag         = errors.New("gff: invalid tag")
-	ErrCannotHeader   = errors.New("gff: cannot write header: data written")
-	ErrNotHandled     = errors.New("gff: type not handled")
-	ErrFieldMissing   = errors.New("gff: missing fields")
-	ErrBadMoltype     = errors.New("gff: invalid moltype")
-	ErrEmptyMetaLine  = errors.New("gff: empty comment metaline")
-	ErrBadMetaLine    = errors.New("gff: incomplete metaline")
-	ErrBadSequence    = errors.New("gff: corrupt metasequence")
+	ErrBadStrandField = Error("gff: bad strand field")
+	ErrBadStrand      = Error("gff: invalid strand")
+	ErrClosed         = Error("gff: writer closed")
+	ErrBadTag         = Error("gff: invalid tag")
+	ErrCannotHeader   = Error("gff: cannot write header: data written")
+	ErrNotHandled     = Error("gff: type not handled")
+	ErrFieldMissing   = Error("gff: missing fields")
+	ErrBadMoltype     = Error("gff: invalid moltype")
+	ErrEmptyMetaLine  = Error("gff: empty comment metaline")
+	ErrBadMetaLine    = Error("gff: incomplete metaline")
+	ErrBadSequence    = Error("gff: corrupt metasequence")
 )
 
 const (
@@ -213,7 +216,7 @@ func (g *Feature) Location() feat.Feature { return Sequence{SeqName: g.SeqName} 
 func handlePanic(f feat.Feature, err *error) {
 	r := recover()
 	if r != nil {
-		e, ok := r.(error)
+		e, ok := r.(Error)
 		if !ok {
 			panic(r)
 		}

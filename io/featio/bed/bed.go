@@ -15,7 +15,6 @@ import (
 
 	"bufio"
 	"bytes"
-	"errors"
 	"fmt"
 	"image/color"
 	"io"
@@ -24,14 +23,18 @@ import (
 	"unsafe"
 )
 
+type Error string
+
+func (e Error) Error() string { return string(e) }
+
 var (
-	ErrBadBedType         = errors.New("bed: bad bed type")
-	ErrBadStrandField     = errors.New("bed: bad strand field")
-	ErrBadStrand          = errors.New("bed: invalid strand")
-	ErrBadColorField      = errors.New("bed: bad color field")
-	ErrMissingBlockValues = errors.New("bed: missing block values")
-	ErrNoChromField       = errors.New("bed: no chrom field available")
-	ErrClosed             = errors.New("bed: writer closed")
+	ErrBadBedType         = Error("bed: bad bed type")
+	ErrBadStrandField     = Error("bed: bad strand field")
+	ErrBadStrand          = Error("bed: invalid strand")
+	ErrBadColorField      = Error("bed: bad color field")
+	ErrMissingBlockValues = Error("bed: missing block values")
+	ErrNoChromField       = Error("bed: no chrom field available")
+	ErrClosed             = Error("bed: writer closed")
 )
 
 const (
@@ -77,7 +80,7 @@ type Bed interface {
 func handlePanic(f feat.Feature, err *error) {
 	r := recover()
 	if r != nil {
-		e, ok := r.(error)
+		e, ok := r.(Error)
 		if !ok {
 			panic(r)
 		}
