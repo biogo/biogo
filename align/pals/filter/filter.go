@@ -31,7 +31,7 @@ type Params struct {
 // This implementation is a translation of the C++ code written by Edgar and Myers.
 type Filter struct {
 	target         *linear.Seq
-	index          *kmerindex.Index
+	ki             *kmerindex.Index
 	tubes          []tubeState
 	morass         *morass.Morass
 	k              int
@@ -44,12 +44,12 @@ type Filter struct {
 	complement     bool
 }
 
-// Return a new Filter using index as the target and filter parameters in params.
-func New(index *kmerindex.Index, params *Params) (f *Filter) {
+// Return a new Filter using ki as the target, and filter parameters in params.
+func New(ki *kmerindex.Index, params *Params) (f *Filter) {
 	f = &Filter{
-		index:      index,
-		target:     index.Seq,
-		k:          index.GetK(),
+		ki:         ki,
+		target:     ki.GetSeq(),
+		k:          ki.GetK(),
 		minMatch:   params.MinMatch,
 		maxError:   params.MaxError,
 		tubeOffset: params.TubeOffset,
@@ -65,7 +65,7 @@ func (f *Filter) Filter(query *linear.Seq, selfAlign, complement bool, morass *m
 	f.selfAlign = selfAlign
 	f.complement = complement
 	f.morass = morass
-	f.k = f.index.GetK()
+	f.k = f.ki.GetK()
 
 	// Ukonnen's Lemma
 	f.minKmersPerHit = MinWordsPerFilterHit(f.minMatch, f.k, f.maxError)
@@ -88,14 +88,14 @@ func (f *Filter) Filter(query *linear.Seq, selfAlign, complement bool, morass *m
 	ticker := tubeWidth
 
 	var err error
-	err = f.index.ForEachKmerOf(query, 0, query.Len(), func(index *kmerindex.Index, position, kmer int) {
+	err = f.ki.ForEachKmerOf(query, 0, query.Len(), func(ki *kmerindex.Index, position, kmer int) {
 		from := 0
 		if kmer > 0 {
-			from = index.FingerAt(kmer - 1)
+			from = ki.FingerAt(kmer - 1)
 		}
-		to := index.FingerAt(kmer)
+		to := ki.FingerAt(kmer)
 		for i := from; i < to; i++ {
-			f.commonKmer(index.PosAt(i), position)
+			f.commonKmer(ki.PosAt(i), position)
 		}
 
 		if ticker--; ticker == 0 {

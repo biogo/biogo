@@ -8,6 +8,7 @@ import (
 	"code.google.com/p/biogo/exp/alphabet"
 	"code.google.com/p/biogo/exp/seq/linear"
 	"code.google.com/p/biogo/util"
+
 	check "launchpad.net/gocheck"
 	"math/rand"
 	"testing"
@@ -26,7 +27,7 @@ var testLen = 1000
 
 func (s *S) SetUpSuite(c *check.C) {
 	MaxKmerLen = 14
-	s.Seq = &linear.Seq{}
+	s.Seq = linear.NewSeq("", nil, alphabet.DNA)
 	s.Seq.Seq = make(alphabet.Letters, testLen)
 	for i := range s.Seq.Seq {
 		s.Seq.Seq[i] = [...]alphabet.Letter{'A', 'C', 'G', 'T'}[rand.Int()%4]
@@ -123,7 +124,7 @@ func (s *S) TestKmerKmerUtilities(c *check.C) {
 	for k := MinKmerLen; k <= 8; k++ { // again not testing all exhaustively
 		for kmer := Kmer(0); uint(kmer) <= util.Pow4(k)-1; kmer++ {
 			// Interconversion between string and Kmer
-			if rk, err := KmerOf(k, Stringify(k, kmer)); err != nil {
+			if rk, err := KmerOf(k, alphabet.DNA.LetterIndex(), Stringify(k, kmer)); err != nil {
 				c.Fatalf("Failed Kmer conversion: %v", err)
 			} else {
 				c.Check(rk, check.Equals, kmer)

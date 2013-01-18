@@ -31,7 +31,7 @@ type Merger struct {
 
 // Create a new Merger using the provided kmerindex, query sequence, filter parameters and maximum inter-segment gap length.
 // If selfCompare is true only the upper diagonal of the comparison matrix is examined.
-func NewMerger(index *kmerindex.Index, query *linear.Seq, filterParams *Params, maxIGap int, selfCompare bool) *Merger {
+func NewMerger(ki *kmerindex.Index, query *linear.Seq, filterParams *Params, maxIGap int, selfCompare bool) *Merger {
 	tubeWidth := filterParams.TubeOffset + filterParams.MaxError
 	binWidth := tubeWidth - 1
 	leftPadding := diagonalPadding + binWidth
@@ -45,17 +45,17 @@ func NewMerger(index *kmerindex.Index, query *linear.Seq, filterParams *Params, 
 	}
 
 	return &Merger{
-		target:         index.Seq,
+		target:         ki.GetSeq(),
 		filterParams:   filterParams,
 		maxIGap:        maxIGap,
 		query:          query,
 		selfComparison: selfCompare,
-		bottomPadding:  index.GetK() + 2,
+		bottomPadding:  ki.GetK() + 2,
 		leftPadding:    leftPadding,
 		binWidth:       binWidth,
 		eoTerm:         eoTerm,
 		trapOrder:      eoTerm,
-		valueToCode:    index.Seq.Alpha.LetterIndex(),
+		valueToCode:    ki.GetSeq().Alpha.LetterIndex(),
 	}
 }
 
