@@ -5,15 +5,16 @@
 package alignio
 
 import (
-	"code.google.com/p/biogo/io/seqio/fasta"
-	"code.google.com/p/biogo/io/seqio/fastq"
-	check "launchpad.net/gocheck"
-	"testing"
-)
+	"code.google.com/p/biogo/exp/alphabet"
+	"code.google.com/p/biogo/exp/seq"
+	"code.google.com/p/biogo/exp/seq/linear"
+	"code.google.com/p/biogo/exp/seq/multi"
+	"code.google.com/p/biogo/exp/seqio/fasta"
+	"code.google.com/p/biogo/exp/seqio/fastq"
 
-var (
-	fa = "../testdata/testaln.fasta"
-	fq = "../testdata/testaln.fastq"
+	check "launchpad.net/gocheck"
+	"strings"
+	"testing"
 )
 
 // Tests
@@ -24,25 +25,17 @@ type S struct{}
 var _ = check.Suite(&S{})
 
 func (s *S) TestReadFasta(c *check.C) {
-	if r, err := fasta.NewReaderName(fa); err != nil {
-		c.Fatalf("Failed to open %q: %s", fa, err)
-	} else {
-		if a, err := NewReader(r).Read(); err != nil {
-			c.Fatalf("Failed to read %q: %s", fa, err)
-		} else {
-			c.Check(len(a), check.Equals, 11)
-		}
-	}
+	r := fasta.NewReader(strings.NewReader(fa), linear.NewSeq("", nil, alphabet.Protein))
+	m, _ := multi.NewMulti("", nil, seq.DefaultConsensus)
+	a, err := NewReader(r, m).Read()
+	c.Check(err, check.Equals, nil)
+	c.Check(a.Rows(), check.Equals, 11)
 }
 
 func (s *S) TestReadFastq(c *check.C) {
-	if r, err := fastq.NewReaderName(fq); err != nil {
-		c.Fatalf("Failed to open %q: %s", fq, err)
-	} else {
-		if a, err := NewReader(r).Read(); err != nil {
-			c.Fatalf("Failed to read %q: %s", fq, err)
-		} else {
-			c.Check(len(a), check.Equals, 25)
-		}
-	}
+	r := fastq.NewReader(strings.NewReader(fq), linear.NewQSeq("", nil, alphabet.DNA, alphabet.Sanger))
+	m, _ := multi.NewMulti("", nil, seq.DefaultQConsensus)
+	a, err := NewReader(r, m).Read()
+	c.Check(err, check.Equals, nil)
+	c.Check(a.Rows(), check.Equals, 25)
 }

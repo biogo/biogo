@@ -8,7 +8,6 @@ package alignio
 import (
 	"code.google.com/p/biogo/exp/seq/multi"
 	"code.google.com/p/biogo/exp/seqio"
-
 	"io"
 )
 
@@ -28,7 +27,7 @@ func NewReader(r seqio.Reader, m *multi.Multi) *Reader {
 func (r *Reader) Read() (*multi.Multi, error) {
 	for {
 		s, err := r.r.Read()
-		if err == nil {
+		if err != nil {
 			if err == io.EOF {
 				break
 			} else {
