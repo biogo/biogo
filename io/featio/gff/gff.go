@@ -97,7 +97,7 @@ type Sequence struct {
 func (s Sequence) Start() int             { return 0 }
 func (s Sequence) End() int               { return 0 }
 func (s Sequence) Len() int               { return 0 }
-func (s Sequence) Name() string           { return string(s.Name()) }
+func (s Sequence) Name() string           { return string(s.SeqName) }
 func (s Sequence) Description() string    { return "GFF sequence" }
 func (s Sequence) Location() feat.Feature { return nil }
 func (s Sequence) MolType() bio.Moltype   { return s.Type }
@@ -546,7 +546,8 @@ func NewWriter(w io.Writer, width int, header bool) *Writer {
 // Write writes a single feature and return the number of bytes written and any error.
 // gff.Features are written as a canonical GFF line, seq.Sequences are written as inline
 // sequence in GFF format (note that only sequences of bio.Moltype DNA, RNA and Protein
-// are supported). All other feat.Feature are written as sequence region metadata lines.
+// are supported). gff.Sequences are not handled as they have a zero length. All other
+// feat.Feature are written as sequence region metadata lines.
 func (w *Writer) Write(f feat.Feature) (n int, err error) {
 	w.header = true
 	switch f := f.(type) {
@@ -636,6 +637,8 @@ func (w *Writer) Write(f feat.Feature) (n int, err error) {
 			return n, err
 		}
 		return n + in, err
+	case Sequence:
+		return 0, ErrNotHandled
 	case *Region:
 		return fmt.Fprintf(w.w, "##sequence-region %s %d %d\n", f.SeqName, bio.ZeroToOne(f.RegionStart), f.RegionEnd)
 	default:
