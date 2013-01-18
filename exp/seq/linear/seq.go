@@ -127,7 +127,7 @@ func (s *Seq) String() string { return alphabet.Letters(s.Seq).String() }
 // truncated output via the verb's precision. Fasta format supports sequence line
 // specification via the verb's width field. Fastq format supports optional inclusion
 // of the '+' line descriptor line with the '+' flag. The 'v' verb supports the '#'
-// flag for Go syntax output. Ths 's' and 'v' formats support the '-' flag for
+// flag for Go syntax output. The 's' and 'v' formats support the '-' flag for
 // omission of the sequence name.
 func (s *Seq) Format(fs fmt.State, c rune) {
 	if s == nil {
