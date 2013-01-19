@@ -1,4 +1,4 @@
-// Copyright ©2011-2012 The bíogo Authors. All rights reserved.
+// Copyright ©2011-2013 The bíogo Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -10,6 +10,7 @@ import (
 	"code.google.com/p/biogo/exp/alphabet"
 	"code.google.com/p/biogo/exp/seq/linear"
 	"code.google.com/p/biogo/util"
+
 	check "launchpad.net/gocheck"
 	"testing"
 )
@@ -63,7 +64,7 @@ func (s *S) TestAlignment(c *check.C) {
 		b.Seq = append(b.Seq, alphabet.Letter(l[i]))
 	}
 	aligner := NewAligner(a, b, int(k), 50, 0.80)
-	aligner.Config = &AlignConfig{
+	aligner.Costs = &Costs{
 		MaxIGap:    maxIGap,
 		DiffCost:   diffCost,
 		SameCost:   sameCost,

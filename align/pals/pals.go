@@ -19,8 +19,16 @@ import (
 	"unsafe"
 )
 
-// Default values for filter and alignment.
+// Default thresholds for filter and alignment.
 var (
+	DefaultLength      = 400
+	DefaultMinIdentity = 0.94
+	MaxAvgIndexListLen = 15.0
+	TubeOffsetDelta    = 32
+)
+
+// Default filter and dynamic programming Cost values.
+const (
 	MaxIGap    = 5
 	DiffCost   = 3
 	SameCost   = 1
@@ -29,13 +37,15 @@ var (
 	RMatchCost = float64(DiffCost) + 1
 )
 
-// Default thresholds for filter and alignment.
-var (
-	DefaultLength      = 400
-	DefaultMinIdentity = 0.94
-	MaxAvgIndexListLen = 15.0
-	TubeOffsetDelta    = 32
-)
+// A dp.Costs based on the default cost values.
+var defaultCosts = dp.Costs{
+	MaxIGap:    MaxIGap,
+	DiffCost:   DiffCost,
+	SameCost:   SameCost,
+	MatchCost:  MatchCost,
+	BlockCost:  BlockCost,
+	RMatchCost: RMatchCost,
+}
 
 // Default word characteristics.
 var (
@@ -54,12 +64,7 @@ type PALS struct {
 	index         *kmerindex.Index
 	FilterParams  *filter.Params
 	DPParams      *dp.Params
-	MaxIGap       int
-	DiffCost      int
-	SameCost      int
-	MatchCost     int
-	BlockCost     int
-	RMatchCost    float64
+	dp.Costs
 
 	log        Logger
 	timer      *util.Timer
@@ -79,12 +84,7 @@ func New(target, query *linear.Seq, selfComp bool, m *morass.Morass, threads, tu
 		selfCompare: selfComp,
 		log:         log,
 		tubeOffset:  tubeOffset,
-		MaxIGap:     MaxIGap,
-		DiffCost:    DiffCost,
-		SameCost:    SameCost,
-		MatchCost:   MatchCost,
-		BlockCost:   BlockCost,
-		RMatchCost:  RMatchCost,
+		Costs:       defaultCosts,
 		maxMem:      mem,
 		morass:      m,
 		threads:     threads,
@@ -311,14 +311,7 @@ func (p *PALS) Align(complement bool) (dp.DPHits, error) {
 
 	p.notify("Aligning")
 	aligner := dp.NewAligner(p.target, working, p.FilterParams.WordSize, p.DPParams.MinHitLength, p.DPParams.MinId)
-	aligner.Config = &dp.AlignConfig{
-		MaxIGap:    p.MaxIGap,
-		DiffCost:   p.DiffCost,
-		SameCost:   p.SameCost,
-		MatchCost:  p.MatchCost,
-		BlockCost:  p.BlockCost,
-		RMatchCost: p.RMatchCost,
-	}
+	aligner.Costs = &p.Costs
 	hits := aligner.AlignTraps(trapezoids)
 	hitCoverageA, hitCoverageB, err := hits.Sum()
 	if err != nil {

@@ -7,6 +7,7 @@ package filter
 import (
 	"code.google.com/p/biogo/exp/seq/linear"
 	"code.google.com/p/biogo/index/kmerindex"
+
 	"sort"
 )
 

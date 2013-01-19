@@ -1,4 +1,4 @@
-// Copyright ©2011-2012 The bíogo Authors. All rights reserved.
+// Copyright ©2011-2013 The bíogo Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -9,25 +9,18 @@ import (
 	"code.google.com/p/biogo/align/pals/filter"
 	"code.google.com/p/biogo/bio"
 	"code.google.com/p/biogo/exp/seq/linear"
+
 	"sort"
 )
 
-// Holds dp alignment parameters.
+// A Params holds dynamic programming alignment parameters.
 type Params struct {
 	MinHitLength int
 	MinId        float64
 }
 
-// An AlignConfig specifies dynamic programming behaviour.
-//
-// Sensible default parameters for alignment:
-//	MaxIGap    = 5
-//	DiffCost   = 3
-//	SameCost   = 1
-//	MatchCost  = DiffCost + SameCost
-//	BlockCost  = DiffCost * MaxIGap
-//	RMatchCost = DiffCost + 1
-type AlignConfig struct {
+// A Costs specifies dynamic programming behaviour.
+type Costs struct {
 	MaxIGap    int
 	DiffCost   int
 	SameCost   int
@@ -43,7 +36,7 @@ type Aligner struct {
 	minHitLength  int
 	minId         float64
 	segs          DPHits
-	Config        *AlignConfig
+	Costs         *Costs
 }
 
 // Create a new Aligner based on target and query sequences. 
@@ -71,12 +64,7 @@ func (a *Aligner) AlignTraps(trapezoids filter.Trapezoids) DPHits {
 		minLen:      a.minHitLength,
 		maxDiff:     1 - a.minId,
 
-		maxIGap:    a.Config.MaxIGap,
-		diffCost:   a.Config.DiffCost,
-		sameCost:   a.Config.SameCost,
-		matchCost:  a.Config.MatchCost,
-		blockCost:  a.Config.BlockCost,
-		rMatchCost: a.Config.RMatchCost,
+		Costs: *a.Costs,
 
 		result: make(chan DPHit),
 	}

@@ -1,4 +1,4 @@
-// Copyright ©2011-2012 The bíogo Authors. All rights reserved.
+// Copyright ©2011-2013 The bíogo Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -23,12 +23,7 @@ type kernel struct {
 
 	valueToCode []int
 
-	maxIGap    int
-	diffCost   int
-	sameCost   int
-	matchCost  int
-	blockCost  int
-	rMatchCost float64
+	Costs
 
 	lowEnd     DPHit
 	highEnd    DPHit
@@ -61,15 +56,15 @@ func (k *kernel) alignRecursion(workingTrap *filter.Trapezoid) {
 
 	k.traceForward(mid, mid-workingTrap.Right, mid-workingTrap.Left)
 
-	for x := 1; x == 1 || k.highEnd.Bbpos > mid+x*k.maxIGap && k.highEnd.Score < k.lowEnd.Score; x++ {
-		k.traceReverse(k.lowEnd.Bepos, k.lowEnd.Aepos, k.lowEnd.Aepos, mid+k.maxIGap, k.blockCost+2*x*k.diffCost)
+	for x := 1; x == 1 || k.highEnd.Bbpos > mid+x*k.MaxIGap && k.highEnd.Score < k.lowEnd.Score; x++ {
+		k.traceReverse(k.lowEnd.Bepos, k.lowEnd.Aepos, k.lowEnd.Aepos, mid+k.MaxIGap, k.BlockCost+2*x*k.DiffCost)
 	}
 
 	k.highEnd.Aepos, k.highEnd.Bepos = k.lowEnd.Aepos, k.lowEnd.Bepos
 
 	lowTrap, highTrap := *workingTrap, *workingTrap
-	lowTrap.Top = k.highEnd.Bbpos - k.maxIGap
-	highTrap.Bottom = k.highEnd.Bepos + k.maxIGap
+	lowTrap.Top = k.highEnd.Bbpos - k.MaxIGap
+	highTrap.Bottom = k.highEnd.Bepos + k.MaxIGap
 
 	if k.highEnd.Bepos-k.highEnd.Bbpos >= k.minLen && k.highEnd.Aepos-k.highEnd.Abpos >= k.minLen {
 		indel := (k.highEnd.Abpos - k.highEnd.Bbpos) - (k.highEnd.Aepos - k.highEnd.Bepos)
@@ -79,7 +74,7 @@ func (k *kernel) alignRecursion(workingTrap *filter.Trapezoid) {
 			}
 			indel = -indel
 		}
-		identity := ((1 / k.rMatchCost) - float64(k.highEnd.Score-indel)/(k.rMatchCost*float64(k.highEnd.Bepos-k.highEnd.Bbpos)))
+		identity := ((1 / k.RMatchCost) - float64(k.highEnd.Score-indel)/(k.RMatchCost*float64(k.highEnd.Bepos-k.highEnd.Bbpos)))
 
 		if identity <= k.maxDiff {
 			k.highEnd.Error = identity
@@ -127,7 +122,7 @@ func (k *kernel) alignRecursion(workingTrap *filter.Trapezoid) {
 		}
 	}
 
-	if lowTrap.Top-lowTrap.Bottom > k.minLen && lowTrap.Top < workingTrap.Top-k.maxIGap {
+	if lowTrap.Top-lowTrap.Bottom > k.minLen && lowTrap.Top < workingTrap.Top-k.MaxIGap {
 		k.alignRecursion(&lowTrap)
 	}
 	if highTrap.Top-highTrap.Bottom > k.minLen {
@@ -164,7 +159,7 @@ func (k *kernel) traceForward(mid, low, high int) {
 		high = k.target.Len()
 	}
 
-	if required := (high - low) + k.maxIGap; required >= len(k.vectors[0]) {
+	if required := (high - low) + k.MaxIGap; required >= len(k.vectors[0]) {
 		k.allocateVectors(required)
 	}
 
@@ -177,13 +172,13 @@ func (k *kernel) traceForward(mid, low, high int) {
 		thisVector.set(j, 0)
 	}
 
-	high += k.maxIGap
+	high += k.MaxIGap
 	if high > k.target.Len() {
 		high = k.target.Len()
 	}
 
 	for ; j <= high; j++ {
-		thisVector.set(j, thisVector.at(j-1)-k.diffCost)
+		thisVector.set(j, thisVector.at(j-1)-k.DiffCost)
 	}
 
 	maxScore = 0
@@ -207,7 +202,7 @@ func (k *kernel) traceForward(mid, low, high int) {
 		odd = !odd
 
 		score = thatVector.at(low)
-		thisVector.set(low, score-k.diffCost)
+		thisVector.set(low, score-k.DiffCost)
 		cost = thisVector.at(low)
 
 		for j = low + 1; j <= high; j++ {
@@ -217,7 +212,7 @@ func (k *kernel) traceForward(mid, low, high int) {
 			cost = score
 			score = thatVector.at(j)
 			if k.query.Seq[i] == k.target.Seq[j-1] && k.valueToCode[k.query.Seq[i]] >= 0 {
-				cost += k.matchCost
+				cost += k.MatchCost
 			}
 
 			ratchet = cost
@@ -228,7 +223,7 @@ func (k *kernel) traceForward(mid, low, high int) {
 				ratchet = temp
 			}
 
-			cost = ratchet - k.diffCost
+			cost = ratchet - k.DiffCost
 			thisVector.set(j, cost)
 			if cost >= maxScore {
 				maxScore = cost
@@ -241,7 +236,7 @@ func (k *kernel) traceForward(mid, low, high int) {
 			var ratchet int
 
 			if k.query.Seq[i] == k.target.Seq[j-1] && k.valueToCode[k.query.Seq[i]] >= 0 {
-				score += k.matchCost
+				score += k.MatchCost
 			}
 
 			ratchet = score
@@ -249,7 +244,7 @@ func (k *kernel) traceForward(mid, low, high int) {
 				ratchet = cost
 			}
 
-			score = ratchet - k.diffCost
+			score = ratchet - k.DiffCost
 			thisVector.set(j, score)
 			if score > maxScore {
 				maxScore = score
@@ -258,8 +253,8 @@ func (k *kernel) traceForward(mid, low, high int) {
 			}
 
 			for j++; j <= k.target.Len(); j++ {
-				score -= k.diffCost
-				if score < maxScore-k.blockCost {
+				score -= k.DiffCost
+				if score < maxScore-k.BlockCost {
 					break
 				}
 				thisVector.set(j, score)
@@ -268,10 +263,10 @@ func (k *kernel) traceForward(mid, low, high int) {
 
 		high = j - 1
 
-		for low <= high && thisVector.at(low) < maxScore-k.blockCost {
+		for low <= high && thisVector.at(low) < maxScore-k.BlockCost {
 			low++
 		}
-		for low <= high && thisVector.at(high) < maxScore-k.blockCost {
+		for low <= high && thisVector.at(high) < maxScore-k.BlockCost {
 			high--
 		}
 
@@ -311,7 +306,7 @@ func (k *kernel) traceReverse(top, low, high, bottom, xfactor int) {
 		high = k.target.Len()
 	}
 
-	if required := (high - low) + k.maxIGap; required >= len(k.vectors[0]) {
+	if required := (high - low) + k.MaxIGap; required >= len(k.vectors[0]) {
 		k.allocateVectors(required)
 	}
 
@@ -323,13 +318,13 @@ func (k *kernel) traceReverse(top, low, high, bottom, xfactor int) {
 		thisVector.set(j, 0)
 	}
 
-	low -= k.maxIGap
+	low -= k.MaxIGap
 	if low < 0 {
 		low = 0
 	}
 
 	for ; j >= low; j-- {
-		thisVector.set(j, thisVector.at(j+1)-k.diffCost)
+		thisVector.set(j, thisVector.at(j+1)-k.DiffCost)
 	}
 
 	maxScore = 0
@@ -340,7 +335,7 @@ func (k *kernel) traceReverse(top, low, high, bottom, xfactor int) {
 
 	/* Advance to next row */
 	if top-1 <= bottom {
-		xfactor = k.blockCost
+		xfactor = k.BlockCost
 	}
 
 	thatVector := &offsetSlice{}
@@ -357,7 +352,7 @@ func (k *kernel) traceReverse(top, low, high, bottom, xfactor int) {
 		odd = !odd
 
 		score = thatVector.at(high)
-		thisVector.set(high, score-k.diffCost)
+		thisVector.set(high, score-k.DiffCost)
 		cost = thisVector.at(high)
 
 		for j = high - 1; j >= low; j-- {
@@ -367,7 +362,7 @@ func (k *kernel) traceReverse(top, low, high, bottom, xfactor int) {
 			cost = score
 			score = thatVector.at(j)
 			if k.query.Seq[i] == k.target.Seq[j] && k.valueToCode[k.query.Seq[i]] >= 0 {
-				cost += k.matchCost
+				cost += k.MatchCost
 			}
 
 			ratchet = cost
@@ -378,7 +373,7 @@ func (k *kernel) traceReverse(top, low, high, bottom, xfactor int) {
 				ratchet = temp
 			}
 
-			cost = ratchet - k.diffCost
+			cost = ratchet - k.DiffCost
 			thisVector.set(j, cost)
 			if cost >= maxScore {
 				maxScore = cost
@@ -391,7 +386,7 @@ func (k *kernel) traceReverse(top, low, high, bottom, xfactor int) {
 			var ratchet int
 
 			if k.query.Seq[i] == k.target.Seq[j] && k.valueToCode[k.query.Seq[i]] >= 0 {
-				score += k.matchCost
+				score += k.MatchCost
 			}
 
 			ratchet = score
@@ -399,7 +394,7 @@ func (k *kernel) traceReverse(top, low, high, bottom, xfactor int) {
 				ratchet = cost
 			}
 
-			score = ratchet - k.diffCost
+			score = ratchet - k.DiffCost
 			thisVector.set(j, score)
 			if score > maxScore {
 				maxScore = score
@@ -408,7 +403,7 @@ func (k *kernel) traceReverse(top, low, high, bottom, xfactor int) {
 			}
 
 			for j--; j >= 0; j-- {
-				score -= k.diffCost
+				score -= k.DiffCost
 				if score < maxScore-xfactor {
 					break
 				}
@@ -426,7 +421,7 @@ func (k *kernel) traceReverse(top, low, high, bottom, xfactor int) {
 		}
 
 		if i == bottom {
-			xfactor = k.blockCost
+			xfactor = k.BlockCost
 		}
 
 		if required := (high - low) + 2; required > len(k.vectors[0]) {
