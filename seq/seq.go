@@ -2,314 +2,237 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// Basic sequence package
+// Package seq provides the base for storage and manipulation of biological sequence information.
+// 
+// A variety of sequence types are provided by derived packages including linear and protein sequence
+// with and without quality scores. Multiple sequence data is also supported as unaligned sets and aligned sequences.
+// 
+// Quality scoring is based on Phred scores, although there is the capacity to interconvert between Phred and
+// Solexa scores and a Solexa quality package is provide, though not integrated.
 package seq
 
 import (
-	"code.google.com/p/biogo/bio"
+	"code.google.com/p/biogo/alphabet"
 	"code.google.com/p/biogo/feat"
-	"code.google.com/p/biogo/interval"
-	"code.google.com/p/biogo/util"
+	"fmt"
+	"math"
 )
 
 const (
-	Prepend = iota
-	Append
+	Start = 1 << iota
+	End
 )
 
 var (
-	complement = [...]map[byte]byte{
-		{'a': 't', 'c': 'g', 'g': 'c', 't': 'a', 'n': 'n',
-			'A': 'T', 'C': 'G', 'G': 'C', 'T': 'A', 'N': 'N'}, // DNA rules
-		{'a': 'u', 'c': 'g', 'g': 'c', 'u': 'a', 'n': 'n',
-			'A': 'U', 'C': 'G', 'G': 'C', 'U': 'A', 'N': 'N'}, // RNA rules
-	}
-
-	emptyString = ""
+	// The default value for Qphred scores from non-quality sequences.
+	DefaultQphred alphabet.Qphred = 40
+	// The default encoding for Qphred scores from non-quality sequences.
+	DefaultEncoding alphabet.Encoding = alphabet.Sanger
 )
 
-type Seq struct {
-	ID       string
-	Seq      []byte
-	Offset   int
-	Strand   int8
-	Circular bool
-	Moltype  bio.Moltype
-	Quality  *Quality
-	Inplace  bool
-	Meta     interface{} // No operation on Seq objects implicitly copies or changes the contents of Meta.
+type Alphabeter interface {
+	Alphabet() alphabet.Alphabet
 }
 
-func New(id string, seq []byte, qual *Quality) *Seq {
-	return &Seq{
-		ID:       id,
-		Seq:      seq,
-		Offset:   0,
-		Strand:   1,
-		Circular: false,
-		Moltype:  0,
-		Quality:  qual,
-		Inplace:  false,
+// A QFilter returns a letter based on an alphabet, quality letter and quality threshold.
+type QFilter func(a alphabet.Alphabet, thresh alphabet.Qphred, ql alphabet.QLetter) alphabet.Letter
+
+var (
+	// AmbigFilter is a QFilter function that returns the given alphabet's ambiguous position
+	// letter for quality letters with a quality score below the specified threshold.
+	AmbigFilter QFilter = func(a alphabet.Alphabet, thresh alphabet.Qphred, l alphabet.QLetter) alphabet.Letter {
+		if l.L == a.Gap() || l.Q >= thresh {
+			return l.L
+		}
+		return a.Ambiguous()
 	}
+
+	// CaseFilter is a QFilter function that returns a lower case letter for quality letters
+	// with a quality score below the specified threshold and upper case equal to or above the threshold.
+	CaseFilter QFilter = func(a alphabet.Alphabet, thresh alphabet.Qphred, l alphabet.QLetter) alphabet.Letter {
+		switch {
+		case l.L == a.Gap():
+			return l.L
+		case l.Q >= thresh:
+			return l.L &^ ('a' - 'A')
+		}
+		return l.L | ('a' - 'A')
+	}
+)
+
+// A Sequence is a feature that stores sequence information.
+type Sequence interface {
+	Feature
+	At(int) alphabet.QLetter      // Return the letter at a specific position.
+	Set(int, alphabet.QLetter)    // Set the letter at a specific position.
+	Alphabet() alphabet.Alphabet  // Return the Alphabet being used.
+	RevComp()                     // Reverse complement the sequence.
+	Reverse()                     // Reverse the order of elements in the sequence.
+	New() Sequence                // Return a pointer to the zero value of the concrete type.
+	Clone() Sequence              // Return a copy of the Sequence.
+	CloneAnnotation() *Annotation // Return a copy of the sequence's annotation.
+	Slicer
+	Conformationer
+	ConformationSetter
+	fmt.Formatter
 }
 
-// Set Inplace and return self for chaining.
-func (self *Seq) WorkInplace(b bool) *Seq {
-	self.Inplace = b
-	return self
+// A Feature describes the basis for sequence features.
+type Feature interface {
+	feat.Feature
+	feat.Offsetter
 }
 
-func (self *Seq) Len() int {
-	return len(self.Seq)
+// A Conformationer can give information regarding the sequence's conformation. For the
+// purposes of sequtils, types that are not a Conformationer are treated as linear.
+type Conformationer interface {
+	Conformation() feat.Conformation
 }
 
-func (self *Seq) Start() int {
-	return self.Offset
+// A ConformationSetter can set its sequence conformation.
+type ConformationSetter interface {
+	SetConformation(feat.Conformation)
 }
 
-func (self *Seq) End() int {
-	return self.Offset + len(self.Seq)
+// A Slicer returns and sets a Slice. 
+type Slicer interface {
+	Slice() alphabet.Slice
+	SetSlice(alphabet.Slice)
 }
 
-func (self *Seq) Trunc(start, end int) (s *Seq, err error) {
-	var ts []byte
-
-	if !self.Inplace && self.Quality != nil && self.Quality.Inplace {
-		return nil, bio.NewError("Inplace operation on Quality with non-Inplace operation on parent Seq.", 0, self)
-	}
-
-	if start < self.Offset || end < self.Offset ||
-		start > len(self.Seq)+self.Offset || end > len(self.Seq)+self.Offset {
-		return nil, bio.NewError("Start or end position out of range.", 0, self)
-	}
-
-	if start <= end {
-		if self.Inplace {
-			ts = self.Seq[start-self.Offset : end-self.Offset]
-		} else {
-			ts = append([]byte(nil), self.Seq[start-self.Offset:end-self.Offset]...)
-		}
-	} else if self.Circular {
-		if self.Inplace {
-			ts = append(self.Seq[start-self.Offset:], self.Seq[:end-self.Offset]...) // not quite inplace for this op
-		} else {
-			ts = make([]byte, len(self.Seq)-start-self.Offset, len(self.Seq)+end-start)
-			copy(ts, self.Seq[start-self.Offset:])
-			ts = append(ts, self.Seq[:end-self.Offset]...)
-		}
-	} else {
-		return nil, bio.NewError("Start position greater than end position for non-circular molecule.", 0, self)
-	}
-
-	var q *Quality
-	if self.Quality != nil {
-		q, err = self.Quality.Trunc(start, end)
-		if err != nil {
-			err = bio.NewError("Quality.Trunc() returned error", 0, err)
-			return
-		}
-	}
-
-	if self.Inplace {
-		s = self
-		s.Seq = ts
-		s.Circular = false
-		s.Quality = q
-	} else {
-		s = &Seq{
-			ID:       self.ID,
-			Seq:      ts,
-			Offset:   start,
-			Strand:   self.Strand,
-			Circular: false,
-			Moltype:  self.Moltype,
-			Quality:  q,
-		}
-	}
-
-	return
+// A Scorer is a sequence type that provides Phred-based scoring information.
+type Scorer interface {
+	EAt(int) float64               // Return the p(Error) for a specific position.
+	SetE(int, float64)             // Set the p(Error) for a specific position.
+	Encoding() alphabet.Encoding   // Return the score encoding scheme.
+	SetEncoding(alphabet.Encoding) // Set the score encoding scheme.
+	QEncode(int) byte              // Encode the quality at the specified position according the the encoding scheme.
 }
 
-func (self *Seq) RevComp() (s *Seq, err error) {
-	var rs []byte
-	if self.Inplace {
-		rs = self.Seq
-	} else {
-		if self.Quality != nil && self.Quality.Inplace {
-			return nil, bio.NewError("Inplace operation on Quality with non-Inplace operation on parent Seq.", 0, self)
-		}
-		rs = make([]byte, len(self.Seq))
-	}
-
-	if self.Moltype == bio.DNA || self.Moltype == bio.RNA {
-		i, j := 0, len(self.Seq)-1
-		for ; i < j; i, j = i+1, j-1 {
-			rs[i], rs[j] = complement[self.Moltype][self.Seq[j]], complement[self.Moltype][self.Seq[i]]
-		}
-		if i == j {
-			rs[i] = complement[self.Moltype][self.Seq[i]]
-		}
-	} else {
-		return nil, bio.NewError("Cannot reverse-complement protein.", 0, self)
-	}
-
-	var q *Quality
-	if self.Quality != nil {
-		q = self.Quality.Reverse()
-	}
-
-	if self.Inplace {
-		s = self
-		s.Quality = q
-	} else {
-		s = &Seq{
-			ID:       self.ID,
-			Seq:      rs,
-			Offset:   self.Offset + len(self.Seq),
-			Strand:   -self.Strand,
-			Circular: self.Circular,
-			Moltype:  self.Moltype,
-			Quality:  q,
-		}
-	}
-
-	return
+// A Quality is a feature whose elements are Phred scores.
+type Quality interface {
+	Scorer
+	Copy() Quality // Return a copy of the Quality.
 }
 
-func (self *Seq) Join(s *Seq, where int) (j *Seq, err error) {
-	var (
-		ts []byte
-		ID string
-	)
-
-	if self.Circular {
-		return nil, bio.NewError("Cannot join circular molecule.", 0, self)
-	}
-
-	if !self.Inplace && self.Quality != nil && self.Quality.Inplace {
-		return nil, bio.NewError("Inplace operation on Quality with non-Inplace operation on parent Seq.", 0, self)
-	}
-
-	switch where {
-	case Prepend:
-		ID = s.ID + "+" + self.ID
-		ts = make([]byte, len(s.Seq), len(s.Seq)+len(self.Seq))
-		copy(ts, s.Seq)
-		ts = append(ts, self.Seq...)
-	case Append:
-		ID = self.ID + "+" + s.ID
-		if self.Inplace {
-			ts = append(self.Seq, s.Seq...)
-		} else {
-			ts = make([]byte, len(self.Seq), len(s.Seq)+len(self.Seq))
-			copy(ts, self.Seq)
-			ts = append(ts, s.Seq...)
-		}
-	}
-
-	var q *Quality
-	if self.Quality != nil && s.Quality != nil {
-		q, err = self.Quality.Join(s.Quality, where)
-		if err != nil {
-			return
-		}
-	}
-
-	if self.Inplace {
-		j = self
-		j.ID = ID
-		j.Seq = ts
-		j.Quality = q // self.Quality will become nil if either sequence lacks Quality
-	} else {
-		j = &Seq{
-			ID:      ID,
-			Seq:     ts,
-			Strand:  self.Strand,
-			Moltype: self.Moltype,
-			Quality: q,
-		}
-	}
-	if where == Prepend {
-		j.Offset -= s.Len()
-	}
-
-	return
+// Rower describes the interface for sets of sequences or aligned multiple sequences.
+type Rower interface {
+	Rows() int
+	Row(i int) Sequence
 }
 
-func (self *Seq) Stitch(f feat.FeatureSet) (s *Seq, err error) {
-	if !self.Inplace && self.Quality != nil && self.Quality.Inplace {
-		return nil, bio.NewError("Inplace operation on Quality with non-Inplace operation on parent Seq.", 0, self)
-	}
+// RowAppender is a type for sets of sequences or aligned multiple sequences that can append letters to individual or grouped sequences.
+type RowAppender interface {
+	Rower
+	AppendEach(a [][]alphabet.QLetter) (err error)
+}
 
-	t := interval.NewTree()
-	var i *interval.Interval
+// An Appender can append letters.
+type Appender interface {
+	AppendLetters(...alphabet.Letter) error
+	AppendQLetters(...alphabet.QLetter) error
+}
 
-	for _, feature := range f {
-		i, err = interval.New(emptyString, feature.Start, feature.End, 0, nil)
-		if err != nil {
-			return
-		} else {
-			t.Insert(i)
-		}
-	}
+// Aligned describes the interface for aligned multiple sequences.
+type Aligned interface {
+	Start() int
+	End() int
+	Rows() int
+	Column(pos int, fill bool) []alphabet.Letter
+	ColumnQL(pos int, fill bool) []alphabet.QLetter
+}
 
-	span, err := interval.New(emptyString, self.Start(), self.End(), 0, nil)
-	if err != nil {
-		panic("Seq.End() < Seq.Start()")
-	}
-	fs, _ := t.Flatten(span, 0, 0)
+// An AlignedAppenderis a multiple sequence alignment that can append letters.
+type AlignedAppender interface {
+	Aligned
+	AppendColumns(a ...[]alphabet.QLetter) (err error)
+	AppendEach(a [][]alphabet.QLetter) (err error)
+}
 
-	if self.Inplace {
-		self.Seq = self.stitch(fs)
-		self.Offset = 0
-		self.Circular = false
-		if self.Quality != nil {
-			var q *Quality
-			if !self.Quality.Inplace {
-				q = &Quality{ID: self.Quality.ID}
-			}
-			q.Qual = self.Quality.stitch(fs)
-			q.Offset = 0
-			q.Circular = false
-			self.Quality = q
-		}
-		s = self
-	} else {
-		var q *Quality
-		if self.Quality != nil {
-			q = &Quality{
-				ID:       self.Quality.ID,
-				Qual:     self.Quality.stitch(fs),
-				Offset:   0,
-				Circular: false,
+// ConsenseFunc is a function type that returns the consensus letter for a column of an alignment.
+type ConsenseFunc func(a Aligned, alpha alphabet.Alphabet, pos int, fill bool) alphabet.QLetter
+
+var (
+	// The default ConsenseFunc function.
+	DefaultConsensus ConsenseFunc = func(a Aligned, alpha alphabet.Alphabet, pos int, fill bool) alphabet.QLetter {
+		w := make([]int, alpha.Len())
+		c := a.Column(pos, fill)
+
+		for _, l := range c {
+			if alpha.IsValid(l) {
+				w[alpha.IndexOf(l)]++
 			}
 		}
-		s = &Seq{
-			ID:       self.ID,
-			Seq:      self.stitch(fs),
-			Offset:   0,
-			Strand:   self.Strand,
-			Circular: false,
-			Moltype:  self.Moltype,
-			Quality:  q,
+
+		var max, maxi int
+		for i, v := range w {
+			if v > max {
+				max, maxi = v, i
+			}
+		}
+
+		return alphabet.QLetter{
+			L: alpha.Letter(maxi),
+			Q: alphabet.Ephred(1 - (float64(max) / float64(len(c)))),
 		}
 	}
 
-	return
-}
+	// A default ConsenseFunc function that takes letter quality into account.
+	// http://staden.sourceforge.net/manual/gap4_unix_120.html
+	DefaultQConsensus ConsenseFunc = func(a Aligned, alpha alphabet.Alphabet, pos int, fill bool) alphabet.QLetter {
+		w := make([]float64, alpha.Len())
+		for i := range w {
+			w[i] = 1
+		}
 
-func (self *Seq) stitch(f []*interval.Interval) (ts []byte) {
-	for _, seg := range f {
-		ts = append(ts, self.Seq[util.Max(seg.Start()-self.Offset, 0):util.Min(seg.End()-self.Offset, len(self.Seq))]...)
+		others := float64(alpha.Len() - 1)
+		c := a.ColumnQL(pos, fill)
+		for _, l := range c {
+			if alpha.IsValid(l.L) {
+				i, alt := alpha.IndexOf(l.L), l.Q.ProbE()
+				p := (1 - alt)
+				alt /= others
+				for b := range w {
+					if i == b {
+						w[b] *= p
+					} else {
+						w[b] *= alt
+					}
+				}
+			}
+		}
+
+		var (
+			max         = 0.
+			sum         float64
+			best, count int
+		)
+		for _, p := range w {
+			sum += p
+		}
+		for i, v := range w {
+			if v /= sum; v > max {
+				max, best = v, i
+				count = 0
+			}
+			if v == max || math.Abs(max-v) < FloatTolerance {
+				count++
+			}
+		}
+
+		if count > 1 {
+			return alphabet.QLetter{
+				L: alpha.Ambiguous(),
+				Q: 0,
+			}
+		}
+
+		return alphabet.QLetter{
+			L: alpha.Letter(best),
+			Q: alphabet.Ephred(1 - max),
+		}
 	}
+)
 
-	return
-}
-
-var defaultStringFunc = func(s *Seq) string { return string(s.Seq) }
-
-var StringFunc = defaultStringFunc
-
-func (self *Seq) String() string {
-	return StringFunc(self)
-}
+// Tolerance on float comparison for DefaultQConsensus.
+var FloatTolerance float64 = 1e-10

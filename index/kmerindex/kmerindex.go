@@ -8,10 +8,10 @@ package kmerindex
 
 import (
 	"code.google.com/p/biogo/bio"
-	"code.google.com/p/biogo/exp/seq/linear"
+	"code.google.com/p/biogo/seq/linear"
 	"code.google.com/p/biogo/util"
 
-	"code.google.com/p/biogo/exp/alphabet"
+	"code.google.com/p/biogo/alphabet"
 	"fmt"
 	"math"
 )

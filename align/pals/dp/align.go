@@ -8,7 +8,7 @@ package dp
 import (
 	"code.google.com/p/biogo/align/pals/filter"
 	"code.google.com/p/biogo/bio"
-	"code.google.com/p/biogo/exp/seq/linear"
+	"code.google.com/p/biogo/seq/linear"
 
 	"sort"
 )

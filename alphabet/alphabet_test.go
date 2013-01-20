@@ -21,7 +21,7 @@ var _ = check.Suite(&S{})
 func (s *S) TestInterfaces(c *check.C) {
 	var (
 		alpha Alphabet
-		comp  Complementable
+		comp  Complementor
 	)
 
 	for _, a := range []interface{}{DNA, RNA, Protein} {
@@ -43,7 +43,7 @@ type testAlphabets struct {
 func (s *S) TestIsValid(c *check.C) {
 	for _, t := range []testAlphabets{{N, DNA}, {R, RNA}, {P, Protein}} {
 		for i := 0; i < 256; i++ {
-			c.Check(t.alphabet.IsValid(byte(i)), check.Equals, strings.ContainsRune(t.letters, unicode.ToUpper(rune(i))) || strings.ContainsRune(t.letters, unicode.ToLower(rune(i))))
+			c.Check(t.alphabet.IsValid(Letter(i)), check.Equals, strings.ContainsRune(t.letters, unicode.ToUpper(rune(i))) || strings.ContainsRune(t.letters, unicode.ToLower(rune(i))))
 		}
 	}
 }
@@ -59,10 +59,10 @@ func (s *S) TestLetter(c *check.C) {
 func (s *S) TestComplementOf(c *check.C) {
 	for _, t := range []testAlphabets{{N, DNA}, {R, RNA}} {
 		for i := 0; i < 256; i++ {
-			if sc, ok := t.alphabet.(Complementable).ComplementOf(byte(i)); ok {
-				dc, ok := t.alphabet.(Complementable).ComplementOf(sc)
+			if sc, ok := t.alphabet.(Complementor).Complement(Letter(i)); ok {
+				dc, ok := t.alphabet.(Complementor).Complement(sc)
 				c.Check(ok, check.Equals, true)
-				c.Check(dc, check.Equals, byte(i))
+				c.Check(dc, check.Equals, Letter(i))
 			}
 		}
 	}
@@ -70,21 +70,21 @@ func (s *S) TestComplementOf(c *check.C) {
 
 func (s *S) TestComplementDirect(c *check.C) {
 	for _, t := range []testAlphabets{{N, DNA}, {R, RNA}} {
-		complement := t.alphabet.(Complementable).ComplementTable()
+		complement := t.alphabet.(Complementor).ComplementTable()
 		for i := 0; i < 256; i++ {
 			if sc := complement[i]; sc <= unicode.MaxASCII {
 				dc := complement[sc]
 				c.Check(dc <= unicode.MaxASCII, check.Equals, true)
-				c.Check(dc, check.Equals, byte(i))
+				c.Check(dc, check.Equals, Letter(i))
 			} else {
-				c.Check(sc&unicode.MaxASCII, check.Equals, byte(i&unicode.MaxASCII))
+				c.Check(sc&unicode.MaxASCII, check.Equals, Letter(i&unicode.MaxASCII))
 			}
 		}
 	}
 }
 
 func (s *S) TestString(c *check.C) {
-	e := [...]string{"acgtACGT", "acguACGU", "*-abcdefghijklmnpqrstvxyz*-ABCDEFGHIJKLMNPQRSTVXYZ"}
+	e := [...]string{"acgtACGT", "acguACGU", "*abcdefghijklmnpqrstvxyz*ABCDEFGHIJKLMNPQRSTVXYZ"}
 	for i, t := range []testAlphabets{{N, DNA}, {R, RNA}, {P, Protein}} {
 		c.Check(t.alphabet.String(), check.Equals, e[i])
 	}
@@ -107,19 +107,19 @@ func BenchmarkIsValidGeneric(b *testing.B) {
 	g, _ := NewGeneric(P, 0, 0, 0, !CaseSensitive)
 	b.StartTimer()
 	for i := 0; i < b.N; i++ {
-		g.IsValid(byte(i))
+		g.IsValid(Letter(i))
 	}
 }
 
 func BenchmarkIsValidProtein(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		Protein.IsValid(byte(i))
+		Protein.IsValid(Letter(i))
 	}
 }
 
 func BenchmarkIsValidDNA(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		DNA.IsValid(byte(i))
+		DNA.IsValid(Letter(i))
 	}
 }
 
@@ -132,7 +132,7 @@ func BenchmarkIsValidDNADirect(b *testing.B) {
 
 func BenchmarkIndexDNA(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		DNA.IndexOf(byte(i))
+		DNA.IndexOf(Letter(i))
 	}
 }
 
@@ -145,15 +145,15 @@ func BenchmarkIndexDNADirect(b *testing.B) {
 
 func BenchmarkComplementDNA(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		DNA.ComplementOf(byte(i))
+		DNA.Complement(Letter(i))
 	}
 }
 
 func BenchmarkComplementDNADirect(b *testing.B) {
-	complement := DNA.ComplementTable()
-	var c byte
+	comp := DNA.ComplementTable()
+	var c Letter
 	for i := 0; i < b.N; i++ {
-		if c = complement[byte(i)]; c != 0x80 {
+		if c = comp[Letter(i)]; c != 0x80 {
 		}
 	}
 }

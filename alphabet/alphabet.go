@@ -1,11 +1,13 @@
-// Copyright ©2011-2012 The bíogo Authors. All rights reserved.
+// Copyright ©2011-2013 The bíogo Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+// Package alphabet describes biological sequence letters, including quality scores.
 package alphabet
 
 import (
 	"code.google.com/p/biogo/bio"
+
 	"errors"
 	"fmt"
 	"sort"
@@ -18,19 +20,19 @@ const (
 )
 
 var (
-	N               = "acgt"
-	Npairing        = [2]string{"acgtnxACGTNX-", "tgcanxTGCANX-"}
-	R               = "acgu"
-	Rpairing        = [2]string{"acgunxACGUNX-", "ugcanxUGCANX-"}
-	Nambiguous byte = 'n'
-	P               = "abcdefghijklmnpqrstvxyz*-"
-	Pambiguous byte = 'x'
-	Gap        byte = '-'
+	N                 = "acgt"
+	Npairing          = [2]string{"acgtnxACGTNX-", "tgcanxTGCANX-"}
+	R                 = "acgu"
+	Rpairing          = [2]string{"acgunxACGUNX-", "ugcanxUGCANX-"}
+	Nambiguous Letter = 'n'
+	P                 = "abcdefghijklmnpqrstvxyz*"
+	Pambiguous Letter = 'x'
+	Gap        Letter = '-'
 )
 
 var (
-	DNA, RNA *Nucleic
-	Protein  *Peptide
+	DNA, RNA Complementor
+	Protein  Alphabet
 )
 
 func init() {
@@ -69,24 +71,25 @@ func Init() (err error) {
 
 // Minimum requirements for an Alphabet.
 type Alphabet interface {
-	IsValid(byte) bool
-	AllValid([]byte) (bool, int)
+	IsValid(Letter) bool
+	AllValid([]Letter) (bool, int)
+	AllValidQLetter([]QLetter) (bool, int)
 	Len() int
 	Moltype() bio.Moltype
-	IndexOf(byte) int
-	Letter(int) byte
+	IndexOf(Letter) int
+	Letter(int) Letter
 	ValidLetters() []bool
 	LetterIndex() []int
-	Gap() byte
-	Ambiguous() byte
+	Gap() Letter
+	Ambiguous() Letter
 	String() string
 }
 
 // Nucleic alphabets are able to complement their values.
-type Complementable interface {
+type Complementor interface {
 	Alphabet
-	ComplementOf(byte) (byte, bool)
-	ComplementTable() []byte
+	Complement(Letter) (Letter, bool)
+	ComplementTable() []Letter
 }
 
 // Single letter alphabet type.
@@ -94,14 +97,14 @@ type Generic struct {
 	letters        string
 	valid          [256]bool
 	index          [256]int
-	gap, ambiguous byte
+	gap, ambiguous Letter
 	caseSensitive  bool
 	molType        bio.Moltype
 }
 
 // Return a new alphabet. Index values for letters reflect order of the letters parameter if Generic is case sensitive,
 // otherwise index values will reflect ASCII sort order. Letters must be within the ASCII range.
-func NewGeneric(letters string, molType bio.Moltype, gap, ambiguous byte, caseSensitive bool) (a *Generic, err error) {
+func NewGeneric(letters string, molType bio.Moltype, gap, ambiguous Letter, caseSensitive bool) (a *Generic, err error) {
 	if strings.IndexFunc(letters, func(r rune) bool { return r < 0 || r > unicode.MaxASCII }) > -1 {
 		return nil, errors.New("letters contains non-ASCII rune.")
 	}
@@ -126,11 +129,11 @@ func NewGeneric(letters string, molType bio.Moltype, gap, ambiguous byte, caseSe
 			ll = append(ll, int(l))
 		}
 		sort.Ints(ll)
-		let := make([]byte, 0, size)
+		let := make([]Letter, 0, size)
 		for _, l := range ll {
-			let = append(let, byte(l))
+			let = append(let, Letter(l))
 		}
-		a.letters = string(let)
+		a.letters = string(LettersToBytes(let))
 	}
 
 	for i := range a.index {
@@ -150,26 +153,39 @@ func NewGeneric(letters string, molType bio.Moltype, gap, ambiguous byte, caseSe
 }
 
 // Return the molecule type of the alphabet.
-func (self *Generic) Moltype() bio.Moltype { return self.molType }
+func (a *Generic) Moltype() bio.Moltype { return a.molType }
 
 // Return the number of distinct valid letters in the alphabet.
-func (self *Generic) Len() int { return len(self.letters) }
+func (a *Generic) Len() int { return len(a.letters) }
 
 // Return whether the alphabet is case sensitive.
-func (self *Generic) IsCaseSensitive() bool { return self.caseSensitive }
+func (a *Generic) IsCaseSensitive() bool { return a.caseSensitive }
 
 // Return the gap character.
-func (self *Generic) Gap() byte { return self.gap }
+func (a *Generic) Gap() Letter { return a.gap }
 
 // Return the character representing an ambiguous letter.
-func (self *Generic) Ambiguous() byte { return self.ambiguous }
+func (a *Generic) Ambiguous() Letter { return a.ambiguous }
 
 // Check that a slice of bytes conforms to the alphabet, returning false
 // and the position of the first invalid byte if invalid and true and a negative
 // int if valid.
-func (self *Generic) AllValid(n []byte) (valid bool, pos int) {
+func (a *Generic) AllValidQLetter(n []QLetter) (valid bool, pos int) {
 	for i, v := range n {
-		if !self.valid[v] {
+		if !a.valid[v.L] {
+			return false, i
+		}
+	}
+
+	return true, -1
+}
+
+// Check that a slice of bytes conforms to the alphabet, returning false
+// and the position of the first invalid byte if invalid and true and a negative
+// int if valid.
+func (a *Generic) AllValid(n []Letter) (valid bool, pos int) {
+	for i, v := range n {
+		if !a.valid[v] {
 			return false, i
 		}
 	}
@@ -178,68 +194,61 @@ func (self *Generic) AllValid(n []byte) (valid bool, pos int) {
 }
 
 // Check that a byte conforms to the alphabet.
-func (self *Generic) IsValid(n byte) bool {
-	return self.valid[n]
+func (a *Generic) IsValid(n Letter) bool {
+	return a.valid[n]
 }
 
 // Return the letter for and index.
-func (self *Generic) Letter(i int) byte {
-	if !self.caseSensitive {
-		return byte(unicode.ToLower(rune(self.letters[i])))
+func (a *Generic) Letter(i int) Letter {
+	if !a.caseSensitive {
+		return Letter(unicode.ToLower(rune(a.letters[i])))
 	}
-	return self.letters[i]
+	return Letter(a.letters[i])
 }
 
 // Return the index of a letter.
-func (self *Generic) IndexOf(n byte) int {
-	return self.index[n]
+func (a *Generic) IndexOf(n Letter) int {
+	return a.index[n]
 }
 
-// Return a copy of the internal []bool indicating valid letters.
-func (self *Generic) ValidLetters() (v []bool) {
-	v = make([]bool, 256)
-	copy(v, self.valid[:])
-	return
-}
+// Return a slice of the internal []bool indicating valid letters. The returned slice should not
+// be altered.
+func (a *Generic) ValidLetters() []bool { return a.valid[:] }
 
-// Return a copy of the internal []int specifying letter to index conversion.
-func (self *Generic) LetterIndex() (i []int) {
-	i = make([]int, 256)
-	copy(i, self.index[:])
-
-	return
-}
+// Return a slice of the internal []int specifying letter to index conversion. The return 
+// index should not be altered.
+func (a *Generic) LetterIndex() []int { return a.index[:] }
 
 // Return a string indicating characters accepted as valid by the Validator.
-func (self *Generic) String() (s string) {
-	s = self.letters
+func (a *Generic) String() string {
+	s := a.letters
 
-	if !self.caseSensitive {
+	if !a.caseSensitive {
 		s += strings.ToUpper(s)
 	}
 
-	return
+	return s
 }
 
 // Pairing provides a lookup table between a letter and its complement.
 type Pairing struct {
-	pair []byte
+	pair []Letter
 	ok   []bool
 }
 
 // Create a new Pairing from a pair of strings. 
-func NewPairing(s, c string) (p *Pairing, err error) {
+func NewPairing(s, c string) (*Pairing, error) {
 	if len(s) != len(c) {
 		return nil, errors.New("Length of pairing definitions do not match.")
 	}
 
-	p = &Pairing{
-		pair: make([]byte, 256),
+	p := &Pairing{
+		pair: make([]Letter, 256),
 		ok:   make([]bool, 256),
 	}
 
 	for i := range p.pair {
-		p.pair[i] = byte(i)
+		p.pair[i] = Letter(i)
 	}
 
 	cr := []rune(c)
@@ -247,21 +256,21 @@ func NewPairing(s, c string) (p *Pairing, err error) {
 		if v < 0 || cr[i] < 0 || v > unicode.MaxASCII || cr[i] > unicode.MaxASCII {
 			return nil, errors.New("Pairing definition contains non-ASCII rune.")
 		}
-		p.pair[v] = byte(cr[i])
+		p.pair[v] = Letter(cr[i])
 		p.ok[v] = true
 	}
 
-	return
+	return p, nil
 }
 
 // Returns the complement of a letter and true if the complement is a valid letter otherwise unchanged and false.
-func (self *Pairing) ComplementOf(l byte) (c byte, ok bool) { return self.pair[l], self.ok[l] }
+func (p *Pairing) Complement(l Letter) (c Letter, ok bool) { return p.pair[l], p.ok[l] }
 
 // Returns a complementation table based on the internal representation. Invalid pairs hold a value outside the ASCII range.
-func (self *Pairing) ComplementTable() (t []byte) {
-	t = make([]byte, 256)
-	copy(t, self.pair)
-	for i, ok := range self.ok {
+func (p *Pairing) ComplementTable() (t []Letter) {
+	t = make([]Letter, 256)
+	copy(t, p.pair)
+	for i, ok := range p.ok {
 		if !ok {
 			t[i] |= unicode.MaxASCII + 1
 		}
@@ -270,8 +279,7 @@ func (self *Pairing) ComplementTable() (t []byte) {
 	return
 }
 
-// The Nucleic type incorporates a Generic alphabet with the capacity to return a complement.
-type Nucleic struct {
+type nucleic struct {
 	*Generic
 	*Pairing
 }
@@ -279,7 +287,7 @@ type Nucleic struct {
 // Create a generalised Nucleic alphabet. The Complement table is checked for validity and an error is returned if an invalid complement pair is found.
 // Pairings that result in no change but would otherwise be invalid are allowed. If invalid pairings are required, the Pairing should be provided after
 // creating the Nucleic struct.
-func NewNucleic(letters string, molType bio.Moltype, pairs *Pairing, gap, ambiguous byte, caseSensitive bool) (n *Nucleic, err error) {
+func NewNucleic(letters string, molType bio.Moltype, pairs *Pairing, gap, ambiguous Letter, caseSensitive bool) (Complementor, error) {
 	g, err := NewGeneric(letters, molType, gap, ambiguous, caseSensitive)
 	if err != nil {
 		return nil, err
@@ -287,28 +295,19 @@ func NewNucleic(letters string, molType bio.Moltype, pairs *Pairing, gap, ambigu
 
 	if pairs != nil {
 		for i, v := range pairs.pair {
-			if !(pairs.ok[i] || byte(i&unicode.MaxASCII) == v&unicode.MaxASCII) && !(g.valid[i] && g.valid[v]) {
+			if !(pairs.ok[i] || Letter(i&unicode.MaxASCII) == v&unicode.MaxASCII) && !(g.valid[i] && g.valid[v]) {
 				return nil, errors.New(fmt.Sprintf("Invalid pairing: %c (%d) -> %c (%d)", i, i, v, v))
 			}
 		}
 	}
 
-	return &Nucleic{
+	return &nucleic{
 		Generic: g,
 		Pairing: pairs,
 	}, nil
 }
 
-// Peptide wraps Generic to provide type restrictions.
-type Peptide struct {
-	*Generic
-}
-
 // Return a new Peptide alphabet.
-func NewPeptide(letters string, gap, ambiguous byte, caseSensitive bool) (p *Peptide, err error) {
-	g, err := NewGeneric(letters, bio.Protein, gap, ambiguous, caseSensitive)
-	if err != nil {
-		return nil, err
-	}
-	return &Peptide{g}, nil
+func NewPeptide(letters string, gap, ambiguous Letter, caseSensitive bool) (Alphabet, error) {
+	return NewGeneric(letters, bio.Protein, gap, ambiguous, caseSensitive)
 }

@@ -1,20 +1,30 @@
-// Copyright ©2011-2012 The bíogo Authors. All rights reserved.
+// Copyright ©2011-2013 The bíogo Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package seq
+package seq_test
 
 import (
-	check "launchpad.net/gocheck"
+	"code.google.com/p/biogo/seq"
+	"code.google.com/p/biogo/seq/alignment"
+	"code.google.com/p/biogo/seq/linear"
+	"code.google.com/p/biogo/seq/multi"
 	"testing"
 )
 
-// Tests
-func Test(t *testing.T) { check.TestingT(t) }
+func TestSeq(t *testing.T) {
+	var (
+		_ seq.Sequence = (*linear.Seq)(nil)
+		_ seq.Sequence = (*linear.QSeq)(nil)
+		_ seq.Sequence = (*alignment.Row)(nil)
+		_ seq.Sequence = (*alignment.QRow)(nil)
 
-type S struct{}
+		_ seq.Scorer = (*linear.QSeq)(nil)
+		_ seq.Scorer = (*alignment.QRow)(nil)
 
-var _ = check.Suite(&S{})
-
-func (s *S) TestSeqXXX(c *check.C) {
+		_ seq.Rower = (*alignment.Seq)(nil)
+		_ seq.Rower = (*alignment.QSeq)(nil)
+		_ seq.Rower = (*multi.Multi)(nil)
+		_ seq.Rower = (*multi.Set)(nil)
+	)
 }

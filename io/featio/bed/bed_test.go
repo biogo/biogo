@@ -6,8 +6,8 @@ package bed
 
 import (
 	"bytes"
-	"code.google.com/p/biogo/exp/feat"
-	"code.google.com/p/biogo/exp/seq"
+	"code.google.com/p/biogo/feat"
+	"code.google.com/p/biogo/seq"
 	"fmt"
 	"image/color"
 	check "launchpad.net/gocheck"

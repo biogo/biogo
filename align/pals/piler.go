@@ -6,7 +6,7 @@ package pals
 
 import (
 	"code.google.com/p/biogo.interval"
-	"code.google.com/p/biogo/exp/feat"
+	"code.google.com/p/biogo/feat"
 	"fmt"
 	"unsafe"
 )

@@ -7,8 +7,8 @@ package dp
 import (
 	"code.google.com/p/biogo/align"
 	"code.google.com/p/biogo/align/pals/filter"
-	"code.google.com/p/biogo/exp/alphabet"
-	"code.google.com/p/biogo/exp/seq/linear"
+	"code.google.com/p/biogo/alphabet"
+	"code.google.com/p/biogo/seq/linear"
 	"code.google.com/p/biogo/util"
 
 	check "launchpad.net/gocheck"

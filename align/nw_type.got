@@ -6,7 +6,7 @@ package align
 
 import (
 	"code.google.com/p/biogo/exp/alphabet"
-	"code.google.com/p/biogo/exp/feat"
+	"code.google.com/p/biogo/feat"
 )
 
 func (a NW) alignType(rSeq, qSeq Type, alpha alphabet.Alphabet) ([]feat.Pair, error) {

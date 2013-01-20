@@ -6,8 +6,8 @@
 package alignio
 
 import (
-	"code.google.com/p/biogo/exp/seq/multi"
-	"code.google.com/p/biogo/exp/seqio"
+	"code.google.com/p/biogo/io/seqio"
+	"code.google.com/p/biogo/seq/multi"
 	"io"
 )
 

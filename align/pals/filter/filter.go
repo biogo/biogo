@@ -9,9 +9,9 @@ package filter
 
 import (
 	"code.google.com/p/biogo/bio"
-	"code.google.com/p/biogo/exp/seq/linear"
 	"code.google.com/p/biogo/index/kmerindex"
 	"code.google.com/p/biogo/morass"
+	"code.google.com/p/biogo/seq/linear"
 )
 
 // Ukonnen's Lemma: U(n, q, 𝛜) := (n + 1) - q(⌊𝛜n⌋ + 1)

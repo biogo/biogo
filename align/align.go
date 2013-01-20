@@ -6,9 +6,9 @@
 package align
 
 import (
-	"code.google.com/p/biogo/exp/alphabet"
-	"code.google.com/p/biogo/exp/feat"
-	"code.google.com/p/biogo/exp/seq"
+	"code.google.com/p/biogo/alphabet"
+	"code.google.com/p/biogo/feat"
+	"code.google.com/p/biogo/seq"
 	"errors"
 	"fmt"
 )

@@ -7,8 +7,8 @@
 package align
 
 import (
-	"code.google.com/p/biogo/exp/alphabet"
-	"code.google.com/p/biogo/exp/feat"
+	"code.google.com/p/biogo/alphabet"
+	"code.google.com/p/biogo/feat"
 )
 
 func (a SW) alignQLetters(rSeq, qSeq alphabet.QLetters, alpha alphabet.Alphabet) ([]feat.Pair, error) {

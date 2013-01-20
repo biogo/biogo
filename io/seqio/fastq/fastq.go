@@ -1,248 +1,214 @@
-// Copyright ©2011-2012 The bíogo Authors. All rights reserved.
+// Copyright ©2011-2013 The bíogo Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// Package to read and write FASTQ format files
+// Package fastq provides types to read and write FASTQ format files.
 package fastq
 
 import (
+	"code.google.com/p/biogo/alphabet"
+	"code.google.com/p/biogo/io/seqio"
+	"code.google.com/p/biogo/seq"
+
 	"bufio"
 	"bytes"
-	"code.google.com/p/biogo/bio"
-	"code.google.com/p/biogo/seq"
+	"errors"
 	"io"
-	"os"
 )
 
-/*
-Encodings
+var (
+	_ seqio.Reader = (*Reader)(nil)
+	_ seqio.Writer = (*Writer)(nil)
+)
 
-
-
-                                                                                            Q-range  Encoding
-
- Sanger         !"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHI···                                 0 - 40  Phred+33
- Solexa                                 ··;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdefgh··· -5 - 40  Solexa+64
- Illumina 1.3+                                 @ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdefgh···  0 - 40  Phred+64
- Illumina 1.5+                                 xxḆCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdefgh···  3 - 40  Phred+64*
- Illumina 1.8   !"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJ···                                0 - 40  Phred+33
-
-                !"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_`abcdefghijklmnopqrstuvwxyz{|}~
-                |                         |    |        |                              |                     |
-               33                        59   64       73                            104                   126
-
- Q-range for typical raw reads
-
- * 0=unused, 1=unused, 2=Read Segment Quality Control Indicator (Ḇ)
-*/
+type Encoder interface {
+	Encoding() alphabet.Encoding
+}
 
 // Fastq sequence format reader type.
 type Reader struct {
-	f        io.ReadCloser
-	r        *bufio.Reader
-	Encoding seq.Encoding
+	r   *bufio.Reader
+	t   seqio.SequenceAppender
+	enc alphabet.Encoding
 }
 
-// Returns a new fastq format reader using r.
-func NewReader(f io.ReadCloser) *Reader {
+// Returns a new fastq format reader using r. Sequences returned by the Reader are copied
+// from the provided template.
+func NewReader(r io.Reader, template seqio.SequenceAppender) *Reader {
+	var enc alphabet.Encoding
+	if e, ok := template.(Encoder); ok {
+		enc = e.Encoding()
+	} else {
+		enc = alphabet.None
+	}
+
 	return &Reader{
-		f: f,
-		r: bufio.NewReader(f),
+		r:   bufio.NewReader(r),
+		t:   template,
+		enc: enc,
 	}
-}
-
-// Returns a new fastq format reader using a filename.
-func NewReaderName(name string) (r *Reader, err error) {
-	f, err := os.Open(name)
-	if err != nil {
-		return
-	}
-	return NewReader(f), nil
 }
 
 // Read a single sequence and return it or an error.
-// TODO: Does not read interleaved fastq.
-func (self *Reader) Read() (sequence *seq.Seq, err error) {
-	var line, label, seqBody, qualBody []byte
-	sequence = &seq.Seq{}
+// TODO: Does not read multi-line fastq.
+func (r *Reader) Read() (seq.Sequence, error) {
+	var (
+		buff, line, label []byte
+		isPrefix          bool
+		seqBuff           []alphabet.QLetter
+		t                 seqio.SequenceAppender
+	)
 
 	inQual := false
-READ:
+
 	for {
-		line, err = self.r.ReadBytes('\n')
-		if err == nil {
-			if len(line) > 0 && line[len(line)-1] == '\r' {
-				line = line[:len(line)-1]
-			}
-			line = bytes.TrimSpace(line)
-			if len(line) == 0 {
-				continue
-			}
-			switch {
-			case !inQual && line[0] == '@':
-				label = line[1:]
-			case !inQual && line[0] == '+':
-				if len(label) == 0 {
-					return nil, bio.NewError("No ID line parsed at +line in fastq format", 0)
-				}
-				if len(line) > 1 && bytes.Compare(label, line[1:]) != 0 {
-					return nil, bio.NewError("Quality ID does not match sequence ID", 0)
-				}
-				inQual = true
-			case !inQual:
-				line = bytes.Join(bytes.Fields(line), nil)
-				seqBody = append(seqBody, line...)
-			case inQual:
-				line = bytes.Join(bytes.Fields(line), nil)
-				qualBody = append(qualBody, line...)
-				if len(qualBody) >= len(seqBody) {
-					break READ
-				}
-			}
-		} else {
-			return
+		var err error
+		if buff, isPrefix, err = r.r.ReadLine(); err != nil {
+			return nil, err
 		}
+		line = append(line, buff...)
+		if isPrefix {
+			continue
+		}
+
+		line = bytes.TrimSpace(line)
+		if len(line) == 0 {
+			continue
+		}
+		switch {
+		case !inQual && line[0] == '@':
+			t = r.readHeader(line)
+			label = line
+		case !inQual && line[0] == '+':
+			if len(label) == 0 {
+				return nil, errors.New("fastq: no header line parsed before +line in fastq format")
+			}
+			if len(line) > 1 && bytes.Compare(label[1:], line[1:]) != 0 {
+				return nil, errors.New("fastq: quality header does not match sequence header")
+			}
+			inQual = true
+		case !inQual:
+			line = bytes.Join(bytes.Fields(line), nil)
+			seqBuff = make([]alphabet.QLetter, len(line))
+			for i := range line {
+				seqBuff[i].L = alphabet.Letter(line[i])
+			}
+		case inQual:
+			line = bytes.Join(bytes.Fields(line), nil)
+			if len(line) != len(seqBuff) {
+				return nil, errors.New("fastq: sequence/quality length mismatch")
+			}
+			for i := range line {
+				seqBuff[i].Q = r.enc.DecodeToQphred(line[i])
+			}
+			t.AppendQLetters(seqBuff...)
+
+			return t, nil
+		}
+		line = nil
 	}
 
-	if len(seqBody) != len(qualBody) {
-		return nil, bio.NewError("Quality length does not match sequence length", 0)
-	}
-
-	labelString := string(label)
-	sequence = seq.New(labelString, seqBody, seq.NewQuality(labelString, self.decodeQuality(qualBody)))
-
-	return
+	panic("cannot reach")
 }
 
-func (self *Reader) decodeQuality(q []byte) (qs []seq.Qsanger) {
-	qs = make([]seq.Qsanger, 0, len(q))
-
-	switch self.Encoding {
-	case seq.Sanger, seq.Illumina1_8:
-		for _, qe := range q {
-			qs = append(qs, seq.Qsanger(qe-33))
-		}
-	case seq.Solexa:
-		for _, qe := range q {
-			qs = append(qs, seq.Qsolexa(qe-64).ToSanger())
-		}
-	case seq.Illumina1_3, seq.Illumina1_5:
-		for _, qe := range q {
-			qs = append(qs, seq.Qsanger(qe-64))
-		}
-	}
-
-	return qs
-}
-
-// Rewind the reader.
-func (self *Reader) Rewind() (err error) {
-	if s, ok := self.f.(io.Seeker); ok {
-		_, err = s.Seek(0, 0)
+func (r *Reader) readHeader(line []byte) seqio.SequenceAppender {
+	s := r.t.Clone().(seqio.SequenceAppender)
+	fieldMark := bytes.IndexAny(line, " \t")
+	if fieldMark < 0 {
+		s.SetName(string(line[1:]))
 	} else {
-		err = bio.NewError("Not a Seeker", 0, self)
+		s.SetName(string(line[1:fieldMark]))
+		s.SetDescription(string(line[fieldMark+1:]))
 	}
-	return
-}
 
-// Close the reader.
-func (self *Reader) Close() (err error) {
-	return self.f.Close()
+	return s
 }
 
 // Fastq sequence format writer type.
 type Writer struct {
-	f        io.WriteCloser
-	w        *bufio.Writer
-	template [][]byte
-	Encoding seq.Encoding
-	QID      bool // Include ID on +lines
+	w   io.Writer
+	QID bool // Include ID on +lines
 }
 
 // Returns a new fastq format writer using w.
-func NewWriter(f io.WriteCloser) *Writer {
+func NewWriter(w io.Writer) *Writer {
 	return &Writer{
-		f: f,
-		w: bufio.NewWriter(f),
-		template: [][]byte{
-			[]byte{'@'},
-			[]byte{}, // ID
-			[]byte{'\n'},
-			[]byte{}, // Seq
-			[]byte("\n+\n"),
-			[]byte{}, // Quality
-			[]byte{'\n'},
-		},
+		w: w,
 	}
-}
-
-// Returns a new fastq format writer using a filename, truncating any existing file.
-// If appending is required use NewWriter and os.OpenFile.
-func NewWriterName(name string) (w *Writer, err error) {
-	f, err := os.Create(name)
-	if err != nil {
-		return
-	}
-	return NewWriter(f), nil
 }
 
 // Write a single sequence and return the number of bytes written and any error.
-func (self *Writer) Write(s *seq.Seq) (n int, err error) {
-	if s.Quality == nil {
-		return 0, bio.NewError("No quality associated with sequence", 0, s)
+func (w *Writer) Write(s seq.Sequence) (n int, err error) {
+	var (
+		ln  int
+		enc alphabet.Encoding
+	)
+	if e, ok := s.(Encoder); ok {
+		enc = e.Encoding()
+	} else {
+		enc = alphabet.Sanger
 	}
-	if s.Len() == s.Quality.Len() {
-		self.template[1] = []byte(s.ID)
-		self.template[3] = s.Seq
-		if self.QID {
-			self.template[4] = append(append([]byte("\n+"), []byte(s.ID)...), '\n')
-		} else {
-			self.template[4] = []byte("\n+\n")
+
+	n, err = w.writeHeader('@', s)
+	if err != nil {
+		return
+	}
+	for i := 0; i < s.Len(); i++ {
+		ln, err = w.w.Write([]byte{byte(s.At(i).L)})
+		if n += ln; err != nil {
+			return
 		}
-		self.template[5] = self.encodeQuality(s.Quality.Qual)
-		var tn int
-		for _, t := range self.template {
-			tn, err = self.w.Write(t)
-			n += tn
-			if err != nil {
-				return
-			}
+	}
+	ln, err = w.w.Write([]byte{'\n'})
+	if n += ln; err != nil {
+		return
+	}
+	if w.QID {
+		ln, err = w.writeHeader('+', s)
+		if n += ln; err != nil {
+			return
 		}
 	} else {
-		return 0, bio.NewError("Sequence length and quality length do not match", 0, s)
+		ln, err = w.w.Write([]byte("+\n"))
+		if n += ln; err != nil {
+			return
+		}
+	}
+	for i := 0; i < s.Len(); i++ {
+		ln, err = w.w.Write([]byte{s.At(i).Q.Encode(enc)})
+		if n += ln; err != nil {
+			return
+		}
+	}
+	ln, err = w.w.Write([]byte{'\n'})
+	if n += ln; err != nil {
+		return
 	}
 
 	return
 }
 
-// Could do this by lookup - make three tables (or at least one table for Sanger -> Solexa)
-func (self *Writer) encodeQuality(q []seq.Qsanger) (qe []byte) {
-	qe = make([]byte, 0, len(q))
-
-	switch self.Encoding {
-	case seq.Solexa:
-		for _, qv := range q {
-			qe = append(qe, qv.ToSolexa().Encode(seq.Solexa))
-		}
-	default:
-		for _, qv := range q {
-			qe = append(qe, qv.Encode(self.Encoding))
-		}
-	}
-
-	return qe
-}
-
-// Flush the writer.
-func (self *Writer) Flush() error {
-	return self.w.Flush()
-}
-
-// Close the writer, flushing any unwritten sequence.
-func (self *Writer) Close() (err error) {
-	err = self.w.Flush()
+func (w *Writer) writeHeader(prefix byte, s seq.Sequence) (n int, err error) {
+	var ln int
+	n, err = w.w.Write([]byte{prefix})
 	if err != nil {
 		return
 	}
-	return self.f.Close()
+	ln, err = io.WriteString(w.w, s.Name())
+	if n += ln; err != nil {
+		return
+	}
+	if desc := s.Description(); len(desc) != 0 {
+		ln, err = w.w.Write([]byte{' '})
+		if n += ln; err != nil {
+			return
+		}
+		ln, err = io.WriteString(w.w, desc)
+		if n += ln; err != nil {
+			return
+		}
+	}
+	ln, err = w.w.Write([]byte("\n"))
+	n += ln
+	return
 }

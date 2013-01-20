@@ -5,7 +5,7 @@
 // Package featio provides interfaces for feature I/O functions. 
 package featio
 
-import "code.google.com/p/biogo/exp/feat"
+import "code.google.com/p/biogo/feat"
 
 // Reader is the common feat.Feature reader interface.
 type Reader interface {

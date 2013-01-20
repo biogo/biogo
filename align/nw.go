@@ -5,8 +5,8 @@
 package align
 
 import (
-	"code.google.com/p/biogo/exp/alphabet"
-	"code.google.com/p/biogo/exp/feat"
+	"code.google.com/p/biogo/alphabet"
+	"code.google.com/p/biogo/feat"
 )
 
 // NW is the linear gap penalty Needleman-Wunsch aligner type.

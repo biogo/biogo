@@ -5,12 +5,12 @@
 package alignio
 
 import (
-	"code.google.com/p/biogo/exp/alphabet"
-	"code.google.com/p/biogo/exp/seq"
-	"code.google.com/p/biogo/exp/seq/linear"
-	"code.google.com/p/biogo/exp/seq/multi"
-	"code.google.com/p/biogo/exp/seqio/fasta"
-	"code.google.com/p/biogo/exp/seqio/fastq"
+	"code.google.com/p/biogo/alphabet"
+	"code.google.com/p/biogo/io/seqio/fasta"
+	"code.google.com/p/biogo/io/seqio/fastq"
+	"code.google.com/p/biogo/seq"
+	"code.google.com/p/biogo/seq/linear"
+	"code.google.com/p/biogo/seq/multi"
 
 	check "launchpad.net/gocheck"
 	"strings"

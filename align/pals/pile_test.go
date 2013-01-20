@@ -5,7 +5,7 @@
 package pals
 
 import (
-	"code.google.com/p/biogo/exp/feat"
+	"code.google.com/p/biogo/feat"
 	check "launchpad.net/gocheck"
 )
 

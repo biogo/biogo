@@ -6,8 +6,8 @@ package pals
 
 import (
 	"code.google.com/p/biogo.graph"
-	"code.google.com/p/biogo/exp/feat"
-	"code.google.com/p/biogo/exp/seq"
+	"code.google.com/p/biogo/feat"
+	"code.google.com/p/biogo/seq"
 
 	"fmt"
 )

@@ -5,17 +5,36 @@
 package fastq
 
 import (
-	"code.google.com/p/biogo/seq"
+	"bytes"
+	"code.google.com/p/biogo/alphabet"
+	"code.google.com/p/biogo/seq/linear"
 	"io"
-	"io/ioutil"
 	check "launchpad.net/gocheck"
-	"os"
 	"testing"
 )
 
 var (
-	fqs = []string{"../../testdata/testaln.fastq", "../../testdata/testaln2.fastq"}
+	fqs = []string{fq0, fq1}
 )
+
+// Helpers
+func constructQL(l [][]alphabet.Letter, q [][]alphabet.Qphred) (ql [][]alphabet.QLetter) {
+	if len(l) != len(q) {
+		panic("test data length mismatch")
+	}
+	ql = make([][]alphabet.QLetter, len(l))
+	for i := range ql {
+		if len(l[i]) != len(q[i]) {
+			panic("test data length mismatch")
+		}
+		ql[i] = make([]alphabet.QLetter, len(l[i]))
+		for j := range ql[i] {
+			ql[i][j] = alphabet.QLetter{L: l[i][j], Q: q[i][j]}
+		}
+	}
+
+	return
+}
 
 // Tests
 func Test(t *testing.T) { check.TestingT(t) }
@@ -53,35 +72,35 @@ var (
 		"FC12044_91407_8_200_285_136",
 	}
 
-	expectS = [][]byte{
-		[]byte("GTTAGCTCCCACCTTAAGATGTTTA"),
-		[]byte("CTCTGTGGCACCCCATCCCTCACTT"),
-		[]byte("GATTTTTTAACAATAAACGTACATA"),
-		[]byte("GTTGCCCAGGCTCGTCTTGAACTCC"),
-		[]byte("TGATTGAAGGTAGGGTAGCATACTG"),
-		[]byte("GCTCCAATAGCGCAGAGGAAACCTG"),
-		[]byte("GCTGCTTGGGAGGCTGAGGCAGGAG"),
-		[]byte("AGACCTTTGGATACAATGAACGACT"),
-		[]byte("AGGGAATTTTAGAGGAGGGCTGCCG"),
-		[]byte("TCTCCATGTTGGTCAGGCTGGTCTC"),
-		[]byte("TGAACGTCGAGACGCAAGGCCCGCC"),
-		[]byte("CTGTCCCCACGGCGGGGGGGCCTGG"),
-		[]byte("GATGTACTCTTACACCCAGACTTTG"),
-		[]byte("TCAAGGGTGGATCTTGGCTCCCAGT"),
-		[]byte("TTGCGACAGAGTTTTGCTCTTGTCC"),
-		[]byte("TCTGCTCCAGCTCCAAGACGCCGCC"),
-		[]byte("TACGGAGCCGCGGGCGGGAAAGGCG"),
-		[]byte("CCTCCCAGGTTCAAGCGATTATCCT"),
-		[]byte("GTCATGGCGGCCCGCGCGGGGAGCG"),
-		[]byte("ACAGTGGGTTCTTAAAGAAGAGTCG"),
-		[]byte("AACGAGGGGCGCGACTTGACCTTGG"),
-		[]byte("TTTCCCACCCCAGGAAGCCTTGGAC"),
-		[]byte("TCAGCCTCCGTGCCCAGCCCACTCC"),
-		[]byte("CTCGGGAGGCTGAGGCAGGGGGGTT"),
-		[]byte("CCAAATCTTGAATTGTAGCTCCCCT"),
+	expectS = [][]alphabet.Letter{
+		[]alphabet.Letter("GTTAGCTCCCACCTTAAGATGTTTA"),
+		[]alphabet.Letter("CTCTGTGGCACCCCATCCCTCACTT"),
+		[]alphabet.Letter("GATTTTTTAACAATAAACGTACATA"),
+		[]alphabet.Letter("GTTGCCCAGGCTCGTCTTGAACTCC"),
+		[]alphabet.Letter("TGATTGAAGGTAGGGTAGCATACTG"),
+		[]alphabet.Letter("GCTCCAATAGCGCAGAGGAAACCTG"),
+		[]alphabet.Letter("GCTGCTTGGGAGGCTGAGGCAGGAG"),
+		[]alphabet.Letter("AGACCTTTGGATACAATGAACGACT"),
+		[]alphabet.Letter("AGGGAATTTTAGAGGAGGGCTGCCG"),
+		[]alphabet.Letter("TCTCCATGTTGGTCAGGCTGGTCTC"),
+		[]alphabet.Letter("TGAACGTCGAGACGCAAGGCCCGCC"),
+		[]alphabet.Letter("CTGTCCCCACGGCGGGGGGGCCTGG"),
+		[]alphabet.Letter("GATGTACTCTTACACCCAGACTTTG"),
+		[]alphabet.Letter("TCAAGGGTGGATCTTGGCTCCCAGT"),
+		[]alphabet.Letter("TTGCGACAGAGTTTTGCTCTTGTCC"),
+		[]alphabet.Letter("TCTGCTCCAGCTCCAAGACGCCGCC"),
+		[]alphabet.Letter("TACGGAGCCGCGGGCGGGAAAGGCG"),
+		[]alphabet.Letter("CCTCCCAGGTTCAAGCGATTATCCT"),
+		[]alphabet.Letter("GTCATGGCGGCCCGCGCGGGGAGCG"),
+		[]alphabet.Letter("ACAGTGGGTTCTTAAAGAAGAGTCG"),
+		[]alphabet.Letter("AACGAGGGGCGCGACTTGACCTTGG"),
+		[]alphabet.Letter("TTTCCCACCCCAGGAAGCCTTGGAC"),
+		[]alphabet.Letter("TCAGCCTCCGTGCCCAGCCCACTCC"),
+		[]alphabet.Letter("CTCGGGAGGCTGAGGCAGGGGGGTT"),
+		[]alphabet.Letter("CCAAATCTTGAATTGTAGCTCCCCT"),
 	}
 
-	expectQ = [][]seq.Qsanger{
+	expectQ = [][]alphabet.Qphred{
 		{50, 55, 55, 51, 55, 55, 55, 55, 55, 55, 55, 55, 55, 51, 51, 50, 52, 55, 50, 50, 55, 42, 51, 44, 48},
 		{46, 55, 55, 55, 55, 55, 55, 55, 55, 55, 55, 55, 55, 55, 55, 55, 55, 55, 51, 50, 55, 48, 51, 55, 52},
 		{46, 48, 51, 46, 46, 50, 37, 46, 49, 51, 37, 37, 37, 40, 40, 46, 37, 37, 37, 37, 37, 37, 37, 37, 37},
@@ -108,51 +127,44 @@ var (
 		{46, 55, 51, 55, 55, 55, 50, 55, 55, 48, 55, 55, 46, 55, 55, 42, 44, 55, 55, 44, 55, 46, 42, 48, 37},
 		{46, 50, 55, 46, 48, 55, 55, 55, 55, 55, 50, 55, 55, 52, 55, 55, 51, 55, 55, 55, 55, 51, 49, 44, 50},
 	}
+
+	expectQL = constructQL(expectS, expectQ)
 )
 
 func (s *S) TestReadFastq(c *check.C) {
 	var (
-		obtainN []string
-		obtainS [][]byte
-		obtainQ [][]seq.Qsanger
+		obtainN  []string
+		obtainQL [][]alphabet.QLetter
 	)
 
 	for _, fq := range fqs {
-		if r, err := NewReaderName(fq); err != nil {
-			c.Fatalf("Failed to open %q: %s", fq, err)
-		} else {
-			for i := 0; i < 3; i++ {
-				for {
-					if s, err := r.Read(); err != nil {
-						if err == io.EOF {
-							break
-						} else {
-							c.Fatalf("Failed to read %q: %s", fq, err)
-						}
-					} else {
-						obtainN = append(obtainN, s.ID)
-						obtainS = append(obtainS, s.Seq)
-						obtainQ = append(obtainQ, s.Quality.Qual)
-					}
+		r := NewReader(bytes.NewBufferString(fq), linear.NewQSeq("", nil, alphabet.DNA, alphabet.Sanger))
+		for {
+			if s, err := r.Read(); err != nil {
+				if err == io.EOF {
+					break
+				} else {
+					c.Fatalf("Failed to read %q: %s", fq, err)
 				}
-				c.Check(obtainN, check.DeepEquals, expectN)
-				obtainN = nil
-				c.Check(obtainS, check.DeepEquals, expectS)
-				obtainS = nil
-				c.Check(obtainQ, check.DeepEquals, expectQ)
-				obtainQ = nil
-				if err = r.Rewind(); err != nil {
-					c.Fatalf("Failed to rewind %s", err)
+			} else {
+				t := s.(*linear.QSeq)
+				header := t.Name()
+				if desc := t.Description(); len(desc) > 0 {
+					header += " " + desc
 				}
+				obtainN = append(obtainN, header)
+				obtainQL = append(obtainQL, (t.Slice().(alphabet.QLetters)))
 			}
-			r.Close()
 		}
+		c.Check(obtainN, check.DeepEquals, expectN)
+		obtainN = nil
+		c.Check(obtainQL, check.DeepEquals, expectQL)
+		obtainQL = nil
 	}
 }
 
 func (s *S) TestWriteFastq(c *check.C) {
 	fq := fqs[0]
-	o := c.MkDir()
 	names := 0
 	for _, n := range expectN {
 		names += len(n)
@@ -160,49 +172,26 @@ func (s *S) TestWriteFastq(c *check.C) {
 	expectSize := []int{2722, 2722 - names}
 	var total int
 	for j := 0; j < 2; j++ {
-		if w, err := NewWriterName(o + "/fq"); err != nil {
-			c.Fatalf("Failed to open %q for write: %s", o+"/fq", err)
-		} else {
-			w.QID = j == 0
-			s := &seq.Seq{Quality: &seq.Quality{}}
+		b := &bytes.Buffer{}
+		w := NewWriter(b)
+		w.QID = j == 0
+		seq := linear.NewQSeq("", nil, alphabet.DNA, alphabet.Sanger)
 
-			for i := range expectN {
-				s.ID = expectN[i]
-				s.Seq = expectS[i]
-				s.Quality.Qual = expectQ[i]
-				if n, err := w.Write(s); err != nil {
-					c.Fatalf("Failed to write %q: %s", o, err)
-				} else {
-					total += n
-				}
+		for i := range expectN {
+			seq.ID = expectN[i]
+			seq.Seq = expectQL[i]
+			if n, err := w.Write(seq); err != nil {
+				c.Fatalf("Failed to write to buffer: %s", err)
+			} else {
+				total += n
 			}
+		}
 
-			if err = w.Close(); err != nil {
-				c.Fatalf("Failed to Close %q: %s", o+"/fq", err)
-			}
-			c.Check(total, check.Equals, expectSize[j])
-			total = 0
+		c.Check(total, check.Equals, expectSize[j])
+		total = 0
 
-			if w.QID {
-				var (
-					of, gf *os.File
-					ob, gb []byte
-				)
-				if of, err = os.Open(fq); err != nil {
-					c.Fatalf("Failed to Open %q: %s", fq, err)
-				}
-				if gf, err = os.Open(o + "/fq"); err != nil {
-					c.Fatalf("Failed to Open %q: %s", o+"/fq", err)
-				}
-				if ob, err = ioutil.ReadAll(of); err != nil {
-					c.Fatalf("Failed to read %q: %s", fq, err)
-				}
-				if gb, err = ioutil.ReadAll(gf); err != nil {
-					c.Fatalf("Failed to read %q: %s", o+"/fq", err)
-				}
-
-				c.Check(gb, check.DeepEquals, ob)
-			}
+		if w.QID {
+			c.Check(string(b.Bytes()), check.Equals, fq)
 		}
 	}
 }

@@ -1,182 +1,169 @@
-// Copyright ©2011-2012 The bíogo Authors. All rights reserved.
+// Copyright ©2011-2013 The bíogo Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// Package to read and write FASTA format files
+// Package fasta provides types to read and write FASTA format files.
 package fasta
 
 import (
+	"code.google.com/p/biogo/alphabet"
+	"code.google.com/p/biogo/io/seqio"
+	"code.google.com/p/biogo/seq"
+
 	"bufio"
 	"bytes"
-	"code.google.com/p/biogo/bio"
-	"code.google.com/p/biogo/seq"
-	"code.google.com/p/biogo/util"
+	"fmt"
 	"io"
-	"os"
 )
 
+var (
+	_ seqio.Reader = (*Reader)(nil)
+	_ seqio.Writer = (*Writer)(nil)
+)
+
+// Default delimiters.
 const (
-	IDPrefix  = ">" // default delimiters
-	SeqPrefix = ""  // default delimiters
+	DefaultIDPrefix  = ">"
+	DefaultSeqPrefix = ""
 )
 
 // Fasta sequence format reader type.
 type Reader struct {
-	f         io.ReadCloser
 	r         *bufio.Reader
+	t         seqio.SequenceAppender
 	IDPrefix  []byte
 	SeqPrefix []byte
-	last      []byte
-	line      int
+	working   seqio.SequenceAppender
 }
 
-// Returns a new fasta format reader using f.
-func NewReader(f io.ReadCloser) *Reader {
+// Returns a new fasta format reader using f. Sequences returned by the Reader are copied
+// from the provided template.
+func NewReader(f io.Reader, template seqio.SequenceAppender) *Reader {
 	return &Reader{
-		f:         f,
 		r:         bufio.NewReader(f),
-		IDPrefix:  []byte(IDPrefix),
-		SeqPrefix: []byte(SeqPrefix),
-		last:      nil,
+		t:         template,
+		IDPrefix:  []byte(DefaultIDPrefix),
+		SeqPrefix: []byte(DefaultSeqPrefix),
+		working:   nil,
 	}
-}
-
-// Returns a new fasta format reader using a filename.
-func NewReaderName(name string) (r *Reader, err error) {
-	f, err := os.Open(name)
-	if err != nil {
-		return
-	}
-	return NewReader(f), nil
 }
 
 // Read a single sequence and return it or an error.
-func (self *Reader) Read() (sequence *seq.Seq, err error) {
-	var line, label, body []byte
-	label = self.last
+func (r *Reader) Read() (seq.Sequence, error) {
+	var (
+		buff, line []byte
+		isPrefix   bool
+		s          seq.Sequence
+	)
 
-READ:
 	for {
-		line, err = self.r.ReadBytes('\n')
-		if err == nil {
-			self.line++
-			if len(line) > 0 && line[len(line)-1] == '\r' {
-				line = line[:len(line)-1]
+		var err error
+		if buff, isPrefix, err = r.r.ReadLine(); err != nil {
+			if err != io.EOF || r.working == nil {
+				return nil, err
 			}
-			line = bytes.TrimSpace(line)
-			if len(line) == 0 {
-				continue
-			}
-			switch {
-			case bytes.HasPrefix(line, self.IDPrefix):
-				if self.last == nil {
-					self.last = line[len(self.IDPrefix):]
-				} else {
-					label = self.last
-					self.last = line[len(self.IDPrefix):] // entering a new sequence so exit read loop
-					break READ
-				}
-			case bytes.HasPrefix(line, self.SeqPrefix):
-				line = bytes.Join(bytes.Fields(line[len(self.SeqPrefix):]), nil)
-				body = append(body, line...)
-			}
-		} else {
-			if self.last != nil {
-				label = self.last
-				self.last = nil
-				err = nil
-				break
+			s = r.working
+			r.working = nil
+			return s, nil
+		}
+		line = append(line, buff...)
+		if isPrefix {
+			continue
+		}
+		line = bytes.TrimSpace(line)
+		if len(line) == 0 {
+			continue
+		}
+
+		if bytes.HasPrefix(line, r.IDPrefix) {
+			if r.working == nil {
+				r.working = r.header(line)
+				line = nil
 			} else {
-				return nil, io.EOF
+				s = r.working
+				r.working = r.header(line)
+				return s, nil
 			}
+		} else if bytes.HasPrefix(line, r.SeqPrefix) {
+			if r.working == nil {
+				return nil, fmt.Errorf("fasta: badly formed line %q", line)
+			}
+			line = bytes.Join(bytes.Fields(line[len(r.SeqPrefix):]), nil)
+			r.working.AppendLetters(alphabet.BytesToLetters(line)...)
+			line = nil
+		} else {
+			return nil, fmt.Errorf("fasta: badly formed line %q", line)
 		}
 	}
 
-	if len(label) > 0 || len(body) > 0 {
-		sequence = seq.New(string(label), body, nil)
-	} else {
-		err = bio.NewError("fasta: empty sequence", 0, self.line)
-	}
-
-	return
+	panic("cannot reach")
 }
 
-// Rewind the reader.
-func (self *Reader) Rewind() (err error) {
-	if s, ok := self.f.(io.Seeker); ok {
-		self.last = nil
-		_, err = s.Seek(0, 0)
-		self.r = bufio.NewReader(self.f)
+func (r *Reader) header(line []byte) seqio.SequenceAppender {
+	s := r.t.Clone().(seqio.SequenceAppender)
+	fieldMark := bytes.IndexAny(line, " \t")
+	if fieldMark < 0 {
+		s.SetName(string(line[len(r.IDPrefix):]))
 	} else {
-		err = bio.NewError("Not a Seeker", 0, self)
+		s.SetName(string(line[len(r.IDPrefix):fieldMark]))
+		s.SetDescription(string(line[fieldMark+1:]))
 	}
-	return
-}
 
-// Close the reader.
-func (self *Reader) Close() (err error) {
-	return self.f.Close()
+	return s
 }
 
 // Fasta sequence format writer type.
 type Writer struct {
-	f         io.WriteCloser
-	w         *bufio.Writer
+	w         io.Writer
 	IDPrefix  []byte
 	SeqPrefix []byte
 	Width     int
 }
 
 // Returns a new fasta format writer using f.
-func NewWriter(f io.WriteCloser, width int) *Writer {
+func NewWriter(w io.Writer, width int) *Writer {
 	return &Writer{
-		f:         f,
-		w:         bufio.NewWriter(f),
-		IDPrefix:  []byte(IDPrefix),
-		SeqPrefix: []byte(SeqPrefix),
+		w:         w,
+		IDPrefix:  []byte(DefaultIDPrefix),
+		SeqPrefix: []byte(DefaultSeqPrefix),
 		Width:     width,
 	}
 }
 
-// Returns a new fasta format writer using a filename, truncating any existing file.
-// If appending is required use NewWriter and os.OpenFile.
-func NewWriterName(name string, width int) (w *Writer, err error) {
-	f, err := os.Create(name)
-	if err != nil {
-		return
-	}
-	return NewWriter(f, width), nil
-}
-
 // Write a single sequence and return the number of bytes written and any error.
-func (self *Writer) Write(s *seq.Seq) (n int, err error) {
-	var ln int
-	n, err = self.w.WriteString(string(self.IDPrefix) + s.ID + "\n")
+func (w *Writer) Write(s seq.Sequence) (n int, err error) {
+	var (
+		ln     int
+		prefix = append([]byte{'\n'}, w.SeqPrefix...)
+	)
+	id, desc := s.Name(), s.Description()
+	header := make([]byte, 0, len(w.IDPrefix)+len(id)+len(desc)+1)
+	header = append(header, w.IDPrefix...)
+	header = append(header, id...)
+	if len(desc) > 0 {
+		header = append(header, ' ')
+		header = append(header, desc...)
+	}
+
+	n, err = w.w.Write(header)
 	if err == nil {
-		for i := 0; i*self.Width <= s.Len(); i++ {
-			endLinePos := util.Min(self.Width*(i+1), s.Len())
-			for _, elem := range [][]byte{self.SeqPrefix, s.Seq[self.Width*i : endLinePos], {'\n'}} {
-				ln, err = self.w.Write(elem)
+		for i := 0; i < s.Len(); i++ {
+			if i%w.Width == 0 {
+				ln, err = w.w.Write(prefix)
 				if n += ln; err != nil {
 					return
 				}
 			}
+			ln, err = w.w.Write([]byte{byte(s.At(i).L)})
+			if n += ln; err != nil {
+				return
+			}
+		}
+		ln, err = w.w.Write([]byte{'\n'})
+		if n += ln; err != nil {
+			return
 		}
 	}
 
 	return
-}
-
-// Flush the writer.
-func (self *Writer) Flush() error {
-	return self.w.Flush()
-}
-
-// Close the writer, flushing any unwritten sequence.
-func (self *Writer) Close() (err error) {
-	err = self.w.Flush()
-	if err != nil {
-		return
-	}
-	return self.f.Close()
 }
