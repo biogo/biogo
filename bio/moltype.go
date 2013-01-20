@@ -1,4 +1,4 @@
-// Copyright ©2011-2012 The bíogo Authors. All rights reserved.
+// Copyright ©2011-2013 The bíogo Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -33,11 +33,11 @@ func init() {
 type Moltype int8
 
 // Return a string representation of a Moltype.
-func (self Moltype) String() string {
-	if self == Undefined {
+func (m Moltype) String() string {
+	if m == Undefined {
 		return "Undefined"
 	}
-	return moltypeToString[self]
+	return moltypeToString[m]
 }
 
 // ParseMoltype allows conversion from a string to a Moltype.

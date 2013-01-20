@@ -1,4 +1,4 @@
-// Copyright ©2011-2012 The bíogo Authors. All rights reserved.
+// Copyright ©2011-2013 The bíogo Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -68,25 +68,25 @@ func RGBAtoHSVA(r, g, b, a uint32) HSVA {
 }
 
 // RGBA() allows HSVAColor to satisfy the color.Color interface.
-func (self HSVA) RGBA() (r, g, b, a uint32) {
+func (c HSVA) RGBA() (r, g, b, a uint32) {
 	var red, green, blue float64
 
-	a = uint32(maxChannelValue * self.A)
+	a = uint32(maxChannelValue * c.A)
 
-	if self.V == 0 {
+	if c.V == 0 {
 		return
 	}
 
-	if self.S == 0 {
-		r, g, b = uint32(maxChannelValue*self.V), uint32(maxChannelValue*self.V), uint32(maxChannelValue*self.V)
+	if c.S == 0 {
+		r, g, b = uint32(maxChannelValue*c.V), uint32(maxChannelValue*c.V), uint32(maxChannelValue*c.V)
 		return
 	}
 
-	chroma := self.V * self.S
-	m := self.V - chroma
+	chroma := c.V * c.S
+	m := c.V - chroma
 
-	if !math.IsNaN(self.H) {
-		hue := math.Mod(self.H, 360) / 60
+	if !math.IsNaN(c.H) {
+		hue := math.Mod(c.H, 360) / 60
 		x := chroma * (1 - math.Abs(math.Mod(hue, 2)-1))
 		switch math.Floor(hue) {
 		case 0:

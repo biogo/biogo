@@ -1,4 +1,4 @@
-// Copyright ©2011-2012 The bíogo Authors. All rights reserved.
+// Copyright ©2011-2013 The bíogo Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -37,9 +37,9 @@ func NewValidator(valid []byte) (v *Validator) {
 // Check that a slice of bytes conforms to an alphabet, returning false
 // and the position of the first invalid byte if invalid and true and a negative
 // int if valid.
-func (self *Validator) Check(n []byte) (valid bool, pos int) {
+func (va *Validator) Check(n []byte) (valid bool, pos int) {
 	for i, v := range n {
-		if !self.valid[v] {
+		if !va.valid[v] {
 			return false, i
 		}
 	}
@@ -48,9 +48,9 @@ func (self *Validator) Check(n []byte) (valid bool, pos int) {
 }
 
 // Return a string indicating characters accepted as valid by the Validator.
-func (self *Validator) String() string {
+func (va *Validator) String() string {
 	valid := make([]byte, 0, 256)
-	for i, v := range self.valid {
+	for i, v := range va.valid {
 		if v {
 			valid = append(valid, byte(i))
 		}

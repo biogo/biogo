@@ -51,7 +51,7 @@ func NewReader(r io.Reader, template seqio.SequenceAppender) *Reader {
 
 // Read a single sequence and return it or an error.
 // TODO: Does not read multi-line fastq.
-func (self *Reader) Read() (seq.Sequence, error) {
+func (r *Reader) Read() (seq.Sequence, error) {
 	var (
 		buff, line, label []byte
 		isPrefix          bool
@@ -63,7 +63,7 @@ func (self *Reader) Read() (seq.Sequence, error) {
 
 	for {
 		var err error
-		if buff, isPrefix, err = self.r.ReadLine(); err != nil {
+		if buff, isPrefix, err = r.r.ReadLine(); err != nil {
 			return nil, err
 		}
 		line = append(line, buff...)
@@ -77,7 +77,7 @@ func (self *Reader) Read() (seq.Sequence, error) {
 		}
 		switch {
 		case !inQual && line[0] == '@':
-			t = self.readHeader(line)
+			t = r.readHeader(line)
 			label = line
 		case !inQual && line[0] == '+':
 			if len(label) == 0 {
@@ -99,7 +99,7 @@ func (self *Reader) Read() (seq.Sequence, error) {
 				return nil, errors.New("fastq: sequence/quality length mismatch")
 			}
 			for i := range line {
-				seqBuff[i].Q = self.enc.DecodeToQphred(line[i])
+				seqBuff[i].Q = r.enc.DecodeToQphred(line[i])
 			}
 			t.AppendQLetters(seqBuff...)
 
@@ -111,8 +111,8 @@ func (self *Reader) Read() (seq.Sequence, error) {
 	panic("cannot reach")
 }
 
-func (self *Reader) readHeader(line []byte) seqio.SequenceAppender {
-	s := self.t.Clone().(seqio.SequenceAppender)
+func (r *Reader) readHeader(line []byte) seqio.SequenceAppender {
+	s := r.t.Clone().(seqio.SequenceAppender)
 	fieldMark := bytes.IndexAny(line, " \t")
 	if fieldMark < 0 {
 		s.SetName(string(line[1:]))
@@ -138,7 +138,7 @@ func NewWriter(w io.Writer) *Writer {
 }
 
 // Write a single sequence and return the number of bytes written and any error.
-func (self *Writer) Write(s seq.Sequence) (n int, err error) {
+func (w *Writer) Write(s seq.Sequence) (n int, err error) {
 	var (
 		ln  int
 		enc alphabet.Encoding
@@ -149,38 +149,38 @@ func (self *Writer) Write(s seq.Sequence) (n int, err error) {
 		enc = alphabet.Sanger
 	}
 
-	n, err = self.writeHeader('@', s)
+	n, err = w.writeHeader('@', s)
 	if err != nil {
 		return
 	}
 	for i := 0; i < s.Len(); i++ {
-		ln, err = self.w.Write([]byte{byte(s.At(i).L)})
+		ln, err = w.w.Write([]byte{byte(s.At(i).L)})
 		if n += ln; err != nil {
 			return
 		}
 	}
-	ln, err = self.w.Write([]byte{'\n'})
+	ln, err = w.w.Write([]byte{'\n'})
 	if n += ln; err != nil {
 		return
 	}
-	if self.QID {
-		ln, err = self.writeHeader('+', s)
+	if w.QID {
+		ln, err = w.writeHeader('+', s)
 		if n += ln; err != nil {
 			return
 		}
 	} else {
-		ln, err = self.w.Write([]byte("+\n"))
+		ln, err = w.w.Write([]byte("+\n"))
 		if n += ln; err != nil {
 			return
 		}
 	}
 	for i := 0; i < s.Len(); i++ {
-		ln, err = self.w.Write([]byte{s.At(i).Q.Encode(enc)})
+		ln, err = w.w.Write([]byte{s.At(i).Q.Encode(enc)})
 		if n += ln; err != nil {
 			return
 		}
 	}
-	ln, err = self.w.Write([]byte{'\n'})
+	ln, err = w.w.Write([]byte{'\n'})
 	if n += ln; err != nil {
 		return
 	}
@@ -188,27 +188,27 @@ func (self *Writer) Write(s seq.Sequence) (n int, err error) {
 	return
 }
 
-func (self *Writer) writeHeader(prefix byte, s seq.Sequence) (n int, err error) {
+func (w *Writer) writeHeader(prefix byte, s seq.Sequence) (n int, err error) {
 	var ln int
-	n, err = self.w.Write([]byte{prefix})
+	n, err = w.w.Write([]byte{prefix})
 	if err != nil {
 		return
 	}
-	ln, err = io.WriteString(self.w, s.Name())
+	ln, err = io.WriteString(w.w, s.Name())
 	if n += ln; err != nil {
 		return
 	}
 	if desc := s.Description(); len(desc) != 0 {
-		ln, err = self.w.Write([]byte{' '})
+		ln, err = w.w.Write([]byte{' '})
 		if n += ln; err != nil {
 			return
 		}
-		ln, err = io.WriteString(self.w, desc)
+		ln, err = io.WriteString(w.w, desc)
 		if n += ln; err != nil {
 			return
 		}
 	}
-	ln, err = self.w.Write([]byte("\n"))
+	ln, err = w.w.Write([]byte("\n"))
 	n += ln
 	return
 }

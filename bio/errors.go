@@ -1,4 +1,4 @@
-// Copyright ©2011-2012 The bíogo Authors. All rights reserved.
+// Copyright ©2011-2013 The bíogo Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -50,15 +50,15 @@ func NewError(message string, skip int, items ...interface{}) Error {
 }
 
 // Return the file name and line number of caller stored at creation of the Error.
-func (self *errorBase) FileLine() (file string, line int) {
+func (err *errorBase) FileLine() (file string, line int) {
 
-	return self.Func.FileLine(self.pc[0])
+	return err.Func.FileLine(err.pc[0])
 }
 
 // Return a slice contining the stack trace stored at creation of the Error.
-func (self *errorBase) Trace() (stack []*runtime.Func) {
-	stack = make([]*runtime.Func, len(self.pc))
-	for i, pc := range self.pc {
+func (err *errorBase) Trace() (stack []*runtime.Func) {
+	stack = make([]*runtime.Func, len(err.pc))
+	for i, pc := range err.pc {
 		stack[i] = runtime.FuncForPC(pc)
 	}
 
@@ -66,30 +66,30 @@ func (self *errorBase) Trace() (stack []*runtime.Func) {
 }
 
 // Return the package name of the stored caller.
-func (self *errorBase) Package() string {
-	caller := strings.Split(self.Func.Name(), ".")
+func (err *errorBase) Package() string {
+	caller := strings.Split(err.Func.Name(), ".")
 	return strings.Join(caller[0:len(caller)-1], ".")
 }
 
 // Return the function name of the stored caller.
-func (self *errorBase) Function() string {
-	caller := strings.Split(self.Func.Name(), ".")
+func (err *errorBase) Function() string {
+	caller := strings.Split(err.Func.Name(), ".")
 	return caller[len(caller)-1]
 }
 
 // Return any items retained by caller.
-func (self *errorBase) Items() []interface{} { return self.items }
+func (err *errorBase) Items() []interface{} { return err.items }
 
 // A formatted stack trace of the error extending depth frames into the stack, 0 indicates no limit. 
-func (self *errorBase) Tracef(depth int) string {
+func (err *errorBase) Tracef(depth int) string {
 	var last, name string
 	b := &bytes.Buffer{}
-	fmt.Fprintf(b, "Trace: %s:\n", self.message)
-	for i, frame := range self.Trace() {
+	fmt.Fprintf(b, "Trace: %s:\n", err.message)
+	for i, frame := range err.Trace() {
 		if depth > 0 && i >= depth {
 			break
 		}
-		file, line := frame.FileLine(self.pc[i])
+		file, line := frame.FileLine(err.pc[i])
 		if name = frame.Name(); name != last {
 			fmt.Fprintf(b, "\n %s:\n", frame.Name())
 		}
@@ -101,6 +101,6 @@ func (self *errorBase) Tracef(depth int) string {
 }
 
 // Satisfy the error interface.
-func (self *errorBase) Error() string {
-	return self.message
+func (err *errorBase) Error() string {
+	return err.message
 }

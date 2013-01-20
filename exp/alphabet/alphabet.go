@@ -1,4 +1,4 @@
-// Copyright ©2011-2012 The bíogo Authors. All rights reserved.
+// Copyright ©2011-2013 The bíogo Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -7,6 +7,7 @@ package alphabet
 
 import (
 	"code.google.com/p/biogo/bio"
+
 	"errors"
 	"fmt"
 	"sort"
@@ -152,26 +153,26 @@ func NewGeneric(letters string, molType bio.Moltype, gap, ambiguous Letter, case
 }
 
 // Return the molecule type of the alphabet.
-func (self *Generic) Moltype() bio.Moltype { return self.molType }
+func (a *Generic) Moltype() bio.Moltype { return a.molType }
 
 // Return the number of distinct valid letters in the alphabet.
-func (self *Generic) Len() int { return len(self.letters) }
+func (a *Generic) Len() int { return len(a.letters) }
 
 // Return whether the alphabet is case sensitive.
-func (self *Generic) IsCaseSensitive() bool { return self.caseSensitive }
+func (a *Generic) IsCaseSensitive() bool { return a.caseSensitive }
 
 // Return the gap character.
-func (self *Generic) Gap() Letter { return self.gap }
+func (a *Generic) Gap() Letter { return a.gap }
 
 // Return the character representing an ambiguous letter.
-func (self *Generic) Ambiguous() Letter { return self.ambiguous }
+func (a *Generic) Ambiguous() Letter { return a.ambiguous }
 
 // Check that a slice of bytes conforms to the alphabet, returning false
 // and the position of the first invalid byte if invalid and true and a negative
 // int if valid.
-func (self *Generic) AllValidQLetter(n []QLetter) (valid bool, pos int) {
+func (a *Generic) AllValidQLetter(n []QLetter) (valid bool, pos int) {
 	for i, v := range n {
-		if !self.valid[v.L] {
+		if !a.valid[v.L] {
 			return false, i
 		}
 	}
@@ -182,9 +183,9 @@ func (self *Generic) AllValidQLetter(n []QLetter) (valid bool, pos int) {
 // Check that a slice of bytes conforms to the alphabet, returning false
 // and the position of the first invalid byte if invalid and true and a negative
 // int if valid.
-func (self *Generic) AllValid(n []Letter) (valid bool, pos int) {
+func (a *Generic) AllValid(n []Letter) (valid bool, pos int) {
 	for i, v := range n {
-		if !self.valid[v] {
+		if !a.valid[v] {
 			return false, i
 		}
 	}
@@ -193,36 +194,36 @@ func (self *Generic) AllValid(n []Letter) (valid bool, pos int) {
 }
 
 // Check that a byte conforms to the alphabet.
-func (self *Generic) IsValid(n Letter) bool {
-	return self.valid[n]
+func (a *Generic) IsValid(n Letter) bool {
+	return a.valid[n]
 }
 
 // Return the letter for and index.
-func (self *Generic) Letter(i int) Letter {
-	if !self.caseSensitive {
-		return Letter(unicode.ToLower(rune(self.letters[i])))
+func (a *Generic) Letter(i int) Letter {
+	if !a.caseSensitive {
+		return Letter(unicode.ToLower(rune(a.letters[i])))
 	}
-	return Letter(self.letters[i])
+	return Letter(a.letters[i])
 }
 
 // Return the index of a letter.
-func (self *Generic) IndexOf(n Letter) int {
-	return self.index[n]
+func (a *Generic) IndexOf(n Letter) int {
+	return a.index[n]
 }
 
 // Return a slice of the internal []bool indicating valid letters. The returned slice should not
 // be altered.
-func (self *Generic) ValidLetters() []bool { return self.valid[:] }
+func (a *Generic) ValidLetters() []bool { return a.valid[:] }
 
 // Return a slice of the internal []int specifying letter to index conversion. The return 
 // index should not be altered.
-func (self *Generic) LetterIndex() []int { return self.index[:] }
+func (a *Generic) LetterIndex() []int { return a.index[:] }
 
 // Return a string indicating characters accepted as valid by the Validator.
-func (self *Generic) String() string {
-	s := self.letters
+func (a *Generic) String() string {
+	s := a.letters
 
-	if !self.caseSensitive {
+	if !a.caseSensitive {
 		s += strings.ToUpper(s)
 	}
 
@@ -263,13 +264,13 @@ func NewPairing(s, c string) (*Pairing, error) {
 }
 
 // Returns the complement of a letter and true if the complement is a valid letter otherwise unchanged and false.
-func (self *Pairing) Complement(l Letter) (c Letter, ok bool) { return self.pair[l], self.ok[l] }
+func (p *Pairing) Complement(l Letter) (c Letter, ok bool) { return p.pair[l], p.ok[l] }
 
 // Returns a complementation table based on the internal representation. Invalid pairs hold a value outside the ASCII range.
-func (self *Pairing) ComplementTable() (t []Letter) {
+func (p *Pairing) ComplementTable() (t []Letter) {
 	t = make([]Letter, 256)
-	copy(t, self.pair)
-	for i, ok := range self.ok {
+	copy(t, p.pair)
+	for i, ok := range p.ok {
 		if !ok {
 			t[i] |= unicode.MaxASCII + 1
 		}
