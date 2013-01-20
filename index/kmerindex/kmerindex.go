@@ -11,6 +11,7 @@ import (
 	"code.google.com/p/biogo/exp/seq/linear"
 	"code.google.com/p/biogo/util"
 
+	"code.google.com/p/biogo/exp/alphabet"
 	"fmt"
 	"math"
 )
@@ -50,7 +51,7 @@ func New(k int, s *linear.Seq) (*Index, error) {
 		return nil, bio.NewError("alphabet length != 4", 0, s.Alpha.Len())
 	}
 
-	i := &Index{
+	ki := &Index{
 		finger:  make([]Kmer, util.Pow4(k)+1), // Need a Tn+1 finger position so that Tn can be recognised
 		k:       k,
 		kMask:   Kmer(util.Pow4(k) - 1),
@@ -58,9 +59,9 @@ func New(k int, s *linear.Seq) (*Index, error) {
 		lookUp:  s.Alpha.LetterIndex(),
 		indexed: false,
 	}
-	i.buildKmerTable()
+	ki.buildKmerTable()
 
-	return i, nil
+	return ki, nil
 }
 
 // Build the table of Kmer frequencies - called by New
@@ -89,7 +90,7 @@ func (ki *Index) Build() {
 }
 
 // Return an array of positions for the Kmer string kmertext
-func (ki *Index) GetPositionsString(kmertext string) (positions []int, err error) {
+func (ki *Index) KmerPositionsString(kmertext string) (positions []int, err error) {
 	switch {
 	case len(kmertext) != ki.k:
 		return nil, bio.NewError("Sequence length does not match Kmer length", 0, ki.k, kmertext)
@@ -102,11 +103,11 @@ func (ki *Index) GetPositionsString(kmertext string) (positions []int, err error
 		return nil, err
 	}
 
-	return ki.GetPositionsKmer(kmer)
+	return ki.KmerPositions(kmer)
 }
 
 // Return an array of positions for the Kmer kmer
-func (ki *Index) GetPositionsKmer(kmer Kmer) (positions []int, err error) {
+func (ki *Index) KmerPositions(kmer Kmer) (positions []int, err error) {
 	if kmer > ki.kMask {
 		return nil, bio.NewError("Kmer out of range", 0, kmer, ki.kMask)
 	}
@@ -175,7 +176,7 @@ func (ki *Index) KmerIndex() (map[Kmer][]int, bool) {
 	m := make(map[Kmer][]int)
 
 	for i := range ki.finger {
-		if p, _ := ki.GetPositionsKmer(Kmer(i)); len(p) > 0 {
+		if p, _ := ki.KmerPositions(Kmer(i)); len(p) > 0 {
 			m[Kmer(i)] = p
 		}
 	}
@@ -193,8 +194,8 @@ func (ki *Index) StringKmerIndex() (map[string][]int, bool) {
 	m := make(map[string][]int)
 
 	for i := range ki.finger {
-		if p, _ := ki.GetPositionsKmer(Kmer(i)); len(p) > 0 {
-			m[ki.Stringify(Kmer(i))] = p
+		if p, _ := ki.KmerPositions(Kmer(i)); len(p) > 0 {
+			m[ki.Format(Kmer(i))] = p
 		}
 	}
 
@@ -275,8 +276,9 @@ func (ki *Index) PosAt(p int) int {
 }
 
 // Convert a Kmer into a string of bases
-func (ki *Index) Stringify(kmer Kmer) string {
-	return Stringify(ki.k, kmer)
+func (ki *Index) Format(kmer Kmer) string {
+	s, _ := Format(kmer, ki.k, ki.seq.Alpha)
+	return s
 }
 
 // Convert a string of bases into a len k Kmer, returns an error if string length does not match k.
@@ -313,14 +315,17 @@ func GCof(k int, kmer Kmer) float64 {
 }
 
 // Convert a Kmer into a string of bases
-func Stringify(k int, kmer Kmer) string {
+func Format(kmer Kmer, k int, alpha alphabet.Alphabet) (string, error) {
+	if alpha.Len() != 4 {
+		return "", bio.NewError("alphabet length != 4", 0, alpha.Len())
+	}
 	kmertext := make([]byte, k)
 
 	for i := k - 1; i >= 0; i, kmer = i-1, kmer>>2 {
-		kmertext[i] = bio.N[kmer&3]
+		kmertext[i] = byte(alpha.Letter(int(kmer & 3)))
 	}
 
-	return string(kmertext)
+	return string(kmertext), nil
 }
 
 // Reverse complement a Kmer. Complementation is performed according to letter index:
