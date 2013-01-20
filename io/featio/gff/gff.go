@@ -1,4 +1,4 @@
-// Copyright ©2011-2012 The bíogo Authors. All rights reserved.
+// Copyright ©2011-2013 The bíogo Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -29,8 +29,8 @@ import (
 )
 
 var (
-	_ featio.Reader = &Reader{}
-	_ featio.Writer = &Writer{}
+	_ featio.Reader = (*Reader)(nil)
+	_ featio.Writer = (*Writer)(nil)
 )
 
 // Version is the GFF version that is read and written.

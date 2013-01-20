@@ -1,4 +1,4 @@
-// Copyright ©2011-2012 The bíogo Authors. All rights reserved.
+// Copyright ©2011-2013 The bíogo Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -10,6 +10,7 @@ import (
 	"code.google.com/p/biogo/exp/seq"
 	"code.google.com/p/biogo/exp/seq/linear"
 	"code.google.com/p/biogo/util"
+
 	"errors"
 	"fmt"
 	"strings"
@@ -67,7 +68,7 @@ func NewQSeq(id string, subids []string, ql [][]alphabet.QLetter, alpha alphabet
 
 // Interface guarantees
 var (
-	_ feat.Feature = &QSeq{}
+	_ feat.Feature = (*QSeq)(nil)
 	_ feat.Feature = QRow{}
 	_ seq.Sequence = QRow{}
 	_ seq.Scorer   = QRow{}

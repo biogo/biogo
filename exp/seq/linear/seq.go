@@ -1,4 +1,4 @@
-// Copyright ©2011-2012 The bíogo Authors. All rights reserved.
+// Copyright ©2011-2013 The bíogo Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -8,6 +8,7 @@ import (
 	"code.google.com/p/biogo/exp/alphabet"
 	"code.google.com/p/biogo/exp/feat"
 	"code.google.com/p/biogo/exp/seq"
+
 	"fmt"
 	"unicode"
 )
@@ -20,8 +21,8 @@ type Seq struct {
 
 // Interface guarantees
 var (
-	_ feat.Feature = &Seq{}
-	_ seq.Sequence = &Seq{}
+	_ feat.Feature = (*Seq)(nil)
+	_ seq.Sequence = (*Seq)(nil)
 )
 
 // NewSeq creates a new Seq with the given id, letter sequence and alphabet.

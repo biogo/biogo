@@ -8,6 +8,7 @@ import (
 	"code.google.com/p/biogo/exp/alphabet"
 	"code.google.com/p/biogo/exp/seq"
 	"code.google.com/p/biogo/util"
+
 	"fmt"
 )
 
@@ -15,8 +16,8 @@ type Set []seq.Sequence
 
 // Interface guarantees
 var (
-	_ seq.Rower       = &Set{}
-	_ seq.RowAppender = &Set{}
+	_ seq.Rower       = (*Set)(nil)
+	_ seq.RowAppender = (*Set)(nil)
 )
 
 // Append each []byte in a to the appropriate sequence in the reciever.

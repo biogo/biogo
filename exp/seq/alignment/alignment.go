@@ -1,4 +1,4 @@
-// Copyright ©2011-2012 The bíogo Authors. All rights reserved.
+// Copyright ©2011-2013 The bíogo Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -11,6 +11,7 @@ import (
 	"code.google.com/p/biogo/exp/seq"
 	"code.google.com/p/biogo/exp/seq/linear"
 	"code.google.com/p/biogo/util"
+
 	"errors"
 	"fmt"
 	"strings"
@@ -62,7 +63,7 @@ func NewSeq(id string, subids []string, b [][]alphabet.Letter, alpha alphabet.Al
 
 // Interface guarantees
 var (
-	_ feat.Feature = &Seq{}
+	_ feat.Feature = (*Seq)(nil)
 	_ feat.Feature = Row{}
 	_ seq.Sequence = Row{}
 )

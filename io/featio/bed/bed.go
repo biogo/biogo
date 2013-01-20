@@ -1,4 +1,4 @@
-// Copyright ©2011-2012 The bíogo Authors. All rights reserved.
+// Copyright ©2011-2013 The bíogo Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -53,23 +53,23 @@ const (
 )
 
 var (
-	_ featio.Reader = &Reader{}
-	_ featio.Writer = &Writer{}
+	_ featio.Reader = (*Reader)(nil)
+	_ featio.Writer = (*Writer)(nil)
 
-	_ feat.Feature = &Bed3{}
-	_ feat.Feature = &Bed4{}
-	_ feat.Feature = &Bed5{}
-	_ feat.Feature = &Bed6{}
-	_ feat.Feature = &Bed12{}
+	_ feat.Feature = (*Bed3)(nil)
+	_ feat.Feature = (*Bed4)(nil)
+	_ feat.Feature = (*Bed5)(nil)
+	_ feat.Feature = (*Bed6)(nil)
+	_ feat.Feature = (*Bed12)(nil)
 
-	_ Bed = &Bed3{}
-	_ Bed = &Bed4{}
-	_ Bed = &Bed5{}
-	_ Bed = &Bed6{}
-	_ Bed = &Bed12{}
+	_ Bed = (*Bed3)(nil)
+	_ Bed = (*Bed4)(nil)
+	_ Bed = (*Bed5)(nil)
+	_ Bed = (*Bed6)(nil)
+	_ Bed = (*Bed12)(nil)
 
-	_ feat.Orienter = &Bed6{}
-	_ feat.Orienter = &Bed12{}
+	_ feat.Orienter = (*Bed6)(nil)
+	_ feat.Orienter = (*Bed12)(nil)
 )
 
 type Bed interface {

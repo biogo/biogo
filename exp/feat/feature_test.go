@@ -1,4 +1,4 @@
-// Copyright ©2011-2012 The bíogo Authors. All rights reserved.
+// Copyright ©2011-2013 The bíogo Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -14,22 +14,22 @@ import (
 
 func TestFeat(t *testing.T) {
 	var (
-		_ feat.Feature = &linear.Seq{}
-		_ feat.Feature = &linear.QSeq{}
-		_ feat.Feature = &alignment.Seq{}
-		_ feat.Feature = &alignment.QSeq{}
-		_ feat.Feature = &multi.Multi{}
+		_ feat.Feature = (*linear.Seq)(nil)
+		_ feat.Feature = (*linear.QSeq)(nil)
+		_ feat.Feature = (*alignment.Seq)(nil)
+		_ feat.Feature = (*alignment.QSeq)(nil)
+		_ feat.Feature = (*multi.Multi)(nil)
 
-		_ feat.Offsetter = &linear.Seq{}
-		_ feat.Offsetter = &linear.QSeq{}
-		_ feat.Offsetter = &alignment.Seq{}
-		_ feat.Offsetter = &alignment.QSeq{}
-		_ feat.Offsetter = &multi.Multi{}
+		_ feat.Offsetter = (*linear.Seq)(nil)
+		_ feat.Offsetter = (*linear.QSeq)(nil)
+		_ feat.Offsetter = (*alignment.Seq)(nil)
+		_ feat.Offsetter = (*alignment.QSeq)(nil)
+		_ feat.Offsetter = (*multi.Multi)(nil)
 
-		_ feat.LocationSetter = &linear.Seq{}
-		_ feat.LocationSetter = &linear.QSeq{}
-		_ feat.LocationSetter = &alignment.Seq{}
-		_ feat.LocationSetter = &alignment.QSeq{}
-		_ feat.LocationSetter = &multi.Multi{}
+		_ feat.LocationSetter = (*linear.Seq)(nil)
+		_ feat.LocationSetter = (*linear.QSeq)(nil)
+		_ feat.LocationSetter = (*alignment.Seq)(nil)
+		_ feat.LocationSetter = (*alignment.QSeq)(nil)
+		_ feat.LocationSetter = (*multi.Multi)(nil)
 	)
 }
