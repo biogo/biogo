@@ -7,13 +7,23 @@
 package kmerindex
 
 import (
-	"code.google.com/p/biogo/bio"
+	"code.google.com/p/biogo/alphabet"
 	"code.google.com/p/biogo/seq/linear"
 	"code.google.com/p/biogo/util"
 
-	"code.google.com/p/biogo/alphabet"
+	"errors"
 	"fmt"
 	"math"
+)
+
+var (
+	ErrKTooLarge      = errors.New("kmerindex: k too large")
+	ErrKTooSmall      = errors.New("kmerindex: k too small")
+	ErrShortSeq       = errors.New("kmerindex: sequence to short for k")
+	ErrBadAlphabet    = errors.New("kmerindex: alphabet size != 4")
+	ErrBadKmer        = errors.New("kmerindex: kmer out of range")
+	ErrBadKmerTextLen = errors.New("kmerindex: kmertext length != k")
+	ErrBadKmerText    = errors.New("kmerindex: kmertext contains illegal character")
 )
 
 var Debug = false // Set Debug to true to prevent recovering from panics in ForEachKmer f Eval function.
@@ -42,13 +52,13 @@ var (
 func New(k int, s *linear.Seq) (*Index, error) {
 	switch {
 	case k > MaxKmerLen:
-		return nil, bio.NewError("k greater than MaxKmerLen", 0, k, MaxKmerLen)
+		return nil, ErrKTooLarge
 	case k < MinKmerLen:
-		return nil, bio.NewError("k less than MinKmerLen", 0, k, MinKmerLen)
+		return nil, ErrKTooSmall
 	case k+1 > s.Len():
-		return nil, bio.NewError("sequence shorter than k+1-mer length", 0, k+1, s.Len())
+		return nil, ErrShortSeq
 	case s.Alpha.Len() != 4:
-		return nil, bio.NewError("alphabet length != 4", 0, s.Alpha.Len())
+		return nil, ErrBadAlphabet
 	}
 
 	ki := &Index{
@@ -93,9 +103,9 @@ func (ki *Index) Build() {
 func (ki *Index) KmerPositionsString(kmertext string) (positions []int, err error) {
 	switch {
 	case len(kmertext) != ki.k:
-		return nil, bio.NewError("Sequence length does not match Kmer length", 0, ki.k, kmertext)
+		return nil, ErrBadKmerTextLen
 	case !ki.indexed:
-		return nil, bio.NewError("Index not built: call Build()", 0, ki)
+		return nil, errors.New("kmerindex: index not built: call Build()")
 	}
 
 	var kmer Kmer
@@ -109,7 +119,7 @@ func (ki *Index) KmerPositionsString(kmertext string) (positions []int, err erro
 // Return an array of positions for the Kmer kmer
 func (ki *Index) KmerPositions(kmer Kmer) (positions []int, err error) {
 	if kmer > ki.kMask {
-		return nil, bio.NewError("Kmer out of range", 0, kmer, ki.kMask)
+		return nil, ErrBadKmer
 	}
 
 	i := Kmer(0)
@@ -213,7 +223,7 @@ func (ki *Index) ForEachKmerOf(s *linear.Seq, start, end int, f Eval) (err error
 				var ok bool
 				err, ok = r.(error)
 				if !ok {
-					err = bio.NewError(fmt.Sprintf("pkg: %v", r), 1, r)
+					err = fmt.Errorf("kmerindex: %v", r)
 				}
 			}
 		}
@@ -285,13 +295,13 @@ func (ki *Index) Format(kmer Kmer) string {
 // lookUp is an index lookup table as returned by alphabet.Alphabet.LetterIndex().
 func KmerOf(k int, lookUp []int, kmertext string) (kmer Kmer, err error) {
 	if len(kmertext) != k {
-		return 0, bio.NewError("Sequence length does not match Kmer length", 0, k, kmertext)
+		return 0, ErrBadKmerTextLen
 	}
 
 	for _, v := range kmertext {
 		x := lookUp[v]
 		if x < 0 {
-			return 0, bio.NewError("Kmer contains illegal character", 0, kmertext)
+			return 0, ErrBadKmerText
 		}
 		kmer = (kmer << 2) | Kmer(x)
 	}
@@ -317,7 +327,7 @@ func GCof(k int, kmer Kmer) float64 {
 // Convert a Kmer into a string of bases
 func Format(kmer Kmer, k int, alpha alphabet.Alphabet) (string, error) {
 	if alpha.Len() != 4 {
-		return "", bio.NewError("alphabet length != 4", 0, alpha.Len())
+		return "", ErrBadAlphabet
 	}
 	kmertext := make([]byte, k)
 
@@ -349,13 +359,13 @@ func ComplementOf(k int, kmer Kmer) (c Kmer) {
 // Convert a string of bases into a Kmer, returns an error if string length does not match word length
 func (ki *Index) KmerOf(kmertext string) (kmer Kmer, err error) {
 	if len(kmertext) != ki.k {
-		return 0, bio.NewError("Sequence length does not match Kmer length", 0, ki.k, kmertext)
+		return 0, ErrBadKmerTextLen
 	}
 
 	for _, v := range kmertext {
 		x := ki.lookUp[v]
 		if x < 0 {
-			return 0, bio.NewError("Kmer contains illegal character", 0, kmertext)
+			return 0, ErrBadKmerText
 		}
 		kmer = (kmer << 2) | Kmer(x)
 	}

@@ -8,12 +8,12 @@ package pals
 import (
 	"code.google.com/p/biogo/align/pals/dp"
 	"code.google.com/p/biogo/align/pals/filter"
-	"code.google.com/p/biogo/bio"
 	"code.google.com/p/biogo/index/kmerindex"
 	"code.google.com/p/biogo/morass"
 	"code.google.com/p/biogo/seq/linear"
 	"code.google.com/p/biogo/util"
 
+	"errors"
 	"io"
 	"os"
 	"unsafe"
@@ -95,10 +95,10 @@ func New(target, query *linear.Seq, selfComp bool, m *morass.Morass, threads, tu
 // An error is returned if no satisfactory parameters can be found.
 func (p *PALS) Optimise(minHitLen int, minId float64) error {
 	if minId < 0 || minId > 1.0 {
-		return bio.NewError("bad minId", 0, minId)
+		return errors.New("pals: minimum identity out of range")
 	}
 	if minHitLen <= MinWordLength {
-		return bio.NewError("bad minHitLength", 0, minHitLen)
+		return errors.New("pals: minimum hit length too short")
 	}
 
 	if p.log != nil {
@@ -195,7 +195,7 @@ func (p *PALS) Optimise(minHitLen int, minId float64) error {
 			continue
 		}
 
-		return bio.NewError("failed to find filter parameters", 0)
+		return errors.New("pals: failed to find filter parameters")
 	}
 
 	p.FilterParams = filterParams
@@ -225,7 +225,8 @@ func (p *PALS) filterMemRequired(filterParams *filter.Params) uintptr {
 	return finger + pos + tubes
 }
 
-// filter.tubeState is repeated here to allow memory calculation without exporting tubeState from filter package.
+// filter.tubeState is repeated here to allow memory calculation without
+// exporting tubeState from filter package.
 type tubeState struct {
 	QLo   int
 	QHi   int
@@ -310,7 +311,10 @@ func (p *PALS) Align(complement bool) (dp.DPHits, error) {
 	p.notifyf("Merged %d trapezoids covering %d x %d", len(trapezoids), lt, lq)
 
 	p.notify("Aligning")
-	aligner := dp.NewAligner(p.target, working, p.FilterParams.WordSize, p.DPParams.MinHitLength, p.DPParams.MinId)
+	aligner := dp.NewAligner(
+		p.target, working,
+		p.FilterParams.WordSize, p.DPParams.MinHitLength, p.DPParams.MinId,
+	)
 	aligner.Costs = &p.Costs
 	hits := aligner.AlignTraps(trapezoids)
 	hitCoverageA, hitCoverageB, err := hits.Sum()
@@ -322,7 +326,8 @@ func (p *PALS) Align(complement bool) (dp.DPHits, error) {
 	return hits, nil
 }
 
-// Remove filesystem components of filter. This should be called after the last use of the aligner.
+// Remove file system components of filter. This should be called after
+// the last use of the aligner.
 func (p *PALS) CleanUp() error { return p.morass.CleanUp() }
 
 // Interface for logger used by PALS.

@@ -1,12 +1,13 @@
-// Copyright ©2011-2012 The bíogo Authors. All rights reserved.
+// Copyright ©2011-2013 The bíogo Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
 package concurrent
 
 import (
-	"code.google.com/p/biogo/bio"
 	"code.google.com/p/biogo/util"
+
+	"fmt"
 	"math"
 )
 
@@ -47,7 +48,7 @@ func Map(set Mapper, threads, maxChunkSize int) (results []interface{}, err erro
 	for r := 0; r*chunkSize < set.Len(); r++ {
 		result := <-p.out
 		if result.Err != nil {
-			err = bio.NewError("Map failed", 0, err)
+			err = fmt.Errorf("concurrent: map failed: %v", err)
 			close(quit)
 			break
 		}

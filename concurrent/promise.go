@@ -5,7 +5,8 @@
 package concurrent
 
 import (
-	"code.google.com/p/biogo/bio"
+	"errors"
+	"fmt"
 	"sync"
 )
 
@@ -63,19 +64,19 @@ func (p *Promise) fulfill(value interface{}) (err error) {
 	r, set := p.messageState()
 
 	if r.Err != nil {
-		err = bio.NewError("Tried to fulfill a failed promise", 0, r.Err)
+		err = fmt.Errorf("concurrent: attempt to fulfill failed promise: %v", r.Err)
 	} else {
 		if !set || p.mutable {
 			r.Value = value
 			err = nil
 		} else {
-			err = bio.NewError("Tried to fulfill an already set immutable promise", 0)
+			err = errors.New("concurrent: attempt to fulfill already set immutable promise")
 		}
 	}
 
 	if err != nil && p.relay {
 		if r.Err != nil {
-			err = bio.NewError("Promise already failed - cannot relay", 0, r.Err)
+			err = fmt.Errorf("concrrent: promise already failed - cannot relay", r.Err)
 		} else {
 			r.Err = err
 		}

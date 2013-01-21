@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package bio
+// Package errors supports generic rich error reporting.
+package errors
 
 import (
 	"bytes"
@@ -11,13 +12,11 @@ import (
 	"strings"
 )
 
-// Trace depth
-var TraceDepth = 10
-
-// Base Error handling for bio packages.
+// Type Error is the interface for rich error reporting supported by the
+// errors package.
 type Error interface {
 	FileLine() (file string, line int) // Return the file name and line number of caller stored at creation of the Error.
-	Trace() (stack []*runtime.Func)    // Return a slice contining the stack trace stored at creation of the Error.
+	Trace() (stack []*runtime.Func)    // Return a slice continuing the stack trace stored at creation of the Error.
 	Package() string                   // Return the package name of the stored caller.
 	Function() string                  // Return the function name of the stored caller.
 	Items() []interface{}              // Return any items retained by caller.
@@ -32,10 +31,16 @@ type errorBase struct {
 	items   []interface{}
 }
 
-// Create a new Error with message, storing information about the caller stack frame skip levels above the caller and any item that may be needed for handling the error.
-func NewError(message string, skip int, items ...interface{}) Error {
+// Make creates a new Error with message, storing information about the
+// caller stack frame skip levels above the caller and any item that may
+// be needed for handling the error. The number of frames stored is specified
+// by the depth parameter. If depth is zero, Make will panic.
+func Make(message string, skip, depth int, items ...interface{}) Error {
+	if depth == 0 {
+		panic("errors: zero trace depth")
+	}
 	err := &errorBase{
-		pc:      make([]uintptr, TraceDepth),
+		pc:      make([]uintptr, depth),
 		message: message,
 		items:   items,
 	}
@@ -49,9 +54,9 @@ func NewError(message string, skip int, items ...interface{}) Error {
 	return err
 }
 
-// Return the file name and line number of caller stored at creation of the Error.
+// Return the file name and line number of caller stored at creation of
+// the Error.
 func (err *errorBase) FileLine() (file string, line int) {
-
 	return err.Func.FileLine(err.pc[0])
 }
 
@@ -80,7 +85,8 @@ func (err *errorBase) Function() string {
 // Return any items retained by caller.
 func (err *errorBase) Items() []interface{} { return err.items }
 
-// A formatted stack trace of the error extending depth frames into the stack, 0 indicates no limit. 
+// A formatted stack trace of the error extending depth frames into the
+// stack, 0 indicates no limit.
 func (err *errorBase) Tracef(depth int) string {
 	var last, name string
 	b := &bytes.Buffer{}

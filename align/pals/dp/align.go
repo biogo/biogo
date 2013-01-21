@@ -7,9 +7,9 @@ package dp
 
 import (
 	"code.google.com/p/biogo/align/pals/filter"
-	"code.google.com/p/biogo/bio"
 	"code.google.com/p/biogo/seq/linear"
 
+	"errors"
 	"sort"
 )
 
@@ -157,7 +157,7 @@ func (h DPHits) Sum() (a, b int, err error) {
 	for _, hit := range h {
 		la, lb := hit.Aepos-hit.Abpos, hit.Bepos-hit.Bbpos
 		if la < 0 || lb < 0 {
-			return 0, 0, bio.NewError("Area < 0", 0, hit)
+			return 0, 0, errors.New("dp: negative trapezoid area")
 		}
 		a, b = a+la, b+lb
 	}

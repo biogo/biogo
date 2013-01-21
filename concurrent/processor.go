@@ -5,7 +5,7 @@
 package concurrent
 
 import (
-	"code.google.com/p/biogo/bio"
+	"fmt"
 	"runtime"
 	"sync"
 )
@@ -45,8 +45,8 @@ func NewProcessor(queue chan Operator, buffer int, threads int) (p *Processor) {
 		go func() {
 			p.working <- true
 			defer func() {
-				if e := recover(); e != nil {
-					p.out <- Result{nil, bio.NewError("concurrent.Processor panic", 1, e)}
+				if err := recover(); err != nil {
+					p.out <- Result{nil, fmt.Errorf("concurrent: processor panic: %v", err)}
 				}
 				<-p.working
 				if len(p.working) == 0 {

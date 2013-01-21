@@ -8,10 +8,11 @@
 package filter
 
 import (
-	"code.google.com/p/biogo/bio"
 	"code.google.com/p/biogo/index/kmerindex"
 	"code.google.com/p/biogo/morass"
 	"code.google.com/p/biogo/seq/linear"
+
+	"errors"
 )
 
 // Ukonnen's Lemma: U(n, q, 𝛜) := (n + 1) - q(⌊𝛜n⌋ + 1)
@@ -78,7 +79,7 @@ func (f *Filter) Filter(query *linear.Seq, selfAlign, complement bool, morass *m
 	tubeWidth := f.tubeOffset + f.maxError
 
 	if f.tubeOffset < f.maxError {
-		return bio.NewError("TubeOffset < MaxError", 0, []int{f.tubeOffset, f.maxError})
+		return errors.New("filter: TubeOffset < MaxError")
 	}
 
 	maxActiveTubes := (f.target.Len()+tubeWidth-1)/f.tubeOffset + 1

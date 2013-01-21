@@ -5,7 +5,7 @@
 package util
 
 import (
-	"code.google.com/p/biogo/bio"
+	"errors"
 	"hash"
 	"io"
 	"os"
@@ -22,7 +22,7 @@ var buffer = make([]byte, bufferLen)
 func Hash(h hash.Hash, f *os.File) (sum []byte, err error) {
 	fi, err := f.Stat()
 	if err != nil || fi.IsDir() {
-		return nil, bio.NewError("Is a directory", 0, f)
+		return nil, errors.New("util: file is a directory")
 	}
 
 	s := io.NewSectionReader(f, 0, fi.Size())
