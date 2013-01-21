@@ -15,12 +15,26 @@ import (
 // Type Error is the interface for rich error reporting supported by the
 // errors package.
 type Error interface {
-	FileLine() (file string, line int) // Return the file name and line number of caller stored at creation of the Error.
-	Trace() (stack []*runtime.Func)    // Return a slice continuing the stack trace stored at creation of the Error.
-	Package() string                   // Return the package name of the stored caller.
-	Function() string                  // Return the function name of the stored caller.
-	Items() []interface{}              // Return any items retained by caller.
-	Tracef(depth int) string           // A formatted stack trace of the error extending depth frames into the stack, 0 indicates no limit. 
+	// FileLine returns the file name and line number of caller
+	// stored at creation of the Error.
+	FileLine() (file string, line int)
+
+	// Trace returns a slice continuing the stack trace stored at
+	// creation of the Error.
+	Trace() (stack []*runtime.Func)
+
+	// Package returns the package name of the stored caller.
+	Package() string
+
+	// Function returns the function name of the stored caller.
+	Function() string
+
+	// Items returns any items retained by caller.
+	Items() []interface{}
+
+	// Tracef returns a formatted stack trace of the error
+	// extending depth frames into the stack, 0 indicates no limit. 
+	Tracef(depth int) string
 	error
 }
 
