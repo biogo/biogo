@@ -36,12 +36,16 @@ func (s *S) TestInterfaces(c *check.C) {
 }
 
 type testAlphabets struct {
-	letters  string
 	alphabet Alphabet
+	letters  string
 }
 
 func (s *S) TestIsValid(c *check.C) {
-	for _, t := range []testAlphabets{{N, DNA}, {R, RNA}, {P, Protein}} {
+	for _, t := range []testAlphabets{
+		{DNA, "acgt"},
+		{RNA, "acgu"},
+		{Protein, "abcdefghijklmnpqrstvxyz*"},
+	} {
 		for i := 0; i < 256; i++ {
 			c.Check(t.alphabet.IsValid(Letter(i)), check.Equals, strings.ContainsRune(t.letters, unicode.ToUpper(rune(i))) || strings.ContainsRune(t.letters, unicode.ToLower(rune(i))))
 		}
@@ -49,7 +53,11 @@ func (s *S) TestIsValid(c *check.C) {
 }
 
 func (s *S) TestLetter(c *check.C) {
-	for _, t := range []testAlphabets{{N, DNA}, {R, RNA}, {P, Protein}} {
+	for _, t := range []testAlphabets{
+		{DNA, "acgt"},
+		{RNA, "acgu"},
+		{Protein, "abcdefghijklmnpqrstvxyz*"},
+	} {
 		for i := 0; i < t.alphabet.Len(); i++ {
 			c.Check(t.alphabet.IndexOf(t.alphabet.Letter(i)), check.Equals, i)
 		}
@@ -57,10 +65,13 @@ func (s *S) TestLetter(c *check.C) {
 }
 
 func (s *S) TestComplementOf(c *check.C) {
-	for _, t := range []testAlphabets{{N, DNA}, {R, RNA}} {
+	for _, t := range []Complementor{
+		DNA,
+		RNA,
+	} {
 		for i := 0; i < 256; i++ {
-			if sc, ok := t.alphabet.(Complementor).Complement(Letter(i)); ok {
-				dc, ok := t.alphabet.(Complementor).Complement(sc)
+			if sc, ok := t.Complement(Letter(i)); ok {
+				dc, ok := t.Complement(sc)
 				c.Check(ok, check.Equals, true)
 				c.Check(dc, check.Equals, Letter(i))
 			}
@@ -69,8 +80,11 @@ func (s *S) TestComplementOf(c *check.C) {
 }
 
 func (s *S) TestComplementDirect(c *check.C) {
-	for _, t := range []testAlphabets{{N, DNA}, {R, RNA}} {
-		complement := t.alphabet.(Complementor).ComplementTable()
+	for _, t := range []Complementor{
+		DNA,
+		RNA,
+	} {
+		complement := t.ComplementTable()
 		for i := 0; i < 256; i++ {
 			if sc := complement[i]; sc <= unicode.MaxASCII {
 				dc := complement[sc]
@@ -84,27 +98,30 @@ func (s *S) TestComplementDirect(c *check.C) {
 }
 
 func (s *S) TestString(c *check.C) {
-	e := [...]string{"acgtACGT", "acguACGU", "*abcdefghijklmnpqrstvxyz*ABCDEFGHIJKLMNPQRSTVXYZ"}
-	for i, t := range []testAlphabets{{N, DNA}, {R, RNA}, {P, Protein}} {
-		c.Check(t.alphabet.String(), check.Equals, e[i])
+	for _, t := range []testAlphabets{
+		{DNA, "acgtACGT"},
+		{RNA, "acguACGU"},
+		{Protein, "*abcdefghijklmnpqrstvxyz*ABCDEFGHIJKLMNPQRSTVXYZ"},
+	} {
+		c.Check(t.alphabet.Letters(), check.Equals, t.letters)
 	}
 }
 
 func (s *S) TestRangeCheck(c *check.C) {
 	var err error
-	_, err = NewGeneric(string([]rune{256}), 0, 0, 0, !CaseSensitive)
+	_, err = newAlphabet(string([]rune{256}), 0, 0, 0, !CaseSensitive)
 	c.Check(err, check.Not(check.IsNil))
-	_, err = NewGeneric(string([]rune{0}), 0, 0, 0, !CaseSensitive)
+	_, err = newAlphabet(string([]rune{0}), 0, 0, 0, !CaseSensitive)
 	c.Check(err, check.IsNil)
-	_, err = NewGeneric(string([]rune{127}), 0, 0, 0, !CaseSensitive)
+	_, err = newAlphabet(string([]rune{127}), 0, 0, 0, !CaseSensitive)
 	c.Check(err, check.IsNil)
-	_, err = NewGeneric(string([]rune{-1}), 0, 0, 0, !CaseSensitive)
+	_, err = newAlphabet(string([]rune{-1}), 0, 0, 0, !CaseSensitive)
 	c.Check(err, check.Not(check.IsNil))
 }
 
-func BenchmarkIsValidGeneric(b *testing.B) {
+func BenchmarkIsValid(b *testing.B) {
 	b.StopTimer()
-	g, _ := NewGeneric(P, 0, 0, 0, !CaseSensitive)
+	g, _ := newAlphabet("abcdefghijklmnpqrstvxyz*", 0, 0, 0, !CaseSensitive)
 	b.StartTimer()
 	for i := 0; i < b.N; i++ {
 		g.IsValid(Letter(i))

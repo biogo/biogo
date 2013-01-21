@@ -19,73 +19,120 @@ const (
 	CaseSensitive = true
 )
 
+// Package alphabet provides default Alphabets for DNA, RNA and Protein. These
+// alphabets are case insensitive and for the nucleic acid alphabets satisfy
+// the condition that the index of a letter is equal to the bitwise-complement
+// of the index of the base-complement, modulo 4, allowing the alphabets to be
+// used in 2-bit packed sequences
 var (
-	N                 = "acgt"
-	Npairing          = [2]string{"acgtnxACGTNX-", "tgcanxTGCANX-"}
-	R                 = "acgu"
-	Rpairing          = [2]string{"acgunxACGUNX-", "ugcanxUGCANX-"}
-	Nambiguous Letter = 'n'
-	P                 = "abcdefghijklmnpqrstvxyz*"
-	Pambiguous Letter = 'x'
-	Gap        Letter = '-'
+	DNA = MustComplement(NewComplementor(
+		"acgt",
+		feat.DNA,
+		MustPair(NewPairing("acgtnxACGTNX-", "tgcanxTGCANX-")),
+		'-', 'n',
+		!CaseSensitive,
+	))
+
+	RNA = MustComplement(NewComplementor(
+		"acgu",
+		feat.RNA,
+		MustPair(NewPairing("acgunxACGUNX-", "ugcanxUGCANX-")),
+		'-', 'n',
+		!CaseSensitive,
+	))
+
+	Protein = Must(NewAlphabet(
+		"abcdefghijklmnpqrstvxyz*",
+		feat.Protein,
+		'-', 'x',
+		!CaseSensitive,
+	))
 )
 
-var (
-	DNA, RNA Complementor
-	Protein  Alphabet
-)
-
-func init() {
-	if err := Init(); err != nil {
+// Must is a helper that wraps a call to a function returning (Alphabet, error)
+// and panics if the error is non-nil. It is intended for use in variable
+// initializations.
+func Must(a Alphabet, err error) Alphabet {
+	if err != nil {
 		panic(err)
 	}
+	return a
 }
 
-// Provide default Alphabets.
-func Init() (err error) {
-	pairing, err := NewPairing(Npairing[0], Npairing[1])
+// MustComplement is a helper that wraps a call to a function returning (Complementor, error)
+// and panics if the error is non-nil. It is intended for use in variable
+// initializations.
+func MustComplement(c Complementor, err error) Complementor {
 	if err != nil {
-		return
+		panic(err)
 	}
-	DNA, err = NewNucleic(N, feat.DNA, pairing, Gap, Nambiguous, !CaseSensitive)
-	if err != nil {
-		return
-	}
-
-	pairing, err = NewPairing(Rpairing[0], Rpairing[1])
-	if err != nil {
-		return
-	}
-	RNA, err = NewNucleic(R, feat.RNA, pairing, Gap, Nambiguous, !CaseSensitive)
-	if err != nil {
-		return
-	}
-
-	Protein, err = NewPeptide(P, Gap, Pambiguous, !CaseSensitive)
-	if err != nil {
-		return
-	}
-
-	return
+	return c
 }
 
-// Minimum requirements for an Alphabet.
+// MustPair is a helper that wraps a call to a function returning (*Pairing, error)
+// and panics if the error is non-nil. It is intended for use in variable
+// initializations.
+func MustPair(p *Pairing, err error) *Pairing {
+	if err != nil {
+		panic(err)
+	}
+	return p
+}
+
+// Type Index is a pointer to an index table.
+type Index *[256]int
+
+// An Alphabet describes valid single character letters within a sequence.
 type Alphabet interface {
+	// IsValid returns whether a letter conforms to the alphabet.
 	IsValid(Letter) bool
-	AllValid([]Letter) (bool, int)
-	AllValidQLetter([]QLetter) (bool, int)
+
+	// AllValid checks that a slice of bytes conforms to the alphabet,
+	// returning false and the position of the first invalid byte if
+	// invalid and true and a negative int if valid.
+	AllValid([]Letter) (ok bool, pos int)
+
+	// AllValidQLetter checks that a slice of bytes conforms to the alphabet,
+	// returning false and the position of the first invalid byte if invalid
+	// and true and a negative int if valid.
+	AllValidQLetter([]QLetter) (ok bool, pos int)
+
+	// Len returns the number of distinct valid letters in the alphabet.
 	Len() int
-	Moltype() feat.Moltype
+
+	// IndexOf returns the index of a given letter.
 	IndexOf(Letter) int
+
+	// Letter returns the letter corresponding to the given index.
 	Letter(int) Letter
-	ValidLetters() []bool
+
+	// LetterIndex returns a pointer to the internal array specifying
+	// letter to index conversion. The returned index should not be altered.
 	LetterIndex() Index
+
+	// Letters returns a string of letters conforming to the alphabet in index
+	// order. In case insensitive alphabets, both cases are presented.
+	Letters() string
+
+	// ValidLetters return a slice of the internal []bool indicating valid
+	// letters. The returned slice should not be altered.
+	ValidLetters() []bool
+
+	// Gap return the gap character used by the alphabet.
 	Gap() Letter
+
+	// Ambiguous return the character representing an ambiguous letter.
 	Ambiguous() Letter
-	String() string
+
+	// Moltype returns the molecule type of the alphabet.
+	Moltype() feat.Moltype
+
+	// IsCased returns whether the alphabet is case sensitive.
+	IsCased() bool
 }
 
-// Nucleic alphabets are able to complement their values.
+// A Complementor is an Alphabet that describes the complementation relationships
+// between letters.
 type Complementor interface {
 	Alphabet
 	Complement(Letter) (Letter, bool)
@@ -93,7 +140,7 @@ type Complementor interface {
 }
 
 // Single letter alphabet type.
-type Generic struct {
+type alpha struct {
 	letters        string
 	valid          [256]bool
 	index          [256]int
@@ -102,14 +149,12 @@ type Generic struct {
 	molType        feat.Moltype
 }
 
-// Return a new alphabet. Index values for letters reflect order of the letters parameter if Generic is case sensitive,
-// otherwise index values will reflect ASCII sort order. Letters must be within the ASCII range.
-func NewGeneric(letters string, molType feat.Moltype, gap, ambiguous Letter, caseSensitive bool) (a *Generic, err error) {
+func newAlphabet(letters string, molType feat.Moltype, gap, ambiguous Letter, caseSensitive bool) (*alpha, error) {
 	if strings.IndexFunc(letters, func(r rune) bool { return r < 0 || r > unicode.MaxASCII }) > -1 {
-		return nil, errors.New("letters contains non-ASCII rune.")
+		return nil, errors.New("alphabet: letters contains non-ASCII rune")
 	}
 
-	a = &Generic{
+	a := &alpha{
 		gap:           gap,
 		ambiguous:     ambiguous,
 		caseSensitive: caseSensitive,
@@ -149,28 +194,15 @@ func NewGeneric(letters string, molType feat.Moltype, gap, ambiguous Letter, cas
 		}
 	}
 
-	return
+	return a, nil
 }
 
-// Return the molecule type of the alphabet.
-func (a *Generic) Moltype() feat.Moltype { return a.molType }
-
-// Return the number of distinct valid letters in the alphabet.
-func (a *Generic) Len() int { return len(a.letters) }
-
-// Return whether the alphabet is case sensitive.
-func (a *Generic) IsCaseSensitive() bool { return a.caseSensitive }
-
-// Return the gap character.
-func (a *Generic) Gap() Letter { return a.gap }
-
-// Return the character representing an ambiguous letter.
-func (a *Generic) Ambiguous() Letter { return a.ambiguous }
-
-// Check that a slice of bytes conforms to the alphabet, returning false
-// and the position of the first invalid byte if invalid and true and a negative
-// int if valid.
-func (a *Generic) AllValidQLetter(n []QLetter) (valid bool, pos int) {
+func (a *alpha) Moltype() feat.Moltype { return a.molType }
+func (a *alpha) Len() int              { return len(a.letters) }
+func (a *alpha) IsCased() bool         { return a.caseSensitive }
+func (a *alpha) Gap() Letter           { return a.gap }
+func (a *alpha) Ambiguous() Letter     { return a.ambiguous }
+func (a *alpha) AllValidQLetter(n []QLetter) (bool, int) {
 	for i, v := range n {
 		if !a.valid[v.L] {
 			return false, i
@@ -179,11 +211,7 @@ func (a *Generic) AllValidQLetter(n []QLetter) (valid bool, pos int) {
 
 	return true, -1
 }
-
-// Check that a slice of bytes conforms to the alphabet, returning false
-// and the position of the first invalid byte if invalid and true and a negative
-// int if valid.
-func (a *Generic) AllValid(n []Letter) (valid bool, pos int) {
+func (a *alpha) AllValid(n []Letter) (bool, int) {
 	for i, v := range n {
 		if !a.valid[v] {
 			return false, i
@@ -192,38 +220,21 @@ func (a *Generic) AllValid(n []Letter) (valid bool, pos int) {
 
 	return true, -1
 }
-
-// Check that a byte conforms to the alphabet.
-func (a *Generic) IsValid(n Letter) bool {
+func (a *alpha) IsValid(n Letter) bool {
 	return a.valid[n]
 }
-
-// Return the letter for and index.
-func (a *Generic) Letter(i int) Letter {
+func (a *alpha) Letter(i int) Letter {
 	if !a.caseSensitive {
 		return Letter(unicode.ToLower(rune(a.letters[i])))
 	}
 	return Letter(a.letters[i])
 }
-
-// Return the index of a letter.
-func (a *Generic) IndexOf(n Letter) int {
+func (a *alpha) IndexOf(n Letter) int {
 	return a.index[n]
 }
-
-// Return a slice of the internal []bool indicating valid letters. The returned slice should not
-// be altered.
-func (a *Generic) ValidLetters() []bool { return a.valid[:] }
-
-// Type Index is a pointer to an index table.
-type Index *[256]int
-
-// Return a pointer to the internal array specifying letter to index conversion. The return 
-// index should not be altered.
-func (a *Generic) LetterIndex() Index { return Index(&a.index) }
-
-// Return a string indicating characters accepted as valid by the Validator.
-func (a *Generic) String() string {
+func (a *alpha) ValidLetters() []bool { return a.valid[:] }
+func (a *alpha) LetterIndex() Index   { return Index(&a.index) }
+func (a *alpha) Letters() string {
 	s := a.letters
 
 	if !a.caseSensitive {
@@ -233,16 +244,17 @@ func (a *Generic) String() string {
 	return s
 }
 
-// Pairing provides a lookup table between a letter and its complement.
+// A Pairing provides a lookup table between a letter and its complement.
 type Pairing struct {
 	pair []Letter
 	ok   []bool
 }
 
-// Create a new Pairing from a pair of strings. 
+// NewPairing create a new Pairing from a pair of strings. Pairing definitions must be
+// a bijection and must contain only ASCII characters.
 func NewPairing(s, c string) (*Pairing, error) {
 	if len(s) != len(c) {
-		return nil, errors.New("Length of pairing definitions do not match.")
+		return nil, errors.New("alphabet: length of pairing definitions do not match")
 	}
 
 	p := &Pairing{
@@ -257,10 +269,18 @@ func NewPairing(s, c string) (*Pairing, error) {
 	cr := []rune(c)
 	for i, v := range s {
 		if v < 0 || cr[i] < 0 || v > unicode.MaxASCII || cr[i] > unicode.MaxASCII {
-			return nil, errors.New("Pairing definition contains non-ASCII rune.")
+			return nil, errors.New("alphabet: pairing definition contains non-ASCII rune")
 		}
 		p.pair[v] = Letter(cr[i])
 		p.ok[v] = true
+	}
+	for i, l := range s {
+		if Letter(l) != p.pair[p.pair[l]] {
+			return nil, errors.New("alphabet: pairing definition is not a bijection")
+		}
+		if Letter(c[i]) != p.pair[p.pair[c[i]]] {
+			return nil, errors.New("alphabet: pairing definition is not a bijection")
+		}
 	}
 
 	return p, nil
@@ -283,34 +303,38 @@ func (p *Pairing) ComplementTable() (t []Letter) {
 }
 
 type nucleic struct {
-	*Generic
+	*alpha
 	*Pairing
 }
 
-// Create a generalised Nucleic alphabet. The Complement table is checked for validity and an error is returned if an invalid complement pair is found.
-// Pairings that result in no change but would otherwise be invalid are allowed. If invalid pairings are required, the Pairing should be provided after
-// creating the Nucleic struct.
-func NewNucleic(letters string, molType feat.Moltype, pairs *Pairing, gap, ambiguous Letter, caseSensitive bool) (Complementor, error) {
-	g, err := NewGeneric(letters, molType, gap, ambiguous, caseSensitive)
+// NewComplementor returns a complementing alphabet. The Complement table is checked for
+// validity and an error is returned if an invalid complement pair is found. Pairings
+// that result in no change but would otherwise be invalid are allowed. Sort and letter
+// range requirements are the same as for NewAlphabet.
+func NewComplementor(letters string, molType feat.Moltype, pairs *Pairing, gap, ambiguous Letter, caseSensitive bool) (Complementor, error) {
+	a, err := newAlphabet(letters, molType, gap, ambiguous, caseSensitive)
 	if err != nil {
 		return nil, err
 	}
 
 	if pairs != nil {
 		for i, v := range pairs.pair {
-			if !(pairs.ok[i] || Letter(i&unicode.MaxASCII) == v&unicode.MaxASCII) && !(g.valid[i] && g.valid[v]) {
-				return nil, errors.New(fmt.Sprintf("Invalid pairing: %c (%d) -> %c (%d)", i, i, v, v))
+			if !(pairs.ok[i] || Letter(i&unicode.MaxASCII) == v&unicode.MaxASCII) && !(a.valid[i] && a.valid[v]) {
+				return nil, fmt.Errorf("alphabet: invalid pairing: %c (%d) -> %c (%d)", i, i, v, v)
 			}
 		}
 	}
 
 	return &nucleic{
-		Generic: g,
+		alpha:   a,
 		Pairing: pairs,
 	}, nil
 }
 
-// Return a new Peptide alphabet.
-func NewPeptide(letters string, gap, ambiguous Letter, caseSensitive bool) (Alphabet, error) {
-	return NewGeneric(letters, feat.Protein, gap, ambiguous, caseSensitive)
+// NewAlphabet returns a new Alphabet based on the provided definitions. Index values
+// for letters reflect order of the letters parameter if the alphabet is case sensitive,
+// otherwise index values will reflect ASCII sort order. Letters must be within the
+// ASCII range.
+func NewAlphabet(letters string, molType feat.Moltype, gap, ambiguous Letter, caseSensitive bool) (Alphabet, error) {
+	return newAlphabet(letters, molType, gap, ambiguous, caseSensitive)
 }
