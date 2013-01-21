@@ -217,8 +217,8 @@ type Eval func(index *Index, j, kmer int)
 
 // Applies the f Eval func to all kmers in s from start to end. Returns any panic raised by f as an error.
 func (ki *Index) ForEachKmerOf(s *linear.Seq, start, end int, f Eval) (err error) {
-	defer func() {
-		if !Debug {
+	if !Debug {
+		defer func() {
 			if r := recover(); r != nil {
 				var ok bool
 				err, ok = r.(error)
@@ -226,8 +226,8 @@ func (ki *Index) ForEachKmerOf(s *linear.Seq, start, end int, f Eval) (err error
 					err = fmt.Errorf("kmerindex: %v", r)
 				}
 			}
-		}
-	}()
+		}()
+	}
 
 	kmer := Kmer(0)
 	high := 0
