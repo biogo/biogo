@@ -6,7 +6,6 @@ package seq
 
 import (
 	"code.google.com/p/biogo/alphabet"
-	"code.google.com/p/biogo/bio"
 	"code.google.com/p/biogo/feat"
 )
 
@@ -82,7 +81,7 @@ func (a *Annotation) SetAlphabet(n alphabet.Alphabet) { a.Alpha = n }
 func (a *Annotation) SetOffset(o int) { a.Offset = o }
 
 // Moltype returns the molecule type of the sequence.
-func (a *Annotation) Moltype() bio.Moltype { return a.Alpha.Moltype() }
+func (a *Annotation) Moltype() feat.Moltype { return a.Alpha.Moltype() }
 
 // CloneAnnotation returns a pointer to a copy of the receiver.
 func (a *Annotation) CloneAnnotation() *Annotation { ca := *a; return &ca }

@@ -10,7 +10,6 @@ package gff
 
 import (
 	"code.google.com/p/biogo/alphabet"
-	"code.google.com/p/biogo/bio"
 	"code.google.com/p/biogo/feat"
 	"code.google.com/p/biogo/io/featio"
 	"code.google.com/p/biogo/io/seqio/fasta"
@@ -91,7 +90,7 @@ const (
 // A Sequence is a feat.Feature
 type Sequence struct {
 	SeqName string
-	Type    bio.Moltype
+	Type    feat.Moltype
 }
 
 func (s Sequence) Start() int             { return 0 }
@@ -100,7 +99,7 @@ func (s Sequence) Len() int               { return 0 }
 func (s Sequence) Name() string           { return string(s.SeqName) }
 func (s Sequence) Description() string    { return "GFF sequence" }
 func (s Sequence) Location() feat.Feature { return nil }
-func (s Sequence) MolType() bio.Moltype   { return s.Type }
+func (s Sequence) MolType() feat.Moltype  { return s.Type }
 
 // A Region is a feat.Feature
 type Region struct {
@@ -345,7 +344,7 @@ type Metadata struct {
 	Date          time.Time
 	Version       int
 	SourceVersion string
-	Type          bio.Moltype
+	Type          feat.Moltype
 }
 
 // A Reader can parse GFFv2 formatted io.Reader and return feat.Features.
@@ -361,7 +360,7 @@ func NewReader(r io.Reader) *Reader {
 	return &Reader{
 		r:          bufio.NewReader(r),
 		TimeFormat: Astronomical,
-		Metadata:   Metadata{Type: bio.Undefined},
+		Metadata:   Metadata{Type: feat.Undefined},
 	}
 }
 
@@ -399,7 +398,7 @@ func (r *Reader) commentMetaline(line []byte) (f feat.Feature, err error) {
 		if len(fields) <= 1 {
 			return nil, ErrBadMetaLine
 		}
-		r.Type = bio.ParseMoltype(unsafeString(fields[1]))
+		r.Type = feat.ParseMoltype(unsafeString(fields[1]))
 		if len(fields) > 2 {
 			r.Name = string(fields[2])
 		}
@@ -410,7 +409,7 @@ func (r *Reader) commentMetaline(line []byte) (f feat.Feature, err error) {
 		}
 		return &Region{
 			Sequence:    Sequence{SeqName: string(fields[1]), Type: r.Type},
-			RegionStart: bio.OneToZero(mustAtoi(fields[2])),
+			RegionStart: feat.OneToZero(mustAtoi(fields[2])),
 			RegionEnd:   mustAtoi(fields[3]),
 		}, nil
 	case "DNA", "RNA", "Protein", "dna", "rna", "protein":
@@ -451,12 +450,12 @@ func (r *Reader) metaSeq(moltype, id []byte) (seq.Sequence, error) {
 	}
 
 	var alpha alphabet.Alphabet
-	switch bio.ParseMoltype(unsafeString(moltype)) {
-	case bio.DNA:
+	switch feat.ParseMoltype(unsafeString(moltype)) {
+	case feat.DNA:
 		alpha = alphabet.DNA
-	case bio.RNA:
+	case feat.RNA:
 		alpha = alphabet.RNA
-	case bio.Protein:
+	case feat.Protein:
 		alpha = alphabet.Protein
 	default:
 		return nil, ErrBadMoltype
@@ -497,7 +496,7 @@ func (r *Reader) Read() (f feat.Feature, err error) {
 		SeqName:    string(fields[nameField]),
 		Source:     string(fields[sourceField]),
 		Feature:    string(fields[featureField]),
-		FeatStart:  bio.OneToZero(mustAtoi(fields[startField])),
+		FeatStart:  feat.OneToZero(mustAtoi(fields[startField])),
 		FeatEnd:    mustAtoi(fields[endField]),
 		FeatScore:  mustAtofPtr(fields[scoreField]),
 		FeatStrand: mustAtos(fields[strandField]),
@@ -545,7 +544,7 @@ func NewWriter(w io.Writer, width int, header bool) *Writer {
 
 // Write writes a single feature and return the number of bytes written and any error.
 // gff.Features are written as a canonical GFF line, seq.Sequences are written as inline
-// sequence in GFF format (note that only sequences of bio.Moltype DNA, RNA and Protein
+// sequence in GFF format (note that only sequences of feat.Moltype DNA, RNA and Protein
 // are supported). gff.Sequences are not handled as they have a zero length. All other
 // feat.Feature are written as sequence region metadata lines.
 func (w *Writer) Write(f feat.Feature) (n int, err error) {
@@ -566,7 +565,7 @@ func (w *Writer) Write(f feat.Feature) (n int, err error) {
 			f.SeqName,
 			f.Source,
 			f.Feature,
-			bio.ZeroToOne(f.FeatStart),
+			feat.ZeroToOne(f.FeatStart),
 			f.FeatEnd,
 		)
 		if err != nil {
@@ -614,13 +613,13 @@ func (w *Writer) Write(f feat.Feature) (n int, err error) {
 	case seq.Sequence:
 		sw := fasta.NewWriter(w.w, w.Width)
 		moltype := f.Alphabet().Moltype()
-		if moltype < bio.DNA || moltype > bio.Protein {
+		if moltype < feat.DNA || moltype > feat.Protein {
 			return 0, ErrNotHandled
 		}
 		sw.IDPrefix = [...][]byte{
-			bio.DNA:     []byte("##DNA "),
-			bio.RNA:     []byte("##RNA "),
-			bio.Protein: []byte("##Protein "),
+			feat.DNA:     []byte("##DNA "),
+			feat.RNA:     []byte("##RNA "),
+			feat.Protein: []byte("##Protein "),
 		}[moltype]
 		sw.SeqPrefix = []byte("##")
 		n, err = sw.Write(f)
@@ -629,9 +628,9 @@ func (w *Writer) Write(f feat.Feature) (n int, err error) {
 		}
 		var in int
 		in, err = w.w.WriteString([...]string{
-			bio.DNA:     "##end-DNA\n",
-			bio.RNA:     "##end-RNA\n",
-			bio.Protein: "##end-Protein\n",
+			feat.DNA:     "##end-DNA\n",
+			feat.RNA:     "##end-RNA\n",
+			feat.Protein: "##end-Protein\n",
 		}[moltype])
 		if err != nil {
 			return n, err
@@ -640,9 +639,9 @@ func (w *Writer) Write(f feat.Feature) (n int, err error) {
 	case Sequence:
 		return 0, ErrNotHandled
 	case *Region:
-		return fmt.Fprintf(w.w, "##sequence-region %s %d %d\n", f.SeqName, bio.ZeroToOne(f.RegionStart), f.RegionEnd)
+		return fmt.Fprintf(w.w, "##sequence-region %s %d %d\n", f.SeqName, feat.ZeroToOne(f.RegionStart), f.RegionEnd)
 	default:
-		return fmt.Fprintf(w.w, "##sequence-region %s %d %d\n", f.Name(), bio.ZeroToOne(f.Start()), f.End())
+		return fmt.Fprintf(w.w, "##sequence-region %s %d %d\n", f.Name(), feat.ZeroToOne(f.Start()), f.End())
 	}
 
 	panic("cannot reach")
@@ -651,7 +650,7 @@ func (w *Writer) Write(f feat.Feature) (n int, err error) {
 // WriteMetaData writes a meta data line to a GFF file. The type of metadata line
 // depends on the type of d: strings and byte slices are written verbatim, an int is
 // interpreted as a version number and can only be written before any other data,
-// bio.Moltype and gff.Sequence types are written as sequence type lines, gff.Features
+// feat.Moltype and gff.Sequence types are written as sequence type lines, gff.Features
 // and gff.Regions are written as sequence regions, sequences are written in GFF
 // format and time.Time values are written as date line. All other type return an
 // ErrNotHandled.
@@ -667,12 +666,12 @@ func (w *Writer) WriteMetaData(d interface{}) (n int, err error) {
 			return 0, ErrCannotHeader
 		}
 		return fmt.Fprintf(w.w, "##gff-version %d\n", d)
-	case bio.Moltype:
+	case feat.Moltype:
 		return fmt.Fprintf(w.w, "##Type %s\n", d)
 	case Sequence:
 		return fmt.Fprintf(w.w, "##Type %s %s\n", d.Type, d.SeqName)
 	case *Feature:
-		return fmt.Fprintf(w.w, "##sequence-region %s %d %d\n", d.SeqName, bio.ZeroToOne(d.FeatStart), d.FeatEnd)
+		return fmt.Fprintf(w.w, "##sequence-region %s %d %d\n", d.SeqName, feat.ZeroToOne(d.FeatStart), d.FeatEnd)
 	case feat.Feature:
 		return w.Write(d)
 	case time.Time:

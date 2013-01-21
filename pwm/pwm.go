@@ -7,7 +7,6 @@
 package pwm
 
 import (
-	"code.google.com/p/biogo/bio"
 	"code.google.com/p/biogo/feat"
 	"code.google.com/p/biogo/seq"
 	"code.google.com/p/biogo/seq/sequtils"
@@ -37,7 +36,7 @@ type Feature struct {
 	MotifProb     float64
 	MotifSeq      seq.Sequence
 	MotifOrient   feat.Orientation
-	Moltype       bio.Moltype
+	Moltype       feat.Moltype
 }
 
 func (f *Feature) Start() int { return f.MotifStart }
@@ -48,7 +47,7 @@ func (f *Feature) Name() string {
 }
 func (f *Feature) Description() string           { return "PWM motif" }
 func (f *Feature) Location() feat.Feature        { return f.MotifLocation }
-func (f *Feature) MolType() bio.Moltype          { return f.Moltype }
+func (f *Feature) MolType() feat.Moltype         { return f.Moltype }
 func (f *Feature) Orientation() feat.Orientation { return f.MotifOrient }
 
 type PWM struct {
@@ -137,7 +136,7 @@ func (m *PWM) genTable(minScore, score float64, pos int, motif []byte) {
 
 type Sequence interface {
 	seq.Sequence
-	Moltype() bio.Moltype
+	Moltype() feat.Moltype
 	Orientation() feat.Orientation
 }
 

@@ -5,7 +5,7 @@
 package pals
 
 import (
-	"code.google.com/p/biogo/bio"
+	"code.google.com/p/biogo/feat"
 	"code.google.com/p/biogo/io/featio/gff"
 
 	"fmt"
@@ -40,7 +40,7 @@ func (w *Writer) Write(pair *Pair) (n int, err error) {
 	t.FeatAttributes = append(t.FeatAttributes[:0],
 		gff.Attribute{
 			Tag:   "Target",
-			Value: fmt.Sprintf("%s %d %d", pair.A.Name(), bio.ZeroToOne(pair.A.Start()), pair.A.End()),
+			Value: fmt.Sprintf("%s %d %d", pair.A.Name(), feat.ZeroToOne(pair.A.Start()), pair.A.End()),
 		},
 		gff.Attribute{
 			Tag:   "maxe",

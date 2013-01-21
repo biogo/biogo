@@ -2,12 +2,12 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package bio
+package feat
 
 // Convert from 1-based to 0-based indexing
 func OneToZero(pos int) int {
 	if pos == 0 {
-		panic("1-based index == 0")
+		panic("feat: 1-based index == 0")
 	}
 	if pos > 0 {
 		pos--

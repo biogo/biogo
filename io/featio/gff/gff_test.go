@@ -5,12 +5,12 @@
 package gff
 
 import (
-	"bytes"
 	"code.google.com/p/biogo/alphabet"
-	"code.google.com/p/biogo/bio"
 	"code.google.com/p/biogo/feat"
 	"code.google.com/p/biogo/seq"
 	"code.google.com/p/biogo/seq/linear"
+
+	"bytes"
 	"io"
 	check "launchpad.net/gocheck"
 	"strings"
@@ -67,7 +67,7 @@ SEQ2	grail	ATG	17	19	2.1	-	0
 		sourceVersion string
 		version       int
 		name          string
-		molType       bio.Moltype
+		molType       feat.Moltype
 		gff           string
 		feat          []feat.Feature
 		write         []interface{}
@@ -78,7 +78,7 @@ SEQ2	grail	ATG	17	19	2.1	-	0
 			sourceVersion: "<source> <version-text>",
 			version:       2,
 			name:          "<seqname>",
-			molType:       bio.DNA,
+			molType:       feat.DNA,
 
 			gff: `##gff-version 2
 ##source-version <source> <version-text>
@@ -102,13 +102,13 @@ SEQ2	grail	ATG	17	19	2.1	-	0
 				linear.NewSeq("<seqname>", alphabet.BytesToLetters([]byte("acggctcggattggcgctggatgatagatcagacgac...")), alphabet.DNA),
 				linear.NewSeq("<seqname>", alphabet.BytesToLetters([]byte("acggcucggauuggcgcuggaugauagaucagacgac...")), alphabet.RNA),
 				linear.NewSeq("<seqname>", alphabet.BytesToLetters([]byte("MVLSPADKTNVKAAWGKVGAHAGEYGAEALERMFLSF...")), alphabet.Protein),
-				&Region{Sequence: Sequence{SeqName: "<seqname>", Type: bio.DNA}, RegionStart: 0, RegionEnd: 5},
+				&Region{Sequence: Sequence{SeqName: "<seqname>", Type: feat.DNA}, RegionStart: 0, RegionEnd: 5},
 			},
 			write: []interface{}{
 				2,
 				"source-version <source> <version-text>",
 				mustTime(time.Parse(Astronomical, "1997-11-08")),
-				Sequence{SeqName: "<seqname>", Type: bio.DNA},
+				Sequence{SeqName: "<seqname>", Type: feat.DNA},
 				linear.NewSeq("<seqname>", alphabet.BytesToLetters([]byte("acggctcggattggcgctggatgatagatcagacgac...")), alphabet.DNA),
 				linear.NewSeq("<seqname>", alphabet.BytesToLetters([]byte("acggcucggauuggcgcuggaugauagaucagacgac...")), alphabet.RNA),
 				linear.NewSeq("<seqname>", alphabet.BytesToLetters([]byte("MVLSPADKTNVKAAWGKVGAHAGEYGAEALERMFLSF...")), alphabet.Protein),

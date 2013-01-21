@@ -6,7 +6,7 @@
 package alphabet
 
 import (
-	"code.google.com/p/biogo/bio"
+	"code.google.com/p/biogo/feat"
 
 	"errors"
 	"fmt"
@@ -47,7 +47,7 @@ func Init() (err error) {
 	if err != nil {
 		return
 	}
-	DNA, err = NewNucleic(N, bio.DNA, pairing, Gap, Nambiguous, !CaseSensitive)
+	DNA, err = NewNucleic(N, feat.DNA, pairing, Gap, Nambiguous, !CaseSensitive)
 	if err != nil {
 		return
 	}
@@ -56,7 +56,7 @@ func Init() (err error) {
 	if err != nil {
 		return
 	}
-	RNA, err = NewNucleic(R, bio.RNA, pairing, Gap, Nambiguous, !CaseSensitive)
+	RNA, err = NewNucleic(R, feat.RNA, pairing, Gap, Nambiguous, !CaseSensitive)
 	if err != nil {
 		return
 	}
@@ -75,7 +75,7 @@ type Alphabet interface {
 	AllValid([]Letter) (bool, int)
 	AllValidQLetter([]QLetter) (bool, int)
 	Len() int
-	Moltype() bio.Moltype
+	Moltype() feat.Moltype
 	IndexOf(Letter) int
 	Letter(int) Letter
 	ValidLetters() []bool
@@ -99,12 +99,12 @@ type Generic struct {
 	index          [256]int
 	gap, ambiguous Letter
 	caseSensitive  bool
-	molType        bio.Moltype
+	molType        feat.Moltype
 }
 
 // Return a new alphabet. Index values for letters reflect order of the letters parameter if Generic is case sensitive,
 // otherwise index values will reflect ASCII sort order. Letters must be within the ASCII range.
-func NewGeneric(letters string, molType bio.Moltype, gap, ambiguous Letter, caseSensitive bool) (a *Generic, err error) {
+func NewGeneric(letters string, molType feat.Moltype, gap, ambiguous Letter, caseSensitive bool) (a *Generic, err error) {
 	if strings.IndexFunc(letters, func(r rune) bool { return r < 0 || r > unicode.MaxASCII }) > -1 {
 		return nil, errors.New("letters contains non-ASCII rune.")
 	}
@@ -153,7 +153,7 @@ func NewGeneric(letters string, molType bio.Moltype, gap, ambiguous Letter, case
 }
 
 // Return the molecule type of the alphabet.
-func (a *Generic) Moltype() bio.Moltype { return a.molType }
+func (a *Generic) Moltype() feat.Moltype { return a.molType }
 
 // Return the number of distinct valid letters in the alphabet.
 func (a *Generic) Len() int { return len(a.letters) }
@@ -287,7 +287,7 @@ type nucleic struct {
 // Create a generalised Nucleic alphabet. The Complement table is checked for validity and an error is returned if an invalid complement pair is found.
 // Pairings that result in no change but would otherwise be invalid are allowed. If invalid pairings are required, the Pairing should be provided after
 // creating the Nucleic struct.
-func NewNucleic(letters string, molType bio.Moltype, pairs *Pairing, gap, ambiguous Letter, caseSensitive bool) (Complementor, error) {
+func NewNucleic(letters string, molType feat.Moltype, pairs *Pairing, gap, ambiguous Letter, caseSensitive bool) (Complementor, error) {
 	g, err := NewGeneric(letters, molType, gap, ambiguous, caseSensitive)
 	if err != nil {
 		return nil, err
@@ -309,5 +309,5 @@ func NewNucleic(letters string, molType bio.Moltype, pairs *Pairing, gap, ambigu
 
 // Return a new Peptide alphabet.
 func NewPeptide(letters string, gap, ambiguous Letter, caseSensitive bool) (Alphabet, error) {
-	return NewGeneric(letters, bio.Protein, gap, ambiguous, caseSensitive)
+	return NewGeneric(letters, feat.Protein, gap, ambiguous, caseSensitive)
 }
