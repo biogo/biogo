@@ -94,13 +94,8 @@ research software for computationally intensive tasks.
 The bíogo library structure is influenced both by the structure of BioPerl and
 the Go core libraries.
 
-The coding style is increasingly aligning itself with the style of Go core
-library (I hope), although the use of '`self`' as the receiver variable is
-aligned with the BioPerl and BioPython coding styles. While this complicates
-refactoring, I currently feel that it provides a more informative description
-of the underlying intent of the code. The alignment with the BioPerl and
-BioPython styles is also intended to ease adoption by bioinformatics
-researchers, many of whom use these libraries.
+The coding style should be aligned with normal Go idioms as represented in the
+Go core libraries.
 
 ##Quality Scores
 
