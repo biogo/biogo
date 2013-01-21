@@ -36,7 +36,7 @@ type Index struct {
 	finger  []Kmer
 	pos     []int
 	seq     *linear.Seq
-	lookUp  []int
+	lookUp  alphabet.Index
 	k       int
 	kMask   Kmer
 	indexed bool
@@ -293,7 +293,7 @@ func (ki *Index) Format(kmer Kmer) string {
 
 // Convert a string of bases into a len k Kmer, returns an error if string length does not match k.
 // lookUp is an index lookup table as returned by alphabet.Alphabet.LetterIndex().
-func KmerOf(k int, lookUp []int, kmertext string) (kmer Kmer, err error) {
+func KmerOf(k int, lookUp alphabet.Index, kmertext string) (kmer Kmer, err error) {
 	if len(kmertext) != k {
 		return 0, ErrBadKmerTextLen
 	}

@@ -79,7 +79,7 @@ type Alphabet interface {
 	IndexOf(Letter) int
 	Letter(int) Letter
 	ValidLetters() []bool
-	LetterIndex() []int
+	LetterIndex() Index
 	Gap() Letter
 	Ambiguous() Letter
 	String() string
@@ -215,9 +215,12 @@ func (a *Generic) IndexOf(n Letter) int {
 // be altered.
 func (a *Generic) ValidLetters() []bool { return a.valid[:] }
 
-// Return a slice of the internal []int specifying letter to index conversion. The return 
+// Type Index is a pointer to an index table.
+type Index *[256]int
+
+// Return a pointer to the internal array specifying letter to index conversion. The return 
 // index should not be altered.
-func (a *Generic) LetterIndex() []int { return a.index[:] }
+func (a *Generic) LetterIndex() Index { return Index(&a.index) }
 
 // Return a string indicating characters accepted as valid by the Validator.
 func (a *Generic) String() string {

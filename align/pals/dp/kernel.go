@@ -6,6 +6,7 @@ package dp
 
 import (
 	"code.google.com/p/biogo/align/pals/filter"
+	"code.google.com/p/biogo/alphabet"
 	"code.google.com/p/biogo/seq/linear"
 )
 
@@ -21,7 +22,7 @@ type kernel struct {
 	minLen  int
 	maxDiff float64
 
-	valueToCode []int
+	valueToCode alphabet.Index
 
 	Costs
 

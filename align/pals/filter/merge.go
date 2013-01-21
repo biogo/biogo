@@ -5,6 +5,7 @@
 package filter
 
 import (
+	"code.google.com/p/biogo/alphabet"
 	"code.google.com/p/biogo/index/kmerindex"
 	"code.google.com/p/biogo/seq/linear"
 
@@ -27,7 +28,7 @@ type Merger struct {
 	trapOrder, tail            *Trapezoid
 	eoTerm                     *Trapezoid
 	trapCount                  int
-	valueToCode                []int
+	valueToCode                alphabet.Index
 }
 
 // Create a new Merger using the provided kmerindex, query sequence, filter parameters and maximum inter-segment gap length.
