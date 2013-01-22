@@ -28,7 +28,7 @@ func (s *S) TestInterfaces(c *check.C) {
 		c.Check(a, check.Implements, &alpha)
 	}
 
-	for _, a := range []interface{}{DNA, RNA} {
+	for _, a := range []interface{}{DNA, DNAredundant, RNA, RNAredundant} {
 		c.Check(a, check.Implements, &comp)
 	}
 
@@ -52,19 +52,26 @@ func (s *S) TestIsValid(c *check.C) {
 	}
 }
 
+func uc(l Letter) Letter {
+	return Letter(unicode.ToUpper(rune(l)))
+}
+
 func (s *S) TestLetter(c *check.C) {
-	for _, t := range []testAlphabets{
-		{DNA, "acgt"},
-		{RNA, "acgu"},
-		{Protein, "abcdefghijklmnpqrstvxyz*"},
+	for _, t := range []Alphabet{
+		DNA,
+		RNA,
+		Protein,
 	} {
-		for i := 0; i < t.alphabet.Len(); i++ {
-			c.Check(t.alphabet.IndexOf(t.alphabet.Letter(i)), check.Equals, i)
+		for i := 0; i < t.Len(); i++ {
+			c.Check(t.IndexOf(t.Letter(i)), check.Equals, i,
+				check.Commentf("Index %d: %c == %d", i, t.Letter(i), t.IndexOf(t.Letter(i))))
+			c.Check(t.IndexOf(uc(t.Letter(i))), check.Equals, i,
+				check.Commentf("Index %d: %c == %d", i, uc(t.Letter(i)), t.IndexOf(uc(t.Letter(i)))))
 		}
 	}
 }
 
-func (s *S) TestComplementOf(c *check.C) {
+func (s *S) TestComplement(c *check.C) {
 	for _, t := range []Complementor{
 		DNA,
 		RNA,
@@ -97,11 +104,11 @@ func (s *S) TestComplementDirect(c *check.C) {
 	}
 }
 
-func (s *S) TestString(c *check.C) {
+func (s *S) TestLetters(c *check.C) {
 	for _, t := range []testAlphabets{
 		{DNA, "acgtACGT"},
 		{RNA, "acguACGU"},
-		{Protein, "*abcdefghijklmnpqrstvxyz*ABCDEFGHIJKLMNPQRSTVXYZ"},
+		{Protein, "abcdefghijklmnpqrstvxyz*ABCDEFGHIJKLMNPQRSTVXYZ*"},
 	} {
 		c.Check(t.alphabet.Letters(), check.Equals, t.letters)
 	}

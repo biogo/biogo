@@ -10,7 +10,6 @@ import (
 
 	"errors"
 	"fmt"
-	"sort"
 	"strings"
 	"unicode"
 )
@@ -20,10 +19,9 @@ const (
 )
 
 // Package alphabet provides default Alphabets for DNA, RNA and Protein. These
-// alphabets are case insensitive and for the nucleic acid alphabets satisfy
-// the condition that the index of a letter is equal to the bitwise-complement
-// of the index of the base-complement, modulo 4, allowing the alphabets to be
-// used in 2-bit packed sequences
+// alphabets are case insensitive and for the non-redundant nucleic acid alphabets
+// satisfy the condition that the index of a letter is equal to the bitwise-complement
+// of the index of the base-complement, modulo 4.
 var (
 	DNA = MustComplement(NewComplementor(
 		"acgt",
@@ -33,10 +31,26 @@ var (
 		!CaseSensitive,
 	))
 
+	DNAredundant = MustComplement(NewComplementor(
+		"-acmgrsvtwyhkdbn",
+		feat.DNA,
+		MustPair(NewPairing("acmgrsvtwyhkdbnxACMGRSVTWYHKDBNX-", "tgkcysbawrdmhvnxTGKCYSBAWRDMHVNX-")),
+		'-', 'n',
+		!CaseSensitive,
+	))
+
 	RNA = MustComplement(NewComplementor(
 		"acgu",
 		feat.RNA,
 		MustPair(NewPairing("acgunxACGUNX-", "ugcanxUGCANX-")),
+		'-', 'n',
+		!CaseSensitive,
+	))
+
+	RNAredundant = MustComplement(NewComplementor(
+		"-acmgrsvuwyhkdbn",
+		feat.RNA,
+		MustPair(NewPairing("acmgrsvuwyhkdbnxACMGRSVUWYHKDBNX-", "ugkcysbawrdmhvnxUGKCYSBAWRDMHVNX-")),
 		'-', 'n',
 		!CaseSensitive,
 	))
@@ -142,6 +156,7 @@ type Complementor interface {
 // Single letter alphabet type.
 type alpha struct {
 	letters        string
+	length         int
 	valid          [256]bool
 	index          [256]int
 	gap, ambiguous Letter
@@ -155,50 +170,41 @@ func newAlphabet(letters string, molType feat.Moltype, gap, ambiguous Letter, ca
 	}
 
 	a := &alpha{
+		length:        len(letters),
 		gap:           gap,
 		ambiguous:     ambiguous,
 		caseSensitive: caseSensitive,
 		molType:       molType,
 	}
 
-	if caseSensitive {
-		a.letters = letters
-	} else {
-		set := make(map[rune]struct{}, len(letters))
-		for _, l := range letters {
-			set[unicode.ToLower(l)] = struct{}{}
-		}
-		size := len(set)
-		ll := make([]int, 0, size)
-		for l := range set {
-			ll = append(ll, int(l))
-		}
-		sort.Ints(ll)
-		let := make([]Letter, 0, size)
-		for _, l := range ll {
-			let = append(let, Letter(l))
-		}
-		a.letters = string(LettersToBytes(let))
-	}
-
 	for i := range a.index {
 		a.index[i] = -1
 	}
 
-	for i, l := range a.letters {
+	if caseSensitive {
+		a.letters = letters
+		for i, l := range a.letters {
+			a.valid[l] = true
+			a.index[l] = i
+		}
+		return a, nil
+	}
+
+	a.letters = strings.ToLower(letters) + strings.ToUpper(letters)
+	for i, l := range a.letters[:len(letters)] {
 		a.valid[l] = true
 		a.index[l] = i
-		if !caseSensitive {
-			a.valid[unicode.ToUpper(l)] = true
-			a.index[unicode.ToUpper(l)] = i
-		}
+	}
+	for i, l := range a.letters[len(letters):] {
+		a.valid[l] = true
+		a.index[l] = a.index[a.letters[i]]
 	}
 
 	return a, nil
 }
 
 func (a *alpha) Moltype() feat.Moltype { return a.molType }
-func (a *alpha) Len() int              { return len(a.letters) }
+func (a *alpha) Len() int              { return a.length }
 func (a *alpha) IsCased() bool         { return a.caseSensitive }
 func (a *alpha) Gap() Letter           { return a.gap }
 func (a *alpha) Ambiguous() Letter     { return a.ambiguous }
@@ -224,25 +230,14 @@ func (a *alpha) IsValid(n Letter) bool {
 	return a.valid[n]
 }
 func (a *alpha) Letter(i int) Letter {
-	if !a.caseSensitive {
-		return Letter(unicode.ToLower(rune(a.letters[i])))
-	}
-	return Letter(a.letters[i])
+	return Letter(a.letters[:a.length][i])
 }
 func (a *alpha) IndexOf(n Letter) int {
 	return a.index[n]
 }
 func (a *alpha) ValidLetters() []bool { return a.valid[:] }
 func (a *alpha) LetterIndex() Index   { return Index(&a.index) }
-func (a *alpha) Letters() string {
-	s := a.letters
-
-	if !a.caseSensitive {
-		s += strings.ToUpper(s)
-	}
-
-	return s
-}
+func (a *alpha) Letters() string      { return a.letters }
 
 // A Pairing provides a lookup table between a letter and its complement.
 type Pairing struct {
@@ -309,8 +304,8 @@ type nucleic struct {
 
 // NewComplementor returns a complementing alphabet. The Complement table is checked for
 // validity and an error is returned if an invalid complement pair is found. Pairings
-// that result in no change but would otherwise be invalid are allowed. Sort and letter
-// range requirements are the same as for NewAlphabet.
+// that result in no change but would otherwise be invalid are allowed. Letter parameter
+// handling is the same as for NewAlphabet.
 func NewComplementor(letters string, molType feat.Moltype, pairs *Pairing, gap, ambiguous Letter, caseSensitive bool) (Complementor, error) {
 	a, err := newAlphabet(letters, molType, gap, ambiguous, caseSensitive)
 	if err != nil {
@@ -332,9 +327,10 @@ func NewComplementor(letters string, molType feat.Moltype, pairs *Pairing, gap, 
 }
 
 // NewAlphabet returns a new Alphabet based on the provided definitions. Index values
-// for letters reflect order of the letters parameter if the alphabet is case sensitive,
-// otherwise index values will reflect ASCII sort order. Letters must be within the
-// ASCII range.
+// for letters reflect order of the letters parameter. Letters must be within the
+// ASCII range. No check is performed to determine whether letters appear more than once,
+// the index of a letter will be the position of the last occurrence of that letter in the
+// letters parameter.
 func NewAlphabet(letters string, molType feat.Moltype, gap, ambiguous Letter, caseSensitive bool) (Alphabet, error) {
 	return newAlphabet(letters, molType, gap, ambiguous, caseSensitive)
 }
