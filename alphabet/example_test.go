@@ -1,4 +1,4 @@
-// Copyright ©2011-2012 The bíogo Authors. All rights reserved.
+// Copyright ©2011-2013 The bíogo Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -8,29 +8,29 @@ import (
 	"fmt"
 )
 
-func ExampleGeneric_AllValid() {
+func Example_1() {
 	fmt.Println(DNA.AllValid([]Letter("acgatcgatatagctatnagcatgc")))
 	// Output:
 	// false 17
 }
 
-func ExamplePairing_ComplementOf() {
+func Example_2() {
 	var (
 		c  Letter
 		ok bool
 	)
 
-	c, ok = DNA.(Complementor).Complement('a')
+	c, ok = DNA.Complement('a')
 	fmt.Printf("%c %v\n", c, ok)
-	c, ok = DNA.(Complementor).Complement('n')
+	c, ok = DNA.Complement('n')
 	fmt.Printf("%c %v\n", c, ok)
-	c, ok = RNA.(Complementor).Complement('a')
+	c, ok = RNA.Complement('a')
 	fmt.Printf("%c %v\n", c, ok)
-	_, ok = RNA.(Complementor).Complement('t')
-	fmt.Printf("%v\n", ok)
+	c, ok = RNA.Complement('t')
+	fmt.Printf("%c %v\n", c, ok)
 	// Output:
 	// t true
 	// n true
 	// u true
-	// false
+	// t false
 }
