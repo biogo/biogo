@@ -285,7 +285,12 @@ func Ephred(p float64) Qphred {
 	return Qphred(Q)
 }
 
-// prehdETable holds a lookup for phred E values.
+// ProbE returns the error probability for the receiver's Phred value.
+func (qp Qphred) ProbE() float64 {
+	return phredETable[qp]
+}
+
+// phredETable holds a lookup for phred E values.
 var phredETable = func() [256]float64 {
 	t := [256]float64{254: 0, 255: nan}
 	for q := range t[:254] {
@@ -294,31 +299,30 @@ var phredETable = func() [256]float64 {
 	return t
 }()
 
-// ProbE returns the error probability for the receiver's Phred value.
-func (qp Qphred) ProbE() float64 {
-	return phredETable[qp]
-}
-
 // Qsolexa converts the quality value from Phred to Solexa. This conversion is lossy and
 // should be avoided; the epsilon on the E value associated with a converted Qsolexa is
 // bounded approximately by math.Pow(10, 1e-4-float64(qp)/10) over the range 0 < qp < 127.
-func (qp Qphred) Qsolexa() Qsolexa {
-	if qp == 254 {
-		return 127
-	}
-	if qp == 255 {
-		return -128
-	}
-	Q := 10 * math.Log10(math.Pow(10, float64(qp)/10)-1)
-	if Q > 0 {
-		Q += 0.5
-	} else {
-		Q -= 0.5
-	}
-	return Qsolexa(Q)
-}
+func (qp Qphred) Qsolexa() Qsolexa { return phredSolexaTable[qp] }
 
-// Encode encodes the reciever's Phred score to a byte based on the specified encoding.
+// phredSolexaTable holds a lookup for the near equivalent solexa score of a phred score.
+var phredSolexaTable = func() [256]Qsolexa {
+	t := [256]Qsolexa{254: 127, 255: -128}
+	for q := range t[:254] {
+		Q := 10 * math.Log10(math.Pow(10, float64(q)/10)-1)
+		if Q > 0 {
+			Q += 0.5
+		} else {
+			Q -= 0.5
+		}
+		if Q > 127 {
+			Q = 127
+		}
+		t[q] = Qsolexa(Q)
+	}
+	return t
+}()
+
+// Encode encodes the receiver's Phred score to a byte based on the specified encoding.
 func (qp Qphred) Encode(e Encoding) (q byte) {
 	if qp == 254 {
 		return '~'
@@ -385,6 +389,9 @@ func Esolexa(p float64) Qsolexa {
 	return Qsolexa(Q)
 }
 
+// ProbE returns the error probability for the receiver's Phred value.
+func (qs Qsolexa) ProbE() float64 { return solexaETable[int(qs)+128] }
+
 // solexaETable holds a translated lookup table for solexa E values. Since solexa
 // scores can extend into negative territory, the table is shifted 128 into the
 // positive.
@@ -397,25 +404,28 @@ var solexaETable = func() [256]float64 {
 	return t
 }()
 
-// ProbE returns the error probability for the receiver's Phred value.
-func (qs Qsolexa) ProbE() float64 {
-	return solexaETable[int(qs)+128]
-}
-
 // Qphred converts the quality value from Solexa to Phred. This conversion is lossy and
 // should be avoided; the epsilon on the E value associated with a converted Qphred is
 // bounded approximately by math.Pow(10, 1e-4-float64(qs)/10) over the range 0 < qs < 127.
-func (qs Qsolexa) Qphred() Qphred {
-	if qs == 127 {
-		return 254
-	}
-	if qs == -128 {
-		return 255
-	}
-	return Qphred(10*math.Log10(math.Pow(10, float64(qs)/10)) + 0.5)
-}
+func (qs Qsolexa) Qphred() Qphred { return solexaPhredTable[int(qs)+128] }
 
-// Encode encodes the reciever's Solexa score to a byte based on the specified encoding.
+// solexaPhredTable holds a lookup for the near equivalent phred score of a solexa
+// score. Since solexa scores can extend into negative territory, the table is
+// shifted 128 into the positive.
+var solexaPhredTable = func() [256]Qphred {
+	t := [256]Qphred{0: 255, 255: 0}
+	for q := range t[1:255] {
+		qs := q - 127
+		Q := Qphred(10*math.Log10(math.Pow(10, float64(qs)/10)) + 0.5)
+		if Q > 254 {
+			Q = 254
+		}
+		t[q+1] = Q
+	}
+	return t
+}()
+
+// Encode encodes the receiver's Solexa score to a byte based on the specified encoding.
 func (qs Qsolexa) Encode(e Encoding) (q byte) {
 	if qs == 127 {
 		return '~'
