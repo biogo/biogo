@@ -30,6 +30,20 @@ func (checker *approxChecker) Check(params []interface{}, names []string) (resul
 
 // Tests
 func (s *S) TestPhred(c *check.C) {
+	// Confirm landmarks.
+	for _, t := range []struct {
+		E float64
+		Q Qphred
+	}{
+		{E: 1e-1, Q: 10},
+		{E: 1e-2, Q: 20},
+		{E: 1e-3, Q: 30},
+		{E: 1e-4, Q: 40},
+		{E: 1e-5, Q: 50},
+	} {
+		c.Check(Ephred(t.E), check.Equals, t.Q)
+		c.Check(t.Q.ProbE(), check.Equals, t.E)
+	}
 	for q := Qphred(0); q < 254; q++ {
 		c.Check(q.ProbE(), check.Equals, math.Pow(10, -(float64(q)/10)))
 		c.Check(Ephred(q.ProbE()), check.Equals, q)
@@ -39,6 +53,20 @@ func (s *S) TestPhred(c *check.C) {
 }
 
 func (s *S) TestSolexa(c *check.C) {
+	// Confirm landmarks.
+	for _, t := range []struct {
+		E float64
+		Q Qsolexa
+	}{
+		{E: 1e-1 / (1 + 1e-1), Q: 10},
+		{E: 1e-2 / (1 + 1e-2), Q: 20},
+		{E: 1e-3 / (1 + 1e-3), Q: 30},
+		{E: 1e-4 / (1 + 1e-4), Q: 40},
+		{E: 1e-5 / (1 + 1e-5), Q: 50},
+	} {
+		c.Check(Esolexa(t.E), check.Equals, t.Q)
+		c.Check(t.Q.ProbE(), approx, t.E, 1e-15)
+	}
 	c.Check(math.IsNaN(Qsolexa(-128).ProbE()), check.Equals, true)
 	for q := -127; q < 127; q++ {
 		pq := math.Pow(10, -(float64(q) / 10))

@@ -39,7 +39,7 @@ func NewQSeq(id string, ql []alphabet.QLetter, alpha alphabet.Alphabet, enc alph
 		},
 		Seq:       append(alphabet.QLetters(nil), ql...),
 		Encode:    enc,
-		Threshold: 2,
+		Threshold: 3,
 		QFilter:   seq.AmbigFilter,
 	}
 }
