@@ -174,8 +174,6 @@ func (s *S) TestWrite(c *check.C) {
 			}
 		}
 	}
-	c.Check(string(b.Bytes()), check.Equals, "")
-	w.Close()
 	c.Check(string(b.Bytes()), check.Equals,
 		`deBruijn2	pals	hit	1	6	0.0000	.	.	Target deBruijn2 1 6; maxe 0
 deBruijn2	pals	hit	2	6	0.0000	.	.	Target deBruijn2 2 6; maxe 0

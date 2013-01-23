@@ -52,8 +52,3 @@ func (w *Writer) Write(pair *Pair) (n int, err error) {
 }
 
 func floatPtr(f float64) *float64 { return &f }
-
-// Close the writer, flushing any unwritten data.
-func (w *Writer) Close() (err error) {
-	return w.w.Close()
-}

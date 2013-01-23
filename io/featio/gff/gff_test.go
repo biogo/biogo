@@ -167,7 +167,6 @@ func (s *S) TestWriteGff(c *check.C) {
 			_, err := w.Write(f)
 			c.Check(err, check.Equals, nil)
 		}
-		w.Close()
 		c.Check(buf.String(), check.Equals, g.gff, check.Commentf("Test: %d", i))
 	}
 }
@@ -180,7 +179,6 @@ func (s *S) TestWriteMetadata(c *check.C) {
 			_, err := w.WriteMetaData(d)
 			c.Check(err, check.Equals, nil)
 		}
-		w.Close()
 		c.Check(buf.String(), check.Equals, g.gff, check.Commentf("Test: %d", i))
 	}
 }

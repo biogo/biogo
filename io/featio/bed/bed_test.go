@@ -134,7 +134,6 @@ func (s *S) TestWriteBed(c *check.C) {
 			buf := &bytes.Buffer{}
 			w := NewWriter(buf, typ)
 			_, err := w.Write(b.beds[len(b.beds)-1])
-			w.Close()
 			if typ <= b.fields {
 				trunc := strings.Join(strings.Split(b.line, "\t")[:typ], "\t")
 				if trunc[len(trunc)-1] != '\n' {
@@ -307,7 +306,6 @@ func (s *S) TestWriteFeature(c *check.C) {
 		buf := &bytes.Buffer{}
 		w := NewWriter(buf, f.typ)
 		_, err := w.Write(f.feat)
-		w.Close()
 
 		c.Check(err, check.Equals, f.err)
 		c.Check(buf.String(), check.Equals, f.line, check.Commentf("Test: %d type: Bed%d", i, f.typ))

@@ -517,19 +517,18 @@ func (r *Reader) Read() (f feat.Feature, err error) {
 
 // A Writer outputs features and sequences into GFFv2 format.
 type Writer struct {
-	w          *bufio.Writer
+	w          io.Writer
 	TimeFormat string
 	Precision  int
 	Width      int
 	header     bool
-	closed     bool
 }
 
 // Returns a new GFF format writer using w. When header is true,
 // a version header will be written to the GFF.
 func NewWriter(w io.Writer, width int, header bool) *Writer {
 	gw := &Writer{
-		w:          bufio.NewWriter(w),
+		w:          w,
 		Width:      width,
 		TimeFormat: Astronomical,
 		Precision:  -1,
@@ -555,7 +554,7 @@ func (w *Writer) Write(f feat.Feature) (n int, err error) {
 			if err != nil {
 				return
 			}
-			err = w.w.WriteByte('\n')
+			_, err = w.w.Write([]byte{'\n'})
 			if err != nil {
 				return
 			}
@@ -579,7 +578,7 @@ func (w *Writer) Write(f feat.Feature) (n int, err error) {
 			}
 			n += in
 		} else {
-			err = w.w.WriteByte('.')
+			_, err = w.w.Write([]byte{'.'})
 			if err != nil {
 				return n, err
 			}
@@ -600,7 +599,7 @@ func (w *Writer) Write(f feat.Feature) (n int, err error) {
 				return n, err
 			}
 		} else if f.Comments != "" {
-			err = w.w.WriteByte('\t')
+			_, err = w.w.Write([]byte{'\t'})
 			if err != nil {
 				return
 			}
@@ -627,10 +626,10 @@ func (w *Writer) Write(f feat.Feature) (n int, err error) {
 			return n, err
 		}
 		var in int
-		in, err = w.w.WriteString([...]string{
-			feat.DNA:     "##end-DNA\n",
-			feat.RNA:     "##end-RNA\n",
-			feat.Protein: "##end-Protein\n",
+		in, err = w.w.Write([...][]byte{
+			feat.DNA:     []byte("##end-DNA\n"),
+			feat.RNA:     []byte("##end-RNA\n"),
+			feat.Protein: []byte("##end-Protein\n"),
 		}[moltype])
 		if err != nil {
 			return n, err
@@ -683,13 +682,4 @@ func (w *Writer) WriteMetaData(d interface{}) (n int, err error) {
 // WriteComment writes a comment line to a GFF file.
 func (w *Writer) WriteComment(c string) (n int, err error) {
 	return fmt.Fprintf(w.w, "# %s\n", c)
-}
-
-// Close closes the Writer. The underlying io.Writer is not closed.
-func (w *Writer) Close() error {
-	if w.closed {
-		return nil
-	}
-	w.closed = true
-	return w.w.Flush()
 }

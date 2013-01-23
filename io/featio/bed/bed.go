@@ -464,15 +464,14 @@ func format(b Bed, fs fmt.State, c rune) {
 
 // BED format writer type.
 type Writer struct {
-	w       *bufio.Writer
-	closed  bool
+	w       io.Writer
 	BedType int
 }
 
-// Returns a new BED format writer using f.
-func NewWriter(f io.Writer, b int) *Writer {
+// Returns a new BED format writer using w.
+func NewWriter(w io.Writer, b int) *Writer {
 	return &Writer{
-		w:       bufio.NewWriter(f),
+		w:       w,
 		BedType: b,
 	}
 }
@@ -483,14 +482,11 @@ type Scorer interface {
 
 // Write a single feature and return the number of bytes written and any error.
 func (w *Writer) Write(f feat.Feature) (n int, err error) {
-	if w.closed {
-		return 0, ErrClosed
-	}
 	defer func() {
 		if err != nil {
 			return
 		}
-		err = w.w.WriteByte('\n')
+		_, err = w.w.Write([]byte{'\n'})
 		if err != nil {
 			return
 		}
@@ -562,13 +558,4 @@ func (w *Writer) Write(f feat.Feature) (n int, err error) {
 	// Don't handle Bed12.
 	w.w.Write([]byte{'\n'})
 	return n, ErrBadBedType
-}
-
-// Close closes the Writer. The underlying io.Writer is not closed.
-func (w *Writer) Close() error {
-	if w.closed {
-		return nil
-	}
-	w.closed = true
-	return w.w.Flush()
 }
