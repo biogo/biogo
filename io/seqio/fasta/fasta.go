@@ -146,24 +146,25 @@ func (w *Writer) Write(s seq.Sequence) (n int, err error) {
 	}
 
 	n, err = w.w.Write(header)
-	if err == nil {
-		for i := 0; i < s.Len(); i++ {
-			if i%w.Width == 0 {
-				_n, err = w.w.Write(prefix)
-				if n += _n; err != nil {
-					return
-				}
-			}
-			_n, err = w.w.Write([]byte{byte(s.At(i).L)})
+	if err != nil {
+		return n, err
+	}
+	for i := 0; i < s.Len(); i++ {
+		if i%w.Width == 0 {
+			_n, err = w.w.Write(prefix)
 			if n += _n; err != nil {
-				return
+				return n, err
 			}
 		}
-		_n, err = w.w.Write([]byte{'\n'})
+		_n, err = w.w.Write([]byte{byte(s.At(i).L)})
 		if n += _n; err != nil {
-			return
+			return n, err
 		}
 	}
+	_n, err = w.w.Write([]byte{'\n'})
+	if n += _n; err != nil {
+		return n, err
+	}
 
-	return
+	return n, nil
 }
