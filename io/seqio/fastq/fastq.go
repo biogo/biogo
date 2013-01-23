@@ -140,7 +140,7 @@ func NewWriter(w io.Writer) *Writer {
 // Write a single sequence and return the number of bytes written and any error.
 func (w *Writer) Write(s seq.Sequence) (n int, err error) {
 	var (
-		ln  int
+		_n  int
 		enc alphabet.Encoding
 	)
 	if e, ok := s.(Encoder); ok {
@@ -154,34 +154,34 @@ func (w *Writer) Write(s seq.Sequence) (n int, err error) {
 		return
 	}
 	for i := 0; i < s.Len(); i++ {
-		ln, err = w.w.Write([]byte{byte(s.At(i).L)})
-		if n += ln; err != nil {
+		_n, err = w.w.Write([]byte{byte(s.At(i).L)})
+		if n += _n; err != nil {
 			return
 		}
 	}
-	ln, err = w.w.Write([]byte{'\n'})
-	if n += ln; err != nil {
+	_n, err = w.w.Write([]byte{'\n'})
+	if n += _n; err != nil {
 		return
 	}
 	if w.QID {
-		ln, err = w.writeHeader('+', s)
-		if n += ln; err != nil {
+		_n, err = w.writeHeader('+', s)
+		if n += _n; err != nil {
 			return
 		}
 	} else {
-		ln, err = w.w.Write([]byte("+\n"))
-		if n += ln; err != nil {
+		_n, err = w.w.Write([]byte("+\n"))
+		if n += _n; err != nil {
 			return
 		}
 	}
 	for i := 0; i < s.Len(); i++ {
-		ln, err = w.w.Write([]byte{s.At(i).Q.Encode(enc)})
-		if n += ln; err != nil {
+		_n, err = w.w.Write([]byte{s.At(i).Q.Encode(enc)})
+		if n += _n; err != nil {
 			return
 		}
 	}
-	ln, err = w.w.Write([]byte{'\n'})
-	if n += ln; err != nil {
+	_n, err = w.w.Write([]byte{'\n'})
+	if n += _n; err != nil {
 		return
 	}
 
@@ -189,26 +189,26 @@ func (w *Writer) Write(s seq.Sequence) (n int, err error) {
 }
 
 func (w *Writer) writeHeader(prefix byte, s seq.Sequence) (n int, err error) {
-	var ln int
+	var _n int
 	n, err = w.w.Write([]byte{prefix})
 	if err != nil {
 		return
 	}
-	ln, err = io.WriteString(w.w, s.Name())
-	if n += ln; err != nil {
+	_n, err = io.WriteString(w.w, s.Name())
+	if n += _n; err != nil {
 		return
 	}
 	if desc := s.Description(); len(desc) != 0 {
-		ln, err = w.w.Write([]byte{' '})
-		if n += ln; err != nil {
+		_n, err = w.w.Write([]byte{' '})
+		if n += _n; err != nil {
 			return
 		}
-		ln, err = io.WriteString(w.w, desc)
-		if n += ln; err != nil {
+		_n, err = io.WriteString(w.w, desc)
+		if n += _n; err != nil {
 			return
 		}
 	}
-	ln, err = w.w.Write([]byte("\n"))
-	n += ln
+	_n, err = w.w.Write([]byte("\n"))
+	n += _n
 	return
 }

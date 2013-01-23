@@ -570,13 +570,13 @@ func (w *Writer) Write(f feat.Feature) (n int, err error) {
 		if err != nil {
 			return n, err
 		}
-		var in int
+		var _n int
 		if f.FeatScore != nil && !math.IsNaN(*f.FeatScore) {
-			in, err = fmt.Fprintf(w.w, "%.*f", w.Precision, *f.FeatScore)
+			_n, err = fmt.Fprintf(w.w, "%.*f", w.Precision, *f.FeatScore)
 			if err != nil {
 				return n, err
 			}
-			n += in
+			n += _n
 		} else {
 			_, err = w.w.Write([]byte{'.'})
 			if err != nil {
@@ -584,17 +584,17 @@ func (w *Writer) Write(f feat.Feature) (n int, err error) {
 			}
 			n++
 		}
-		in, err = fmt.Fprintf(w.w, "\t%s\t%s",
+		_n, err = fmt.Fprintf(w.w, "\t%s\t%s",
 			f.FeatStrand,
 			f.FeatFrame,
 		)
 		if err != nil {
 			return n, err
 		}
-		n += in
+		n += _n
 		if f.FeatAttributes != nil {
-			in, err = fmt.Fprintf(w.w, "\t%v", f.FeatAttributes)
-			n += in
+			_n, err = fmt.Fprintf(w.w, "\t%v", f.FeatAttributes)
+			n += _n
 			if err != nil {
 				return n, err
 			}
@@ -606,9 +606,9 @@ func (w *Writer) Write(f feat.Feature) (n int, err error) {
 			n++
 		}
 		if f.Comments != "" {
-			in, err = fmt.Fprintf(w.w, "\t%s", f.Comments)
+			_n, err = fmt.Fprintf(w.w, "\t%s", f.Comments)
 		}
-		return n + in, err
+		return n + _n, err
 	case seq.Sequence:
 		sw := fasta.NewWriter(w.w, w.Width)
 		moltype := f.Alphabet().Moltype()
@@ -625,8 +625,8 @@ func (w *Writer) Write(f feat.Feature) (n int, err error) {
 		if err != nil {
 			return n, err
 		}
-		var in int
-		in, err = w.w.Write([...][]byte{
+		var _n int
+		_n, err = w.w.Write([...][]byte{
 			feat.DNA:     []byte("##end-DNA\n"),
 			feat.RNA:     []byte("##end-RNA\n"),
 			feat.Protein: []byte("##end-Protein\n"),
@@ -634,7 +634,7 @@ func (w *Writer) Write(f feat.Feature) (n int, err error) {
 		if err != nil {
 			return n, err
 		}
-		return n + in, err
+		return n + _n, err
 	case Sequence:
 		return 0, ErrNotHandled
 	case *Region:
@@ -650,7 +650,7 @@ func (w *Writer) Write(f feat.Feature) (n int, err error) {
 // depends on the type of d: strings and byte slices are written verbatim, an int is
 // interpreted as a version number and can only be written before any other data,
 // feat.Moltype and gff.Sequence types are written as sequence type lines, gff.Features
-// and gff.Regions are written as sequence regions, sequences are written in GFF
+// and gff.Regions are written as sequence regions, sequences are written _n GFF
 // format and time.Time values are written as date line. All other type return an
 // ErrNotHandled.
 func (w *Writer) WriteMetaData(d interface{}) (n int, err error) {

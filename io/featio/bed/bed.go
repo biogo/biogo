@@ -513,22 +513,22 @@ func (w *Writer) Write(f feat.Feature) (n int, err error) {
 	}
 
 	// Bed4
-	in, err := fmt.Fprintf(w.w, "\t%s", f.Name())
-	n += in
+	_n, err := fmt.Fprintf(w.w, "\t%s", f.Name())
+	n += _n
 	if w.BedType == 4 || err != nil {
 		return n, err
 	}
 
 	// Bed5
 	if f, ok := f.(Scorer); ok {
-		in, err := fmt.Fprintf(w.w, "\t%d", f.Score())
-		n += in
+		_n, err := fmt.Fprintf(w.w, "\t%d", f.Score())
+		n += _n
 		if err != nil {
 			return n, err
 		}
 	} else {
-		in, err := fmt.Fprintf(w.w, "\t0")
-		n += in
+		_n, err := fmt.Fprintf(w.w, "\t0")
+		n += _n
 		if err != nil {
 			return n, err
 		}
@@ -539,14 +539,14 @@ func (w *Writer) Write(f feat.Feature) (n int, err error) {
 
 	// Bed6
 	if f, ok := f.(feat.Orienter); ok {
-		in, err := fmt.Fprintf(w.w, "\t%s", seq.Strand(f.Orientation()))
-		n += in
+		_n, err := fmt.Fprintf(w.w, "\t%s", seq.Strand(f.Orientation()))
+		n += _n
 		if err != nil {
 			return n, err
 		}
 	} else {
-		in, err := fmt.Fprintf(w.w, "\t.")
-		n += in
+		_n, err := fmt.Fprintf(w.w, "\t.")
+		n += _n
 		if err != nil {
 			return n, err
 		}

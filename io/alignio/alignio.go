@@ -57,10 +57,10 @@ func NewWriter(w seqio.Writer) *Writer {
 // Write a multi.Multi to the embedded seqio.Writer.
 // Returns the number of bytes written and any error. 
 func (w *Writer) Write(m *multi.Multi) (n int, err error) {
-	var c int
+	var _n int
 	for _, s := range m.Seq {
-		c, err = w.w.Write(s)
-		n += c
+		_n, err = w.w.Write(s)
+		n += _n
 		if err != nil {
 			break
 		}
