@@ -7,6 +7,7 @@ package pals
 import (
 	"code.google.com/p/biogo.interval"
 	"code.google.com/p/biogo/feat"
+
 	"fmt"
 	"unsafe"
 )
@@ -241,7 +242,7 @@ func (p *Piler) pile(q feat.Feature) (*PileInterval, error) {
 	// Sanity check: no pile should overlap any other pile within overlap constraints
 	// TODO: Should this be a panic?
 	if c > 1 {
-		return nil, fmt.Errorf("pals: internal inconsistency - too many results:", c)
+		return nil, fmt.Errorf("pals: internal inconsistency - too many results: %d", c)
 	}
 
 	return pt.(*PileInterval), nil

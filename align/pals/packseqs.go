@@ -62,7 +62,7 @@ func (pa *Packed) feature(from, to int, comp bool) (feat.Feature, error) {
 	contigIndex := pa.seqMap.binMap[bin]
 
 	if contigIndex < 0 || contigIndex >= len(pa.seqMap.contigs) {
-		return nil, fmt.Errorf("pals: contig index %d out of range 0..%d", pa.ID, contigIndex, len(pa.seqMap.contigs))
+		return nil, fmt.Errorf("pals: contig %s index %d out of range 0..%d", pa.ID, contigIndex, len(pa.seqMap.contigs))
 	}
 
 	length := to - from

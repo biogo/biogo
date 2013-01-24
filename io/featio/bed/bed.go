@@ -420,7 +420,7 @@ func format(b Bed, fs fmt.State, c rune) {
 	case 's':
 		width, _ := fs.Width()
 		if !b.canBed(width) {
-			fmt.Fprintf(fs, "%%!(BADWIDTH)%T", width, b)
+			fmt.Fprintf(fs, "%%!(BADWIDTH)%T", b)
 			return
 		}
 		if width == 0 {
@@ -458,7 +458,7 @@ func format(b Bed, fs fmt.State, c rune) {
 			}
 		}
 	default:
-		fmt.Fprintf(fs, "%%!%c(%T=%3s)", c, b)
+		fmt.Fprintf(fs, "%%!%c(%T=%3s)", c, b, b)
 	}
 }
 

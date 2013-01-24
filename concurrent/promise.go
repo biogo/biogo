@@ -76,7 +76,7 @@ func (p *Promise) fulfill(value interface{}) (err error) {
 
 	if err != nil && p.relay {
 		if r.Err != nil {
-			err = fmt.Errorf("concrrent: promise already failed - cannot relay", r.Err)
+			err = fmt.Errorf("concurrent: promise already failed - cannot relay: %v", r.Err)
 		} else {
 			r.Err = err
 		}
