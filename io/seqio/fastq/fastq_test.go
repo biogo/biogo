@@ -8,6 +8,7 @@ import (
 	"bytes"
 	"code.google.com/p/biogo/alphabet"
 	"code.google.com/p/biogo/seq/linear"
+
 	"io"
 	check "launchpad.net/gocheck"
 	"testing"
@@ -165,13 +166,9 @@ func (s *S) TestReadFastq(c *check.C) {
 
 func (s *S) TestWriteFastq(c *check.C) {
 	fq := fqs[0]
-	names := 0
-	for _, n := range expectN {
-		names += len(n)
-	}
-	expectSize := []int{2722, 2722 - names}
-	var total int
+
 	for j := 0; j < 2; j++ {
+		var n int
 		b := &bytes.Buffer{}
 		w := NewWriter(b)
 		w.QID = j == 0
@@ -180,15 +177,14 @@ func (s *S) TestWriteFastq(c *check.C) {
 		for i := range expectN {
 			seq.ID = expectN[i]
 			seq.Seq = expectQL[i]
-			if n, err := w.Write(seq); err != nil {
+			if _n, err := w.Write(seq); err != nil {
 				c.Fatalf("Failed to write to buffer: %s", err)
 			} else {
-				total += n
+				n += _n
 			}
 		}
 
-		c.Check(total, check.Equals, expectSize[j])
-		total = 0
+		c.Check(n, check.Equals, b.Len())
 
 		if w.QID {
 			c.Check(string(b.Bytes()), check.Equals, fq)

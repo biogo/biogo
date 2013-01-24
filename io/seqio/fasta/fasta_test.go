@@ -8,6 +8,7 @@ import (
 	"bytes"
 	"code.google.com/p/biogo/alphabet"
 	"code.google.com/p/biogo/seq/linear"
+
 	"io"
 	check "launchpad.net/gocheck"
 	"testing"
@@ -91,23 +92,22 @@ func (s *S) TestReadFasta(c *check.C) {
 
 func (s *S) TestWriteFasta(c *check.C) {
 	fa := fas[0]
-	expectSize := 4649
-	var total int
 	b := &bytes.Buffer{}
 	w := NewWriter(b, 60)
 
 	seq := linear.NewSeq("", nil, alphabet.Protein)
 
+	var n int
 	for i := range expectN {
 		seq.ID = expectN[i]
 		seq.Seq = expectS[i]
-		if n, err := w.Write(seq); err != nil {
+		_n, err := w.Write(seq)
+		if err != nil {
 			c.Fatalf("Failed to write to buffer: %s", err)
-		} else {
-			total += n
 		}
+		n += _n
 	}
 
-	c.Check(total, check.Equals, expectSize)
+	c.Check(n, check.Equals, b.Len())
 	c.Check(string(b.Bytes()), check.Equals, fa)
 }

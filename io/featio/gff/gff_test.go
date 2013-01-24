@@ -163,10 +163,13 @@ func (s *S) TestWriteGff(c *check.C) {
 	for i, g := range gffTests {
 		buf := &bytes.Buffer{}
 		w := NewWriter(buf, width, false)
+		var n int
 		for _, f := range g.feat {
-			_, err := w.Write(f)
+			_n, err := w.Write(f)
 			c.Check(err, check.Equals, nil)
+			n += _n
 		}
+		c.Check(buf.Len(), check.Equals, n)
 		c.Check(buf.String(), check.Equals, g.gff, check.Commentf("Test: %d", i))
 	}
 }
@@ -175,10 +178,13 @@ func (s *S) TestWriteMetadata(c *check.C) {
 	for i, g := range metaTests {
 		buf := &bytes.Buffer{}
 		w := NewWriter(buf, width, false)
+		var n int
 		for _, d := range g.write {
-			_, err := w.WriteMetaData(d)
+			_n, err := w.WriteMetaData(d)
 			c.Check(err, check.Equals, nil)
+			n += _n
 		}
+		c.Check(buf.Len(), check.Equals, n)
 		c.Check(buf.String(), check.Equals, g.gff, check.Commentf("Test: %d", i))
 	}
 }

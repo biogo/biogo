@@ -588,16 +588,16 @@ func (w *Writer) Write(f feat.Feature) (n int, err error) {
 			f.FeatStrand,
 			f.FeatFrame,
 		)
+		n += _n
 		if err != nil {
 			return n, err
 		}
-		n += _n
 		if f.FeatAttributes != nil {
 			_n, err = fmt.Fprintf(w.w, "\t%v", f.FeatAttributes)
-			n += _n
 			if err != nil {
 				return n, err
 			}
+			n += _n
 		} else if f.Comments != "" {
 			_, err = w.w.Write([]byte{'\t'})
 			if err != nil {
@@ -607,8 +607,9 @@ func (w *Writer) Write(f feat.Feature) (n int, err error) {
 		}
 		if f.Comments != "" {
 			_n, err = fmt.Fprintf(w.w, "\t%s", f.Comments)
+			n += _n
 		}
-		return n + _n, err
+		return n, err
 	case seq.Sequence:
 		sw := fasta.NewWriter(w.w, w.Width)
 		moltype := f.Alphabet().Moltype()
@@ -631,9 +632,6 @@ func (w *Writer) Write(f feat.Feature) (n int, err error) {
 			feat.RNA:     []byte("##end-RNA\n"),
 			feat.Protein: []byte("##end-Protein\n"),
 		}[moltype])
-		if err != nil {
-			return n, err
-		}
 		return n + _n, err
 	case Sequence:
 		return 0, ErrNotHandled

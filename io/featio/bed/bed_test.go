@@ -5,9 +5,10 @@
 package bed
 
 import (
-	"bytes"
 	"code.google.com/p/biogo/feat"
 	"code.google.com/p/biogo/seq"
+
+	"bytes"
 	"fmt"
 	"image/color"
 	check "launchpad.net/gocheck"
@@ -133,7 +134,8 @@ func (s *S) TestWriteBed(c *check.C) {
 		for _, typ := range validBeds {
 			buf := &bytes.Buffer{}
 			w := NewWriter(buf, typ)
-			_, err := w.Write(b.beds[len(b.beds)-1])
+			n, err := w.Write(b.beds[len(b.beds)-1])
+			c.Check(n, check.Equals, buf.Len())
 			if typ <= b.fields {
 				trunc := strings.Join(strings.Split(b.line, "\t")[:typ], "\t")
 				if trunc[len(trunc)-1] != '\n' {
@@ -305,8 +307,8 @@ func (s *S) TestWriteFeature(c *check.C) {
 	} {
 		buf := &bytes.Buffer{}
 		w := NewWriter(buf, f.typ)
-		_, err := w.Write(f.feat)
-
+		n, err := w.Write(f.feat)
+		c.Check(n, check.Equals, buf.Len())
 		c.Check(err, check.Equals, f.err)
 		c.Check(buf.String(), check.Equals, f.line, check.Commentf("Test: %d type: Bed%d", i, f.typ))
 	}

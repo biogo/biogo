@@ -556,6 +556,7 @@ func (w *Writer) Write(f feat.Feature) (n int, err error) {
 	}
 
 	// Don't handle Bed12.
-	w.w.Write([]byte{'\n'})
+	_n, err = w.w.Write([]byte{'\n'})
+	n += _n
 	return n, ErrBadBedType
 }
