@@ -44,7 +44,7 @@ var traceRE = `Trace: message:
  reflect.Value.Call:
 	.*/go/src/pkg/reflect/value.go#L=[0-9]+
 
- launchpad.net/gocheck._func_006:
+ launchpad.net/gocheck._?func[_·][0-9]+:
 	.*/launchpad.net/gocheck/gocheck.go#L=[0-9]+
 `
 
