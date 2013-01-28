@@ -334,14 +334,17 @@ func (r Row) End() int { return r.Start() + r.Len() }
 // Location returns the feature containing the row's sequence.
 func (r Row) Location() feat.Feature { return r.Align.SubAnnotations[r.Row].Loc }
 
-func (r Row) Alphabet() alphabet.Alphabet         { return r.Align.Alpha }
-func (r Row) Conformation() feat.Conformation     { return r.Align.Conform }
-func (r Row) SetConformation(c feat.Conformation) { r.Align.SubAnnotations[r.Row].Conform = c }
+func (r Row) Alphabet() alphabet.Alphabet     { return r.Align.Alpha }
+func (r Row) Conformation() feat.Conformation { return r.Align.Conform }
+func (r Row) SetConformation(c feat.Conformation) error {
+	r.Align.SubAnnotations[r.Row].Conform = c
+	return nil
+}
 func (r Row) Name() string {
 	return r.Align.SubAnnotations[r.Row].ID
 }
-func (r Row) Description() string { return r.Align.SubAnnotations[r.Row].Desc }
-func (r Row) SetOffset(o int)     { r.Align.SubAnnotations[r.Row].Offset = o }
+func (r Row) Description() string   { return r.Align.SubAnnotations[r.Row].Desc }
+func (r Row) SetOffset(o int) error { r.Align.SubAnnotations[r.Row].Offset = o; return nil }
 
 func (r Row) RevComp() {
 	rs, comp := r.Align.Seq, r.Alphabet().(alphabet.Complementor).ComplementTable()

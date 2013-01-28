@@ -96,11 +96,12 @@ func (m *Multi) Rows() int {
 }
 
 // SetOffset sets the global offset of the sequence to o.
-func (m *Multi) SetOffset(o int) {
+func (m *Multi) SetOffset(o int) error {
 	for _, r := range m.Seq {
 		r.SetOffset(r.Start() - m.Offset + o)
 	}
 	m.Offset = o
+	return nil
 }
 
 // Start returns the start position of the sequence in global coordinates.

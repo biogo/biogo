@@ -71,7 +71,7 @@ func (q *Solexa) QDecode(l byte) alphabet.Qsolexa { return q.Encode.DecodeToQsol
 func (q *Solexa) Encoding() alphabet.Encoding { return q.Encode }
 
 // Set the quality Encode type to e.
-func (q *Solexa) SetEncoding(e alphabet.Encoding) { q.Encode = e }
+func (q *Solexa) SetEncoding(e alphabet.Encoding) error { q.Encode = e; return nil }
 
 // Return the lenght of the score sequence.
 func (q *Solexa) Len() int { return len(q.Qual) }

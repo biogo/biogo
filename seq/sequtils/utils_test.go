@@ -49,7 +49,7 @@ func stringToOffSlice(s string) *offSlice {
 	return &offSlice{slice: stringToSlice(s)}
 }
 func (os *offSlice) Conformation() feat.Conformation { return os.conf }
-func (os *offSlice) SetOffset(o int)                 { os.offset = o }
+func (os *offSlice) SetOffset(o int) error           { os.offset = o; return nil }
 func (os *offSlice) Slice() alphabet.Slice           { return os.slice }
 func (os *offSlice) SetSlice(sl alphabet.Slice)      { os.slice = sl.(slice) }
 func (os *offSlice) String() string                  { return fmt.Sprintf("%s %d", os.slice, os.offset) }
@@ -65,7 +65,7 @@ func stringToConformRangeOffSlice(s string) *conformRangeOffSlice {
 }
 func (os *conformRangeOffSlice) Conformation() feat.Conformation     { return os.conf }
 func (os *conformRangeOffSlice) SetConformation(c feat.Conformation) { os.conf = c }
-func (os *conformRangeOffSlice) SetOffset(o int)                     { os.offset = o }
+func (os *conformRangeOffSlice) SetOffset(o int) error               { os.offset = o; return nil }
 func (os *conformRangeOffSlice) Start() int                          { return os.offset }
 func (os *conformRangeOffSlice) End() int                            { return os.offset + len(os.slice) }
 func (os *conformRangeOffSlice) Slice() alphabet.Slice               { return os.slice }

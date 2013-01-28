@@ -81,7 +81,7 @@ func (s *QSeq) QEncode(i int) byte {
 func (s *QSeq) Encoding() alphabet.Encoding { return s.Encode }
 
 // SetEncoding sets the quality encoding scheme to e.
-func (s *QSeq) SetEncoding(e alphabet.Encoding) { s.Encode = e }
+func (s *QSeq) SetEncoding(e alphabet.Encoding) error { s.Encode = e; return nil }
 
 // EAt returns the probability of a sequence error at position pos.
 func (s *QSeq) EAt(i int) float64 {

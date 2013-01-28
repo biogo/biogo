@@ -1,12 +1,12 @@
-// Copyright ©2011-2012 The bíogo Authors. All rights reserved.
+// Copyright ©2011-2013 The bíogo Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
 // Package seq provides the base for storage and manipulation of biological sequence information.
-// 
+//
 // A variety of sequence types are provided by derived packages including linear and protein sequence
 // with and without quality scores. Multiple sequence data is also supported as unaligned sets and aligned sequences.
-// 
+//
 // Quality scoring is based on Phred scores, although there is the capacity to interconvert between Phred and
 // Solexa scores and a Solexa quality package is provide, though not integrated.
 package seq
@@ -14,6 +14,7 @@ package seq
 import (
 	"code.google.com/p/biogo/alphabet"
 	"code.google.com/p/biogo/feat"
+
 	"fmt"
 	"math"
 )
@@ -91,10 +92,10 @@ type Conformationer interface {
 
 // A ConformationSetter can set its sequence conformation.
 type ConformationSetter interface {
-	SetConformation(feat.Conformation)
+	SetConformation(feat.Conformation) error
 }
 
-// A Slicer returns and sets a Slice. 
+// A Slicer returns and sets a Slice.
 type Slicer interface {
 	Slice() alphabet.Slice
 	SetSlice(alphabet.Slice)
@@ -102,11 +103,11 @@ type Slicer interface {
 
 // A Scorer is a sequence type that provides Phred-based scoring information.
 type Scorer interface {
-	EAt(int) float64               // Return the p(Error) for a specific position.
-	SetE(int, float64)             // Set the p(Error) for a specific position.
-	Encoding() alphabet.Encoding   // Return the score encoding scheme.
-	SetEncoding(alphabet.Encoding) // Set the score encoding scheme.
-	QEncode(int) byte              // Encode the quality at the specified position according the the encoding scheme.
+	EAt(int) float64                     // Return the p(Error) for a specific position.
+	SetE(int, float64)                   // Set the p(Error) for a specific position.
+	Encoding() alphabet.Encoding         // Return the score encoding scheme.
+	SetEncoding(alphabet.Encoding) error // Set the score encoding scheme.
+	QEncode(int) byte                    // Encode the quality at the specified position according the the encoding scheme.
 }
 
 // A Quality is a feature whose elements are Phred scores.

@@ -9,8 +9,8 @@ import "code.google.com/p/biogo/seq"
 
 // A SequenceAppender is a generic sequence type that can append elements.
 type SequenceAppender interface {
-	SetName(string)
-	SetDescription(string)
+	SetName(string) error
+	SetDescription(string) error
 	seq.Appender
 	seq.Sequence
 }

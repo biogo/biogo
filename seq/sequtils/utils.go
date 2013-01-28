@@ -16,7 +16,7 @@ import (
 
 // A Joinable can be joined to another of the same concrete type using the Join function.
 type Joinable interface {
-	SetOffset(int)
+	SetOffset(int) error
 	Slice() alphabet.Slice
 	SetSlice(alphabet.Slice)
 }
@@ -51,7 +51,7 @@ func Join(dst, src Joinable, where int) error {
 type Sliceable interface {
 	Start() int
 	End() int
-	SetOffset(int)
+	SetOffset(int) error
 	Slice() alphabet.Slice
 	SetSlice(alphabet.Slice)
 }
@@ -181,7 +181,7 @@ type SliceReverser interface {
 	Sliceable
 	New() seq.Sequence
 	Alphabet() alphabet.Alphabet
-	SetAlphabet(alphabet.Alphabet)
+	SetAlphabet(alphabet.Alphabet) error
 	RevComp()
 	Reverse()
 }

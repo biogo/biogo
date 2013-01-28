@@ -7,7 +7,7 @@ package feat
 
 type Conformationer interface {
 	Conformation() Conformation
-	SetConformation(Conformation)
+	SetConformation(Conformation) error
 }
 
 type Conformation int8
@@ -32,6 +32,10 @@ const (
 
 type Orienter interface {
 	Orientation() Orientation
+}
+
+type OrientSetter interface {
+	SetOrientation(Orientation) error
 }
 
 type Orientation int8
@@ -68,16 +72,16 @@ type Feature interface {
 }
 
 type Offsetter interface {
-	SetOffset(int)
+	SetOffset(int) error
 }
 
 type Mutable interface {
-	SetStart(int)
-	SetEnd(int)
+	SetStart(int) error
+	SetEnd(int) error
 }
 
 type LocationSetter interface {
-	SetLocation(Feature)
+	SetLocation(Feature) error
 }
 
 type Pair interface {

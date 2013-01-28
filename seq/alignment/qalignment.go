@@ -85,7 +85,7 @@ func (s *QSeq) SetSlice(sl alphabet.Slice) { s.Seq = sl.(alphabet.QColumns) }
 func (s *QSeq) Encoding() alphabet.Encoding { return s.Encode }
 
 // SetEncoding sets the quality encoding scheme to e.
-func (s *QSeq) SetEncoding(e alphabet.Encoding) { s.Encode = e }
+func (s *QSeq) SetEncoding(e alphabet.Encoding) error { s.Encode = e; return nil }
 
 // Len returns the length of the alignment.
 func (s *QSeq) Len() int { return len(s.Seq) }
@@ -354,14 +354,17 @@ func (r QRow) EAt(i int) float64 {
 	return r.Align.Seq[i-r.Align.Offset][r.Row].Q.ProbE()
 }
 
-func (r QRow) Alphabet() alphabet.Alphabet         { return r.Align.Alpha }
-func (r QRow) Encoding() alphabet.Encoding         { return r.Align.Encoding() }
-func (r QRow) SetEncoding(e alphabet.Encoding)     { r.Align.SetEncoding(e) }
-func (r QRow) Conformation() feat.Conformation     { return r.Align.SubAnnotations[r.Row].Conform }
-func (r QRow) SetConformation(c feat.Conformation) { r.Align.SubAnnotations[r.Row].Conform = c }
-func (r QRow) Name() string                        { return r.Align.SubAnnotations[r.Row].ID }
-func (r QRow) Description() string                 { return r.Align.SubAnnotations[r.Row].Desc }
-func (r QRow) SetOffset(o int)                     { r.Align.SubAnnotations[r.Row].Offset = o }
+func (r QRow) Alphabet() alphabet.Alphabet           { return r.Align.Alpha }
+func (r QRow) Encoding() alphabet.Encoding           { return r.Align.Encoding() }
+func (r QRow) SetEncoding(e alphabet.Encoding) error { return r.Align.SetEncoding(e) }
+func (r QRow) Conformation() feat.Conformation       { return r.Align.SubAnnotations[r.Row].Conform }
+func (r QRow) SetConformation(c feat.Conformation) error {
+	r.Align.SubAnnotations[r.Row].Conform = c
+	return nil
+}
+func (r QRow) Name() string          { return r.Align.SubAnnotations[r.Row].ID }
+func (r QRow) Description() string   { return r.Align.SubAnnotations[r.Row].Desc }
+func (r QRow) SetOffset(o int) error { r.Align.SubAnnotations[r.Row].Offset = o; return nil }
 
 func (r QRow) RevComp() {
 	rs, comp := r.Align.Seq, r.Alphabet().(alphabet.Complementor).ComplementTable()
