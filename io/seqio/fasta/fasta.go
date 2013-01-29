@@ -34,6 +34,7 @@ type Reader struct {
 	IDPrefix  []byte
 	SeqPrefix []byte
 	working   seqio.SequenceAppender
+	err       error
 }
 
 // Returns a new fasta format reader using f. Sequences returned by the Reader are copied
@@ -44,17 +45,28 @@ func NewReader(f io.Reader, template seqio.SequenceAppender) *Reader {
 		t:         template,
 		IDPrefix:  []byte(DefaultIDPrefix),
 		SeqPrefix: []byte(DefaultSeqPrefix),
-		working:   nil,
 	}
 }
 
-// Read a single sequence and return it or an error.
+// Read a single sequence and return it and potentially an error. Note that
+// a non-nil returned error may be associated with a valid sequence, so it is
+// the responsibility of the caller to examine the error to determine whether
+// the read was successful.
+// Note that if the Reader's template type returns different non-nil error
+// values from calls to SetName and SetDescription, a new error string will be
+// returned on each call to Read. So to allow direct error comparison these
+// methods should return the same error.
 func (r *Reader) Read() (seq.Sequence, error) {
 	var (
 		buff, line []byte
 		isPrefix   bool
 		s          seq.Sequence
 	)
+	defer func() {
+		if r.working == nil {
+			r.err = nil
+		}
+	}()
 
 	for {
 		var err error
@@ -62,9 +74,9 @@ func (r *Reader) Read() (seq.Sequence, error) {
 			if err != io.EOF || r.working == nil {
 				return nil, err
 			}
-			s = r.working
+			s, err = r.working, r.err
 			r.working = nil
-			return s, nil
+			return s, err
 		}
 		line = append(line, buff...)
 		if isPrefix {
@@ -77,12 +89,12 @@ func (r *Reader) Read() (seq.Sequence, error) {
 
 		if bytes.HasPrefix(line, r.IDPrefix) {
 			if r.working == nil {
-				r.working = r.header(line)
+				r.working, r.err = r.header(line)
 				line = nil
 			} else {
-				s = r.working
-				r.working = r.header(line)
-				return s, nil
+				s, err = r.working, r.err
+				r.working, r.err = r.header(line)
+				return s, err
 			}
 		} else if bytes.HasPrefix(line, r.SeqPrefix) {
 			if r.working == nil {
@@ -99,17 +111,31 @@ func (r *Reader) Read() (seq.Sequence, error) {
 	panic("cannot reach")
 }
 
-func (r *Reader) header(line []byte) seqio.SequenceAppender {
+func (r *Reader) header(line []byte) (seqio.SequenceAppender, error) {
 	s := r.t.Clone().(seqio.SequenceAppender)
 	fieldMark := bytes.IndexAny(line, " \t")
+	var err error
 	if fieldMark < 0 {
-		s.SetName(string(line[len(r.IDPrefix):]))
+		err = s.SetName(string(line[len(r.IDPrefix):]))
+		return s, err
 	} else {
-		s.SetName(string(line[len(r.IDPrefix):fieldMark]))
-		s.SetDescription(string(line[fieldMark+1:]))
+		err = s.SetName(string(line[len(r.IDPrefix):fieldMark]))
+		_err := s.SetDescription(string(line[fieldMark+1:]))
+		if err != nil || _err != nil {
+			switch {
+			case err == _err:
+				return s, err
+			case err != nil && _err != nil:
+				return s, fmt.Errorf("fasta: multiple errors: name: %s, desc:%s", err, _err)
+			case err != nil:
+				return s, err
+			case _err != nil:
+				return s, _err
+			}
+		}
 	}
 
-	return s
+	return s, nil
 }
 
 // Fasta sequence format writer type.

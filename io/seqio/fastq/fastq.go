@@ -13,6 +13,7 @@ import (
 	"bufio"
 	"bytes"
 	"errors"
+	"fmt"
 	"io"
 )
 
@@ -49,7 +50,14 @@ func NewReader(r io.Reader, template seqio.SequenceAppender) *Reader {
 	}
 }
 
-// Read a single sequence and return it or an error.
+// Read a single sequence and return it  and potentially an error. Note that
+// a non-nil returned error may be associated with a valid sequence, so it is
+// the responsibility of the caller to examine the error to determine whether
+// the read was successful.
+// Note that if the Reader's template type returns different non-nil error
+// values from calls to SetName and SetDescription, a new error string will be
+// returned on each call to Read. So to allow direct error comparison these
+// methods should return the same error.
 // TODO: Does not read multi-line fastq.
 func (r *Reader) Read() (seq.Sequence, error) {
 	var (
@@ -61,8 +69,8 @@ func (r *Reader) Read() (seq.Sequence, error) {
 
 	inQual := false
 
+	var err error
 	for {
-		var err error
 		if buff, isPrefix, err = r.r.ReadLine(); err != nil {
 			return nil, err
 		}
@@ -77,7 +85,11 @@ func (r *Reader) Read() (seq.Sequence, error) {
 		}
 		switch {
 		case !inQual && line[0] == '@':
-			t = r.readHeader(line)
+			var _err error
+			t, _err = r.readHeader(line)
+			if err == nil && _err != nil {
+				err = _err
+			}
 			label = line
 		case !inQual && line[0] == '+':
 			if len(label) == 0 {
@@ -103,7 +115,7 @@ func (r *Reader) Read() (seq.Sequence, error) {
 			}
 			t.AppendQLetters(seqBuff...)
 
-			return t, nil
+			return t, err
 		}
 		line = nil
 	}
@@ -111,17 +123,31 @@ func (r *Reader) Read() (seq.Sequence, error) {
 	panic("cannot reach")
 }
 
-func (r *Reader) readHeader(line []byte) seqio.SequenceAppender {
+func (r *Reader) readHeader(line []byte) (seqio.SequenceAppender, error) {
 	s := r.t.Clone().(seqio.SequenceAppender)
 	fieldMark := bytes.IndexAny(line, " \t")
+	var err error
 	if fieldMark < 0 {
-		s.SetName(string(line[1:]))
+		err = s.SetName(string(line[1:]))
+		return s, err
 	} else {
-		s.SetName(string(line[1:fieldMark]))
-		s.SetDescription(string(line[fieldMark+1:]))
+		err = s.SetName(string(line[1:fieldMark]))
+		_err := s.SetDescription(string(line[fieldMark+1:]))
+		if err != nil || _err != nil {
+			switch {
+			case err == _err:
+				return s, err
+			case err != nil && _err != nil:
+				return s, fmt.Errorf("fastq: multiple errors: name: %s, desc:%s", err, _err)
+			case err != nil:
+				return s, err
+			case _err != nil:
+				return s, _err
+			}
+		}
 	}
 
-	return s
+	return s, nil
 }
 
 // Fastq sequence format writer type.
