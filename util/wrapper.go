@@ -47,8 +47,15 @@ func (w *Wrapper) Write(p []byte) (n int, err error) {
 	if w.width <= 0 {
 		return w.w.Write(p)
 	}
+	var _n int
 	for len(p) > 0 {
-		var _n int
+		if w.n != 0 && w.n%w.width == 0 {
+			_n, err = w.w.Write([]byte{'\n'})
+			n += _n
+			if err != nil {
+				return
+			}
+		}
 		_n, err = w.w.Write(p[:min(w.width-w.n%w.width, len(p))])
 		n += _n
 		w.n += _n
@@ -56,11 +63,6 @@ func (w *Wrapper) Write(p []byte) (n int, err error) {
 			return
 		}
 		p = p[_n:]
-		_n, err = w.w.Write([]byte{'\n'})
-		n += _n
-		if err != nil {
-			return
-		}
 	}
 	return n, err
 }
