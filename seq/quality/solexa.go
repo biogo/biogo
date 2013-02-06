@@ -52,11 +52,12 @@ func (q *Solexa) At(i int) alphabet.Qsolexa { return q.Qual[i-q.Offset] }
 func (q *Solexa) EAt(i int) float64 { return q.Qual[i-q.Offset].ProbE() }
 
 // Set the raw score at position pos to qual.
-func (q *Solexa) Set(i int, qual alphabet.Qsolexa) { q.Qual[i-q.Offset] = qual }
+func (q *Solexa) Set(i int, qual alphabet.Qsolexa) error { q.Qual[i-q.Offset] = qual; return nil }
 
 // Set the error probability to e at position pos.
-func (q *Solexa) SetE(i int, e float64) {
+func (q *Solexa) SetE(i int, e float64) error {
 	q.Qual[i-q.Offset] = alphabet.Esolexa(e)
+	return nil
 }
 
 // Encode the quality at position pos to a letter based on the sequence Encode setting.

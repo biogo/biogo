@@ -52,11 +52,12 @@ func (q *Phred) At(i int) alphabet.Qphred { return q.Qual[i-q.Offset] }
 func (q *Phred) EAt(i int) float64 { return q.Qual[i-q.Offset].ProbE() }
 
 // Set the raw score at position pos to qual.
-func (q *Phred) Set(i int, qual alphabet.Qphred) { q.Qual[i-q.Offset] = qual }
+func (q *Phred) Set(i int, qual alphabet.Qphred) error { q.Qual[i-q.Offset] = qual; return nil }
 
 // Set the error probability to e at position pos.
-func (q *Phred) SetE(i int, e float64) {
+func (q *Phred) SetE(i int, e float64) error {
 	q.Qual[i-q.Offset] = alphabet.Ephred(e)
+	return nil
 }
 
 // Encode the quality at position pos to a letter based on the sequence Encode setting.
