@@ -9,6 +9,7 @@ import (
 	"code.google.com/p/biogo/io/seqio/fasta"
 	"code.google.com/p/biogo/io/seqio/fastq"
 
+	_ "launchpad.net/gocheck" // Necessary to squelch complaints when testing ./biogo/... verbosely.
 	"testing"
 )
 

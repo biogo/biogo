@@ -20,8 +20,7 @@ type S struct{}
 
 var _ = check.Suite(&S{})
 
-func (s *S) TestXXX(c *check.C) {
-}
+func (s *S) TestWarning(c *check.C) { c.Log("\nFIXME: Tests only in example tests.\n") }
 
 func BenchmarkSWAlign(b *testing.B) {
 	b.StopTimer()

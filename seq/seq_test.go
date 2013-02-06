@@ -9,6 +9,8 @@ import (
 	"code.google.com/p/biogo/seq/alignment"
 	"code.google.com/p/biogo/seq/linear"
 	"code.google.com/p/biogo/seq/multi"
+
+	_ "launchpad.net/gocheck" // Necessary to squelch complaints when testing ./biogo/... verbosely.
 	"testing"
 )
 

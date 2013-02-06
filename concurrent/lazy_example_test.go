@@ -2,15 +2,13 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package concurrent
+package concurrent_test
 
 import (
-	"fmt"
-	"testing"
-)
+	"code.google.com/p/biogo/concurrent"
 
-func TestLazy(t *testing.T) {
-}
+	"fmt"
+)
 
 func ExampleLazily() {
 	sentence := "A sentence to be slowly ROT'ed."
@@ -24,12 +22,12 @@ func ExampleLazily() {
 		return b
 	}
 
-	mutator := Lazily(
-		func(state ...interface{}) (interface{}, State) {
+	mutator := concurrent.Lazily(
+		func(state ...interface{}) (interface{}, concurrent.State) {
 			b, c := []byte(state[0].(string)), state[1].(int)
 			b[c] = ROT13(b[c])
 			ms := string(b)
-			return state[0], State{ms, (c + 1) % len(ms)}
+			return state[0], concurrent.State{ms, (c + 1) % len(ms)}
 		},
 		0,           // No lookahead
 		nil,         // Perpetual evaluator

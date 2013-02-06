@@ -15,3 +15,5 @@ func Test(t *testing.T) { check.TestingT(t) }
 type S struct{}
 
 var _ = check.Suite(&S{})
+
+func (s *S) TestWarning(c *check.C) { c.Log("\nFIXME: Tests only in example tests.\n") }

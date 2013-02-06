@@ -6,6 +6,7 @@ package concurrent_test
 
 import (
 	"code.google.com/p/biogo/concurrent"
+
 	"fmt"
 )
 
