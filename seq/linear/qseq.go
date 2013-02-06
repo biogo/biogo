@@ -89,13 +89,15 @@ func (s *QSeq) EAt(i int) float64 {
 }
 
 // Set sets the letter at position pos to l.
-func (s *QSeq) Set(i int, l alphabet.QLetter) {
+func (s *QSeq) Set(i int, l alphabet.QLetter) error {
 	s.Seq[i-s.Offset] = l
+	return nil
 }
 
 // SetE sets the quality at position pos to e to reflect the given p(Error).
-func (s *QSeq) SetE(i int, e float64) {
+func (s *QSeq) SetE(i int, e float64) error {
 	s.Seq[i-s.Offset].Q = alphabet.Ephred(e)
+	return nil
 }
 
 // Len returns the length of the sequence.

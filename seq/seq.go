@@ -64,14 +64,14 @@ var (
 // A Sequence is a feature that stores sequence information.
 type Sequence interface {
 	Feature
-	At(int) alphabet.QLetter      // Return the letter at a specific position.
-	Set(int, alphabet.QLetter)    // Set the letter at a specific position.
-	Alphabet() alphabet.Alphabet  // Return the Alphabet being used.
-	RevComp()                     // Reverse complement the sequence.
-	Reverse()                     // Reverse the order of elements in the sequence.
-	New() Sequence                // Return a pointer to the zero value of the concrete type.
-	Clone() Sequence              // Return a copy of the Sequence.
-	CloneAnnotation() *Annotation // Return a copy of the sequence's annotation.
+	At(int) alphabet.QLetter         // Return the letter at a specific position.
+	Set(int, alphabet.QLetter) error // Set the letter at a specific position.
+	Alphabet() alphabet.Alphabet     // Return the Alphabet being used.
+	RevComp()                        // Reverse complement the sequence.
+	Reverse()                        // Reverse the order of elements in the sequence.
+	New() Sequence                   // Return a pointer to the zero value of the concrete type.
+	Clone() Sequence                 // Return a copy of the Sequence.
+	CloneAnnotation() *Annotation    // Return a copy of the sequence's annotation.
 	Slicer
 	Conformationer
 	ConformationSetter
@@ -104,7 +104,7 @@ type Slicer interface {
 // A Scorer is a sequence type that provides Phred-based scoring information.
 type Scorer interface {
 	EAt(int) float64                     // Return the p(Error) for a specific position.
-	SetE(int, float64)                   // Set the p(Error) for a specific position.
+	SetE(int, float64) error             // Set the p(Error) for a specific position.
 	Encoding() alphabet.Encoding         // Return the score encoding scheme.
 	SetEncoding(alphabet.Encoding) error // Set the score encoding scheme.
 	QEncode(int) byte                    // Encode the quality at the specified position according the the encoding scheme.

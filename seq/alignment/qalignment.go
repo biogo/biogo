@@ -323,8 +323,9 @@ func (r QRow) At(i int) alphabet.QLetter {
 }
 
 // Set sets the letter at position i to l.
-func (r QRow) Set(i int, l alphabet.QLetter) {
+func (r QRow) Set(i int, l alphabet.QLetter) error {
 	r.Align.Seq[i-r.Align.Offset][r.Row] = l
+	return nil
 }
 
 // Len returns the length of the alignment.
@@ -340,8 +341,9 @@ func (r QRow) End() int { return r.Start() + r.Len() }
 func (r QRow) Location() feat.Feature { return r.Align.SubAnnotations[r.Row].Loc }
 
 // SetE sets the quality at position i to e to reflect the given p(Error).
-func (r QRow) SetE(i int, e float64) {
+func (r QRow) SetE(i int, e float64) error {
 	r.Align.Seq[i-r.Align.Offset][r.Row].Q = alphabet.Ephred(e)
+	return nil
 }
 
 // QEncode encodes the quality at position i to a letter based on the sequence encoding setting.

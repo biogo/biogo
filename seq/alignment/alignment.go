@@ -318,8 +318,9 @@ func (r Row) At(i int) alphabet.QLetter {
 }
 
 // Set sets the letter at position i to l.
-func (r Row) Set(i int, l alphabet.QLetter) {
+func (r Row) Set(i int, l alphabet.QLetter) error {
 	r.Align.Seq[i-r.Align.Offset][r.Row] = l.L
+	return nil
 }
 
 // Len returns the length of the row.

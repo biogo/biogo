@@ -69,8 +69,9 @@ func (s *Seq) At(i int) alphabet.QLetter {
 }
 
 // Set sets the letter at position pos to l.
-func (s *Seq) Set(i int, l alphabet.QLetter) {
+func (s *Seq) Set(i int, l alphabet.QLetter) error {
 	s.Seq[i-s.Offset] = l.L
+	return nil
 }
 
 // Len returns the length of the sequence.
