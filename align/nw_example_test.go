@@ -10,7 +10,7 @@ import (
 	"fmt"
 )
 
-func ExampleNWAffine_Align() {
+func ExampleNW_Align() {
 	nwsa := &linear.Seq{Seq: alphabet.BytesToLetters([]byte("AGACTAGTTA"))}
 	nwsa.Alpha = alphabet.DNA
 	nwsb := &linear.Seq{Seq: alphabet.BytesToLetters([]byte("GACAGACG"))}
