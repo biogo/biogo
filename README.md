@@ -8,7 +8,7 @@
 
 ##Overview
 
-bíogo is a bioinformatics library for the Go language. It is a work in progress.
+bíogo is a bioinformatics library for the Go language.
 
 ##The Purpose of bíogo
 
@@ -70,29 +70,28 @@ research software for computationally intensive tasks.
 [5]: http://biojava.org/ "BioJava"
 [6]: http://www.seqan.de/ "SeqAn"
 
-1. BioPerl  
-    http://genome.cshlp.org/content/12/10/1611.full  
+1. BioPerl
+    http://genome.cshlp.org/content/12/10/1611.full
     http://www.springerlink.com/content/pp72033m171568p2
 
-2. BioPython  
+2. BioPython
     http://bioinformatics.oxfordjournals.org/content/25/11/1422
 
-3. BioRuby  
+3. BioRuby
     http://bioinformatics.oxfordjournals.org/content/26/20/2617
 
-4. PyCogent  
+4. PyCogent
     http://genomebiology.com/2007/8/8/R171
 
-5. BioJava  
+5. BioJava
     http://bioinformatics.oxfordjournals.org/content/24/18/2096
 
-6. SeqAn  
+6. SeqAn
     http://www.biomedcentral.com/1471-2105/9/11
 
 ##Library Structure and Coding Style
 
-The bíogo library structure is influenced both by the structure of BioPerl and
-the Go core libraries.
+The bíogo library structure is influenced both by the Go core library.
 
 The coding style should be aligned with normal Go idioms as represented in the
 Go core libraries.
@@ -107,7 +106,7 @@ be a problem.
 
 ##Copyright and License
 
-Copyright ©2011-2012 The bíogo Authors except where otherwise noted. All rights
+Copyright ©2011-2013 The bíogo Authors except where otherwise noted. All rights
 reserved. Use of this source code is governed by a BSD-style license that can be
 found in the LICENSE file.
 
