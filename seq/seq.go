@@ -103,6 +103,7 @@ type Slicer interface {
 
 // A Scorer is a sequence type that provides Phred-based scoring information.
 type Scorer interface {
+	Feature
 	EAt(int) float64                     // Return the p(Error) for a specific position.
 	SetE(int, float64) error             // Set the p(Error) for a specific position.
 	Encoding() alphabet.Encoding         // Return the score encoding scheme.
