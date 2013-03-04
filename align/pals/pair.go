@@ -65,21 +65,21 @@ func ExpandFeature(f *gff.Feature) (*Pair, error) {
 		return nil, fmt.Errorf("pals: not a feature pair")
 	}
 	fields := strings.Fields(targ)
-	if len(fields) != 6 {
+	if len(fields) != 3 {
 		return nil, fmt.Errorf("pals: not a feature pair")
 	}
 
-	s, err := strconv.Atoi(fields[2])
+	s, err := strconv.Atoi(fields[1])
 	if err != nil {
 		return nil, err
 	}
 	s--
-	e, err := strconv.Atoi(fields[3][:len(fields[3])-1])
+	e, err := strconv.Atoi(fields[2])
 	if err != nil {
 		return nil, err
 	}
 
-	maxe, err := strconv.ParseFloat(fields[5], 64)
+	maxe, err := strconv.ParseFloat(f.FeatAttributes.Get("maxe"), 64)
 	if err != nil {
 		return nil, err
 	}
@@ -92,8 +92,8 @@ func ExpandFeature(f *gff.Feature) (*Pair, error) {
 			To:   f.FeatEnd,
 		},
 		B: &Feature{
-			ID:   fmt.Sprintf("%s:%d..%d", fields[1], s, e),
-			Loc:  Contig(fields[1]),
+			ID:   fmt.Sprintf("%s:%d..%d", fields[0], s, e),
+			Loc:  Contig(fields[0]),
 			From: s,
 			To:   e,
 		},
