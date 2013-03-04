@@ -57,8 +57,7 @@ func NewPair(target, query *Packed, hit dp.DPHit, comp bool) (*Pair, error) {
 	}, nil
 }
 
-// ExpandFeature converts an old-style *feat.Feature (package temporarily renamed to gff for collision avoidance) containing a PALS-type feature attribute
-// into a Pair.
+// ExpandFeature converts a *gff.Feature containing PALS-type feature attributes into a Pair.
 func ExpandFeature(f *gff.Feature) (*Pair, error) {
 	targ := f.FeatAttributes.Get("Target")
 	if targ == "" {
