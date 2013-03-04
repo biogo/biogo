@@ -92,7 +92,7 @@ func ExpandFeature(f *gff.Feature) (*Pair, error) {
 			To:   f.FeatEnd,
 		},
 		B: &Feature{
-			ID:   fmt.Sprintf("%s:%d..%d", fields[0], s, e),
+			ID:   fmt.Sprintf("%s:%d..%s", fields[0], s, fields[2]),
 			Loc:  Contig(fields[0]),
 			From: s,
 			To:   e,
