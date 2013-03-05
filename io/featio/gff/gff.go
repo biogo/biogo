@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"io"
 	"math"
+	"runtime"
 	"strconv"
 	"time"
 	"unicode"
@@ -215,8 +216,11 @@ func (g *Feature) Location() feat.Feature { return Sequence{SeqName: g.SeqName} 
 func handlePanic(f feat.Feature, err *error) {
 	r := recover()
 	if r != nil {
-		e, ok := r.(Error)
+		e, ok := r.(error)
 		if !ok {
+			panic(r)
+		}
+		if _, ok = r.(runtime.Error); ok {
 			panic(r)
 		}
 		*err = e
