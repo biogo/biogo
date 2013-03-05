@@ -71,7 +71,7 @@ const (
 	lastField
 )
 
-// 
+// Frame holds feature frame information.
 type Frame int8
 
 func (f Frame) String() string {
