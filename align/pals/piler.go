@@ -85,7 +85,6 @@ func (p *Piler) Add(fp *Pair) error {
 	p.merge(&PileInterval{fp.A.Start(), fp.A.End(), fp.A.Location(), []*Pair{fp}, p.overlap})
 	p.merge(&PileInterval{fp.B.Start(), fp.B.End(), fp.B.Location(), nil, p.overlap})
 	p.seen[ab] = struct{}{}
-	p.seen[ba] = struct{}{}
 
 	return nil
 }
