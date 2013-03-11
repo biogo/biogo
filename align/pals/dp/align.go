@@ -11,6 +11,7 @@ import (
 
 	"errors"
 	"sort"
+	"sync"
 )
 
 // A Params holds dynamic programming alignment parameters.
@@ -39,7 +40,7 @@ type Aligner struct {
 	Costs         *Costs
 }
 
-// Create a new Aligner based on target and query sequences. 
+// Create a new Aligner based on target and query sequences.
 func NewAligner(target, query *linear.Seq, k, minLength int, minId float64) *Aligner {
 	return &Aligner{
 		target:       target,
@@ -68,10 +69,11 @@ func (a *Aligner) AlignTraps(trapezoids filter.Trapezoids) DPHits {
 
 		result: make(chan DPHit),
 	}
-	w := make(chan struct{})
+	wg := &sync.WaitGroup{}
+	wg.Add(1)
 	var segs DPHits
 	go func() {
-		defer close(w)
+		defer wg.Done()
 		for h := range dp.result {
 			segs = append(segs, h)
 		}
@@ -83,7 +85,7 @@ func (a *Aligner) AlignTraps(trapezoids filter.Trapezoids) DPHits {
 		}
 	}
 	close(dp.result)
-	<-w
+	wg.Wait()
 
 	/* Remove lower scoring segments that begin or end at
 	   the same point as a higher scoring segment.       */
@@ -140,7 +142,7 @@ func (a *Aligner) AlignTraps(trapezoids filter.Trapezoids) DPHits {
 	return segs
 }
 
-// DPHit holds details of alignment result. 
+// DPHit holds details of alignment result.
 type DPHit struct {
 	Abpos, Bbpos              int     // Start coordinate of local alignment
 	Aepos, Bepos              int     // End coordinate of local alignment

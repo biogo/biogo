@@ -20,7 +20,8 @@ type Processor struct {
 	in      chan Operator
 	out     chan Result
 	stop    chan struct{}
-	working chan bool
+	work    chan struct{}
+	threads int
 	wg      *sync.WaitGroup
 }
 
@@ -36,20 +37,24 @@ func NewProcessor(queue chan Operator, buffer int, threads int) (p *Processor) {
 		in:      queue,
 		out:     make(chan Result, buffer),
 		stop:    make(chan struct{}),
-		working: make(chan bool, threads),
+		work:    make(chan struct{}, threads),
+		threads: threads,
 		wg:      &sync.WaitGroup{},
+	}
+	for i := 0; i < threads; i++ {
+		p.work <- struct{}{}
 	}
 
 	for i := 0; i < threads; i++ {
 		p.wg.Add(1)
 		go func() {
-			p.working <- true
+			<-p.work
 			defer func() {
 				if err := recover(); err != nil {
 					p.out <- Result{nil, fmt.Errorf("concurrent: processor panic: %v", err)}
 				}
-				<-p.working
-				if len(p.working) == 0 {
+				p.work <- struct{}{}
+				if len(p.work) == p.threads {
 					close(p.out)
 				}
 				p.wg.Done()
@@ -92,7 +97,7 @@ func (p *Processor) Close() {
 
 // Return the number of working goroutines.
 func (p *Processor) Working() int {
-	return len(p.working)
+	return p.threads - len(p.work)
 }
 
 // Terminate the goroutines.
