@@ -28,24 +28,24 @@ func f(i int) error {
 var traceRE = `Trace: message:
 
  code.google.com/p/biogo/errors.f:
-	.*/code.google.com/p/biogo/errors/errors_test.go#L=21
-	.*/code.google.com/p/biogo/errors/errors_test.go#L=25
-	.*/code.google.com/p/biogo/errors/errors_test.go#L=25
-	.*/code.google.com/p/biogo/errors/errors_test.go#L=25
-	.*/code.google.com/p/biogo/errors/errors_test.go#L=25
-	.*/code.google.com/p/biogo/errors/errors_test.go#L=25
+	(?:[A-Z]:)?/.*/code.google.com/p/biogo/errors/errors_test.go#L=21
+	(?:[A-Z]:)?/.*/code.google.com/p/biogo/errors/errors_test.go#L=25
+	(?:[A-Z]:)?/.*/code.google.com/p/biogo/errors/errors_test.go#L=25
+	(?:[A-Z]:)?/.*/code.google.com/p/biogo/errors/errors_test.go#L=25
+	(?:[A-Z]:)?/.*/code.google.com/p/biogo/errors/errors_test.go#L=25
+	(?:[A-Z]:)?/.*/code.google.com/p/biogo/errors/errors_test.go#L=25
 
  code.google.com/p/biogo/errors.\(\*S\).TestCaller:
-	.*/code.google.com/p/biogo/errors/errors_test.go#L=60
+	(?:[A-Z]:)?/.*/code.google.com/p/biogo/errors/errors_test.go#L=60
 
  reflect.Value.call:
-	.*/go/src/pkg/reflect/value.go#L=[0-9]+
+	(?:[A-Z]:)?/.*/go/src/pkg/reflect/value.go#L=[0-9]+
 
  reflect.Value.Call:
-	.*/go/src/pkg/reflect/value.go#L=[0-9]+
+	(?:[A-Z]:)?/.*/go/src/pkg/reflect/value.go#L=[0-9]+
 
  launchpad.net/gocheck._?func[_·][0-9]+:
-	.*/launchpad.net/gocheck/gocheck.go#L=[0-9]+
+	(?:[A-Z]:)?/.*/launchpad.net/gocheck/gocheck.go#L=[0-9]+
 `
 
 // Tests
@@ -53,7 +53,7 @@ func (s *S) TestCaller(c *check.C) {
 	err := Make("message", 0, 10, "item")
 	c.Check(err.Error(), check.Equals, "message")
 	fn, ln := err.FileLine()
-	c.Check(fn, check.Matches, "/.*/biogo/errors/errors_test.go")
+	c.Check(fn, check.Matches, "(?:[A-Z]:)?/.*/biogo/errors/errors_test.go")
 	c.Check(ln, check.Equals, 53)
 	c.Check(err.Package(), check.Equals, "code.google.com/p/biogo/errors.(*S)")
 	c.Check(err.Function(), check.Equals, "TestCaller")
