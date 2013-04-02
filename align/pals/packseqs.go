@@ -87,7 +87,7 @@ func (pa *Packed) feature(from, to int, comp bool) (feat.Feature, error) {
 		ID:   contig.ID,
 		From: contigFrom,
 		To:   contigTo,
-		Loc:  contig.Seq.Loc,
+		Loc:  Contig(contig.ID),
 	}, nil
 }
 
