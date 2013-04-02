@@ -66,12 +66,12 @@ type ft struct {
 //	7:            deBruijn7      16384           11-27
 //	8:            deBruijn8      65536           28-92
 var T []ft = []ft{
-	{1020, 1030, &Feature{"deBruijn2", 0, 6, nil}},
-	{1025, 1030, &Feature{"deBruijn2", 1, 6, nil}},
-	{1010, 1060, &Feature{"deBruijn2", 0, 16, nil}},
-	{0, 1060, &Feature{"deBruijn1", 0, 4, nil}},
-	{4 * binSize, 4*binSize + 904, &Feature{"deBruijn5", 0, 904, nil}},
-	{29 * binSize, 32*binSize - 1, &Feature{"deBruijn8", 1024, 4095, nil}},
+	{1020, 1030, &Feature{"deBruijn2", 0, 6, Contig("deBruijn2")}},
+	{1025, 1030, &Feature{"deBruijn2", 1, 6, Contig("deBruijn2")}},
+	{1010, 1060, &Feature{"deBruijn2", 0, 16, Contig("deBruijn2")}},
+	{0, 1060, &Feature{"deBruijn1", 0, 4, Contig("deBruijn1")}},
+	{4 * binSize, 4*binSize + 904, &Feature{"deBruijn5", 0, 904, Contig("deBruijn5")}},
+	{29 * binSize, 32*binSize - 1, &Feature{"deBruijn8", 1024, 4095, Contig("deBruijn8")}},
 }
 
 type pt struct {
@@ -111,6 +111,7 @@ func (s *S) SetUpSuite(c *check.C) {
 		for _, i := range util.DeBruijn(byte(Q), k) {
 			a.Seq = append(a.Seq, alphabet.Letter(l[i]))
 		}
+		a.Loc = Contig(a.ID)
 		p.Pack(a)
 	}
 	ps = p.FinalisePack()

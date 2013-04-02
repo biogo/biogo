@@ -31,7 +31,7 @@ func NewWriter(w io.Writer, prec, width int, header bool) *Writer {
 // Write writes a single feature and return the number of bytes written and any error.
 func (w *Writer) Write(pair *Pair) (n int, err error) {
 	t := w.t
-	t.SeqName = pair.B.Name()
+	t.SeqName = pair.B.Location().Name()
 	t.FeatStart = pair.B.Start()
 	t.FeatEnd = pair.B.End()
 	t.FeatScore = floatPtr(float64(pair.Score))
@@ -40,7 +40,7 @@ func (w *Writer) Write(pair *Pair) (n int, err error) {
 	t.FeatAttributes = append(t.FeatAttributes[:0],
 		gff.Attribute{
 			Tag:   "Target",
-			Value: fmt.Sprintf("%s %d %d", pair.A.Name(), feat.ZeroToOne(pair.A.Start()), pair.A.End()),
+			Value: fmt.Sprintf("%s %d %d", pair.A.Location().Name(), feat.ZeroToOne(pair.A.Start()), pair.A.End()),
 		},
 		gff.Attribute{
 			Tag:   "maxe",
