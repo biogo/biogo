@@ -103,7 +103,7 @@ func max(a, b int) int {
 	return b
 }
 
-// merge merges an interval into the tree mioving location meta data from the replaced intervals
+// merge merges an interval into the tree moving location meta data from the replaced intervals
 // into the new interval.
 func (p *Piler) merge(pi *PileInterval) {
 	var (
