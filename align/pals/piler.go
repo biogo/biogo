@@ -26,7 +26,7 @@ func (i *PileInterval) Overlap(b interval.IntRange) bool {
 	return i.End-i.overlap >= b.Start && i.Start <= b.End-i.overlap
 }
 func (i *PileInterval) ID() uintptr              { return uintptr(unsafe.Pointer(i)) }
-func (i *PileInterval) Range() interval.IntRange { return interval.IntRange{i.Start, i.End} }
+func (i *PileInterval) Range() interval.IntRange { return interval.IntRange{Start: i.Start, End: i.End} }
 
 type containQuery struct {
 	start, end int
@@ -38,42 +38,36 @@ func (q containQuery) Overlap(b interval.IntRange) bool {
 	return b.Start <= q.start+q.slop && b.End >= q.end-q.slop
 }
 func (q containQuery) ID() uintptr              { return 0 }
-func (q containQuery) Range() interval.IntRange { return interval.IntRange{q.start, q.end} }
+func (q containQuery) Range() interval.IntRange { return interval.IntRange{Start: q.start, End: q.end} }
 
 // A Piler performs the aggregation of feature pairs according to the description in section 2.3
 // of Edgar and Myers (2005) using an interval tree, giving O(nlogn) time but better space complexity
 // and flexibility with feature overlap.
 type Piler struct {
 	intervals map[feat.Feature]*interval.IntTree
-	seen      map[sp]struct{}
+	seen      map[[2]sf]struct{}
 	overlap   int
 }
 
-type (
-	sf struct {
-		loc  feat.Feature
-		s, e int
-	}
-
-	sp struct {
-		a, b sf
-	}
-)
+type sf struct {
+	loc  feat.Feature
+	s, e int
+}
 
 // NewPiler creates a Piler object ready for piling feature pairs.
 func NewPiler(overlap int) *Piler {
 	return &Piler{
 		intervals: make(map[feat.Feature]*interval.IntTree),
-		seen:      make(map[sp]struct{}),
+		seen:      make(map[[2]sf]struct{}),
 		overlap:   overlap,
 	}
 }
 
 // Add adds a feature pair to the piler incorporating the features into piles where appropriate.
 func (p *Piler) Add(fp *Pair) error {
-	a := sf{fp.A.Location(), fp.A.Start(), fp.A.End()}
-	b := sf{fp.B.Location(), fp.B.Start(), fp.B.End()}
-	ab, ba := sp{a, b}, sp{b, a}
+	a := sf{loc: fp.A.Location(), s: fp.A.Start(), e: fp.A.End()}
+	b := sf{loc: fp.B.Location(), s: fp.B.Start(), e: fp.B.End()}
+	ab, ba := [2]sf{a, b}, [2]sf{b, a}
 
 	if _, ok := p.seen[ab]; ok {
 		return duplicatePair
@@ -82,8 +76,8 @@ func (p *Piler) Add(fp *Pair) error {
 		return duplicatePair
 	}
 
-	p.merge(&PileInterval{fp.A.Start(), fp.A.End(), fp.A.Location(), []*Pair{fp}, p.overlap})
-	p.merge(&PileInterval{fp.B.Start(), fp.B.End(), fp.B.Location(), nil, p.overlap})
+	p.merge(&PileInterval{Start: fp.A.Start(), End: fp.A.End(), Location: fp.A.Location(), Pairs: []*Pair{fp}, overlap: p.overlap})
+	p.merge(&PileInterval{Start: fp.B.Start(), End: fp.B.End(), Location: fp.B.Location(), Pairs: nil, overlap: p.overlap})
 	p.seen[ab] = struct{}{}
 
 	return nil
