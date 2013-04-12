@@ -25,8 +25,8 @@ type Pair struct {
 
 func (fp *Pair) String() string {
 	return fmt.Sprintf("%s/%s[%d,%d)--%s/%s[%d,%d)",
-		fp.A.Location().Location().Name(), fp.A.Name(), fp.A.Start(), fp.A.End(),
-		fp.B.Location().Location().Name(), fp.B.Name(), fp.B.Start(), fp.B.End(),
+		fp.A.Location().Name(), fp.A.Name(), fp.A.Start(), fp.A.End(),
+		fp.B.Location().Name(), fp.B.Name(), fp.B.Start(), fp.B.End(),
 	)
 }
 
