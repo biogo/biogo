@@ -45,7 +45,12 @@ type Feature struct {
 	Loc  feat.Feature
 }
 
-func (f *Feature) Name() string { return f.ID }
+func (f *Feature) Name() string {
+	if f == nil {
+		return "<nil>"
+	}
+	return f.ID
+}
 
 // Description returns the string "pals feature".
 func (f *Feature) Description() string    { return "pals feature" }
@@ -55,6 +60,9 @@ func (f *Feature) Len() int               { return f.To - f.From }
 func (f *Feature) Location() feat.Feature { return f.Loc }
 
 func (f *Feature) String() string {
+	if f == nil {
+		return "<nil>"
+	}
 	return fmt.Sprintf("%s[%d,%d)", f.Loc.Name(), f.From, f.To)
 }
 
@@ -70,6 +78,9 @@ type Pile struct {
 }
 
 func (p *Pile) Name() string {
+	if p == nil {
+		return "<nil>"
+	}
 	return fmt.Sprintf("%s[%d,%d)", p.Loc.Name(), p.From, p.To)
 }
 
@@ -81,5 +92,8 @@ func (p *Pile) Len() int               { return p.To - p.From }
 func (p *Pile) Location() feat.Feature { return p.Loc }
 
 func (p *Pile) String() string {
+	if p == nil {
+		return "<nil>"
+	}
 	return fmt.Sprintf("{%s[%d,%d): %v}", p.Loc.Name(), p.From, p.To, p.Images)
 }
