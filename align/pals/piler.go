@@ -195,7 +195,7 @@ func (p *Piler) Piles(f PileFilter) ([]*Pile, error) {
 	return piles, nil
 }
 
-// Pile returns a Pile representation of the pile containing i.
+// Pile returns a Pile representation of the pile containing q.
 // An error is returned if more than one pile would be returned.
 func (p *Piler) Pile(q feat.Feature) (*Pile, error) {
 	pi, err := p.pile(q)
