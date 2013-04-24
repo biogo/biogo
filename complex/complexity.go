@@ -54,7 +54,7 @@ func EntropicComplexity(s seq.Sequence, start, end int) (ce float64, err error) 
 		return 0, nil
 	}
 
-	N := float64(end - start)
+	var N float64
 	k := s.Alphabet().Len()
 	logk := math.Log(float64(k))
 	n := make([]float64, k)
@@ -63,6 +63,7 @@ func EntropicComplexity(s seq.Sequence, start, end int) (ce float64, err error) 
 	it := s.Alphabet().LetterIndex()
 	for i := start; i < end; i++ {
 		if ind := it[s.At(i).L]; ind >= 0 {
+			N++
 			n[ind]++
 		}
 	}
@@ -89,7 +90,7 @@ func WFComplexity(s seq.Sequence, start, end int) (cwf float64, err error) {
 		return 0, nil
 	}
 
-	N := float64(end - start)
+	var N int
 	k := s.Alphabet().Len()
 	logk := math.Log(float64(k))
 	n := make([]int, k)
@@ -98,16 +99,17 @@ func WFComplexity(s seq.Sequence, start, end int) (cwf float64, err error) {
 	it := s.Alphabet().LetterIndex()
 	for i := start; i < end; i++ {
 		if ind := it[s.At(i).L]; ind >= 0 {
+			N++
 			n[ind]++
 		}
 	}
 
 	// 1/N*log_k(N!/∏i=1..k(n_i!))
-	cwf = lnFac(end - start)
+	cwf = lnFac(N)
 	for i := 0; i < k; i++ {
 		cwf -= lnFac(n[i])
 	}
-	cwf /= N * logk
+	cwf /= float64(N) * logk
 
 	return
 }
@@ -145,14 +147,16 @@ func ZComplexity(s seq.Sequence, start, end int) (cz float64, err error) {
 	z := zlib.NewWriter(bc)
 	defer z.Close()
 	it := s.Alphabet().LetterIndex()
+	var N float64
 	for i := start; i < end; i++ {
 		if b := byte(s.At(i).L); it[b] >= 0 {
+			N++
 			z.Write([]byte{b})
 		}
 	}
 	z.Close()
 
-	cz = (float64(*bc - overhead)) / float64(end-start)
+	cz = (float64(*bc - overhead)) / N
 
 	return
 }
