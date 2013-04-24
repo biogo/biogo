@@ -15,7 +15,6 @@ import (
 
 const tableLength = 10000
 
-// not thread-safe
 var lnFacTable = genLnFac(tableLength)
 
 func genLnFac(l int) (table []float64) {
@@ -30,22 +29,14 @@ func genLnFac(l int) (table []float64) {
 	return
 }
 
+const ln2pi = 1.8378770664093454835606594728112352797227949472755668
+
 func lnFac(x int) float64 {
 	if x < len(lnFacTable) {
 		return lnFacTable[x]
 	}
-
-	l := len(lnFacTable)
-	lnFacTable = append(lnFacTable, make([]float64, x-l+1)...)
-
-	lnfac := lnFacTable[l-1]
-
-	for i := l; i < len(lnFacTable); i++ {
-		lnfac += math.Log(float64(i))
-		lnFacTable[i] = lnfac
-	}
-
-	return lnfac
+	// use Sterling's approximation for queries outside the table:
+	return (float64(x)+0.5)*math.Log(float64(x)) - float64(x) + ln2pi/2
 }
 
 func logBaseK(logk, x float64) float64 {
@@ -59,20 +50,28 @@ func EntropicComplexity(s seq.Sequence, start, end int) (ce float64, err error) 
 		err = fmt.Errorf("complex: index out of range")
 		return
 	}
-	N := float64(s.Len())
+	if start == end {
+		return 0, nil
+	}
+
+	N := float64(end - start)
 	k := s.Alphabet().Len()
 	logk := math.Log(float64(k))
 	n := make([]float64, k)
 
 	// tally classes
-	alpha := s.Alphabet()
+	it := s.Alphabet().LetterIndex()
 	for i := start; i < end; i++ {
-		n[alpha.IndexOf(s.At(i).L)]++
+		if ind := it[s.At(i).L]; ind >= 0 {
+			n[ind]++
+		}
 	}
 
 	// -∑i=1..k((n_i/N)*log_k(n_i/N))
 	for i := 0; i < k; i++ {
-		ce += n[i] * logBaseK(logk, n[i]/N)
+		if n[i] != 0 { // ignore zero counts
+			ce += n[i] * logBaseK(logk, n[i]/N)
+		}
 	}
 	ce = -ce / N
 
@@ -86,19 +85,25 @@ func WFComplexity(s seq.Sequence, start, end int) (cwf float64, err error) {
 		err = fmt.Errorf("complex: index out of range")
 		return
 	}
-	N := float64(s.Len())
+	if start == end {
+		return 0, nil
+	}
+
+	N := float64(end - start)
 	k := s.Alphabet().Len()
 	logk := math.Log(float64(k))
 	n := make([]int, k)
 
 	// tally classes
-	alpha := s.Alphabet()
+	it := s.Alphabet().LetterIndex()
 	for i := start; i < end; i++ {
-		n[alpha.IndexOf(s.At(i).L)]++
+		if ind := it[s.At(i).L]; ind >= 0 {
+			n[ind]++
+		}
 	}
 
 	// 1/N*log_k(N!/∏i=1..k(n_i!))
-	cwf = lnFac(s.Len())
+	cwf = lnFac(end - start)
 	for i := 0; i < k; i++ {
 		cwf -= lnFac(n[i])
 	}
@@ -119,8 +124,7 @@ var overhead = calcOverhead()
 func calcOverhead() byteCounter {
 	b := new(byteCounter)
 	z := zlib.NewWriter(b)
-	z.Write([]byte("a"))
-	z.Flush()
+	z.Write([]byte{0})
 	z.Close()
 
 	return *b - 1
@@ -140,10 +144,13 @@ func ZComplexity(s seq.Sequence, start, end int) (cz float64, err error) {
 	bc := new(byteCounter)
 	z := zlib.NewWriter(bc)
 	defer z.Close()
+	it := s.Alphabet().LetterIndex()
 	for i := start; i < end; i++ {
-		z.Write([]byte{byte(s.At(i).L)})
+		if b := byte(s.At(i).L); it[b] >= 0 {
+			z.Write([]byte{b})
+		}
 	}
-	z.Flush()
+	z.Close()
 
 	cz = (float64(*bc - overhead)) / float64(end-start)
 
