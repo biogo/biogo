@@ -42,12 +42,6 @@ type Index struct {
 	indexed bool
 }
 
-// Constraints on Kmer length.
-var (
-	MinKmerLen = 4  // default minimum
-	MaxKmerLen = 15 // Maximum due to Go int size.
-)
-
 // Create a new Kmer Index with a word size k based on sequence
 func New(k int, s *linear.Seq) (*Index, error) {
 	switch {

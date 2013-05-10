@@ -38,6 +38,4 @@ func (a NW) Align(reference, query AlphabetSlicer) ([]feat.Pair, error) {
 	default:
 		return nil, ErrTypeNotHandled
 	}
-
-	panic("cannot reach")
 }

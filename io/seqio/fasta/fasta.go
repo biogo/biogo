@@ -107,8 +107,6 @@ func (r *Reader) Read() (seq.Sequence, error) {
 			return nil, fmt.Errorf("fasta: badly formed line %q", line)
 		}
 	}
-
-	panic("cannot reach")
 }
 
 func (r *Reader) header(line []byte) (seqio.SequenceAppender, error) {

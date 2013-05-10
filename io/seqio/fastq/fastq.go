@@ -119,8 +119,6 @@ func (r *Reader) Read() (seq.Sequence, error) {
 		}
 		line = nil
 	}
-
-	panic("cannot reach")
 }
 
 func (r *Reader) readHeader(line []byte) (seqio.SequenceAppender, error) {

@@ -76,8 +76,6 @@ func (e Encoding) DecodeToQphred(q byte) Qphred {
 	default:
 		panic("alphabet: illegal encoding")
 	}
-
-	panic("cannot reach")
 }
 
 // DecodeToPhred interpets the byte q as an e encoded quality and returns the corresponding Solexa score.
@@ -94,8 +92,6 @@ func (e Encoding) DecodeToQsolexa(q byte) Qsolexa {
 	default:
 		panic("alphabet: illegal encoding")
 	}
-
-	panic("cannot reach")
 }
 
 // A Letter represents a sequence letter.
