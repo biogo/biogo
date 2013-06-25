@@ -19,7 +19,7 @@ type Links interface {
 	Errors() []error // Errors returns a flat list of errors in order of annotation.
 }
 
-// New returns a new Chain based on the provided error. If the error is a Chain it
+// NewChain returns a new Chain based on the provided error. If the error is a Chain it
 // is returned unaltered.
 func NewChain(err error) Chain {
 	if c, ok := err.(Chain); ok {
