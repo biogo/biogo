@@ -21,7 +21,7 @@ type Links interface {
 
 // New returns a new Chain based on the provided error. If the error is a Chain it
 // is returned unaltered.
-func New(err error) Chain {
+func NewChain(err error) Chain {
 	if c, ok := err.(Chain); ok {
 		return c
 	}
@@ -38,7 +38,7 @@ func Cause(err error) error {
 }
 
 // Link adds an annotation to an error, returning a Chain.
-func Link(err, annotation error) Chain { return New(err).Link(annotation) }
+func Link(err, annotation error) Chain { return NewChain(err).Link(annotation) }
 
 // Last returns the most recent annotation of an error and the remaining chain
 // after the annotation is removed or nil if no further errors remain. Last returns
