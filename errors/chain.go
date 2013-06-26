@@ -9,14 +9,19 @@ type Chain interface {
 	// The error behavior of a Chain is based on the last annotation applied.
 	error
 
-	Cause() error         // Cause returns the initial error in the Chain.
-	Link(error) Chain     // Link adds an annotation layer to the Chain.
-	Last() (Chain, error) // Last returns the Chain and the most recent annotation.
+	// Cause returns the initial error in the Chain.
+	Cause() error
+
+	// Link adds an annotation layer to the Chain.
+	Link(error) Chain
+
+	// Last returns the Chain, or nil if the Chain is empty, and the most recent annotation.
+	Last() (Chain, error)
 }
 
 // Links is an optional interface used by the Errors function.
 type Links interface {
-	Errors() []error // Errors returns a flat list of errors in order of annotation.
+	Errors() []error // Errors returns a flat list of errors in temporal order of annotation.
 }
 
 // NewChain returns a new Chain based on the provided error. If the error is a Chain it
