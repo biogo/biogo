@@ -52,7 +52,7 @@ func (s *Scanner) Scan() bool {
 }
 
 // Err returns the first non-EOF error that was encountered by the Scanner.
-func (s *Scanner) Err() error {
+func (s *Scanner) Error() error {
 	if s.err == io.EOF {
 		return nil
 	}

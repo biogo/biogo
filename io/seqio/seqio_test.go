@@ -173,7 +173,7 @@ func (s *S) TestReadFasta(c *check.C) {
 		obtainNfa = append(obtainNfa, header)
 		obtainSfa = append(obtainSfa, t.Slice().(alphabet.Letters))
 	}
-	c.Check(sc.Err(), check.Equals, nil)
+	c.Check(sc.Error(), check.Equals, nil)
 	c.Check(obtainNfa, check.DeepEquals, expectNfa)
 	for i := range obtainSfa {
 		c.Check(len(obtainSfa[i]), check.Equals, len(expectSfa[i]))
@@ -411,7 +411,7 @@ func (s *S) TestReadFastq(c *check.C) {
 		obtainNfq = append(obtainNfq, header)
 		obtainQL = append(obtainQL, (t.Slice().(alphabet.QLetters)))
 	}
-	c.Check(sc.Err(), check.Equals, nil)
+	c.Check(sc.Error(), check.Equals, nil)
 	c.Check(obtainNfq, check.DeepEquals, expectNfq)
 	c.Check(obtainQL, check.DeepEquals, expectQL)
 }
