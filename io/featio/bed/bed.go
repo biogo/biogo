@@ -15,26 +15,24 @@ import (
 
 	"bufio"
 	"bytes"
+	"encoding/csv"
+	"errors"
 	"fmt"
 	"image/color"
 	"io"
 	"reflect"
+	"runtime"
 	"strconv"
 	"unsafe"
 )
 
-type Error string
-
-func (e Error) Error() string { return string(e) }
-
 var (
-	ErrBadBedType         = Error("bed: bad bed type")
-	ErrBadStrandField     = Error("bed: bad strand field")
-	ErrBadStrand          = Error("bed: invalid strand")
-	ErrBadColorField      = Error("bed: bad color field")
-	ErrMissingBlockValues = Error("bed: missing block values")
-	ErrNoChromField       = Error("bed: no chrom field available")
-	ErrClosed             = Error("bed: writer closed")
+	ErrBadBedType         = errors.New("bed: bad bed type")
+	ErrBadStrandField     = errors.New("bad strand field")
+	ErrBadStrand          = errors.New("invalid strand")
+	ErrBadColorField      = errors.New("bad color field")
+	ErrMissingBlockValues = errors.New("missing block values")
+	ErrNoChromField       = errors.New("no chrom field available")
 )
 
 const (
@@ -80,14 +78,14 @@ type Bed interface {
 func handlePanic(f feat.Feature, err *error) {
 	r := recover()
 	if r != nil {
-		e, ok := r.(Error)
+		e, ok := r.(error)
 		if !ok {
 			panic(r)
 		}
-		*err = e
-		if f != nil {
-			f = nil
+		if _, ok = r.(runtime.Error); ok {
+			panic(r)
 		}
+		*err = e
 	}
 }
 
@@ -96,18 +94,18 @@ func unsafeString(b []byte) string {
 	return *(*string)(unsafe.Pointer(&b))
 }
 
-func mustAtoi(f []byte) int {
+func mustAtoi(f []byte, column int) int {
 	i, err := strconv.ParseInt(unsafeString(f), 0, 0)
 	if err != nil {
-		panic(err)
+		panic(&csv.ParseError{Column: column, Err: err})
 	}
 	return int(i)
 }
 
-func mustAtob(f []byte) byte {
+func mustAtob(f []byte, column int) byte {
 	b, err := strconv.ParseUint(unsafeString(f), 0, 8)
 	if err != nil {
-		panic(err)
+		panic(&csv.ParseError{Column: column, Err: err})
 	}
 	return byte(b)
 }
@@ -123,42 +121,42 @@ var charToStrand = func() [256]seq.Strand {
 	return t
 }()
 
-func mustAtos(f []byte) seq.Strand {
+func mustAtos(f []byte, index int) seq.Strand {
 	if len(f) != 1 {
-		panic(ErrBadStrandField)
+		panic(&csv.ParseError{Column: index, Err: ErrBadStrandField})
 	}
 	s := charToStrand[f[0]]
 	if s == 0x7f {
-		panic(ErrBadStrand)
+		panic(&csv.ParseError{Column: index, Err: ErrBadStrand})
 	}
 	return s
 }
 
-func mustAtoRgb(f []byte) color.RGBA {
+func mustAtoRgb(f []byte, index int) color.RGBA {
 	c := bytes.SplitN(f, []byte{','}, 4)
 	l := len(c)
-	if l == 0 || (l == 1 && mustAtoi(c[0]) == 0) {
+	if l == 0 || (l == 1 && mustAtoi(c[0], index) == 0) {
 		return color.RGBA{}
 	}
 	if l < 3 {
-		panic(ErrBadColorField)
+		panic(&csv.ParseError{Column: index, Err: ErrBadColorField})
 	}
 	return color.RGBA{
-		R: mustAtob(c[0]),
-		G: mustAtob(c[1]),
-		B: mustAtob(c[2]),
+		R: mustAtob(c[0], index),
+		G: mustAtob(c[1], index),
+		B: mustAtob(c[2], index),
 		A: 0xff,
 	}
 }
 
-func mustAtoa(f []byte) []int {
+func mustAtoa(f []byte, index int) []int {
 	c := bytes.Split(f, []byte{','})
 	a := make([]int, len(c))
 	for i, f := range c {
 		if len(f) == 0 {
 			return a[:i]
 		}
-		a[i] = mustAtoi(f)
+		a[i] = mustAtoi(f, index)
 	}
 	return a
 }
@@ -187,8 +185,8 @@ func parseBed3(line []byte) (b *Bed3, err error) {
 	}
 	b = &Bed3{
 		Chrom:      string(f[chromField]),
-		ChromStart: mustAtoi(f[startField]),
-		ChromEnd:   mustAtoi(f[endField]),
+		ChromStart: mustAtoi(f[startField], startField),
+		ChromEnd:   mustAtoi(f[endField], endField),
 	}
 	return
 }
@@ -218,8 +216,8 @@ func parseBed4(line []byte) (b *Bed4, err error) {
 	}
 	b = &Bed4{
 		Chrom:      string(f[chromField]),
-		ChromStart: mustAtoi(f[startField]),
-		ChromEnd:   mustAtoi(f[endField]),
+		ChromStart: mustAtoi(f[startField], startField),
+		ChromEnd:   mustAtoi(f[endField], endField),
 		FeatName:   string(f[nameField]),
 	}
 	return
@@ -251,10 +249,10 @@ func parseBed5(line []byte) (b *Bed5, err error) {
 	}
 	b = &Bed5{
 		Chrom:      string(f[chromField]),
-		ChromStart: mustAtoi(f[startField]),
-		ChromEnd:   mustAtoi(f[endField]),
+		ChromStart: mustAtoi(f[startField], startField),
+		ChromEnd:   mustAtoi(f[endField], endField),
 		FeatName:   string(f[nameField]),
-		FeatScore:  mustAtoi(f[scoreField]),
+		FeatScore:  mustAtoi(f[scoreField], scoreField),
 	}
 	return
 }
@@ -286,11 +284,11 @@ func parseBed6(line []byte) (b *Bed6, err error) {
 	}
 	b = &Bed6{
 		Chrom:      string(f[chromField]),
-		ChromStart: mustAtoi(f[startField]),
-		ChromEnd:   mustAtoi(f[endField]),
+		ChromStart: mustAtoi(f[startField], startField),
+		ChromEnd:   mustAtoi(f[endField], endField),
 		FeatName:   string(f[nameField]),
-		FeatScore:  mustAtoi(f[scoreField]),
-		FeatStrand: mustAtos(f[strandField]),
+		FeatScore:  mustAtoi(f[scoreField], scoreField),
+		FeatStrand: mustAtos(f[strandField], strandField),
 	}
 	return
 }
@@ -329,17 +327,17 @@ func parseBed12(line []byte) (b *Bed12, err error) {
 	}
 	b = &Bed12{
 		Chrom:       string(f[chromField]),
-		ChromStart:  mustAtoi(f[startField]),
-		ChromEnd:    mustAtoi(f[endField]),
+		ChromStart:  mustAtoi(f[startField], startField),
+		ChromEnd:    mustAtoi(f[endField], endField),
 		FeatName:    string(f[nameField]),
-		FeatScore:   mustAtoi(f[scoreField]),
-		FeatStrand:  mustAtos(f[strandField]),
-		ThickStart:  mustAtoi(f[thickStartField]),
-		ThickEnd:    mustAtoi(f[thickEndField]),
-		Rgb:         mustAtoRgb(f[rgbField]),
-		BlockCount:  mustAtoi(f[blockCountField]),
-		BlockSizes:  mustAtoa(f[blockSizesField]),
-		BlockStarts: mustAtoa(f[blockStartsField]),
+		FeatScore:   mustAtoi(f[scoreField], scoreField),
+		FeatStrand:  mustAtos(f[strandField], strandField),
+		ThickStart:  mustAtoi(f[thickStartField], thickStartField),
+		ThickEnd:    mustAtoi(f[thickEndField], thickEndField),
+		Rgb:         mustAtoRgb(f[rgbField], rgbField),
+		BlockCount:  mustAtoi(f[blockCountField], blockCountField),
+		BlockSizes:  mustAtoa(f[blockSizesField], blockSizesField),
+		BlockStarts: mustAtoa(f[blockStartsField], blockStartsField),
 	}
 	if b.BlockCount != len(b.BlockSizes) || b.BlockCount != len(b.BlockStarts) {
 		return nil, ErrMissingBlockValues
@@ -365,11 +363,16 @@ type Reader struct {
 }
 
 // Returns a new BED format reader using r.
-func NewReader(r io.Reader, b int) *Reader {
+func NewReader(r io.Reader, b int) (*Reader, error) {
+	switch b {
+	case 3, 4, 5, 6, 12:
+	default:
+		return nil, ErrBadBedType
+	}
 	return &Reader{
 		r:       bufio.NewReader(r),
 		BedType: b,
-	}
+	}, nil
 }
 
 // Read a single feature and return it or an error.
@@ -392,8 +395,14 @@ func (r *Reader) Read() (f feat.Feature, err error) {
 		f, err = parseBed6(line)
 	case 12:
 		f, err = parseBed12(line)
+	default:
+		return nil, ErrBadBedType
 	}
 	if err != nil {
+		if err, ok := err.(*csv.ParseError); ok {
+			err.Line = r.line
+			return nil, err
+		}
 		return nil, fmt.Errorf("%v at line %d", err, r.line)
 	}
 
@@ -469,11 +478,16 @@ type Writer struct {
 }
 
 // Returns a new BED format writer using w.
-func NewWriter(w io.Writer, b int) *Writer {
+func NewWriter(w io.Writer, b int) (*Writer, error) {
+	switch b {
+	case 3, 4, 5, 6, 12:
+	default:
+		return nil, ErrBadBedType
+	}
 	return &Writer{
 		w:       w,
 		BedType: b,
-	}
+	}, nil
 }
 
 type Scorer interface {

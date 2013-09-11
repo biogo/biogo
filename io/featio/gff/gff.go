@@ -18,6 +18,7 @@ import (
 
 	"bufio"
 	"bytes"
+	"encoding/csv"
 	"fmt"
 	"io"
 	"math"
@@ -224,9 +225,7 @@ func handlePanic(f feat.Feature, err *error) {
 			panic(r)
 		}
 		*err = e
-		if f != nil {
-			f = nil
-		}
+		f = nil
 	}
 }
 
@@ -235,32 +234,32 @@ func unsafeString(b []byte) string {
 	return *(*string)(unsafe.Pointer(&b))
 }
 
-func mustAtoi(f []byte) int {
-	i, err := strconv.ParseInt(unsafeString(f), 0, 0)
+func mustAtoi(f [][]byte, index, line int) int {
+	i, err := strconv.ParseInt(unsafeString(f[index]), 0, 0)
 	if err != nil {
-		panic(err)
+		panic(&csv.ParseError{Line: line, Column: index, Err: err})
 	}
 	return int(i)
 }
 
-func mustAtofPtr(f []byte) *float64 {
-	if len(f) == 1 && f[0] == '.' {
+func mustAtofPtr(f [][]byte, index, line int) *float64 {
+	if len(f[index]) == 1 && f[index][0] == '.' {
 		return nil
 	}
-	i, err := strconv.ParseFloat(unsafeString(f), 64)
+	i, err := strconv.ParseFloat(unsafeString(f[index]), 64)
 	if err != nil {
-		panic(err)
+		panic(&csv.ParseError{Line: line, Column: index, Err: err})
 	}
 	return &i
 }
 
-func mustAtoFr(f []byte) Frame {
-	if len(f) == 1 && f[0] == '.' {
+func mustAtoFr(f [][]byte, index, line int) Frame {
+	if len(f[index]) == 1 && f[index][0] == '.' {
 		return NoFrame
 	}
-	b, err := strconv.ParseInt(unsafeString(f), 0, 8)
+	b, err := strconv.ParseInt(unsafeString(f[index]), 0, 8)
 	if err != nil {
-		panic(err)
+		panic(&csv.ParseError{Line: line, Column: index, Err: err})
 	}
 	return Frame(b)
 }
@@ -276,13 +275,13 @@ var charToStrand = func() [256]seq.Strand {
 	return t
 }()
 
-func mustAtos(f []byte) seq.Strand {
-	if len(f) != 1 {
-		panic(ErrBadStrandField)
+func mustAtos(f [][]byte, index, line int) seq.Strand {
+	if len(f[index]) != 1 {
+		panic(&csv.ParseError{Line: line, Column: index, Err: ErrBadStrandField})
 	}
-	s := charToStrand[f[0]]
+	s := charToStrand[f[index][0]]
 	if s == 0x7f {
-		panic(ErrBadStrand)
+		panic(&csv.ParseError{Line: line, Column: index, Err: ErrBadStrand})
 	}
 	return s
 }
@@ -299,7 +298,7 @@ var alphaNum = func() [256]bool {
 	return t
 }()
 
-func splitAnnot(f []byte) (tag, value []byte) {
+func splitAnnot(f []byte, column, line int) (tag, value []byte) {
 	var (
 		i     int
 		b     byte
@@ -309,7 +308,7 @@ func splitAnnot(f []byte) (tag, value []byte) {
 		space := unicode.IsSpace(rune(b))
 		if !split {
 			if !space && !alphaNum[b] {
-				panic(ErrBadTag)
+				panic(&csv.ParseError{Line: line, Column: column, Err: ErrBadTag})
 			}
 			if space {
 				split = true
@@ -325,17 +324,17 @@ func splitAnnot(f []byte) (tag, value []byte) {
 	return tag, f[i:]
 }
 
-func mustAtoa(f []byte) []Attribute {
-	c := bytes.Split(f, []byte{';'})
+func mustAtoa(f [][]byte, index, line int) []Attribute {
+	c := bytes.Split(f[index], []byte{';'})
 	a := make([]Attribute, 0, len(c))
 	for _, f := range c {
 		f = bytes.TrimSpace(f)
 		if len(f) == 0 {
 			continue
 		}
-		tag, value := splitAnnot(f)
+		tag, value := splitAnnot(f, index, line)
 		if len(tag) == 0 {
-			panic(ErrBadTag)
+			panic(&csv.ParseError{Line: line, Column: index, Err: ErrBadTag})
 		} else {
 			a = append(a, Attribute{Tag: string(tag), Value: string(value)})
 		}
@@ -353,7 +352,9 @@ type Metadata struct {
 
 // A Reader can parse GFFv2 formatted io.Reader and return feat.Features.
 type Reader struct {
-	r          *bufio.Reader
+	r    *bufio.Reader
+	line int
+
 	TimeFormat string // Required for parsing date fields. Defaults to astronomical format.
 
 	Metadata
@@ -375,7 +376,7 @@ func (r *Reader) commentMetaline(line []byte) (f feat.Feature, err error) {
 	}
 	switch unsafeString(fields[0]) {
 	case "gff-version":
-		v := mustAtoi(fields[1])
+		v := mustAtoi(fields, 1, r.line)
 		if v > Version {
 			return nil, ErrNotHandled
 		}
@@ -413,8 +414,8 @@ func (r *Reader) commentMetaline(line []byte) (f feat.Feature, err error) {
 		}
 		return &Region{
 			Sequence:    Sequence{SeqName: string(fields[1]), Type: r.Type},
-			RegionStart: feat.OneToZero(mustAtoi(fields[2])),
-			RegionEnd:   mustAtoi(fields[3]),
+			RegionStart: feat.OneToZero(mustAtoi(fields, 2, r.line)),
+			RegionEnd:   mustAtoi(fields, 3, r.line),
 		}, nil
 	case "DNA", "RNA", "Protein", "dna", "rna", "protein":
 		if len(fields) <= 1 {
@@ -435,6 +436,7 @@ func (r *Reader) metaSeq(moltype, id []byte) (seq.Sequence, error) {
 		if err != nil {
 			return nil, err
 		}
+		r.line++
 		line = bytes.TrimSpace(line)
 		if len(line) == 0 {
 			continue
@@ -478,6 +480,7 @@ func (r *Reader) Read() (f feat.Feature, err error) {
 		if err != nil {
 			return
 		}
+		r.line++
 		line = bytes.TrimSpace(line)
 		if len(line) == 0 { // ignore blank lines
 			continue
@@ -498,17 +501,17 @@ func (r *Reader) Read() (f feat.Feature, err error) {
 		SeqName:    string(fields[nameField]),
 		Source:     string(fields[sourceField]),
 		Feature:    string(fields[featureField]),
-		FeatStart:  feat.OneToZero(mustAtoi(fields[startField])),
-		FeatEnd:    mustAtoi(fields[endField]),
-		FeatScore:  mustAtofPtr(fields[scoreField]),
-		FeatStrand: mustAtos(fields[strandField]),
-		FeatFrame:  mustAtoFr(fields[frameField]),
+		FeatStart:  feat.OneToZero(mustAtoi(fields, startField, r.line)),
+		FeatEnd:    mustAtoi(fields, endField, r.line),
+		FeatScore:  mustAtofPtr(fields, scoreField, r.line),
+		FeatStrand: mustAtos(fields, strandField, r.line),
+		FeatFrame:  mustAtoFr(fields, frameField, r.line),
 	}
 
 	if len(fields) <= attributeField {
 		return gff, nil
 	}
-	gff.FeatAttributes = mustAtoa(fields[attributeField])
+	gff.FeatAttributes = mustAtoa(fields, attributeField, r.line)
 	if len(fields) <= commentField {
 		return gff, nil
 	}

@@ -127,7 +127,8 @@ func (s *S) TestReadBed(c *check.C) {
 	for i, b := range bedTests {
 		for j, typ := range validBeds {
 			buf := strings.NewReader(b.line)
-			r := NewReader(buf, typ)
+			r, err := NewReader(buf, typ)
+			c.Assert(err, check.Equals, nil)
 			f, err := r.Read()
 			if typ <= b.fields {
 				c.Check(f, check.DeepEquals, b.beds[j], check.Commentf("Test: %d type: Bed%d", i, typ))
@@ -144,7 +145,8 @@ func (s *S) TestWriteBed(c *check.C) {
 	for i, b := range bedTests {
 		for _, typ := range validBeds {
 			buf := &bytes.Buffer{}
-			w := NewWriter(buf, typ)
+			w, err := NewWriter(buf, typ)
+			c.Assert(err, check.Equals, nil)
 			n, err := w.Write(b.beds[len(b.beds)-1])
 			c.Check(n, check.Equals, buf.Len())
 			if typ <= b.fields {
@@ -317,7 +319,8 @@ func (s *S) TestWriteFeature(c *check.C) {
 		},
 	} {
 		buf := &bytes.Buffer{}
-		w := NewWriter(buf, f.typ)
+		w, err := NewWriter(buf, f.typ)
+		c.Assert(err, check.Equals, nil)
 		n, err := w.Write(f.feat)
 		c.Check(n, check.Equals, buf.Len())
 		c.Check(err, check.Equals, f.err)
