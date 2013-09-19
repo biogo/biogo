@@ -48,11 +48,11 @@ type Scanner struct {
 // NewScanner returns a Scanner to read from r.
 func NewScanner(r Reader) *Scanner { return &Scanner{r: r} }
 
-// Scan advances the Scanner past the next sequence, which will then be available through
+// Next advances the Scanner past the next sequence, which will then be available through
 // the Seq method. It returns false when the scan stops, either by reaching the end of the
-// input or an error. After Scan returns false, the Err method will return any error that
+// input or an error. After Next returns false, the Err method will return any error that
 // occurred during scanning, except that if it was io.EOF, Err will return nil.
-func (s *Scanner) Scan() bool {
+func (s *Scanner) Next() bool {
 	if s.err != nil {
 		return false
 	}
@@ -68,5 +68,5 @@ func (s *Scanner) Error() error {
 	return s.err
 }
 
-// Seq returns the most recent sequence read by a call to Scan.
+// Seq returns the most recent sequence read by a call to Next.
 func (s *Scanner) Seq() seq.Sequence { return s.seq }

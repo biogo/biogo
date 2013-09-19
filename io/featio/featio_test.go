@@ -56,7 +56,7 @@ SEQ2	grail	ATG	17	19	2.1	-	0
 		)
 
 		var j int
-		for sc.Scan() {
+		for sc.Next() {
 			f := sc.Feat()
 			c.Check(f, check.DeepEquals, g.feat[j], check.Commentf("Test: %d Line: %d", i, j+1))
 			j++

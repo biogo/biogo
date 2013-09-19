@@ -164,7 +164,7 @@ func (s *S) TestReadFasta(c *check.C) {
 			linear.NewSeq("", nil, alphabet.Protein),
 		),
 	)
-	for sc.Scan() {
+	for sc.Next() {
 		t := sc.Seq().(*linear.Seq)
 		header := t.Name()
 		if desc := t.Description(); len(desc) > 0 {
@@ -402,7 +402,7 @@ func (s *S) TestReadFastq(c *check.C) {
 			linear.NewQSeq("", nil, alphabet.DNA, alphabet.Sanger),
 		),
 	)
-	for sc.Scan() {
+	for sc.Next() {
 		t := sc.Seq().(*linear.QSeq)
 		header := t.Name()
 		if desc := t.Description(); len(desc) > 0 {
