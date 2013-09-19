@@ -39,6 +39,13 @@ type Scanner struct {
 // NewScanner returns a Scanner to read from r.
 func NewScanner(r Reader) *Scanner { return &Scanner{r: r} }
 
+type funcReader func() (feat.Feature, error)
+
+func (f funcReader) Read() (feat.Feature, error) { return f() }
+
+// NewScannerFromFunc returns a Scanner to read features returned by calls to f.
+func NewScannerFromFunc(f func() (feat.Feature, error)) *Scanner { return &Scanner{r: funcReader(f)} }
+
 // Next advances the Scanner past the next feature, which will then be available through
 // the Feat method. It returns false when the scan stops, either by reaching the end of the
 // input or an error. After Next returns false, the Err method will return any error that

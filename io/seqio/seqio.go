@@ -48,6 +48,13 @@ type Scanner struct {
 // NewScanner returns a Scanner to read from r.
 func NewScanner(r Reader) *Scanner { return &Scanner{r: r} }
 
+type funcReader func() (seq.Sequence, error)
+
+func (f funcReader) Read() (seq.Sequence, error) { return f() }
+
+// NewScannerFromFunc returns a Scanner to read sequences returned by calls to f.
+func NewScannerFromFunc(f func() (seq.Sequence, error)) *Scanner { return &Scanner{r: funcReader(f)} }
+
 // Next advances the Scanner past the next sequence, which will then be available through
 // the Seq method. It returns false when the scan stops, either by reaching the end of the
 // input or an error. After Next returns false, the Err method will return any error that

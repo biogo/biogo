@@ -181,6 +181,35 @@ func (s *S) TestReadFasta(c *check.C) {
 	}
 }
 
+func (s *S) TestReadFromFunc(c *check.C) {
+	var (
+		obtainNfa []string
+		obtainSfa [][]alphabet.Letter
+	)
+
+	sc := seqio.NewScannerFromFunc(
+		fasta.NewReader(
+			bytes.NewBufferString(testaln0),
+			linear.NewSeq("", nil, alphabet.Protein),
+		).Read,
+	)
+	for sc.Next() {
+		t := sc.Seq().(*linear.Seq)
+		header := t.Name()
+		if desc := t.Description(); len(desc) > 0 {
+			header += " " + desc
+		}
+		obtainNfa = append(obtainNfa, header)
+		obtainSfa = append(obtainSfa, t.Slice().(alphabet.Letters))
+	}
+	c.Check(sc.Error(), check.Equals, nil)
+	c.Check(obtainNfa, check.DeepEquals, expectNfa)
+	for i := range obtainSfa {
+		c.Check(len(obtainSfa[i]), check.Equals, len(expectSfa[i]))
+		c.Check(obtainSfa[i], check.DeepEquals, expectSfa[i])
+	}
+}
+
 // Helper
 func constructQL(l [][]alphabet.Letter, q [][]alphabet.Qphred) (ql [][]alphabet.QLetter) {
 	if len(l) != len(q) {
