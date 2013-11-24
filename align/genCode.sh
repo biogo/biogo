@@ -18,8 +18,8 @@ echo -e $WARNING\
 cat < sw_type.got \
 | gofmt -r 'alignType -> alignQLetters' \
 | gofmt -r 'Type -> alphabet.QLetters' \
-| gofmt -r 'rSeq[i-1] -> rSeq[i-1].L' \
-| gofmt -r 'qSeq[i-1] -> qSeq[i-1].L' \
+| gofmt -r 'rSeq[i] -> rSeq[i].L' \
+| gofmt -r 'qSeq[i] -> qSeq[i].L' \
 >> sw_qletters.go
 
 echo -e $WARNING\
@@ -27,6 +27,7 @@ echo -e $WARNING\
 cat < nw_type.got \
 | gofmt -r 'alignType -> alignLetters' \
 | gofmt -r 'Type -> alphabet.Letters' \
+| gofmt -r 'drawNWTableType -> drawNWTableLetters' \
 >> nw_letters.go
 
 echo -e $WARNING\
@@ -34,8 +35,9 @@ echo -e $WARNING\
 cat < nw_type.got \
 | gofmt -r 'alignType -> alignQLetters' \
 | gofmt -r 'Type -> alphabet.QLetters' \
-| gofmt -r 'rSeq[i-1] -> rSeq[i-1].L' \
-| gofmt -r 'qSeq[i-1] -> qSeq[i-1].L' \
+| gofmt -r 'drawNWTableType -> drawNWTableQLetters' \
+| gofmt -r 'rSeq[i] -> rSeq[i].L' \
+| gofmt -r 'qSeq[i] -> qSeq[i].L' \
 >> nw_qletters.go
 
 #echo -e $WARNING\

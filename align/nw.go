@@ -9,6 +9,9 @@ import (
 	"code.google.com/p/biogo/feat"
 )
 
+// Setting debugNeedle to true gives verbose scoring table output for the dynamic programming.
+const debugNeedle = false
+
 // NW is the linear gap penalty Needleman-Wunsch aligner type.
 type NW Linear
 

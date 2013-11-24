@@ -9,7 +9,36 @@ package align
 import (
 	"code.google.com/p/biogo/alphabet"
 	"code.google.com/p/biogo/feat"
+
+	"fmt"
+	"os"
+	"text/tabwriter"
 )
+
+func drawNWTableLetters(rSeq, qSeq alphabet.Letters, table [][]int) {
+	tw := tabwriter.NewWriter(os.Stdout, 0, 0, 0, ' ', tabwriter.AlignRight|tabwriter.Debug)
+	fmt.Printf("rSeq: %s\n", rSeq)
+	fmt.Printf("qSeq: %s\n", qSeq)
+	fmt.Fprint(tw, "\tqSeq\t")
+	for _, l := range qSeq {
+		fmt.Fprintf(tw, "%c\t", l)
+	}
+	fmt.Fprintln(tw)
+
+	for i, row := range table {
+		if i == 0 {
+			fmt.Fprint(tw, "rSeq\t")
+		} else {
+			fmt.Fprintf(tw, "%c\t", rSeq[i-1])
+		}
+
+		for _, e := range row {
+			fmt.Fprintf(tw, "%2v\t", e)
+		}
+		fmt.Fprintln(tw)
+	}
+	tw.Flush()
+}
 
 func (a NW) alignLetters(rSeq, qSeq alphabet.Letters, alpha alphabet.Alphabet) ([]feat.Pair, error) {
 	gap := len(a) - 1
@@ -18,17 +47,23 @@ func (a NW) alignLetters(rSeq, qSeq alphabet.Letters, alpha alphabet.Alphabet) (
 			return nil, ErrMatrixNotSquare
 		}
 	}
+
+	index := alpha.LetterIndex()
 	r, c := rSeq.Len()+1, qSeq.Len()+1
 	table := make([][]int, r)
 	for i := range table {
-		table[i] = make([]int, c)
+		row := make([]int, c)
+		if i == 0 {
+			for j := range row[1:] {
+				row[j+1] = row[j] + a[gap][index[qSeq[j]]]
+			}
+		} else {
+			row[0] = table[i-1][0] + a[index[rSeq[i-1]]][gap]
+		}
+		table[i] = row
 	}
 
-	var (
-		index  = alpha.LetterIndex()
-		scores [3]int
-	)
-
+	var scores [3]int
 	for i := 1; i < r; i++ {
 		for j := 1; j < c; j++ {
 			var (
@@ -42,6 +77,9 @@ func (a NW) alignLetters(rSeq, qSeq alphabet.Letters, alpha alphabet.Alphabet) (
 				scores[up] = table[i-1][j] + a[rVal][gap]
 				scores[left] = table[i][j-1] + a[gap][qVal]
 				table[i][j] = max(&scores)
+				if debugNeedle {
+					drawNWTableLetters(rSeq, qSeq, table)
+				}
 			}
 		}
 	}
@@ -117,7 +155,7 @@ func (a NW) alignLetters(rSeq, qSeq alphabet.Letters, alpha alphabet.Alphabet) (
 		aln = append(aln, &featPair{
 			a:     feature{start: 0, end: i},
 			b:     feature{start: 0, end: j},
-			score: score,
+			score: table[i][j],
 		})
 	}
 
