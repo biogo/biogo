@@ -9,6 +9,9 @@ import (
 	"code.google.com/p/biogo/feat"
 )
 
+// Setting debugSmith to true gives verbose scoring table output for the dynamic programming.
+const debugSmith = false
+
 // SW is the Smith-Waterman aligner type.
 // Matrix is a square scoring matrix with the last column and last row specifying gap penalties.
 // Currently gap opening is not considered.

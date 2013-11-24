@@ -9,7 +9,36 @@ package align
 import (
 	"code.google.com/p/biogo/alphabet"
 	"code.google.com/p/biogo/feat"
+
+	"fmt"
+	"os"
+	"text/tabwriter"
 )
+
+func drawSWTableLetters(rSeq, qSeq alphabet.Letters, table [][]int) {
+	tw := tabwriter.NewWriter(os.Stdout, 0, 0, 0, ' ', tabwriter.AlignRight|tabwriter.Debug)
+	fmt.Printf("rSeq: %s\n", rSeq)
+	fmt.Printf("qSeq: %s\n", qSeq)
+	fmt.Fprint(tw, "\tqSeq\t")
+	for _, l := range qSeq {
+		fmt.Fprintf(tw, "%c\t", l)
+	}
+	fmt.Fprintln(tw)
+
+	for i, row := range table {
+		if i == 0 {
+			fmt.Fprint(tw, "rSeq\t")
+		} else {
+			fmt.Fprintf(tw, "%c\t", rSeq[i-1])
+		}
+
+		for _, e := range row {
+			fmt.Fprintf(tw, "%2v\t", e)
+		}
+		fmt.Fprintln(tw)
+	}
+	tw.Flush()
+}
 
 func (a SW) alignLetters(rSeq, qSeq alphabet.Letters, alpha alphabet.Alphabet) ([]feat.Pair, error) {
 	gap := len(a) - 1
@@ -53,6 +82,9 @@ func (a SW) alignLetters(rSeq, qSeq alphabet.Letters, alpha alphabet.Alphabet) (
 					maxS, maxI, maxJ = score, i, j
 				}
 				table[i][j] = score
+				if debugSmith {
+					drawSWTableLetters(rSeq, qSeq, table)
+				}
 			}
 		}
 	}
