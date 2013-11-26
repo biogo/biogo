@@ -12,6 +12,7 @@ cat < sw_type.got \
 | gofmt -r 'alignType -> alignLetters' \
 | gofmt -r 'Type -> alphabet.Letters' \
 | gofmt -r 'drawSWTableType -> drawSWTableLetters' \
+| gofmt -r 'pointerSWRuneType -> pointerSWRuneLetters' \
 >> sw_letters.go
 
 echo -e $WARNING\
@@ -20,6 +21,7 @@ cat < sw_type.got \
 | gofmt -r 'alignType -> alignQLetters' \
 | gofmt -r 'Type -> alphabet.QLetters' \
 | gofmt -r 'drawSWTableType -> drawSWTableQLetters' \
+| gofmt -r 'pointerSWRuneType -> pointerSWRuneQLetters' \
 | gofmt -r 'rSeq[i] -> rSeq[i].L' \
 | gofmt -r 'qSeq[i] -> qSeq[i].L' \
 >> sw_qletters.go
@@ -30,6 +32,7 @@ cat < nw_type.got \
 | gofmt -r 'alignType -> alignLetters' \
 | gofmt -r 'Type -> alphabet.Letters' \
 | gofmt -r 'drawNWTableType -> drawNWTableLetters' \
+| gofmt -r 'pointerNWRuneType -> pointerNWRuneLetters' \
 >> nw_letters.go
 
 echo -e $WARNING\
@@ -38,6 +41,7 @@ cat < nw_type.got \
 | gofmt -r 'alignType -> alignQLetters' \
 | gofmt -r 'Type -> alphabet.QLetters' \
 | gofmt -r 'drawNWTableType -> drawNWTableQLetters' \
+| gofmt -r 'pointerNWRuneType -> pointerNWRuneQLetters' \
 | gofmt -r 'rSeq[i] -> rSeq[i].L' \
 | gofmt -r 'qSeq[i] -> qSeq[i].L' \
 >> nw_qletters.go

@@ -15,7 +15,8 @@ import (
 	"text/tabwriter"
 )
 
-func drawNWTableLetters(rSeq, qSeq alphabet.Letters, table [][]int) {
+//line nw_type.got:17
+func drawNWTableLetters(rSeq, qSeq alphabet.Letters, index alphabet.Index, table []int, a [][]int) {
 	tw := tabwriter.NewWriter(os.Stdout, 0, 0, 0, ' ', tabwriter.AlignRight|tabwriter.Debug)
 	fmt.Printf("rSeq: %s\n", rSeq)
 	fmt.Printf("qSeq: %s\n", qSeq)
@@ -25,19 +26,53 @@ func drawNWTableLetters(rSeq, qSeq alphabet.Letters, table [][]int) {
 	}
 	fmt.Fprintln(tw)
 
-	for i, row := range table {
-		if i == 0 {
-			fmt.Fprint(tw, "rSeq\t")
-		} else {
+	r, c := rSeq.Len()+1, qSeq.Len()+1
+	fmt.Fprint(tw, "rSeq\t")
+	for i := 0; i < r; i++ {
+		if i != 0 {
 			fmt.Fprintf(tw, "%c\t", rSeq[i-1])
 		}
 
-		for _, e := range row {
-			fmt.Fprintf(tw, "%2v\t", e)
+		for j := 0; j < c; j++ {
+			pr := pointerNWRuneLetters(rSeq, qSeq, i, j, table, index, a, c)
+			if pr != ' ' {
+				fmt.Fprintf(tw, "%c % 3v\t", pr, table[i*c+j])
+			} else {
+				fmt.Fprintf(tw, "%v\t", table[i*c+j])
+			}
 		}
 		fmt.Fprintln(tw)
 	}
 	tw.Flush()
+}
+
+func pointerNWRuneLetters(rSeq, qSeq alphabet.Letters, i, j int, table []int, index alphabet.Index, a [][]int, c int) rune {
+	switch {
+	case i == 0 && j == 0:
+		return ' '
+	case i == 0:
+		return '⬅'
+	case j == 0:
+		return '⬆'
+	}
+	rVal := index[rSeq[i-1]]
+	qVal := index[qSeq[j-1]]
+	if rVal < 0 || qVal < 0 {
+		return ' '
+	} else {
+		p := i*c + j
+		gap := len(a) - 1
+		switch table[p] {
+		case table[p-c-1] + a[rVal][qVal]:
+			return '⬉'
+		case table[p-c] + a[rVal][gap]:
+			return '⬆'
+		case table[p-1] + a[gap][qVal]:
+			return '⬅'
+		default:
+			return ' '
+		}
+	}
 }
 
 func (a NW) alignLetters(rSeq, qSeq alphabet.Letters, alpha alphabet.Alphabet) ([]feat.Pair, error) {
@@ -50,17 +85,12 @@ func (a NW) alignLetters(rSeq, qSeq alphabet.Letters, alpha alphabet.Alphabet) (
 
 	index := alpha.LetterIndex()
 	r, c := rSeq.Len()+1, qSeq.Len()+1
-	table := make([][]int, r)
-	for i := range table {
-		row := make([]int, c)
-		if i == 0 {
-			for j := range row[1:] {
-				row[j+1] = row[j] + a[gap][index[qSeq[j]]]
-			}
-		} else {
-			row[0] = table[i-1][0] + a[index[rSeq[i-1]]][gap]
-		}
-		table[i] = row
+	table := make([]int, r*c)
+	for j := range table[1:c] {
+		table[j+1] = table[j] + a[gap][index[qSeq[j]]]
+	}
+	for i := 1; i < r; i++ {
+		table[i*c] = table[(i-1)*c] + a[index[rSeq[i-1]]][gap]
 	}
 
 	var scores [3]int
@@ -73,15 +103,18 @@ func (a NW) alignLetters(rSeq, qSeq alphabet.Letters, alpha alphabet.Alphabet) (
 			if rVal < 0 || qVal < 0 {
 				continue
 			} else {
-				scores[diag] = table[i-1][j-1] + a[rVal][qVal]
-				scores[up] = table[i-1][j] + a[rVal][gap]
-				scores[left] = table[i][j-1] + a[gap][qVal]
-				table[i][j] = max(&scores)
-				if debugNeedle {
-					drawNWTableLetters(rSeq, qSeq, table)
+				p := i*c + j
+				scores = [3]int{
+					diag: table[p-c-1] + a[rVal][qVal],
+					up:   table[p-c] + a[rVal][gap],
+					left: table[p-1] + a[gap][qVal],
 				}
+				table[p] = max(&scores)
 			}
 		}
+	}
+	if debugNeedle {
+		drawNWTableLetters(rSeq, qSeq, index, table, a)
 	}
 
 	var aln []feat.Pair
@@ -96,8 +129,9 @@ func (a NW) alignLetters(rSeq, qSeq alphabet.Letters, alpha alphabet.Alphabet) (
 		if rVal < 0 || qVal < 0 {
 			continue
 		} else {
-			switch table[i][j] {
-			case table[i-1][j-1] + a[rVal][qVal]:
+			p := i*c + j
+			switch table[p] {
+			case table[p-c-1] + a[rVal][qVal]:
 				if last != diag {
 					aln = append(aln, &featPair{
 						a:     feature{start: i, end: maxI},
@@ -107,19 +141,11 @@ func (a NW) alignLetters(rSeq, qSeq alphabet.Letters, alpha alphabet.Alphabet) (
 					maxI, maxJ = i, j
 					score = 0
 				}
-				score += table[i][j] - table[i-1][j-1]
+				score += table[p] - table[p-c-1]
 				i--
 				j--
-				if i == 0 || j == 0 {
-					aln = append(aln, &featPair{
-						a:     feature{start: i, end: maxI},
-						b:     feature{start: j, end: maxJ},
-						score: score,
-					})
-					score = 0
-				}
 				last = diag
-			case table[i-1][j] + a[rVal][gap]:
+			case table[p-c] + a[rVal][gap]:
 				if last != up {
 					aln = append(aln, &featPair{
 						a:     feature{start: i, end: maxI},
@@ -129,10 +155,10 @@ func (a NW) alignLetters(rSeq, qSeq alphabet.Letters, alpha alphabet.Alphabet) (
 					maxI, maxJ = i, j
 					score = 0
 				}
-				score += table[i][j] - table[i-1][j]
+				score += table[p] - table[p-c]
 				i--
 				last = up
-			case table[i][j-1] + a[gap][qVal]:
+			case table[p-1] + a[gap][qVal]:
 				if last != left {
 					aln = append(aln, &featPair{
 						a:     feature{start: i, end: maxI},
@@ -142,18 +168,27 @@ func (a NW) alignLetters(rSeq, qSeq alphabet.Letters, alpha alphabet.Alphabet) (
 					maxI, maxJ = i, j
 					score = 0
 				}
-				score += table[i][j] - table[i][j-1]
+				score += table[p] - table[p-1]
 				j--
 				last = left
+			default:
+				panic(fmt.Sprintf("align: nw internal error: no path at row: %d col:%d\n", i, j))
 			}
 		}
 	}
 
+	if i == 0 || j == 0 {
+		aln = append(aln, &featPair{
+			a:     feature{start: i, end: maxI},
+			b:     feature{start: j, end: maxJ},
+			score: score,
+		})
+	}
 	if i != j {
 		aln = append(aln, &featPair{
 			a:     feature{start: 0, end: i},
 			b:     feature{start: 0, end: j},
-			score: table[i][j],
+			score: table[i*c+j],
 		})
 	}
 
