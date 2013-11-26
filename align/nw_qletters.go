@@ -177,13 +177,11 @@ func (a NW) alignQLetters(rSeq, qSeq alphabet.QLetters, alpha alphabet.Alphabet)
 		}
 	}
 
-	if i == 0 || j == 0 {
-		aln = append(aln, &featPair{
-			a:     feature{start: i, end: maxI},
-			b:     feature{start: j, end: maxJ},
-			score: score,
-		})
-	}
+	aln = append(aln, &featPair{
+		a:     feature{start: i, end: maxI},
+		b:     feature{start: j, end: maxJ},
+		score: score,
+	})
 	if i != j {
 		aln = append(aln, &featPair{
 			a:     feature{start: 0, end: i},
