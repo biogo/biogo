@@ -67,30 +67,6 @@ func max(a *[3]int) int {
 	return m
 }
 
-func maxIndex(a *[3]int) (d int) {
-	m := minInt
-	for i, v := range a {
-		if v > m {
-			m = v
-			d = i
-		}
-	}
-	return
-}
-
-func maxAffineIndex(a *[3][3]int) (d, l int) {
-	m := minInt
-	for i := range a {
-		for j, v := range a[i] {
-			if v > m {
-				m = v
-				l, d = i, j
-			}
-		}
-	}
-	return
-}
-
 type feature struct {
 	start, end int
 	loc        feat.Feature

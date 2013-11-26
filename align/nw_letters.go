@@ -96,12 +96,8 @@ func (a NW) alignLetters(rSeq, qSeq alphabet.Letters, alpha alphabet.Alphabet) (
 		if rVal < 0 || qVal < 0 {
 			continue
 		} else {
-			scores[diag] = table[i-1][j-1] + a[rVal][qVal]
-			scores[up] = table[i-1][j] + a[gap][qVal]
-			scores[left] = table[i][j-1] + a[rVal][gap]
-			var d int
-			switch d = maxIndex(&scores); d {
-			case diag:
+			switch table[i][j] {
+			case table[i-1][j-1] + a[rVal][qVal]:
 				if last != diag {
 					aln = append(aln, &featPair{
 						a:     feature{start: i, end: maxI},
@@ -122,7 +118,8 @@ func (a NW) alignLetters(rSeq, qSeq alphabet.Letters, alpha alphabet.Alphabet) (
 					})
 					score = 0
 				}
-			case up:
+				last = diag
+			case table[i-1][j] + a[rVal][gap]:
 				if last != up {
 					aln = append(aln, &featPair{
 						a:     feature{start: i, end: maxI},
@@ -134,7 +131,8 @@ func (a NW) alignLetters(rSeq, qSeq alphabet.Letters, alpha alphabet.Alphabet) (
 				}
 				score += table[i][j] - table[i-1][j]
 				i--
-			case left:
+				last = up
+			case table[i][j-1] + a[gap][qVal]:
 				if last != left {
 					aln = append(aln, &featPair{
 						a:     feature{start: i, end: maxI},
@@ -146,8 +144,8 @@ func (a NW) alignLetters(rSeq, qSeq alphabet.Letters, alpha alphabet.Alphabet) (
 				}
 				score += table[i][j] - table[i][j-1]
 				j--
+				last = left
 			}
-			last = d
 		}
 	}
 
