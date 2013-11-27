@@ -146,7 +146,7 @@ func (a NW) alignQLetters(rSeq, qSeq alphabet.QLetters, alpha alphabet.Alphabet)
 				j--
 				last = diag
 			case table[p-c] + a[rVal][gap]:
-				if last != up {
+				if last != up && p != len(table)-1 {
 					aln = append(aln, &featPair{
 						a:     feature{start: i, end: maxI},
 						b:     feature{start: j, end: maxJ},
@@ -159,7 +159,7 @@ func (a NW) alignQLetters(rSeq, qSeq alphabet.QLetters, alpha alphabet.Alphabet)
 				i--
 				last = up
 			case table[p-1] + a[gap][qVal]:
-				if last != left {
+				if last != left && p != len(table)-1 {
 					aln = append(aln, &featPair{
 						a:     feature{start: i, end: maxI},
 						b:     feature{start: j, end: maxJ},
