@@ -64,3 +64,28 @@ func BenchmarkNWAlign(b *testing.B) {
 		needle.Align(nwsa, nwsb)
 	}
 }
+
+func BenchmarkNWAffineAlign(b *testing.B) {
+	b.StopTimer()
+	t := &linear.Seq{}
+	t.Alpha = alphabet.DNA
+	r := fasta.NewReader(strings.NewReader(crspFa), t)
+	nwsa, _ := r.Read()
+	nwsb, _ := r.Read()
+
+	needle := NWAffine{
+		Matrix: Linear{
+			{10, -3, -1, -4, -5},
+			{-3, 9, -5, 0, -5},
+			{-1, -5, 7, -3, -5},
+			{-4, 0, -3, 8, -5},
+			{-4, -4, -4, -4, 0},
+		},
+		GapOpen: -10,
+	}
+
+	b.StartTimer()
+	for i := 0; i < b.N; i++ {
+		needle.Align(nwsa, nwsb)
+	}
+}
