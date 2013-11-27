@@ -68,3 +68,41 @@ func ExampleSW_Align_2() {
 	// AAAA---TTTAAAA
 	// AAAAGGG---AAAA
 }
+
+func ExampleSWAffine_Align() {
+	swsa := &linear.Seq{Seq: alphabet.BytesToLetters([]byte("ATAGGAAG"))}
+	swsa.Alpha = alphabet.DNA
+	swsb := &linear.Seq{Seq: alphabet.BytesToLetters([]byte("ATTGGCAATG"))}
+	swsb.Alpha = alphabet.DNA
+
+	//		   Query letter
+	//  	 A	 C	 G	 T	 -
+	// A	 1	-1	-1	-1	-1
+	// C	-1	 1	-1	 1	-1
+	// G	-1	-1	 1	-1	-1
+	// T	-1	 1	-1	 1	-1
+	// -	-1	-1	-1	-1	 0
+	//
+	// Gap open: -5
+	smith := SWAffine{
+		Matrix: Linear{
+			{1, -1, -1, -1, -1},
+			{-1, 1, -1, -1, -1},
+			{-1, -1, 1, -1, -1},
+			{-1, -1, -1, 1, -1},
+			{-1, -1, -1, -1, 0},
+		},
+		GapOpen: -5,
+	}
+
+	aln, err := smith.Align(swsa, swsb)
+	if err == nil {
+		fmt.Printf("%s\n", aln)
+		fa := Format(swsa, swsb, aln, '-')
+		fmt.Printf("%s\n%s\n", fa[0], fa[1])
+	}
+	// Output:
+	// [[0,7)/[0,7)=3]
+	// ATAGGAA
+	// ATTGGCA
+}

@@ -30,7 +30,6 @@ type Aligner interface {
 type Linear [][]int
 
 // An Affine is a basic affine gap penalty alignment description.
-// TODO
 type Affine struct {
 	Matrix  Linear
 	GapOpen int

@@ -47,6 +47,26 @@ cat < nw_type.got \
 >> nw_qletters.go
 
 echo -e $WARNING\
+> sw_affine_letters.go
+cat < sw_affine_type.got \
+| gofmt -r 'alignType -> alignLetters' \
+| gofmt -r 'Type -> alphabet.Letters' \
+| gofmt -r 'drawSWAffineTableType -> drawSWAffineTableLetters' \
+| gofmt -r 'pointerSWAffineRuneType -> pointerSWAffineRuneLetters' \
+>> sw_affine_letters.go
+
+echo -e $WARNING\
+> sw_affine_qletters.go
+cat < sw_affine_type.got \
+| gofmt -r 'alignType -> alignQLetters' \
+| gofmt -r 'Type -> alphabet.QLetters' \
+| gofmt -r 'drawSWAffineTableType -> drawSWAffineTableQLetters' \
+| gofmt -r 'pointerSWAffineRuneType -> pointerSWAffineRuneQLetters' \
+| gofmt -r 'rSeq[i] -> rSeq[i].L' \
+| gofmt -r 'qSeq[i] -> qSeq[i].L' \
+>> sw_affine_qletters.go
+
+echo -e $WARNING\
 > nw_affine_letters.go
 cat < nw_affine_type.got \
 | gofmt -r 'alignType -> alignLetters' \
