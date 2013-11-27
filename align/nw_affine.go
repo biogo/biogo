@@ -9,7 +9,7 @@ import (
 	"code.google.com/p/biogo/feat"
 )
 
-// Setting debugNeedle to true gives verbose scoring table output for the dynamic programming.
+// Setting debugNeedleAffine to true gives verbose scoring table output for the dynamic programming.
 const debugNeedleAffine = false
 
 // NWAffine is the affine gap penalty Needleman-Wunsch aligner type.
