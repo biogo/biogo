@@ -67,6 +67,20 @@ func max(a *[3]int) int {
 	return m
 }
 
+func max2(a, b int) int {
+	if a > b {
+		return a
+	}
+	return b
+}
+
+func add(a, b int) int {
+	if a == minInt || b == minInt {
+		return minInt
+	}
+	return a + b
+}
+
 type feature struct {
 	start, end int
 	loc        feat.Feature
