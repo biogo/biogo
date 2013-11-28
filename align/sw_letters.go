@@ -73,11 +73,14 @@ func pointerSWRuneLetters(rSeq, qSeq alphabet.Letters, i, j int, table []int, in
 }
 
 func (a SW) alignLetters(rSeq, qSeq alphabet.Letters, alpha alphabet.Alphabet) ([]feat.Pair, error) {
-	gap := len(a) - 1
+	let := len(a)
+	gap := let - 1
+	la := make([]int, 0, let*let)
 	for _, row := range a {
 		if len(row) != gap+1 {
 			return nil, ErrMatrixNotSquare
 		}
+		la = append(la, row...)
 	}
 	r, c := rSeq.Len()+1, qSeq.Len()+1
 	table := make([]int, r*c)
@@ -102,9 +105,9 @@ func (a SW) alignLetters(rSeq, qSeq alphabet.Letters, alpha alphabet.Alphabet) (
 			} else {
 				p := i*c + j
 				scores = [3]int{
-					diag: table[p-c-1] + a[rVal][qVal],
-					up:   table[p-c] + a[rVal][gap],
-					left: table[p-1] + a[gap][qVal],
+					diag: table[p-c-1] + la[rVal*let+qVal],
+					up:   table[p-c] + la[rVal*let+gap],
+					left: table[p-1] + la[gap*let+qVal],
 				}
 				score = max(&scores)
 				if score < 0 {
@@ -133,7 +136,7 @@ func (a SW) alignLetters(rSeq, qSeq alphabet.Letters, alpha alphabet.Alphabet) (
 			continue
 		} else {
 			switch table[p] {
-			case table[p-c-1] + a[rVal][qVal]:
+			case table[p-c-1] + la[rVal*let+qVal]:
 				if last != diag {
 					aln = append(aln, &featPair{
 						a:     feature{start: i, end: maxI},
@@ -147,7 +150,7 @@ func (a SW) alignLetters(rSeq, qSeq alphabet.Letters, alpha alphabet.Alphabet) (
 				i--
 				j--
 				last = diag
-			case table[p-c] + a[rVal][gap]:
+			case table[p-c] + la[rVal*let+gap]:
 				if last != up {
 					aln = append(aln, &featPair{
 						a:     feature{start: i, end: maxI},
@@ -160,7 +163,7 @@ func (a SW) alignLetters(rSeq, qSeq alphabet.Letters, alpha alphabet.Alphabet) (
 				score += table[p] - table[p-c]
 				i--
 				last = up
-			case table[p-1] + a[gap][qVal]:
+			case table[p-1] + la[gap*let+qVal]:
 				if last != left {
 					aln = append(aln, &featPair{
 						a:     feature{start: i, end: maxI},

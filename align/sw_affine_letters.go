@@ -90,11 +90,14 @@ func pointerSWAffineRuneLetters(rSeq, qSeq alphabet.Letters, i, j, l int, table 
 }
 
 func (a SWAffine) alignLetters(rSeq, qSeq alphabet.Letters, alpha alphabet.Alphabet) ([]feat.Pair, error) {
-	gap := len(a.Matrix) - 1
+	let := len(a.Matrix)
+	gap := let - 1
+	la := make([]int, 0, let*let)
 	for _, row := range a.Matrix {
 		if len(row) != gap+1 {
 			return nil, ErrMatrixNotSquare
 		}
+		la = append(la, row...)
 	}
 	r, c := rSeq.Len()+1, qSeq.Len()+1
 	table := make([][3]int, r*c)
@@ -123,7 +126,7 @@ func (a SWAffine) alignLetters(rSeq, qSeq alphabet.Letters, alpha alphabet.Alpha
 					up:   table[p-c-1][up],
 					left: table[p-c-1][left],
 				}
-				score = max(&scores) + a.Matrix[rVal][qVal]
+				score = max(&scores) + la[rVal*let+qVal]
 				if score < 0 {
 					score = 0
 				}
@@ -133,8 +136,8 @@ func (a SWAffine) alignLetters(rSeq, qSeq alphabet.Letters, alpha alphabet.Alpha
 				table[p][diag] = score
 
 				score = max2(
-					table[p-c][diag]+a.GapOpen+a.Matrix[rVal][gap],
-					table[p-c][up]+a.Matrix[rVal][gap],
+					table[p-c][diag]+a.GapOpen+la[rVal*let+gap],
+					table[p-c][up]+la[rVal*let+gap],
 				)
 				if score < 0 {
 					score = 0
@@ -142,8 +145,8 @@ func (a SWAffine) alignLetters(rSeq, qSeq alphabet.Letters, alpha alphabet.Alpha
 				table[p][up] = score
 
 				score = max2(
-					table[p-1][diag]+a.GapOpen+a.Matrix[gap][qVal],
-					table[p-1][left]+a.Matrix[gap][qVal],
+					table[p-1][diag]+a.GapOpen+la[gap*let+qVal],
+					table[p-1][left]+la[gap*let+qVal],
 				)
 				if score < 0 {
 					score = 0
@@ -169,7 +172,7 @@ func (a SWAffine) alignLetters(rSeq, qSeq alphabet.Letters, alpha alphabet.Alpha
 		} else {
 			p := i*c + j
 			switch table[p][layer] {
-			case table[p-c][up] + a.Matrix[rVal][gap]:
+			case table[p-c][up] + la[rVal*let+gap]:
 				if last != up && p != len(table)-1 {
 					aln = append(aln, &featPair{
 						a:     feature{start: i, end: maxI},
@@ -183,7 +186,7 @@ func (a SWAffine) alignLetters(rSeq, qSeq alphabet.Letters, alpha alphabet.Alpha
 				i--
 				layer = up
 				last = up
-			case table[p-1][left] + a.Matrix[gap][qVal]:
+			case table[p-1][left] + la[gap*let+qVal]:
 				if last != left && p != len(table)-1 {
 					aln = append(aln, &featPair{
 						a:     feature{start: i, end: maxI},
@@ -197,7 +200,7 @@ func (a SWAffine) alignLetters(rSeq, qSeq alphabet.Letters, alpha alphabet.Alpha
 				j--
 				layer = left
 				last = left
-			case table[p-c][diag] + a.GapOpen + a.Matrix[rVal][gap]:
+			case table[p-c][diag] + a.GapOpen + la[rVal*let+gap]:
 				if last != up && p != len(table)-1 {
 					aln = append(aln, &featPair{
 						a:     feature{start: i, end: maxI},
@@ -211,7 +214,7 @@ func (a SWAffine) alignLetters(rSeq, qSeq alphabet.Letters, alpha alphabet.Alpha
 				i--
 				layer = diag
 				last = up
-			case table[p-1][diag] + a.GapOpen + a.Matrix[gap][qVal]:
+			case table[p-1][diag] + a.GapOpen + la[gap*let+qVal]:
 				if last != left && p != len(table)-1 {
 					aln = append(aln, &featPair{
 						a:     feature{start: i, end: maxI},
@@ -225,7 +228,7 @@ func (a SWAffine) alignLetters(rSeq, qSeq alphabet.Letters, alpha alphabet.Alpha
 				j--
 				layer = diag
 				last = left
-			case table[p-c-1][diag] + a.Matrix[rVal][qVal]:
+			case table[p-c-1][diag] + la[rVal*let+qVal]:
 				if last != diag {
 					aln = append(aln, &featPair{
 						a:     feature{start: i, end: maxI},
@@ -240,7 +243,7 @@ func (a SWAffine) alignLetters(rSeq, qSeq alphabet.Letters, alpha alphabet.Alpha
 				j--
 				layer = diag
 				last = diag
-			case table[p-c-1][up] + a.Matrix[rVal][qVal]:
+			case table[p-c-1][up] + la[rVal*let+qVal]:
 				if last != diag {
 					aln = append(aln, &featPair{
 						a:     feature{start: i, end: maxI},
@@ -255,7 +258,7 @@ func (a SWAffine) alignLetters(rSeq, qSeq alphabet.Letters, alpha alphabet.Alpha
 				j--
 				layer = up
 				last = diag
-			case table[p-c-1][left] + a.Matrix[rVal][qVal]:
+			case table[p-c-1][left] + la[rVal*let+qVal]:
 				if last != diag {
 					aln = append(aln, &featPair{
 						a:     feature{start: i, end: maxI},

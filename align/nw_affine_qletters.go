@@ -99,11 +99,14 @@ func pointerNWAffineRuneQLetters(rSeq, qSeq alphabet.QLetters, i, j, l int, tabl
 }
 
 func (a NWAffine) alignQLetters(rSeq, qSeq alphabet.QLetters, alpha alphabet.Alphabet) ([]feat.Pair, error) {
-	gap := len(a.Matrix) - 1
+	let := len(a.Matrix)
+	gap := let - 1
+	la := make([]int, 0, let*let)
 	for _, row := range a.Matrix {
 		if len(row) != gap+1 {
 			return nil, ErrMatrixNotSquare
 		}
+		la = append(la, row...)
 	}
 
 	index := alpha.LetterIndex()
@@ -117,24 +120,24 @@ func (a NWAffine) alignQLetters(rSeq, qSeq alphabet.QLetters, alpha alphabet.Alp
 	table[1] = [3]int{
 		diag: minInt,
 		up:   minInt,
-		left: a.GapOpen + a.Matrix[gap][index[qSeq[0].L]],
+		left: a.GapOpen + la[gap*let+index[qSeq[0].L]],
 	}
 	for j := range table[2:c] {
 		table[j+2] = [3]int{
 			diag: minInt,
 			up:   minInt,
-			left: table[j+1][left] + a.Matrix[gap][index[qSeq[j+1].L]],
+			left: table[j+1][left] + la[gap*let+index[qSeq[j+1].L]],
 		}
 	}
 	table[c] = [3]int{
 		diag: minInt,
-		up:   a.GapOpen + a.Matrix[index[rSeq[0].L]][gap],
+		up:   a.GapOpen + la[index[rSeq[0].L]*let+gap],
 		left: minInt,
 	}
 	for i := 2; i < r; i++ {
 		table[i*c] = [3]int{
 			diag: minInt,
-			up:   table[(i-1)*c][up] + a.Matrix[index[rSeq[i-1].L]][gap],
+			up:   table[(i-1)*c][up] + la[index[rSeq[i-1].L]*let+gap],
 			left: minInt,
 		}
 	}
@@ -155,16 +158,16 @@ func (a NWAffine) alignQLetters(rSeq, qSeq alphabet.QLetters, alpha alphabet.Alp
 					up:   table[p-c-1][up],
 					left: table[p-c-1][left],
 				}
-				table[p][diag] = max(&scores) + a.Matrix[rVal][qVal]
+				table[p][diag] = max(&scores) + la[rVal*let+qVal]
 
 				table[p][up] = max2(
-					add(table[p-c][diag], a.GapOpen+a.Matrix[rVal][gap]),
-					add(table[p-c][up], a.Matrix[rVal][gap]),
+					add(table[p-c][diag], a.GapOpen+la[rVal*let+gap]),
+					add(table[p-c][up], la[rVal*let+gap]),
 				)
 
 				table[p][left] = max2(
-					add(table[p-1][diag], a.GapOpen+a.Matrix[gap][qVal]),
-					add(table[p-1][left], a.Matrix[gap][qVal]),
+					add(table[p-1][diag], a.GapOpen+la[gap*let+qVal]),
+					add(table[p-1][left], la[gap*let+qVal]),
 				)
 			}
 		}
@@ -187,7 +190,7 @@ func (a NWAffine) alignQLetters(rSeq, qSeq alphabet.QLetters, alpha alphabet.Alp
 		} else {
 			p := i*c + j
 			switch table[p][layer] {
-			case table[p-c][up] + a.Matrix[rVal][gap]:
+			case table[p-c][up] + la[rVal*let+gap]:
 				if last != up && p != len(table)-1 {
 					aln = append(aln, &featPair{
 						a:     feature{start: i, end: maxI},
@@ -201,7 +204,7 @@ func (a NWAffine) alignQLetters(rSeq, qSeq alphabet.QLetters, alpha alphabet.Alp
 				i--
 				layer = up
 				last = up
-			case table[p-1][left] + a.Matrix[gap][qVal]:
+			case table[p-1][left] + la[gap*let+qVal]:
 				if last != left && p != len(table)-1 {
 					aln = append(aln, &featPair{
 						a:     feature{start: i, end: maxI},
@@ -215,7 +218,7 @@ func (a NWAffine) alignQLetters(rSeq, qSeq alphabet.QLetters, alpha alphabet.Alp
 				j--
 				layer = left
 				last = left
-			case table[p-c][diag] + a.GapOpen + a.Matrix[rVal][gap]:
+			case table[p-c][diag] + a.GapOpen + la[rVal*let+gap]:
 				if last != up && p != len(table)-1 {
 					aln = append(aln, &featPair{
 						a:     feature{start: i, end: maxI},
@@ -229,7 +232,7 @@ func (a NWAffine) alignQLetters(rSeq, qSeq alphabet.QLetters, alpha alphabet.Alp
 				i--
 				layer = diag
 				last = up
-			case table[p-1][diag] + a.GapOpen + a.Matrix[gap][qVal]:
+			case table[p-1][diag] + a.GapOpen + la[gap*let+qVal]:
 				if last != left && p != len(table)-1 {
 					aln = append(aln, &featPair{
 						a:     feature{start: i, end: maxI},
@@ -243,7 +246,7 @@ func (a NWAffine) alignQLetters(rSeq, qSeq alphabet.QLetters, alpha alphabet.Alp
 				j--
 				layer = diag
 				last = left
-			case table[p-c-1][up] + a.Matrix[rVal][qVal]:
+			case table[p-c-1][up] + la[rVal*let+qVal]:
 				if last != diag {
 					aln = append(aln, &featPair{
 						a:     feature{start: i, end: maxI},
@@ -258,7 +261,7 @@ func (a NWAffine) alignQLetters(rSeq, qSeq alphabet.QLetters, alpha alphabet.Alp
 				j--
 				layer = up
 				last = diag
-			case table[p-c-1][left] + a.Matrix[rVal][qVal]:
+			case table[p-c-1][left] + la[rVal*let+qVal]:
 				if last != diag {
 					aln = append(aln, &featPair{
 						a:     feature{start: i, end: maxI},
@@ -273,7 +276,7 @@ func (a NWAffine) alignQLetters(rSeq, qSeq alphabet.QLetters, alpha alphabet.Alp
 				j--
 				layer = left
 				last = diag
-			case table[p-c-1][diag] + a.Matrix[rVal][qVal]:
+			case table[p-c-1][diag] + la[rVal*let+qVal]:
 				if last != diag {
 					aln = append(aln, &featPair{
 						a:     feature{start: i, end: maxI},

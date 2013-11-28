@@ -76,21 +76,24 @@ func pointerNWRuneLetters(rSeq, qSeq alphabet.Letters, i, j int, table []int, in
 }
 
 func (a NW) alignLetters(rSeq, qSeq alphabet.Letters, alpha alphabet.Alphabet) ([]feat.Pair, error) {
-	gap := len(a) - 1
+	let := len(a)
+	gap := let - 1
+	la := make([]int, 0, let*let)
 	for _, row := range a {
 		if len(row) != gap+1 {
 			return nil, ErrMatrixNotSquare
 		}
+		la = append(la, row...)
 	}
 
 	index := alpha.LetterIndex()
 	r, c := rSeq.Len()+1, qSeq.Len()+1
 	table := make([]int, r*c)
 	for j := range table[1:c] {
-		table[j+1] = table[j] + a[gap][index[qSeq[j]]]
+		table[j+1] = table[j] + la[gap*let+index[qSeq[j]]]
 	}
 	for i := 1; i < r; i++ {
-		table[i*c] = table[(i-1)*c] + a[index[rSeq[i-1]]][gap]
+		table[i*c] = table[(i-1)*c] + la[index[rSeq[i-1]]*let+gap]
 	}
 
 	var scores [3]int
@@ -105,9 +108,9 @@ func (a NW) alignLetters(rSeq, qSeq alphabet.Letters, alpha alphabet.Alphabet) (
 			} else {
 				p := i*c + j
 				scores = [3]int{
-					diag: table[p-c-1] + a[rVal][qVal],
-					up:   table[p-c] + a[rVal][gap],
-					left: table[p-1] + a[gap][qVal],
+					diag: table[p-c-1] + la[rVal*let+qVal],
+					up:   table[p-c] + la[rVal*let+gap],
+					left: table[p-1] + la[gap*let+qVal],
 				}
 				table[p] = max(&scores)
 			}
@@ -131,7 +134,7 @@ func (a NW) alignLetters(rSeq, qSeq alphabet.Letters, alpha alphabet.Alphabet) (
 		} else {
 			p := i*c + j
 			switch table[p] {
-			case table[p-c-1] + a[rVal][qVal]:
+			case table[p-c-1] + la[rVal*let+qVal]:
 				if last != diag {
 					aln = append(aln, &featPair{
 						a:     feature{start: i, end: maxI},
@@ -145,7 +148,7 @@ func (a NW) alignLetters(rSeq, qSeq alphabet.Letters, alpha alphabet.Alphabet) (
 				i--
 				j--
 				last = diag
-			case table[p-c] + a[rVal][gap]:
+			case table[p-c] + la[rVal*let+gap]:
 				if last != up && p != len(table)-1 {
 					aln = append(aln, &featPair{
 						a:     feature{start: i, end: maxI},
@@ -158,7 +161,7 @@ func (a NW) alignLetters(rSeq, qSeq alphabet.Letters, alpha alphabet.Alphabet) (
 				score += table[p] - table[p-c]
 				i--
 				last = up
-			case table[p-1] + a[gap][qVal]:
+			case table[p-1] + la[gap*let+qVal]:
 				if last != left && p != len(table)-1 {
 					aln = append(aln, &featPair{
 						a:     feature{start: i, end: maxI},
