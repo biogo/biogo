@@ -275,7 +275,7 @@ func (a SWAffine) alignLetters(rSeq, qSeq alphabet.Letters, alpha alphabet.Alpha
 				last = diag
 
 			default:
-				panic(fmt.Sprintf("align: sw internal error: no path at row: %d col:%d layer:%s\n", i, j, "mul"[layer:layer+1]))
+				panic(fmt.Sprintf("align: sw affine internal error: no path at row: %d col:%d layer:%s\n", i, j, "mul"[layer:layer+1]))
 			}
 		}
 	}

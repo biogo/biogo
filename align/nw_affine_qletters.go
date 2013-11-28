@@ -293,7 +293,7 @@ func (a NWAffine) alignQLetters(rSeq, qSeq alphabet.QLetters, alpha alphabet.Alp
 				last = diag
 
 			default:
-				panic(fmt.Sprintf("align: nw internal error: no path at row: %d col:%d layer:%s\n", i, j, "mul"[layer:layer+1]))
+				panic(fmt.Sprintf("align: nw affine internal error: no path at row: %d col:%d layer:%s\n", i, j, "mul"[layer:layer+1]))
 			}
 		}
 	}
