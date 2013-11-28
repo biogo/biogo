@@ -54,26 +54,15 @@ func drawSWAffineTableLetters(rSeq, qSeq alphabet.Letters, index alphabet.Index,
 }
 
 func pointerSWAffineRuneLetters(rSeq, qSeq alphabet.Letters, i, j, l int, table [][3]int, index alphabet.Index, a SWAffine, c int) string {
-	switch {
-	case i == 0 && j == 0:
+	p := i*c + j
+	if table[p][l] == 0 {
 		return ""
-	case i == 0:
-		if j == 1 {
-			return "⬅ m"
-		}
-		return "⬅ l"
-	case j == 0:
-		if i == 1 {
-			return "⬆ m"
-		}
-		return "⬆ u"
 	}
 	rVal := index[rSeq[i-1]]
 	qVal := index[qSeq[j-1]]
 	if rVal < 0 || qVal < 0 {
 		return ""
 	} else {
-		p := i*c + j
 		gap := len(a.Matrix) - 1
 		switch table[p][l] {
 		case 0:
@@ -88,12 +77,12 @@ func pointerSWAffineRuneLetters(rSeq, qSeq alphabet.Letters, i, j, l int, table 
 		case table[p-1][diag] + a.GapOpen + a.Matrix[gap][qVal]:
 			return "⬅ m"
 
+		case table[p-c-1][diag] + a.Matrix[rVal][qVal]:
+			return "⬉ m"
 		case table[p-c-1][up] + a.Matrix[rVal][qVal]:
 			return "⬉ u"
 		case table[p-c-1][left] + a.Matrix[rVal][qVal]:
 			return "⬉ l"
-		case table[p-c-1][diag] + a.Matrix[rVal][qVal]:
-			return "⬉ m"
 		default:
 			return [3]string{"", "⬆ u", "⬅ l"}[l]
 		}
@@ -236,6 +225,21 @@ func (a SWAffine) alignLetters(rSeq, qSeq alphabet.Letters, alpha alphabet.Alpha
 				j--
 				layer = diag
 				last = left
+			case table[p-c-1][diag] + a.Matrix[rVal][qVal]:
+				if last != diag {
+					aln = append(aln, &featPair{
+						a:     feature{start: i, end: maxI},
+						b:     feature{start: j, end: maxJ},
+						score: score,
+					})
+					maxI, maxJ = i, j
+					score = 0
+				}
+				score += table[p][layer] - table[p-c-1][diag]
+				i--
+				j--
+				layer = diag
+				last = diag
 			case table[p-c-1][up] + a.Matrix[rVal][qVal]:
 				if last != diag {
 					aln = append(aln, &featPair{
@@ -265,21 +269,6 @@ func (a SWAffine) alignLetters(rSeq, qSeq alphabet.Letters, alpha alphabet.Alpha
 				i--
 				j--
 				layer = left
-				last = diag
-			case table[p-c-1][diag] + a.Matrix[rVal][qVal]:
-				if last != diag {
-					aln = append(aln, &featPair{
-						a:     feature{start: i, end: maxI},
-						b:     feature{start: j, end: maxJ},
-						score: score,
-					})
-					maxI, maxJ = i, j
-					score = 0
-				}
-				score += table[p][layer] - table[p-c-1][diag]
-				i--
-				j--
-				layer = diag
 				last = diag
 
 			default:
