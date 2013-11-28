@@ -76,6 +76,8 @@ func pointerSWAffineRuneLetters(rSeq, qSeq alphabet.Letters, i, j, l int, table 
 		p := i*c + j
 		gap := len(a.Matrix) - 1
 		switch table[p][l] {
+		case 0:
+			return ""
 		case table[p-c][up] + a.Matrix[rVal][gap]:
 			return "⬆ u"
 		case table[p-1][left] + a.Matrix[gap][qVal]:
