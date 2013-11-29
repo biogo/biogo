@@ -128,9 +128,9 @@ func (s *QSeq) Clone() seq.Sequence {
 	return &c
 }
 
-// New returns an empty *QSeq sequence.
+// New returns an empty *QSeq sequence with the same alphabet.
 func (s *QSeq) New() seq.Sequence {
-	return &QSeq{}
+	return &QSeq{Annotation: seq.Annotation{Alpha: s.Alpha}}
 }
 
 // RevComp reverse complements the sequence. RevComp will panic if the alphabet used by

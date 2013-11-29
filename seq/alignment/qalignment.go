@@ -110,9 +110,9 @@ func (s *QSeq) Clone() seq.Rower {
 	return &c
 }
 
-// Return an empty sequence.
+// New returns an empty *QSeq sequence with the same alphabet.
 func (s *QSeq) New() *QSeq {
-	return &QSeq{}
+	return &QSeq{Annotation: seq.Annotation{Alpha: s.Alpha}}
 }
 
 // RevComp reverse complements the sequence. RevComp will panic if the alphabet used by
@@ -387,7 +387,9 @@ func (r QRow) Reverse() {
 	}
 	r.Align.SubAnnotations[r.Row].Strand = seq.None
 }
-func (r QRow) New() seq.Sequence { return QRow{} }
+func (r QRow) New() seq.Sequence {
+	return QRow{Align: &QSeq{Annotation: seq.Annotation{Alpha: r.Align.Alpha}}}
+}
 func (r QRow) Clone() seq.Sequence {
 	b := make([]alphabet.QLetter, r.Len())
 	for i, c := range r.Align.Seq {

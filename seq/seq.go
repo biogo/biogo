@@ -69,7 +69,7 @@ type Sequence interface {
 	Alphabet() alphabet.Alphabet     // Return the Alphabet being used.
 	RevComp()                        // Reverse complement the sequence.
 	Reverse()                        // Reverse the order of elements in the sequence.
-	New() Sequence                   // Return a pointer to the zero value of the concrete type.
+	New() Sequence                   // Return a zero value of the sequence type, with the same alphabet.
 	Clone() Sequence                 // Return a copy of the Sequence.
 	CloneAnnotation() *Annotation    // Return a copy of the sequence's annotation.
 	Slicer

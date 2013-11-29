@@ -98,9 +98,9 @@ func (s *Seq) Clone() seq.Rower {
 	return &c
 }
 
-// New returns an empty *Seq sequence.
+// New returns an empty *Seq sequence with the same alphabet.
 func (s *Seq) New() *Seq {
-	return &Seq{}
+	return &Seq{Annotation: seq.Annotation{Alpha: s.Alpha}}
 }
 
 // RevComp reverse complements the sequence. RevComp will panic if the alphabet used by
@@ -365,7 +365,9 @@ func (r Row) Reverse() {
 	}
 	r.Align.SubAnnotations[r.Row].Strand = seq.None
 }
-func (r Row) New() seq.Sequence { return Row{} }
+func (r Row) New() seq.Sequence {
+	return Row{Align: &Seq{Annotation: seq.Annotation{Alpha: r.Align.Alpha}}}
+}
 func (r Row) Clone() seq.Sequence {
 	b := make([]alphabet.Letter, r.Len())
 	for i, c := range r.Align.Seq {

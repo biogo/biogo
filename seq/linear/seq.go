@@ -93,9 +93,9 @@ func (s *Seq) Clone() seq.Sequence {
 	return &c
 }
 
-// New returns an empty *Seq sequence.
+// New returns an empty *Seq sequence with the same alphabet.
 func (s *Seq) New() seq.Sequence {
-	return &Seq{}
+	return &Seq{Annotation: seq.Annotation{Alpha: s.Alpha}}
 }
 
 // RevComp reverse complements the sequence. RevComp will panic if the alphabet used by
