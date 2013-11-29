@@ -47,6 +47,46 @@ cat < nw_type.got \
 >> nw_qletters.go
 
 echo -e $WARNING\
+> fitted_letters.go
+cat < fitted_type.got \
+| gofmt -r 'alignType -> alignLetters' \
+| gofmt -r 'Type -> alphabet.Letters' \
+| gofmt -r 'drawFittedTableType -> drawFittedTableLetters' \
+| gofmt -r 'pointerFittedType -> pointerFittedLetters' \
+>> fitted_letters.go
+
+echo -e $WARNING\
+> fitted_qletters.go
+cat < fitted_type.got \
+| gofmt -r 'alignType -> alignQLetters' \
+| gofmt -r 'Type -> alphabet.QLetters' \
+| gofmt -r 'drawFittedTableType -> drawFittedTableQLetters' \
+| gofmt -r 'pointerFittedType -> pointerFittedQLetters' \
+| gofmt -r 'rSeq[i] -> rSeq[i].L' \
+| gofmt -r 'qSeq[i] -> qSeq[i].L' \
+>> fitted_qletters.go
+
+echo -e $WARNING\
+> fitted_affine_letters.go
+cat < fitted_affine_type.got \
+| gofmt -r 'alignType -> alignLetters' \
+| gofmt -r 'Type -> alphabet.Letters' \
+| gofmt -r 'drawFittedAffineTableType -> drawFittedAffineTableLetters' \
+| gofmt -r 'pointerFittedAffineType -> pointerFittedAffineLetters' \
+>> fitted_affine_letters.go
+
+echo -e $WARNING\
+> fitted_affine_qletters.go
+cat < fitted_affine_type.got \
+| gofmt -r 'alignType -> alignQLetters' \
+| gofmt -r 'Type -> alphabet.QLetters' \
+| gofmt -r 'drawFittedAffineTableType -> drawFittedAffineTableQLetters' \
+| gofmt -r 'pointerFittedAffineType -> pointerFittedAffineQLetters' \
+| gofmt -r 'rSeq[i] -> rSeq[i].L' \
+| gofmt -r 'qSeq[i] -> qSeq[i].L' \
+>> fitted_affine_qletters.go
+
+echo -e $WARNING\
 > sw_affine_letters.go
 cat < sw_affine_type.got \
 | gofmt -r 'alignType -> alignLetters' \
