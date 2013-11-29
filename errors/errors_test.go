@@ -36,16 +36,7 @@ var traceRE = `Trace: message:
 	(?:[A-Z]:)?/.*/code.google.com/p/biogo/errors/errors_test.go#L=25
 
  code.google.com/p/biogo/errors.\(\*S\).TestCaller:
-	(?:[A-Z]:)?/.*/code.google.com/p/biogo/errors/errors_test.go#L=60
-
- reflect.Value.call:
-	(?:[A-Z]:)?/.*/go/src/pkg/reflect/value.go#L=[0-9]+
-
- reflect.Value.Call:
-	(?:[A-Z]:)?/.*/go/src/pkg/reflect/value.go#L=[0-9]+
-
- launchpad.net/gocheck._?func[_·][0-9]+:
-	(?:[A-Z]:)?/.*/launchpad.net/gocheck/gocheck.go#L=[0-9]+
+	(?:[A-Z]:)?/.*/code.google.com/p/biogo/errors/errors_test.go#L=51
 `
 
 // Tests
@@ -54,11 +45,11 @@ func (s *S) TestCaller(c *check.C) {
 	c.Check(err.Error(), check.Equals, "message")
 	fn, ln := err.FileLine()
 	c.Check(fn, check.Matches, "(?:[A-Z]:)?/.*/biogo/errors/errors_test.go")
-	c.Check(ln, check.Equals, 53)
+	c.Check(ln, check.Equals, 44)
 	c.Check(err.Package(), check.Equals, "code.google.com/p/biogo/errors.(*S)")
 	c.Check(err.Function(), check.Equals, "TestCaller")
 	err = f(5).(Error)
-	c.Check(err.Tracef(10), check.Matches, traceRE)
+	c.Check(err.Tracef(7), check.Matches, traceRE)
 }
 
 func (s *S) TestMakeFail(c *check.C) {
