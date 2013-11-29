@@ -12,7 +12,7 @@ cat < sw_type.got \
 | gofmt -r 'alignType -> alignLetters' \
 | gofmt -r 'Type -> alphabet.Letters' \
 | gofmt -r 'drawSWTableType -> drawSWTableLetters' \
-| gofmt -r 'pointerSWRuneType -> pointerSWRuneLetters' \
+| gofmt -r 'pointerSWType -> pointerSWLetters' \
 >> sw_letters.go
 
 echo -e $WARNING\
@@ -21,7 +21,7 @@ cat < sw_type.got \
 | gofmt -r 'alignType -> alignQLetters' \
 | gofmt -r 'Type -> alphabet.QLetters' \
 | gofmt -r 'drawSWTableType -> drawSWTableQLetters' \
-| gofmt -r 'pointerSWRuneType -> pointerSWRuneQLetters' \
+| gofmt -r 'pointerSWType -> pointerSWQLetters' \
 | gofmt -r 'rSeq[i] -> rSeq[i].L' \
 | gofmt -r 'qSeq[i] -> qSeq[i].L' \
 >> sw_qletters.go
@@ -32,7 +32,7 @@ cat < nw_type.got \
 | gofmt -r 'alignType -> alignLetters' \
 | gofmt -r 'Type -> alphabet.Letters' \
 | gofmt -r 'drawNWTableType -> drawNWTableLetters' \
-| gofmt -r 'pointerNWRuneType -> pointerNWRuneLetters' \
+| gofmt -r 'pointerNWType -> pointerNWLetters' \
 >> nw_letters.go
 
 echo -e $WARNING\
@@ -41,7 +41,7 @@ cat < nw_type.got \
 | gofmt -r 'alignType -> alignQLetters' \
 | gofmt -r 'Type -> alphabet.QLetters' \
 | gofmt -r 'drawNWTableType -> drawNWTableQLetters' \
-| gofmt -r 'pointerNWRuneType -> pointerNWRuneQLetters' \
+| gofmt -r 'pointerNWType -> pointerNWQLetters' \
 | gofmt -r 'rSeq[i] -> rSeq[i].L' \
 | gofmt -r 'qSeq[i] -> qSeq[i].L' \
 >> nw_qletters.go
@@ -52,7 +52,7 @@ cat < sw_affine_type.got \
 | gofmt -r 'alignType -> alignLetters' \
 | gofmt -r 'Type -> alphabet.Letters' \
 | gofmt -r 'drawSWAffineTableType -> drawSWAffineTableLetters' \
-| gofmt -r 'pointerSWAffineRuneType -> pointerSWAffineRuneLetters' \
+| gofmt -r 'pointerSWAffineType -> pointerSWAffineLetters' \
 >> sw_affine_letters.go
 
 echo -e $WARNING\
@@ -61,7 +61,7 @@ cat < sw_affine_type.got \
 | gofmt -r 'alignType -> alignQLetters' \
 | gofmt -r 'Type -> alphabet.QLetters' \
 | gofmt -r 'drawSWAffineTableType -> drawSWAffineTableQLetters' \
-| gofmt -r 'pointerSWAffineRuneType -> pointerSWAffineRuneQLetters' \
+| gofmt -r 'pointerSWAffineType -> pointerSWAffineQLetters' \
 | gofmt -r 'rSeq[i] -> rSeq[i].L' \
 | gofmt -r 'qSeq[i] -> qSeq[i].L' \
 >> sw_affine_qletters.go
@@ -72,7 +72,7 @@ cat < nw_affine_type.got \
 | gofmt -r 'alignType -> alignLetters' \
 | gofmt -r 'Type -> alphabet.Letters' \
 | gofmt -r 'drawNWAffineTableType -> drawNWAffineTableLetters' \
-| gofmt -r 'pointerNWAffineRuneType -> pointerNWAffineRuneLetters' \
+| gofmt -r 'pointerNWAffineType -> pointerNWAffineLetters' \
 >> nw_affine_letters.go
 
 echo -e $WARNING\
@@ -81,7 +81,7 @@ cat < nw_affine_type.got \
 | gofmt -r 'alignType -> alignQLetters' \
 | gofmt -r 'Type -> alphabet.QLetters' \
 | gofmt -r 'drawNWAffineTableType -> drawNWAffineTableQLetters' \
-| gofmt -r 'pointerNWAffineRuneType -> pointerNWAffineRuneQLetters' \
+| gofmt -r 'pointerNWAffineType -> pointerNWAffineQLetters' \
 | gofmt -r 'rSeq[i] -> rSeq[i].L' \
 | gofmt -r 'qSeq[i] -> qSeq[i].L' \
 >> nw_affine_qletters.go

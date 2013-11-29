@@ -35,13 +35,13 @@ func drawSWAffineTableQLetters(rSeq, qSeq alphabet.QLetters, index alphabet.Inde
 			}
 
 			for j := 0; j < c; j++ {
-				pr := pointerSWAffineRuneQLetters(rSeq, qSeq, i, j, l, table, index, a, c)
+				p := pointerSWAffineQLetters(rSeq, qSeq, i, j, l, table, index, a, c)
 				var vi interface{}
 				if vi = table[i*c+j][l]; vi == minInt {
 					vi = "-Inf"
 				}
-				if pr != "" {
-					fmt.Fprintf(tw, "%s % 4v\t", pr, vi)
+				if p != "" {
+					fmt.Fprintf(tw, "%s % 4v\t", p, vi)
 				} else {
 					fmt.Fprintf(tw, "%v\t", vi)
 				}
@@ -53,7 +53,7 @@ func drawSWAffineTableQLetters(rSeq, qSeq alphabet.QLetters, index alphabet.Inde
 	tw.Flush()
 }
 
-func pointerSWAffineRuneQLetters(rSeq, qSeq alphabet.QLetters, i, j, l int, table [][3]int, index alphabet.Index, a SWAffine, c int) string {
+func pointerSWAffineQLetters(rSeq, qSeq alphabet.QLetters, i, j, l int, table [][3]int, index alphabet.Index, a SWAffine, c int) string {
 	p := i*c + j
 	if table[p][l] == 0 {
 		return ""

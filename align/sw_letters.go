@@ -34,9 +34,9 @@ func drawSWTableLetters(rSeq, qSeq alphabet.Letters, index alphabet.Index, table
 		}
 
 		for j := 0; j < c; j++ {
-			pr := pointerSWRuneLetters(rSeq, qSeq, i, j, table, index, a, c)
-			if pr != ' ' {
-				fmt.Fprintf(tw, "%c %3v\t", pr, table[i*c+j])
+			p := pointerSWLetters(rSeq, qSeq, i, j, table, index, a, c)
+			if p != "" {
+				fmt.Fprintf(tw, "%s %3v\t", p, table[i*c+j])
 			} else {
 				fmt.Fprintf(tw, "%v\t", table[i*c+j])
 			}
@@ -46,28 +46,28 @@ func drawSWTableLetters(rSeq, qSeq alphabet.Letters, index alphabet.Index, table
 	tw.Flush()
 }
 
-func pointerSWRuneLetters(rSeq, qSeq alphabet.Letters, i, j int, table []int, index alphabet.Index, a [][]int, c int) rune {
+func pointerSWLetters(rSeq, qSeq alphabet.Letters, i, j int, table []int, index alphabet.Index, a [][]int, c int) string {
 	switch {
 	case i == 0, j == 0:
-		return ' '
+		return ""
 	}
 	rVal := index[rSeq[i-1]]
 	qVal := index[qSeq[j-1]]
 	if rVal < 0 || qVal < 0 {
-		return ' '
+		return " "
 	} else {
 		gap := len(a) - 1
 		switch p := i*c + j; table[p] {
 		case 0:
-			return ' '
+			return ""
 		case table[p-c-1] + a[rVal][qVal]:
-			return '⬉'
+			return "⬉"
 		case table[p-c] + a[rVal][gap]:
-			return '⬆'
+			return "⬆"
 		case table[p-1] + a[gap][qVal]:
-			return '⬅'
+			return "⬅"
 		default:
-			return ' '
+			return ""
 		}
 	}
 }

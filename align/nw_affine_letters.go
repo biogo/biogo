@@ -35,13 +35,13 @@ func drawNWAffineTableLetters(rSeq, qSeq alphabet.Letters, index alphabet.Index,
 			}
 
 			for j := 0; j < c; j++ {
-				pr := pointerNWAffineRuneLetters(rSeq, qSeq, i, j, l, table, index, a, c)
+				p := pointerNWAffineLetters(rSeq, qSeq, i, j, l, table, index, a, c)
 				var vi interface{}
 				if vi = table[i*c+j][l]; vi == minInt {
 					vi = "-Inf"
 				}
-				if pr != "" {
-					fmt.Fprintf(tw, "%s % 4v\t", pr, vi)
+				if p != "" {
+					fmt.Fprintf(tw, "%s % 4v\t", p, vi)
 				} else {
 					fmt.Fprintf(tw, "%v\t", vi)
 				}
@@ -53,7 +53,7 @@ func drawNWAffineTableLetters(rSeq, qSeq alphabet.Letters, index alphabet.Index,
 	tw.Flush()
 }
 
-func pointerNWAffineRuneLetters(rSeq, qSeq alphabet.Letters, i, j, l int, table [][3]int, index alphabet.Index, a NWAffine, c int) string {
+func pointerNWAffineLetters(rSeq, qSeq alphabet.Letters, i, j, l int, table [][3]int, index alphabet.Index, a NWAffine, c int) string {
 	switch {
 	case i == 0 && j == 0:
 		return ""
