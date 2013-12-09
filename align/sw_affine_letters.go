@@ -63,7 +63,6 @@ func pointerSWAffineLetters(rSeq, qSeq alphabet.Letters, i, j, l int, table [][3
 	if rVal < 0 || qVal < 0 {
 		return ""
 	} else {
-		gap := len(a.Matrix) - 1
 		switch table[p][l] {
 		case 0:
 			return ""
@@ -91,10 +90,9 @@ func pointerSWAffineLetters(rSeq, qSeq alphabet.Letters, i, j, l int, table [][3
 
 func (a SWAffine) alignLetters(rSeq, qSeq alphabet.Letters, alpha alphabet.Alphabet) ([]feat.Pair, error) {
 	let := len(a.Matrix)
-	gap := let - 1
 	la := make([]int, 0, let*let)
 	for _, row := range a.Matrix {
-		if len(row) != gap+1 {
+		if len(row) != let {
 			return nil, ErrMatrixNotSquare
 		}
 		la = append(la, row...)
@@ -136,8 +134,8 @@ func (a SWAffine) alignLetters(rSeq, qSeq alphabet.Letters, alpha alphabet.Alpha
 				table[p][diag] = score
 
 				score = max2(
-					table[p-c][diag]+a.GapOpen+la[rVal*let+gap],
-					table[p-c][up]+la[rVal*let+gap],
+					table[p-c][diag]+a.GapOpen+la[rVal*let],
+					table[p-c][up]+la[rVal*let],
 				)
 				if score < 0 {
 					score = 0
@@ -145,8 +143,8 @@ func (a SWAffine) alignLetters(rSeq, qSeq alphabet.Letters, alpha alphabet.Alpha
 				table[p][up] = score
 
 				score = max2(
-					table[p-1][diag]+a.GapOpen+la[gap*let+qVal],
-					table[p-1][left]+la[gap*let+qVal],
+					table[p-1][diag]+a.GapOpen+la[qVal],
+					table[p-1][left]+la[qVal],
 				)
 				if score < 0 {
 					score = 0
@@ -172,7 +170,7 @@ func (a SWAffine) alignLetters(rSeq, qSeq alphabet.Letters, alpha alphabet.Alpha
 		} else {
 			p := i*c + j
 			switch table[p][layer] {
-			case table[p-c][up] + la[rVal*let+gap]:
+			case table[p-c][up] + la[rVal*let]:
 				if last != up && p != len(table)-1 {
 					aln = append(aln, &featPair{
 						a:     feature{start: i, end: maxI},
@@ -186,7 +184,7 @@ func (a SWAffine) alignLetters(rSeq, qSeq alphabet.Letters, alpha alphabet.Alpha
 				i--
 				layer = up
 				last = up
-			case table[p-1][left] + la[gap*let+qVal]:
+			case table[p-1][left] + la[qVal]:
 				if last != left && p != len(table)-1 {
 					aln = append(aln, &featPair{
 						a:     feature{start: i, end: maxI},
@@ -200,7 +198,7 @@ func (a SWAffine) alignLetters(rSeq, qSeq alphabet.Letters, alpha alphabet.Alpha
 				j--
 				layer = left
 				last = left
-			case table[p-c][diag] + a.GapOpen + la[rVal*let+gap]:
+			case table[p-c][diag] + a.GapOpen + la[rVal*let]:
 				if last != up && p != len(table)-1 {
 					aln = append(aln, &featPair{
 						a:     feature{start: i, end: maxI},
@@ -214,7 +212,7 @@ func (a SWAffine) alignLetters(rSeq, qSeq alphabet.Letters, alpha alphabet.Alpha
 				i--
 				layer = diag
 				last = up
-			case table[p-1][diag] + a.GapOpen + la[gap*let+qVal]:
+			case table[p-1][diag] + a.GapOpen + la[qVal]:
 				if last != left && p != len(table)-1 {
 					aln = append(aln, &featPair{
 						a:     feature{start: i, end: maxI},

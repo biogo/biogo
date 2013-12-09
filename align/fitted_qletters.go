@@ -56,7 +56,6 @@ func pointerFittedQLetters(rSeq, qSeq alphabet.QLetters, i, j int, table []int, 
 		return ""
 	} else {
 		p := i*c + j
-		gap := len(a) - 1
 		switch table[p] {
 		case table[p-c-1] + a[rVal][qVal]:
 			return "⬉"
@@ -72,10 +71,9 @@ func pointerFittedQLetters(rSeq, qSeq alphabet.QLetters, i, j int, table []int, 
 
 func (a Fitted) alignQLetters(rSeq, qSeq alphabet.QLetters, alpha alphabet.Alphabet) ([]feat.Pair, error) {
 	let := len(a)
-	gap := let - 1
 	la := make([]int, 0, let*let)
 	for _, row := range a {
-		if len(row) != gap+1 {
+		if len(row) != let {
 			return nil, ErrMatrixNotSquare
 		}
 		la = append(la, row...)
@@ -85,10 +83,10 @@ func (a Fitted) alignQLetters(rSeq, qSeq alphabet.QLetters, alpha alphabet.Alpha
 	r, c := rSeq.Len()+1, qSeq.Len()+1
 	table := make([]int, r*c)
 	for j := range table[1:c] {
-		table[j+1] = table[j] + la[gap*let+index[qSeq[j].L]]
+		table[j+1] = table[j] + la[index[qSeq[j].L]]
 	}
 	for i := 1; i < r; i++ {
-		table[i*c] = table[(i-1)*c] + la[index[rSeq[i-1].L]*let+gap]
+		table[i*c] = table[(i-1)*c] + la[index[rSeq[i-1].L]*let]
 	}
 
 	var scores [3]int
@@ -104,8 +102,8 @@ func (a Fitted) alignQLetters(rSeq, qSeq alphabet.QLetters, alpha alphabet.Alpha
 				p := i*c + j
 				scores = [3]int{
 					diag: table[p-c-1] + la[rVal*let+qVal],
-					up:   table[p-c] + la[rVal*let+gap],
-					left: table[p-1] + la[gap*let+qVal],
+					up:   table[p-c] + la[rVal*let],
+					left: table[p-1] + la[qVal],
 				}
 				table[p] = max(&scores)
 			}
@@ -159,7 +157,7 @@ func (a Fitted) alignQLetters(rSeq, qSeq alphabet.QLetters, alpha alphabet.Alpha
 				i--
 				j--
 				last = diag
-			case table[p-c] + la[rVal*let+gap]:
+			case table[p-c] + la[rVal*let]:
 				if last != up && p != len(table)-1 {
 					aln = append(aln, &featPair{
 						a:     feature{start: i, end: maxI},
@@ -172,7 +170,7 @@ func (a Fitted) alignQLetters(rSeq, qSeq alphabet.QLetters, alpha alphabet.Alpha
 				score += table[p] - table[p-c]
 				i--
 				last = up
-			case table[p-1] + la[gap*let+qVal]:
+			case table[p-1] + la[qVal]:
 				if last != left && p != len(table)-1 {
 					aln = append(aln, &featPair{
 						a:     feature{start: i, end: maxI},
@@ -186,7 +184,7 @@ func (a Fitted) alignQLetters(rSeq, qSeq alphabet.QLetters, alpha alphabet.Alpha
 				j--
 				last = left
 			default:
-				panic(fmt.Sprintf("align: fitted internal error: no path at row: %d col:%d\n", i, j))
+				panic(fmt.Sprintf("align: fitted nw internal error: no path at row: %d col:%d\n", i, j))
 			}
 		}
 	}

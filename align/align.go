@@ -26,7 +26,7 @@ type Aligner interface {
 }
 
 // A Linear is a basic linear gap penalty alignment description.
-// It is a square scoring matrix with the last column and last row specifying gap penalties.
+// It is a square scoring matrix with the first column and first row specifying gap penalties.
 type Linear [][]int
 
 // An Affine is a basic affine gap penalty alignment description.
@@ -44,6 +44,8 @@ const (
 	diag = iota
 	up
 	left
+
+	gap = 0
 
 	minInt = -int(^uint(0)>>1) - 1
 )

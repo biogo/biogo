@@ -63,7 +63,6 @@ func pointerFittedAffineQLetters(rSeq, qSeq alphabet.QLetters, i, j, l int, tabl
 		return ""
 	} else {
 		p := i*c + j
-		gap := len(a.Matrix) - 1
 		switch table[p][l] {
 		case table[p-c][up] + a.Matrix[rVal][gap]:
 			return "⬆ u"
@@ -89,10 +88,9 @@ func pointerFittedAffineQLetters(rSeq, qSeq alphabet.QLetters, i, j, l int, tabl
 
 func (a FittedAffine) alignQLetters(rSeq, qSeq alphabet.QLetters, alpha alphabet.Alphabet) ([]feat.Pair, error) {
 	let := len(a.Matrix)
-	gap := let - 1
 	la := make([]int, 0, let*let)
 	for _, row := range a.Matrix {
-		if len(row) != gap+1 {
+		if len(row) != let {
 			return nil, ErrMatrixNotSquare
 		}
 		la = append(la, row...)
@@ -109,24 +107,24 @@ func (a FittedAffine) alignQLetters(rSeq, qSeq alphabet.QLetters, alpha alphabet
 	table[1] = [3]int{
 		diag: minInt,
 		up:   minInt,
-		left: a.GapOpen + la[gap*let+index[qSeq[0].L]],
+		left: a.GapOpen + la[index[qSeq[0].L]],
 	}
 	for j := range table[2:c] {
 		table[j+2] = [3]int{
 			diag: minInt,
 			up:   minInt,
-			left: table[j+1][left] + la[gap*let+index[qSeq[j+1].L]],
+			left: table[j+1][left] + la[index[qSeq[j+1].L]],
 		}
 	}
 	table[c] = [3]int{
 		diag: minInt,
-		up:   a.GapOpen + la[index[rSeq[0].L]*let+gap],
+		up:   a.GapOpen + la[index[rSeq[0].L]*let],
 		left: minInt,
 	}
 	for i := 2; i < r; i++ {
 		table[i*c] = [3]int{
 			diag: minInt,
-			up:   table[(i-1)*c][up] + la[index[rSeq[i-1].L]*let+gap],
+			up:   table[(i-1)*c][up] + la[index[rSeq[i-1].L]*let],
 			left: minInt,
 		}
 	}
@@ -150,13 +148,13 @@ func (a FittedAffine) alignQLetters(rSeq, qSeq alphabet.QLetters, alpha alphabet
 				table[p][diag] = max(&scores) + la[rVal*let+qVal]
 
 				table[p][up] = max2(
-					add(table[p-c][diag], a.GapOpen+la[rVal*let+gap]),
-					add(table[p-c][up], la[rVal*let+gap]),
+					add(table[p-c][diag], a.GapOpen+la[rVal*let]),
+					add(table[p-c][up], la[rVal*let]),
 				)
 
 				table[p][left] = max2(
-					add(table[p-1][diag], a.GapOpen+la[gap*let+qVal]),
-					add(table[p-1][left], la[gap*let+qVal]),
+					add(table[p-1][diag], a.GapOpen+la[qVal]),
+					add(table[p-1][left], la[qVal]),
 				)
 			}
 		}
@@ -195,7 +193,7 @@ func (a FittedAffine) alignQLetters(rSeq, qSeq alphabet.QLetters, alpha alphabet
 		} else {
 			p := i*c + j
 			switch table[p][layer] {
-			case table[p-c][up] + la[rVal*let+gap]:
+			case table[p-c][up] + la[rVal*let]:
 				if last != up && p != len(table)-1 {
 					aln = append(aln, &featPair{
 						a:     feature{start: i, end: maxI},
@@ -209,7 +207,7 @@ func (a FittedAffine) alignQLetters(rSeq, qSeq alphabet.QLetters, alpha alphabet
 				i--
 				layer = up
 				last = up
-			case table[p-1][left] + la[gap*let+qVal]:
+			case table[p-1][left] + la[qVal]:
 				if last != left && p != len(table)-1 {
 					aln = append(aln, &featPair{
 						a:     feature{start: i, end: maxI},
@@ -223,7 +221,7 @@ func (a FittedAffine) alignQLetters(rSeq, qSeq alphabet.QLetters, alpha alphabet
 				j--
 				layer = left
 				last = left
-			case table[p-c][diag] + a.GapOpen + la[rVal*let+gap]:
+			case table[p-c][diag] + a.GapOpen + la[rVal*let]:
 				if last != up && p != len(table)-1 {
 					aln = append(aln, &featPair{
 						a:     feature{start: i, end: maxI},
@@ -237,7 +235,7 @@ func (a FittedAffine) alignQLetters(rSeq, qSeq alphabet.QLetters, alpha alphabet
 				i--
 				layer = diag
 				last = up
-			case table[p-1][diag] + a.GapOpen + la[gap*let+qVal]:
+			case table[p-1][diag] + a.GapOpen + la[qVal]:
 				if last != left && p != len(table)-1 {
 					aln = append(aln, &featPair{
 						a:     feature{start: i, end: maxI},
@@ -298,7 +296,7 @@ func (a FittedAffine) alignQLetters(rSeq, qSeq alphabet.QLetters, alpha alphabet
 				last = diag
 
 			default:
-				panic(fmt.Sprintf("align: nw affine internal error: no path at row: %d col:%d layer:%s\n", i, j, "mul"[layer:layer+1]))
+				panic(fmt.Sprintf("align: fitted nw affine internal error: no path at row: %d col:%d layer:%s\n", i, j, "mul"[layer:layer+1]))
 			}
 		}
 	}
