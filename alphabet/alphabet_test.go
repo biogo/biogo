@@ -42,9 +42,9 @@ type testAlphabets struct {
 
 func (s *S) TestIsValid(c *check.C) {
 	for _, t := range []testAlphabets{
-		{DNA, "acgt"},
-		{RNA, "acgu"},
-		{Protein, "abcdefghijklmnpqrstvwxyz*"},
+		{DNA, "-acgt"},
+		{RNA, "-acgu"},
+		{Protein, "-abcdefghijklmnpqrstvwxyz*"},
 	} {
 		for i := 0; i < 256; i++ {
 			c.Check(t.alphabet.IsValid(Letter(i)), check.Equals, strings.ContainsRune(t.letters, unicode.ToUpper(rune(i))) || strings.ContainsRune(t.letters, unicode.ToLower(rune(i))))
@@ -106,9 +106,9 @@ func (s *S) TestComplementDirect(c *check.C) {
 
 func (s *S) TestLetters(c *check.C) {
 	for _, t := range []testAlphabets{
-		{DNA, "acgtACGT"},
-		{RNA, "acguACGU"},
-		{Protein, "abcdefghijklmnpqrstvwxyz*ABCDEFGHIJKLMNPQRSTVWXYZ*"},
+		{DNA, "-acgt-ACGT"},
+		{RNA, "-acgu-ACGU"},
+		{Protein, "-abcdefghijklmnpqrstvwxyz*-ABCDEFGHIJKLMNPQRSTVWXYZ*"},
 	} {
 		c.Check(t.alphabet.Letters(), check.Equals, t.letters)
 	}
@@ -128,7 +128,7 @@ func (s *S) TestRangeCheck(c *check.C) {
 
 func BenchmarkIsValid(b *testing.B) {
 	b.StopTimer()
-	g, _ := newAlphabet("abcdefghijklmnpqrstvwxyz*", 0, 0, 0, !CaseSensitive)
+	g, _ := newAlphabet("-abcdefghijklmnpqrstvwxyz*", 0, 0, 0, !CaseSensitive)
 	b.StartTimer()
 	for i := 0; i < b.N; i++ {
 		g.IsValid(Letter(i))

@@ -24,7 +24,7 @@ const (
 // of the index of the base-complement, modulo 4.
 var (
 	DNA = MustComplement(NewComplementor(
-		"acgt",
+		"-acgt",
 		feat.DNA,
 		MustPair(NewPairing("acgtnxACGTNX-", "tgcanxTGCANX-")),
 		'-', 'n',
@@ -40,7 +40,7 @@ var (
 	))
 
 	RNA = MustComplement(NewComplementor(
-		"acgu",
+		"-acgu",
 		feat.RNA,
 		MustPair(NewPairing("acgunxACGUNX-", "ugcanxUGCANX-")),
 		'-', 'n',
@@ -56,7 +56,7 @@ var (
 	))
 
 	Protein = Must(NewAlphabet(
-		"abcdefghijklmnpqrstvwxyz*",
+		"-abcdefghijklmnpqrstvwxyz*",
 		feat.Protein,
 		'-', 'x',
 		!CaseSensitive,
