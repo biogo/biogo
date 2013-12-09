@@ -20,7 +20,9 @@ type AlphabetSlicer interface {
 }
 
 // An Aligner aligns the sequence data of two type-matching Slicers, returning an ordered
-// slice of features describing matching and mismatching segments.
+// slice of features describing matching and mismatching segments. The sequences to be aligned
+// must have a valid gap letter in the first position of their alphabet; the alphabets
+// {DNA,RNA}{gapped,redundant} and Protein provided by the alphabet package satisfy this.
 type Aligner interface {
 	Align(reference, query AlphabetSlicer) ([]feat.Pair, error)
 }
@@ -54,6 +56,7 @@ var (
 	ErrMismatchedTypes     = errors.New("align: mismatched sequence types")
 	ErrMismatchedAlphabets = errors.New("align: mismatched alphabets")
 	ErrNoAlphabet          = errors.New("align: no alphabet")
+	ErrNotGappedAlphabet   = errors.New("align: alphabet does not have gap at position 0")
 	ErrTypeNotHandled      = errors.New("align: sequence type not handled")
 	ErrMatrixNotSquare     = errors.New("align: scoring matrix is not square")
 )

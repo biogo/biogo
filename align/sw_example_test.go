@@ -13,9 +13,9 @@ import (
 
 func ExampleSW_Align_1() {
 	swsa := &linear.Seq{Seq: alphabet.BytesToLetters([]byte("ACACACTA"))}
-	swsa.Alpha = alphabet.DNA
+	swsa.Alpha = alphabet.DNAgapped
 	swsb := &linear.Seq{Seq: alphabet.BytesToLetters([]byte("AGCACACA"))}
-	swsb.Alpha = alphabet.DNA
+	swsb.Alpha = alphabet.DNAgapped
 
 	// w(gap) = -1
 	// w(match) = +2
@@ -42,9 +42,9 @@ func ExampleSW_Align_1() {
 
 func ExampleSW_Align_2() {
 	swsa := &linear.Seq{Seq: alphabet.BytesToLetters([]byte("AAAATTTAAAA"))}
-	swsa.Alpha = alphabet.DNA
+	swsa.Alpha = alphabet.DNAgapped
 	swsb := &linear.Seq{Seq: alphabet.BytesToLetters([]byte("AAAAGGGAAAA"))}
-	swsb.Alpha = alphabet.DNA
+	swsb.Alpha = alphabet.DNAgapped
 
 	// w(gap) = 0
 	// w(match) = +2
@@ -71,9 +71,9 @@ func ExampleSW_Align_2() {
 
 func ExampleSWAffine_Align() {
 	swsa := &linear.Seq{Seq: alphabet.BytesToLetters([]byte("ATAGGAAG"))}
-	swsa.Alpha = alphabet.DNA
+	swsa.Alpha = alphabet.DNAgapped
 	swsb := &linear.Seq{Seq: alphabet.BytesToLetters([]byte("ATTGGCAATG"))}
-	swsb.Alpha = alphabet.DNA
+	swsb.Alpha = alphabet.DNAgapped
 
 	//		   Query letter
 	//  	 -	 A	 C	 G	 T

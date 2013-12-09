@@ -13,9 +13,9 @@ import (
 
 func ExampleFitted_Align() {
 	fsa := &linear.Seq{Seq: alphabet.BytesToLetters([]byte("AGACTAGATT"))}
-	fsa.Alpha = alphabet.DNA
+	fsa.Alpha = alphabet.DNAgapped
 	fsb := &linear.Seq{Seq: alphabet.BytesToLetters([]byte("GACAGACGA"))}
-	fsb.Alpha = alphabet.DNA
+	fsb.Alpha = alphabet.DNAgapped
 
 	//		   Query letter
 	//  	 -	 A	 C	 G	 T
@@ -46,9 +46,9 @@ func ExampleFitted_Align() {
 
 func ExampleFittedAffine_Align() {
 	fsa := &linear.Seq{Seq: alphabet.BytesToLetters([]byte("ATAGGAA"))}
-	fsa.Alpha = alphabet.DNA
+	fsa.Alpha = alphabet.DNAgapped
 	fsb := &linear.Seq{Seq: alphabet.BytesToLetters([]byte("ATTGGCAATGA"))}
-	fsb.Alpha = alphabet.DNA
+	fsb.Alpha = alphabet.DNAgapped
 
 	//		   Query letter
 	//  	 -	 A	 C	 G	 T

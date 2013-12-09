@@ -27,6 +27,9 @@ func (a SW) Align(reference, query AlphabetSlicer) ([]feat.Pair, error) {
 	if alpha != query.Alphabet() {
 		return nil, ErrMismatchedAlphabets
 	}
+	if alpha.IndexOf(alpha.Gap()) != 0 {
+		return nil, ErrNotGappedAlphabet
+	}
 	switch rSeq := reference.Slice().(type) {
 	case alphabet.Letters:
 		qSeq, ok := query.Slice().(alphabet.Letters)

@@ -13,9 +13,9 @@ import (
 
 func ExampleNW_Align() {
 	nwsa := &linear.Seq{Seq: alphabet.BytesToLetters([]byte("AGACTAGTTA"))}
-	nwsa.Alpha = alphabet.DNA
+	nwsa.Alpha = alphabet.DNAgapped
 	nwsb := &linear.Seq{Seq: alphabet.BytesToLetters([]byte("GACAGACG"))}
-	nwsb.Alpha = alphabet.DNA
+	nwsb.Alpha = alphabet.DNAgapped
 
 	//		   Query letter
 	//  	 -	 A	 C	 G	 T
@@ -46,9 +46,9 @@ func ExampleNW_Align() {
 
 func ExampleNWAffine_Align() {
 	nwsa := &linear.Seq{Seq: alphabet.BytesToLetters([]byte("ATAGGAAG"))}
-	nwsa.Alpha = alphabet.DNA
+	nwsa.Alpha = alphabet.DNAgapped
 	nwsb := &linear.Seq{Seq: alphabet.BytesToLetters([]byte("ATTGGCAATG"))}
-	nwsb.Alpha = alphabet.DNA
+	nwsb.Alpha = alphabet.DNAgapped
 
 	//		   Query letter
 	//  	 -	 A	 C	 G	 T

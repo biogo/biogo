@@ -80,15 +80,17 @@ func (s *S) TestAlignment(c *check.C) {
 	c.Check(err, check.Equals, nil)
 	for _, h := range H {
 		sa, sb := &linear.Seq{Seq: a.Seq[h.Abpos:h.Aepos]}, &linear.Seq{Seq: b.Seq[h.Bbpos:h.Bepos]}
+		sa.Alpha = alphabet.DNAgapped
+		sb.Alpha = alphabet.DNAgapped
 		smith := align.SW{
-			{2, -1, -1, -1, -1},
+			{0, -1, -1, -1, -1},
 			{-1, 2, -1, -1, -1},
 			{-1, -1, 2, -1, -1},
 			{-1, -1, -1, 2, -1},
-			{-1, -1, -1, -1, 0},
+			{-1, -1, -1, -1, 2},
 		}
 		swa, _ := smith.Align(sa, sb)
-		fa := align.Format(sa, sb, swa, '-')
+		fa := align.Format(sa, sb, swa, sa.Alpha.Gap())
 		c.Logf("%v\n", swa)
 		c.Logf("%s\n%s\n", fa[0], fa[1])
 	}
