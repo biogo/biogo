@@ -24,6 +24,14 @@ const (
 // of the index of the base-complement, modulo 4.
 var (
 	DNA = MustComplement(NewComplementor(
+		"acgt",
+		feat.DNA,
+		MustPair(NewPairing("acgtnxACGTNX-", "tgcanxTGCANX-")),
+		'-', 'n',
+		!CaseSensitive,
+	))
+
+	DNAgapped = MustComplement(NewComplementor(
 		"-acgt",
 		feat.DNA,
 		MustPair(NewPairing("acgtnxACGTNX-", "tgcanxTGCANX-")),
@@ -40,6 +48,14 @@ var (
 	))
 
 	RNA = MustComplement(NewComplementor(
+		"acgu",
+		feat.RNA,
+		MustPair(NewPairing("acgunxACGUNX-", "ugcanxUGCANX-")),
+		'-', 'n',
+		!CaseSensitive,
+	))
+
+	RNAgapped = MustComplement(NewComplementor(
 		"-acgu",
 		feat.RNA,
 		MustPair(NewPairing("acgunxACGUNX-", "ugcanxUGCANX-")),

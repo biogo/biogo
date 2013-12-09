@@ -42,8 +42,10 @@ type testAlphabets struct {
 
 func (s *S) TestIsValid(c *check.C) {
 	for _, t := range []testAlphabets{
-		{DNA, "-acgt"},
-		{RNA, "-acgu"},
+		{DNA, "acgt"},
+		{DNAgapped, "-acgt"},
+		{RNA, "acgu"},
+		{RNAgapped, "-acgu"},
 		{Protein, "-abcdefghijklmnpqrstvwxyz*"},
 	} {
 		for i := 0; i < 256; i++ {
@@ -106,8 +108,10 @@ func (s *S) TestComplementDirect(c *check.C) {
 
 func (s *S) TestLetters(c *check.C) {
 	for _, t := range []testAlphabets{
-		{DNA, "-acgt-ACGT"},
-		{RNA, "-acgu-ACGU"},
+		{DNA, "acgtACGT"},
+		{DNA, "acgtACGT"},
+		{RNAgapped, "-acgu-ACGU"},
+		{RNAgapped, "-acgu-ACGU"},
 		{Protein, "-abcdefghijklmnpqrstvwxyz*-ABCDEFGHIJKLMNPQRSTVWXYZ*"},
 	} {
 		c.Check(t.alphabet.Letters(), check.Equals, t.letters)
