@@ -56,7 +56,7 @@ var (
 	))
 
 	Protein = Must(NewAlphabet(
-		"abcdefghijklmnpqrstvxyz*",
+		"abcdefghijklmnpqrstvwxyz*",
 		feat.Protein,
 		'-', 'x',
 		!CaseSensitive,
