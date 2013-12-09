@@ -1,0 +1,16 @@
+README for blast/matrices.
+Last updated 09/10/12.
+
+This directory contains matrices produced by various programs.  
+These matrices should be useable with BLAST and other programs.  
+
+BLAST binaries produced within the last few years store matrix information for 
+BLOSUM45, BLOSUM50, BLOSUM62, BLOSUM80, BLOSUM90, PAM30, PAM70, and PAM250 
+as part of the program and do not need external files.
+
+The directory also contains a tar ball (pam.tar.gz) with source code to produce
+the PAM matrices.  The output from this program differs from the PAM matrices 
+in this directory.  It does not produce comments and does not produce scores
+for B, Z, X or *.  In the near future, the NCBI plans to update this code 
+so as to produce comments similar to those of the PAM matrices in this 
+directory and also to include values for B, Z, X and *.  
