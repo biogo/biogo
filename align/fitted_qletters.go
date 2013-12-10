@@ -54,18 +54,16 @@ func pointerFittedQLetters(rSeq, qSeq alphabet.QLetters, i, j int, table []int, 
 	qVal := index[qSeq[j-1].L]
 	if rVal < 0 || qVal < 0 {
 		return ""
-	} else {
-		p := i*c + j
-		switch table[p] {
-		case table[p-c-1] + a[rVal][qVal]:
-			return "⬉"
-		case table[p-c] + a[rVal][gap]:
-			return "⬆"
-		case table[p-1] + a[gap][qVal]:
-			return "⬅"
-		default:
-			return ""
-		}
+	}
+	switch p := i*c + j; table[p] {
+	case table[p-c-1] + a[rVal][qVal]:
+		return "⬉"
+	case table[p-c] + a[rVal][gap]:
+		return "⬆"
+	case table[p-1] + a[gap][qVal]:
+		return "⬅"
+	default:
+		return ""
 	}
 }
 

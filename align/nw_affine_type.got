@@ -70,28 +70,26 @@ func pointerNWAffineType(rSeq, qSeq Type, i, j, l int, table [][3]int, index alp
 	qVal := index[qSeq[j-1]]
 	if rVal < 0 || qVal < 0 {
 		return ""
-	} else {
-		p := i*c + j
-		switch table[p][l] {
-		case table[p-c][up] + a.Matrix[rVal][gap]:
-			return "⬆ u"
-		case table[p-1][left] + a.Matrix[gap][qVal]:
-			return "⬅ l"
+	}
+	switch p := i*c + j; table[p][l] {
+	case table[p-c][up] + a.Matrix[rVal][gap]:
+		return "⬆ u"
+	case table[p-1][left] + a.Matrix[gap][qVal]:
+		return "⬅ l"
 
-		case table[p-c][diag] + a.GapOpen + a.Matrix[rVal][gap]:
-			return "⬆ m"
-		case table[p-1][diag] + a.GapOpen + a.Matrix[gap][qVal]:
-			return "⬅ m"
+	case table[p-c][diag] + a.GapOpen + a.Matrix[rVal][gap]:
+		return "⬆ m"
+	case table[p-1][diag] + a.GapOpen + a.Matrix[gap][qVal]:
+		return "⬅ m"
 
-		case table[p-c-1][up] + a.Matrix[rVal][qVal]:
-			return "⬉ u"
-		case table[p-c-1][left] + a.Matrix[rVal][qVal]:
-			return "⬉ l"
-		case table[p-c-1][diag] + a.Matrix[rVal][qVal]:
-			return "⬉ m"
-		default:
-			return [3]string{"", "⬆ u", "⬅ l"}[l]
-		}
+	case table[p-c-1][up] + a.Matrix[rVal][qVal]:
+		return "⬉ u"
+	case table[p-c-1][left] + a.Matrix[rVal][qVal]:
+		return "⬉ l"
+	case table[p-c-1][diag] + a.Matrix[rVal][qVal]:
+		return "⬉ m"
+	default:
+		return [3]string{"", "⬆ u", "⬅ l"}[l]
 	}
 }
 

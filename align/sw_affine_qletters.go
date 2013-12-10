@@ -54,37 +54,35 @@ func drawSWAffineTableQLetters(rSeq, qSeq alphabet.QLetters, index alphabet.Inde
 }
 
 func pointerSWAffineQLetters(rSeq, qSeq alphabet.QLetters, i, j, l int, table [][3]int, index alphabet.Index, a SWAffine, c int) string {
-	p := i*c + j
-	if table[p][l] == 0 {
+	if i == 0 || j == 0 {
 		return ""
 	}
 	rVal := index[rSeq[i-1].L]
 	qVal := index[qSeq[j-1].L]
 	if rVal < 0 || qVal < 0 {
 		return ""
-	} else {
-		switch table[p][l] {
-		case 0:
-			return ""
-		case table[p-c][up] + a.Matrix[rVal][gap]:
-			return "⬆ u"
-		case table[p-1][left] + a.Matrix[gap][qVal]:
-			return "⬅ l"
+	}
+	switch p := i*c + j; table[p][l] {
+	case 0:
+		return ""
+	case table[p-c][up] + a.Matrix[rVal][gap]:
+		return "⬆ u"
+	case table[p-1][left] + a.Matrix[gap][qVal]:
+		return "⬅ l"
 
-		case table[p-c][diag] + a.GapOpen + a.Matrix[rVal][gap]:
-			return "⬆ m"
-		case table[p-1][diag] + a.GapOpen + a.Matrix[gap][qVal]:
-			return "⬅ m"
+	case table[p-c][diag] + a.GapOpen + a.Matrix[rVal][gap]:
+		return "⬆ m"
+	case table[p-1][diag] + a.GapOpen + a.Matrix[gap][qVal]:
+		return "⬅ m"
 
-		case table[p-c-1][diag] + a.Matrix[rVal][qVal]:
-			return "⬉ m"
-		case table[p-c-1][up] + a.Matrix[rVal][qVal]:
-			return "⬉ u"
-		case table[p-c-1][left] + a.Matrix[rVal][qVal]:
-			return "⬉ l"
-		default:
-			return [3]string{"", "⬆ u", "⬅ l"}[l]
-		}
+	case table[p-c-1][diag] + a.Matrix[rVal][qVal]:
+		return "⬉ m"
+	case table[p-c-1][up] + a.Matrix[rVal][qVal]:
+		return "⬉ u"
+	case table[p-c-1][left] + a.Matrix[rVal][qVal]:
+		return "⬉ l"
+	default:
+		return [3]string{"", "⬆ u", "⬅ l"}[l]
 	}
 }
 
