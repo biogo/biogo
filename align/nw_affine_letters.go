@@ -183,8 +183,7 @@ func (a NWAffine) alignLetters(rSeq, qSeq alphabet.Letters, alpha alphabet.Alpha
 		if rVal < 0 || qVal < 0 {
 			continue
 		}
-		p := i*c + j
-		switch table[p][layer] {
+		switch p := i*c + j; table[p][layer] {
 		case table[p-c][up] + la[rVal*let]:
 			if last != up && p != len(table)-1 {
 				aln = append(aln, &featPair{

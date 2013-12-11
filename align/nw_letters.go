@@ -127,8 +127,7 @@ func (a NW) alignLetters(rSeq, qSeq alphabet.Letters, alpha alphabet.Alphabet) (
 		if rVal < 0 || qVal < 0 {
 			continue
 		}
-		p := i*c + j
-		switch table[p] {
+		switch p := i*c + j; table[p] {
 		case table[p-c-1] + la[rVal*let+qVal]:
 			if last != diag {
 				aln = append(aln, &featPair{
