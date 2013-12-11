@@ -25,7 +25,7 @@ func (s *S) TestWarning(c *check.C) { c.Log("\nFIXME: Tests only in example test
 func BenchmarkSWAlign(b *testing.B) {
 	b.StopTimer()
 	t := &linear.Seq{}
-	t.Alpha = alphabet.DNA
+	t.Alpha = alphabet.DNAgapped
 	r := fasta.NewReader(strings.NewReader(crspFa), t)
 	swsa, _ := r.Read()
 	swsb, _ := r.Read()
@@ -46,7 +46,7 @@ func BenchmarkSWAlign(b *testing.B) {
 func BenchmarkNWAlign(b *testing.B) {
 	b.StopTimer()
 	t := &linear.Seq{}
-	t.Alpha = alphabet.DNA
+	t.Alpha = alphabet.DNAgapped
 	r := fasta.NewReader(strings.NewReader(crspFa), t)
 	nwsa, _ := r.Read()
 	nwsb, _ := r.Read()
@@ -68,7 +68,7 @@ func BenchmarkNWAlign(b *testing.B) {
 func BenchmarkSWAffineAlign(b *testing.B) {
 	b.StopTimer()
 	t := &linear.Seq{}
-	t.Alpha = alphabet.DNA
+	t.Alpha = alphabet.DNAgapped
 	r := fasta.NewReader(strings.NewReader(crspFa), t)
 	swsa, _ := r.Read()
 	swsb, _ := r.Read()
@@ -92,7 +92,7 @@ func BenchmarkSWAffineAlign(b *testing.B) {
 func BenchmarkNWAffineAlign(b *testing.B) {
 	b.StopTimer()
 	t := &linear.Seq{}
-	t.Alpha = alphabet.DNA
+	t.Alpha = alphabet.DNAgapped
 	r := fasta.NewReader(strings.NewReader(crspFa), t)
 	nwsa, _ := r.Read()
 	nwsb, _ := r.Read()
