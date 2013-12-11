@@ -122,7 +122,8 @@ func (a SW) alignLetters(rSeq, qSeq alphabet.Letters, alpha alphabet.Alphabet) (
 	var aln []feat.Pair
 	score, last := 0, diag
 	i, j := maxI, maxJ
-	for p := i*c + j; table[p] != 0 && i > 0 && j > 0; p = i*c + j {
+loop:
+	for i > 0 && j > 0 {
 		var (
 			rVal = index[rSeq[i-1]]
 			qVal = index[qSeq[j-1]]
@@ -130,7 +131,9 @@ func (a SW) alignLetters(rSeq, qSeq alphabet.Letters, alpha alphabet.Alphabet) (
 		if rVal < 0 || qVal < 0 {
 			continue
 		}
-		switch table[p] {
+		switch p := i*c + j; table[p] {
+		case 0:
+			break loop
 		case table[p-c-1] + la[rVal*let+qVal]:
 			if last != diag {
 				aln = append(aln, &featPair{

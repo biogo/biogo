@@ -157,7 +157,8 @@ func (a SWAffine) alignLetters(rSeq, qSeq alphabet.Letters, alpha alphabet.Alpha
 	var aln []feat.Pair
 	score, last, layer := 0, diag, diag
 	i, j := maxI, maxJ
-	for p := i*c + j; table[p][layer] != 0 && i > 0 && j > 0; p = i*c + j {
+loop:
+	for i > 0 && j > 0 {
 		var (
 			rVal = index[rSeq[i-1]]
 			qVal = index[qSeq[j-1]]
@@ -165,7 +166,9 @@ func (a SWAffine) alignLetters(rSeq, qSeq alphabet.Letters, alpha alphabet.Alpha
 		if rVal < 0 || qVal < 0 {
 			continue
 		}
-		switch table[p][layer] {
+		switch p := i*c + j; table[p][layer] {
+		case 0:
+			break loop
 		case table[p-c][up] + la[rVal*let]:
 			if last != up && p != len(table)-1 {
 				aln = append(aln, &featPair{
