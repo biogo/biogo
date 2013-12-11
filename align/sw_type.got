@@ -96,22 +96,21 @@ func (a SW) alignType(rSeq, qSeq Type, alpha alphabet.Alphabet) ([]feat.Pair, er
 			)
 			if rVal < 0 || qVal < 0 {
 				continue
-			} else {
-				p := i*c + j
-				scores = [3]int{
-					diag: table[p-c-1] + la[rVal*let+qVal],
-					up:   table[p-c] + la[rVal*let],
-					left: table[p-1] + la[qVal],
-				}
-				score = max(&scores)
-				if score < 0 {
-					score = 0
-				}
-				if score >= maxS { // greedy so make farthest down and right
-					maxS, maxI, maxJ = score, i, j
-				}
-				table[p] = score
 			}
+			p := i*c + j
+			scores = [3]int{
+				diag: table[p-c-1] + la[rVal*let+qVal],
+				up:   table[p-c] + la[rVal*let],
+				left: table[p-1] + la[qVal],
+			}
+			score = max(&scores)
+			if score < 0 {
+				score = 0
+			}
+			if score >= maxS { // greedy so make farthest down and right
+				maxS, maxI, maxJ = score, i, j
+			}
+			table[p] = score
 		}
 	}
 	if debugSmith {
@@ -128,51 +127,50 @@ func (a SW) alignType(rSeq, qSeq Type, alpha alphabet.Alphabet) ([]feat.Pair, er
 		)
 		if rVal < 0 || qVal < 0 {
 			continue
-		} else {
-			switch table[p] {
-			case table[p-c-1] + la[rVal*let+qVal]:
-				if last != diag {
-					aln = append(aln, &featPair{
-						a:     feature{start: i, end: maxI},
-						b:     feature{start: j, end: maxJ},
-						score: score,
-					})
-					maxI, maxJ = i, j
-					score = 0
-				}
-				score += table[p] - table[p-c-1]
-				i--
-				j--
-				last = diag
-			case table[p-c] + la[rVal*let]:
-				if last != up {
-					aln = append(aln, &featPair{
-						a:     feature{start: i, end: maxI},
-						b:     feature{start: j, end: maxJ},
-						score: score,
-					})
-					maxI, maxJ = i, j
-					score = 0
-				}
-				score += table[p] - table[p-c]
-				i--
-				last = up
-			case table[p-1] + la[qVal]:
-				if last != left {
-					aln = append(aln, &featPair{
-						a:     feature{start: i, end: maxI},
-						b:     feature{start: j, end: maxJ},
-						score: score,
-					})
-					maxI, maxJ = i, j
-					score = 0
-				}
-				score += table[p] - table[p-1]
-				j--
-				last = left
-			default:
-				panic(fmt.Sprintf("align: sw internal error: no path at row: %d col:%d\n", i, j))
+		}
+		switch table[p] {
+		case table[p-c-1] + la[rVal*let+qVal]:
+			if last != diag {
+				aln = append(aln, &featPair{
+					a:     feature{start: i, end: maxI},
+					b:     feature{start: j, end: maxJ},
+					score: score,
+				})
+				maxI, maxJ = i, j
+				score = 0
 			}
+			score += table[p] - table[p-c-1]
+			i--
+			j--
+			last = diag
+		case table[p-c] + la[rVal*let]:
+			if last != up {
+				aln = append(aln, &featPair{
+					a:     feature{start: i, end: maxI},
+					b:     feature{start: j, end: maxJ},
+					score: score,
+				})
+				maxI, maxJ = i, j
+				score = 0
+			}
+			score += table[p] - table[p-c]
+			i--
+			last = up
+		case table[p-1] + la[qVal]:
+			if last != left {
+				aln = append(aln, &featPair{
+					a:     feature{start: i, end: maxI},
+					b:     feature{start: j, end: maxJ},
+					score: score,
+				})
+				maxI, maxJ = i, j
+				score = 0
+			}
+			score += table[p] - table[p-1]
+			j--
+			last = left
+		default:
+			panic(fmt.Sprintf("align: sw internal error: no path at row: %d col:%d\n", i, j))
 		}
 	}
 

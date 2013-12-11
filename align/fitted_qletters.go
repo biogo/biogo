@@ -96,15 +96,14 @@ func (a Fitted) alignQLetters(rSeq, qSeq alphabet.QLetters, alpha alphabet.Alpha
 			)
 			if rVal < 0 || qVal < 0 {
 				continue
-			} else {
-				p := i*c + j
-				scores = [3]int{
-					diag: table[p-c-1] + la[rVal*let+qVal],
-					up:   table[p-c] + la[rVal*let],
-					left: table[p-1] + la[qVal],
-				}
-				table[p] = max(&scores)
 			}
+			p := i*c + j
+			scores = [3]int{
+				diag: table[p-c-1] + la[rVal*let+qVal],
+				up:   table[p-c] + la[rVal*let],
+				left: table[p-1] + la[qVal],
+			}
+			table[p] = max(&scores)
 		}
 	}
 	if debugFitted {
@@ -138,52 +137,51 @@ func (a Fitted) alignQLetters(rSeq, qSeq alphabet.QLetters, alpha alphabet.Alpha
 		)
 		if rVal < 0 || qVal < 0 {
 			continue
-		} else {
-			p := i*c + j
-			switch table[p] {
-			case table[p-c-1] + la[rVal*let+qVal]:
-				if last != diag {
-					aln = append(aln, &featPair{
-						a:     feature{start: i, end: maxI},
-						b:     feature{start: j, end: maxJ},
-						score: score,
-					})
-					maxI, maxJ = i, j
-					score = 0
-				}
-				score += table[p] - table[p-c-1]
-				i--
-				j--
-				last = diag
-			case table[p-c] + la[rVal*let]:
-				if last != up && p != len(table)-1 {
-					aln = append(aln, &featPair{
-						a:     feature{start: i, end: maxI},
-						b:     feature{start: j, end: maxJ},
-						score: score,
-					})
-					maxI, maxJ = i, j
-					score = 0
-				}
-				score += table[p] - table[p-c]
-				i--
-				last = up
-			case table[p-1] + la[qVal]:
-				if last != left && p != len(table)-1 {
-					aln = append(aln, &featPair{
-						a:     feature{start: i, end: maxI},
-						b:     feature{start: j, end: maxJ},
-						score: score,
-					})
-					maxI, maxJ = i, j
-					score = 0
-				}
-				score += table[p] - table[p-1]
-				j--
-				last = left
-			default:
-				panic(fmt.Sprintf("align: fitted nw internal error: no path at row: %d col:%d\n", i, j))
+		}
+		p := i*c + j
+		switch table[p] {
+		case table[p-c-1] + la[rVal*let+qVal]:
+			if last != diag {
+				aln = append(aln, &featPair{
+					a:     feature{start: i, end: maxI},
+					b:     feature{start: j, end: maxJ},
+					score: score,
+				})
+				maxI, maxJ = i, j
+				score = 0
 			}
+			score += table[p] - table[p-c-1]
+			i--
+			j--
+			last = diag
+		case table[p-c] + la[rVal*let]:
+			if last != up && p != len(table)-1 {
+				aln = append(aln, &featPair{
+					a:     feature{start: i, end: maxI},
+					b:     feature{start: j, end: maxJ},
+					score: score,
+				})
+				maxI, maxJ = i, j
+				score = 0
+			}
+			score += table[p] - table[p-c]
+			i--
+			last = up
+		case table[p-1] + la[qVal]:
+			if last != left && p != len(table)-1 {
+				aln = append(aln, &featPair{
+					a:     feature{start: i, end: maxI},
+					b:     feature{start: j, end: maxJ},
+					score: score,
+				})
+				maxI, maxJ = i, j
+				score = 0
+			}
+			score += table[p] - table[p-1]
+			j--
+			last = left
+		default:
+			panic(fmt.Sprintf("align: fitted nw internal error: no path at row: %d col:%d\n", i, j))
 		}
 	}
 

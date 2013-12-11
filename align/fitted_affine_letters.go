@@ -136,25 +136,24 @@ func (a FittedAffine) alignLetters(rSeq, qSeq alphabet.Letters, alpha alphabet.A
 			)
 			if rVal < 0 || qVal < 0 {
 				continue
-			} else {
-				p := i*c + j
-				scores = [3]int{
-					diag: table[p-c-1][diag],
-					up:   table[p-c-1][up],
-					left: table[p-c-1][left],
-				}
-				table[p][diag] = max(&scores) + la[rVal*let+qVal]
-
-				table[p][up] = max2(
-					add(table[p-c][diag], a.GapOpen+la[rVal*let]),
-					add(table[p-c][up], la[rVal*let]),
-				)
-
-				table[p][left] = max2(
-					add(table[p-1][diag], a.GapOpen+la[qVal]),
-					add(table[p-1][left], la[qVal]),
-				)
 			}
+			p := i*c + j
+			scores = [3]int{
+				diag: table[p-c-1][diag],
+				up:   table[p-c-1][up],
+				left: table[p-c-1][left],
+			}
+			table[p][diag] = max(&scores) + la[rVal*let+qVal]
+
+			table[p][up] = max2(
+				add(table[p-c][diag], a.GapOpen+la[rVal*let]),
+				add(table[p-c][up], la[rVal*let]),
+			)
+
+			table[p][left] = max2(
+				add(table[p-1][diag], a.GapOpen+la[qVal]),
+				add(table[p-1][left], la[qVal]),
+			)
 		}
 	}
 	if debugFittedAffine {
@@ -188,114 +187,113 @@ func (a FittedAffine) alignLetters(rSeq, qSeq alphabet.Letters, alpha alphabet.A
 		)
 		if rVal < 0 || qVal < 0 {
 			continue
-		} else {
-			p := i*c + j
-			switch table[p][layer] {
-			case table[p-c][up] + la[rVal*let]:
-				if last != up && p != len(table)-1 {
-					aln = append(aln, &featPair{
-						a:     feature{start: i, end: maxI},
-						b:     feature{start: j, end: maxJ},
-						score: score,
-					})
-					maxI, maxJ = i, j
-					score = 0
-				}
-				score += table[p][layer] - table[p-c][up]
-				i--
-				layer = up
-				last = up
-			case table[p-1][left] + la[qVal]:
-				if last != left && p != len(table)-1 {
-					aln = append(aln, &featPair{
-						a:     feature{start: i, end: maxI},
-						b:     feature{start: j, end: maxJ},
-						score: score,
-					})
-					maxI, maxJ = i, j
-					score = 0
-				}
-				score += table[p][layer] - table[p-1][left]
-				j--
-				layer = left
-				last = left
-			case table[p-c][diag] + a.GapOpen + la[rVal*let]:
-				if last != up && p != len(table)-1 {
-					aln = append(aln, &featPair{
-						a:     feature{start: i, end: maxI},
-						b:     feature{start: j, end: maxJ},
-						score: score,
-					})
-					maxI, maxJ = i, j
-					score = 0
-				}
-				score += table[p][layer] - table[p-c][diag]
-				i--
-				layer = diag
-				last = up
-			case table[p-1][diag] + a.GapOpen + la[qVal]:
-				if last != left && p != len(table)-1 {
-					aln = append(aln, &featPair{
-						a:     feature{start: i, end: maxI},
-						b:     feature{start: j, end: maxJ},
-						score: score,
-					})
-					maxI, maxJ = i, j
-					score = 0
-				}
-				score += table[p][layer] - table[p-1][diag]
-				j--
-				layer = diag
-				last = left
-			case table[p-c-1][up] + la[rVal*let+qVal]:
-				if last != diag {
-					aln = append(aln, &featPair{
-						a:     feature{start: i, end: maxI},
-						b:     feature{start: j, end: maxJ},
-						score: score,
-					})
-					maxI, maxJ = i, j
-					score = 0
-				}
-				score += table[p][layer] - table[p-c-1][up]
-				i--
-				j--
-				layer = up
-				last = diag
-			case table[p-c-1][left] + la[rVal*let+qVal]:
-				if last != diag {
-					aln = append(aln, &featPair{
-						a:     feature{start: i, end: maxI},
-						b:     feature{start: j, end: maxJ},
-						score: score,
-					})
-					maxI, maxJ = i, j
-					score = 0
-				}
-				score += table[p][layer] - table[p-c-1][left]
-				i--
-				j--
-				layer = left
-				last = diag
-			case table[p-c-1][diag] + la[rVal*let+qVal]:
-				if last != diag {
-					aln = append(aln, &featPair{
-						a:     feature{start: i, end: maxI},
-						b:     feature{start: j, end: maxJ},
-						score: score,
-					})
-					maxI, maxJ = i, j
-					score = 0
-				}
-				score += table[p][layer] - table[p-c-1][diag]
-				i--
-				j--
-				layer = diag
-				last = diag
-
-			default:
-				panic(fmt.Sprintf("align: fitted nw affine internal error: no path at row: %d col:%d layer:%s\n", i, j, "mul"[layer:layer+1]))
+		}
+		p := i*c + j
+		switch table[p][layer] {
+		case table[p-c][up] + la[rVal*let]:
+			if last != up && p != len(table)-1 {
+				aln = append(aln, &featPair{
+					a:     feature{start: i, end: maxI},
+					b:     feature{start: j, end: maxJ},
+					score: score,
+				})
+				maxI, maxJ = i, j
+				score = 0
 			}
+			score += table[p][layer] - table[p-c][up]
+			i--
+			layer = up
+			last = up
+		case table[p-1][left] + la[qVal]:
+			if last != left && p != len(table)-1 {
+				aln = append(aln, &featPair{
+					a:     feature{start: i, end: maxI},
+					b:     feature{start: j, end: maxJ},
+					score: score,
+				})
+				maxI, maxJ = i, j
+				score = 0
+			}
+			score += table[p][layer] - table[p-1][left]
+			j--
+			layer = left
+			last = left
+		case table[p-c][diag] + a.GapOpen + la[rVal*let]:
+			if last != up && p != len(table)-1 {
+				aln = append(aln, &featPair{
+					a:     feature{start: i, end: maxI},
+					b:     feature{start: j, end: maxJ},
+					score: score,
+				})
+				maxI, maxJ = i, j
+				score = 0
+			}
+			score += table[p][layer] - table[p-c][diag]
+			i--
+			layer = diag
+			last = up
+		case table[p-1][diag] + a.GapOpen + la[qVal]:
+			if last != left && p != len(table)-1 {
+				aln = append(aln, &featPair{
+					a:     feature{start: i, end: maxI},
+					b:     feature{start: j, end: maxJ},
+					score: score,
+				})
+				maxI, maxJ = i, j
+				score = 0
+			}
+			score += table[p][layer] - table[p-1][diag]
+			j--
+			layer = diag
+			last = left
+		case table[p-c-1][up] + la[rVal*let+qVal]:
+			if last != diag {
+				aln = append(aln, &featPair{
+					a:     feature{start: i, end: maxI},
+					b:     feature{start: j, end: maxJ},
+					score: score,
+				})
+				maxI, maxJ = i, j
+				score = 0
+			}
+			score += table[p][layer] - table[p-c-1][up]
+			i--
+			j--
+			layer = up
+			last = diag
+		case table[p-c-1][left] + la[rVal*let+qVal]:
+			if last != diag {
+				aln = append(aln, &featPair{
+					a:     feature{start: i, end: maxI},
+					b:     feature{start: j, end: maxJ},
+					score: score,
+				})
+				maxI, maxJ = i, j
+				score = 0
+			}
+			score += table[p][layer] - table[p-c-1][left]
+			i--
+			j--
+			layer = left
+			last = diag
+		case table[p-c-1][diag] + la[rVal*let+qVal]:
+			if last != diag {
+				aln = append(aln, &featPair{
+					a:     feature{start: i, end: maxI},
+					b:     feature{start: j, end: maxJ},
+					score: score,
+				})
+				maxI, maxJ = i, j
+				score = 0
+			}
+			score += table[p][layer] - table[p-c-1][diag]
+			i--
+			j--
+			layer = diag
+			last = diag
+
+		default:
+			panic(fmt.Sprintf("align: fitted nw affine internal error: no path at row: %d col:%d layer:%s\n", i, j, "mul"[layer:layer+1]))
 		}
 	}
 
