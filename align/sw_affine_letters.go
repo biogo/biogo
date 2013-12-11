@@ -165,7 +165,6 @@ func (a SWAffine) alignLetters(rSeq, qSeq alphabet.Letters, alpha alphabet.Alpha
 		if rVal < 0 || qVal < 0 {
 			continue
 		}
-		p := i*c + j
 		switch table[p][layer] {
 		case table[p-c][up] + la[rVal*let]:
 			if last != up && p != len(table)-1 {
