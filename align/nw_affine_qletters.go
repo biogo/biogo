@@ -171,9 +171,19 @@ func (a NWAffine) alignQLetters(rSeq, qSeq alphabet.QLetters, alpha alphabet.Alp
 		drawNWAffineTableQLetters(rSeq, qSeq, index, table, a)
 	}
 
-	var aln []feat.Pair
-	score, last, layer := 0, diag, diag
+	var (
+		aln   []feat.Pair
+		layer int
+	)
+	score, last := 0, diag
 	i, j := r-1, c-1
+	t := table[i*c+j]
+	best := t[0]
+	for i, s := range t[1:] {
+		if s > best {
+			best, layer = s, i+1
+		}
+	}
 	maxI, maxJ := i, j
 	for i > 0 && j > 0 {
 		var (
