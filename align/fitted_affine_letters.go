@@ -105,25 +105,33 @@ func (a FittedAffine) alignLetters(rSeq, qSeq alphabet.Letters, alpha alphabet.A
 	table[1] = [3]int{
 		diag: minInt,
 		up:   minInt,
-		left: a.GapOpen + la[index[qSeq[0]]],
+	}
+	if r > c {
+		table[1][left] = a.GapOpen + la[index[qSeq[0]]]
 	}
 	for j := range table[2:c] {
 		table[j+2] = [3]int{
 			diag: minInt,
 			up:   minInt,
-			left: table[j+1][left] + la[index[qSeq[j+1]]],
+		}
+		if r > c {
+			table[j+2][left] = table[j+1][left] + la[index[qSeq[j+1]]]
 		}
 	}
 	table[c] = [3]int{
 		diag: minInt,
-		up:   a.GapOpen + la[index[rSeq[0]]*let],
 		left: minInt,
+	}
+	if r < c {
+		table[c][up] = a.GapOpen + la[index[rSeq[0]]*let]
 	}
 	for i := 2; i < r; i++ {
 		table[i*c] = [3]int{
 			diag: minInt,
-			up:   table[(i-1)*c][up] + la[index[rSeq[i-1]]*let],
 			left: minInt,
+		}
+		if r < c {
+			table[i*c][up] = table[(i-1)*c][up] + la[index[rSeq[i-1]]*let]
 		}
 	}
 
@@ -162,21 +170,39 @@ func (a FittedAffine) alignLetters(rSeq, qSeq alphabet.Letters, alpha alphabet.A
 
 	var aln []feat.Pair
 	score, last, layer := 0, diag, diag
-	var j int
+	var i, j int
 	max := minInt
-	for x, v := range table[(r-1)*c : len(table)] {
-		if v[diag] >= max {
-			j = x
-			max = v[diag]
+	switch {
+	case r > c:
+		for y := 1; y < r-1; y++ {
+			v := table[(y*c)+c-1][diag]
+			if v > max {
+				i = y
+				max = v
+			}
 		}
-	}
-	i := r - 1
-	for y := 1; y < r-1; y++ {
-		v := table[(y*c)+c-1][diag]
-		if v >= max {
-			i = y
-			max = v
-			j = c - 1
+	case r < c:
+		for x, v := range table[(r-1)*c : len(table)] {
+			if v[diag] > max {
+				j = x
+				max = v[diag]
+			}
+		}
+	default:
+		for x, v := range table[(r-1)*c : len(table)] {
+			if v[diag] >= max {
+				j = x
+				max = v[diag]
+			}
+		}
+		i = r - 1
+		for y := 1; y < r-1; y++ {
+			v := table[(y*c)+c-1][diag]
+			if v >= max {
+				i = y
+				max = v
+				j = c - 1
+			}
 		}
 	}
 	maxI, maxJ := i, j

@@ -15,8 +15,10 @@ const debugFittedAffine = false
 // FittedAffine is the affine gap penalty fitted Needleman-Wunsch aligner type.
 type FittedAffine Affine
 
-// Align aligns two sequences using the Needleman-Wunsch algorithm. It returns an alignment description
-// or an error if the scoring matrix is not square, or the sequence data types or alphabets do not match.
+// Align aligns two sequences using a modified Needleman-Wunsch algorithm that finds a local region of
+// the longer of the two sequences with high similarity to the shorter sequence. It returns an alignment
+// description or an error if the scoring matrix is not square, or the sequence data types or alphabets
+// do not match.
 func (a FittedAffine) Align(reference, query AlphabetSlicer) ([]feat.Pair, error) {
 	alpha := reference.Alphabet()
 	if alpha == nil {
