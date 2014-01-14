@@ -54,7 +54,13 @@ func drawFittedAffineTableQLetters(rSeq, qSeq alphabet.QLetters, index alphabet.
 }
 
 func pointerFittedAffineQLetters(rSeq, qSeq alphabet.QLetters, i, j, l int, table [][3]int, index alphabet.Index, a FittedAffine, c int) string {
-	if i == 0 || j == 0 {
+	if j == 0 {
+		return ""
+	}
+	if i == 0 {
+		if l == left {
+			return "⬅ l"
+		}
 		return ""
 	}
 	rVal := index[rSeq[i-1].L]
@@ -106,32 +112,22 @@ func (a FittedAffine) alignQLetters(rSeq, qSeq alphabet.QLetters, alpha alphabet
 		diag: minInt,
 		up:   minInt,
 	}
-	if r > c {
-		table[1][left] = a.GapOpen + la[index[qSeq[0].L]]
-	}
+	table[1][left] = a.GapOpen + la[index[qSeq[0].L]]
 	for j := range table[2:c] {
 		table[j+2] = [3]int{
 			diag: minInt,
 			up:   minInt,
-		}
-		if r > c {
-			table[j+2][left] = table[j+1][left] + la[index[qSeq[j+1].L]]
+			left: table[j+1][left] + la[index[qSeq[j+1].L]],
 		}
 	}
 	table[c] = [3]int{
 		diag: minInt,
 		left: minInt,
 	}
-	if r < c {
-		table[c][up] = a.GapOpen + la[index[rSeq[0].L]*let]
-	}
 	for i := 2; i < r; i++ {
 		table[i*c] = [3]int{
 			diag: minInt,
 			left: minInt,
-		}
-		if r < c {
-			table[i*c][up] = table[(i-1)*c][up] + la[index[rSeq[i-1].L]*let]
 		}
 	}
 
@@ -170,39 +166,16 @@ func (a FittedAffine) alignQLetters(rSeq, qSeq alphabet.QLetters, alpha alphabet
 
 	var aln []feat.Pair
 	score, last, layer := 0, diag, diag
-	var i, j int
+	var (
+		i int
+		j = c - 1
+	)
 	max := minInt
-	switch {
-	case r > c:
-		for y := 1; y < r-1; y++ {
-			v := table[(y*c)+c-1][diag]
-			if v > max {
-				i = y
-				max = v
-			}
-		}
-	case r < c:
-		for x, v := range table[(r-1)*c : len(table)] {
-			if v[diag] > max {
-				j = x
-				max = v[diag]
-			}
-		}
-	default:
-		for x, v := range table[(r-1)*c : len(table)] {
-			if v[diag] >= max {
-				j = x
-				max = v[diag]
-			}
-		}
-		i = r - 1
-		for y := 1; y < r-1; y++ {
-			v := table[(y*c)+c-1][diag]
-			if v >= max {
-				i = y
-				max = v
-				j = c - 1
-			}
+	for y := 1; y < r; y++ {
+		v := table[(y*c)+c-1][diag]
+		if v >= max {
+			i = y
+			max = v
 		}
 	}
 	maxI, maxJ := i, j

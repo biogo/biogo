@@ -80,15 +80,8 @@ func (a Fitted) alignQLetters(rSeq, qSeq alphabet.QLetters, alpha alphabet.Alpha
 	index := alpha.LetterIndex()
 	r, c := rSeq.Len()+1, qSeq.Len()+1
 	table := make([]int, r*c)
-	if r > c {
-		for j := range table[1:c] {
-			table[j+1] = table[j] + la[index[qSeq[j].L]]
-		}
-	}
-	if r < c {
-		for i := 1; i < r; i++ {
-			table[i*c] = table[(i-1)*c] + la[index[rSeq[i-1].L]*let]
-		}
+	for j := range table[1:c] {
+		table[j+1] = table[j] + la[index[qSeq[j].L]]
 	}
 
 	var scores [3]int
@@ -116,39 +109,28 @@ func (a Fitted) alignQLetters(rSeq, qSeq alphabet.QLetters, alpha alphabet.Alpha
 
 	var aln []feat.Pair
 	score, last := 0, diag
-	i, j := r-1, c-1
 	max := minInt
-	switch {
-	case r > c:
-		for y := 1; y < r-1; y++ {
-			v := table[(y*c)+c-1]
-			if v > max {
-				i = y
-				max = v
-			}
+	var (
+		i    int
+		j    = c - 1
+		qVal int
+	)
+	for {
+		qVal = index[qSeq[j-1].L]
+		if qVal >= 0 {
+			break
 		}
-	case r < c:
-		for x, v := range table[(r-1)*c : len(table)] {
-			if v > max {
-				j = x
-				max = v
-			}
+		j--
+	}
+	for y := 1; y < r; y++ {
+		v := table[(y*c)+c-1]
+		rVal := index[rSeq[y-1].L]
+		if rVal < 0 {
+			continue
 		}
-	default:
-		for x, v := range table[(r-1)*c : len(table)] {
-			if v >= max {
-				j = x
-				max = v
-			}
-		}
-		i = r - 1
-		for y := 1; y < r-1; y++ {
-			v := table[(y*c)+c-1]
-			if v >= max {
-				i = y
-				max = v
-				j = c - 1
-			}
+		if v >= max && la[rVal*let+qVal] >= 0 {
+			i = y
+			max = v
 		}
 	}
 	maxI, maxJ := i, j

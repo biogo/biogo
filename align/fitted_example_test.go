@@ -12,7 +12,7 @@ import (
 )
 
 func ExampleFitted_Align() {
-	fsa := &linear.Seq{Seq: alphabet.BytesToLetters([]byte("AGACTAGATT"))}
+	fsa := &linear.Seq{Seq: alphabet.BytesToLetters([]byte("GTTGACAGACTAGATTCACG"))}
 	fsa.Alpha = alphabet.DNAgapped
 	fsb := &linear.Seq{Seq: alphabet.BytesToLetters([]byte("GACAGACGA"))}
 	fsb.Alpha = alphabet.DNAgapped
@@ -39,24 +39,24 @@ func ExampleFitted_Align() {
 		fmt.Printf("%s\n%s\n", fa[0], fa[1])
 	}
 	// Output:
-	//[[1,4)/[0,3)=26 [4,5)/-=-5 [5,10)/[3,8)=24]
-	// GACTAGATT
-	// GAC-AGACG
+	// [[3,10)/[0,7)=62 [10,12)/-=-10 [12,14)/[7,9)=17]
+	// GACAGACTAGA
+	// GACAGAC--GA
 }
 
 func ExampleFittedAffine_Align() {
-	fsa := &linear.Seq{Seq: alphabet.BytesToLetters([]byte("ATAGGAA"))}
+	fsa := &linear.Seq{Seq: alphabet.BytesToLetters([]byte("ATTGGCAATGA"))}
 	fsa.Alpha = alphabet.DNAgapped
-	fsb := &linear.Seq{Seq: alphabet.BytesToLetters([]byte("ATTGGCAATGA"))}
+	fsb := &linear.Seq{Seq: alphabet.BytesToLetters([]byte("ATAGGAA"))}
 	fsb.Alpha = alphabet.DNAgapped
 
 	//		   Query letter
 	//  	 -	 A	 C	 G	 T
 	// -	 0	-1	-1	-1	-1
 	// A	-1	 1	-1	-1	-1
-	// C	-1	-1	 1	-1	 1
+	// C	-1	-1	 1	-1	-1
 	// G	-1	-1	-1	 1	-1
-	// T	-1	-1	 1	-1	 1
+	// T	-1	-1	-1	-1	 1
 	//
 	// Gap open: -5
 	fitted := FittedAffine{
@@ -78,6 +78,6 @@ func ExampleFittedAffine_Align() {
 	}
 	// Output:
 	// [[0,7)/[0,7)=3]
-	// ATAGGAA
 	// ATTGGCA
+	// ATAGGAA
 }

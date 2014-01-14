@@ -16,9 +16,8 @@ const debugFitted = false
 type Fitted Linear
 
 // Align aligns two sequences using a modified Needleman-Wunsch algorithm that finds a local region of
-// the longer of the two sequences with high similarity to the shorter sequence. It returns an alignment
-// description or an error if the scoring matrix is not square, or the sequence data types or alphabets
-// do not match.
+// the reference with high similarity to the query. It returns an alignment description or an error if
+// the scoring matrix is not square, or the sequence data types or alphabets do not match.
 func (a Fitted) Align(reference, query AlphabetSlicer) ([]feat.Pair, error) {
 	alpha := reference.Alphabet()
 	if alpha == nil {
