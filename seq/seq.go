@@ -15,7 +15,6 @@ import (
 	"code.google.com/p/biogo/alphabet"
 	"code.google.com/p/biogo/feat"
 
-	"fmt"
 	"math"
 )
 
@@ -75,7 +74,6 @@ type Sequence interface {
 	Slicer
 	Conformationer
 	ConformationSetter
-	fmt.Formatter
 }
 
 // A Feature describes the basis for sequence features.

@@ -6,6 +6,7 @@
 package multi
 
 import (
+	"bytes"
 	"code.google.com/p/biogo/alphabet"
 	"code.google.com/p/biogo/feat"
 	"code.google.com/p/biogo/seq"
@@ -569,6 +570,7 @@ func (m *Multi) Format(fs fmt.State, c rune) {
 		fmt.Fprint(fs, "<nil>")
 		return
 	}
+
 	var align bool
 	switch c {
 	case 'v':
@@ -581,11 +583,12 @@ func (m *Multi) Format(fs fmt.State, c rune) {
 		align = fs.Flag(' ') && fs.Flag('-')
 		fallthrough
 	case 'a', 'q':
+		format := formatString(fs, c)
 		for i, r := range m.Seq {
 			if align {
 				fmt.Fprintf(fs, "%s", strings.Repeat(" ", r.Start()-m.Start()))
 			}
-			r.Format(fs, c)
+			fmt.Fprintf(fs, format, r)
 			if i < m.Rows()-1 {
 				fmt.Fprintln(fs)
 			}
@@ -593,4 +596,25 @@ func (m *Multi) Format(fs fmt.State, c rune) {
 	default:
 		fmt.Fprintf(fs, "%%!%c(*multi.Multi=%.10s)", c, m)
 	}
+}
+
+func formatString(fs fmt.State, c rune) string {
+	w, wOk := fs.Width()
+	p, pOk := fs.Precision()
+	var b bytes.Buffer
+	b.WriteByte('%')
+	for _, f := range "+-# 0" {
+		if fs.Flag(int(f)) {
+			b.WriteRune(f)
+		}
+	}
+	if wOk {
+		fmt.Fprint(&b, w)
+	}
+	if pOk {
+		b.WriteByte('.')
+		fmt.Fprint(&b, p)
+	}
+	b.WriteRune(c)
+	return b.String()
 }
