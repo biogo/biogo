@@ -60,18 +60,32 @@ func NewReader(r io.Reader, template seqio.SequenceAppender) *Reader {
 // methods should return the same error.
 // TODO: Does not read multi-line fastq.
 func (r *Reader) Read() (seq.Sequence, error) {
+	const (
+		id1 = iota
+		letters
+		id2
+		quality
+	)
+
 	var (
 		buff, line, label []byte
 		isPrefix          bool
-		seqBuff           []alphabet.QLetter
-		t                 seqio.SequenceAppender
+
+		seqBuff []alphabet.QLetter
+		t       seqio.SequenceAppender
+
+		state int
+		err   error
 	)
 
-	inQual := false
-
-	var err error
+loop:
 	for {
-		if buff, isPrefix, err = r.r.ReadLine(); err != nil {
+		buff, isPrefix, err = r.r.ReadLine()
+		if err != nil {
+			if t != nil && state == quality && err == io.EOF {
+				err = nil
+				break
+			}
 			return nil, err
 		}
 		line = append(line, buff...)
@@ -80,45 +94,68 @@ func (r *Reader) Read() (seq.Sequence, error) {
 		}
 
 		line = bytes.TrimSpace(line)
-		if len(line) == 0 {
-			continue
-		}
 		switch {
-		case !inQual && line[0] == '@':
+		case state == id1 && maybeID1(line):
+			state = letters
 			var _err error
 			t, _err = r.readHeader(line)
 			if err == nil && _err != nil {
 				err = _err
 			}
-			label = line
-		case !inQual && line[0] == '+':
+			label = append([]byte(nil), line...)
+		case state == id2 && maybeID2(line):
+			state = quality
 			if len(label) == 0 {
 				return nil, errors.New("fastq: no header line parsed before +line in fastq format")
 			}
-			if len(line) > 1 && bytes.Compare(label[1:], line[1:]) != 0 {
+			if bytes.Compare(label[1:], line[1:]) != 0 {
 				return nil, errors.New("fastq: quality header does not match sequence header")
 			}
-			inQual = true
-		case !inQual:
-			line = bytes.Join(bytes.Fields(line), nil)
+		case state == letters && len(line) > 0:
+			if maybeID2(line) && (len(line) == 1 || bytes.Compare(label[1:], line[1:]) == 0) {
+				state = quality
+				break
+			}
+			state = id2
 			seqBuff = make([]alphabet.QLetter, len(line))
-			for i := range line {
-				seqBuff[i].L = alphabet.Letter(line[i])
+			var i int
+			for _, l := range line {
+				if isSpace(l) {
+					continue
+				}
+				seqBuff[i].L = alphabet.Letter(l)
+				i++
 			}
-		case inQual:
-			line = bytes.Join(bytes.Fields(line), nil)
-			if len(line) != len(seqBuff) {
-				return nil, errors.New("fastq: sequence/quality length mismatch")
+			seqBuff = seqBuff[:i]
+		case state == quality:
+			if len(line) == 0 && len(seqBuff) != 0 {
+				continue
 			}
-			for i := range line {
-				seqBuff[i].Q = r.enc.DecodeToQphred(line[i])
-			}
-			t.AppendQLetters(seqBuff...)
-
-			return t, err
+			break loop
 		}
-		line = nil
+		line = line[:0]
 	}
+
+	line = bytes.Join(bytes.Fields(line), nil)
+	if len(line) != len(seqBuff) {
+		return nil, errors.New("fastq: sequence/quality length mismatch")
+	}
+	for i := range line {
+		seqBuff[i].Q = r.enc.DecodeToQphred(line[i])
+	}
+	t.AppendQLetters(seqBuff...)
+
+	return t, err
+}
+
+func maybeID1(l []byte) bool { return len(l) > 0 && l[0] == '@' }
+func maybeID2(l []byte) bool { return len(l) > 0 && l[0] == '+' }
+func isSpace(b byte) bool {
+	switch b {
+	case '\t', '\n', '\v', '\f', '\r', ' ', 0x85, 0xA0:
+		return true
+	}
+	return false
 }
 
 func (r *Reader) readHeader(line []byte) (seqio.SequenceAppender, error) {

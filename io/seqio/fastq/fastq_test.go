@@ -1,34 +1,33 @@
-// Copyright ©2011-2012 The bíogo Authors. All rights reserved.
+// Copyright ©2011-2013 The bíogo Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
 package fastq
 
 import (
-	"bytes"
 	"code.google.com/p/biogo/alphabet"
 	"code.google.com/p/biogo/seq/linear"
 
+	"bytes"
 	"io"
 	check "launchpad.net/gocheck"
 	"testing"
 )
 
-var (
-	fqs = []string{fq0, fq1}
-)
-
 // Helpers
-func constructQL(l [][]alphabet.Letter, q [][]alphabet.Qphred) (ql [][]alphabet.QLetter) {
+func constructQL(l [][]alphabet.Letter, q [][]alphabet.Qphred) (ql []alphabet.QLetters) {
 	if len(l) != len(q) {
 		panic("test data length mismatch")
 	}
-	ql = make([][]alphabet.QLetter, len(l))
+	ql = make([]alphabet.QLetters, len(l))
 	for i := range ql {
 		if len(l[i]) != len(q[i]) {
 			panic("test data length mismatch")
 		}
-		ql[i] = make([]alphabet.QLetter, len(l[i]))
+		if len(l[i]) == 0 {
+			continue
+		}
+		ql[i] = make(alphabet.QLetters, len(l[i]))
 		for j := range ql[i] {
 			ql[i][j] = alphabet.QLetter{L: l[i][j], Q: q[i][j]}
 		}
@@ -45,27 +44,7 @@ type S struct{}
 var _ = check.Suite(&S{})
 
 var (
-	expectN = []string{
-		"FC12044_91407_8_200_406_24",
-		"FC12044_91407_8_200_720_610",
-		"FC12044_91407_8_200_345_133",
-		"FC12044_91407_8_200_106_131",
-		"FC12044_91407_8_200_916_471",
-		"FC12044_91407_8_200_57_85",
-		"FC12044_91407_8_200_10_437",
-		"FC12044_91407_8_200_154_436",
-		"FC12044_91407_8_200_336_64",
-		"FC12044_91407_8_200_620_233",
-		"FC12044_91407_8_200_902_349",
-		"FC12044_91407_8_200_40_618",
-		"FC12044_91407_8_200_83_511",
-		"FC12044_91407_8_200_76_246",
-		"FC12044_91407_8_200_303_427",
-		"FC12044_91407_8_200_31_299",
-		"FC12044_91407_8_200_553_135",
-		"FC12044_91407_8_200_139_74",
-		"FC12044_91407_8_200_108_33",
-		"FC12044_91407_8_200_980_965",
+	expectedIds = []string{
 		"FC12044_91407_8_200_981_857",
 		"FC12044_91407_8_200_8_865",
 		"FC12044_91407_8_200_292_484",
@@ -73,121 +52,401 @@ var (
 		"FC12044_91407_8_200_285_136",
 	}
 
-	expectS = [][]alphabet.Letter{
-		[]alphabet.Letter("GTTAGCTCCCACCTTAAGATGTTTA"),
-		[]alphabet.Letter("CTCTGTGGCACCCCATCCCTCACTT"),
-		[]alphabet.Letter("GATTTTTTAACAATAAACGTACATA"),
-		[]alphabet.Letter("GTTGCCCAGGCTCGTCTTGAACTCC"),
-		[]alphabet.Letter("TGATTGAAGGTAGGGTAGCATACTG"),
-		[]alphabet.Letter("GCTCCAATAGCGCAGAGGAAACCTG"),
-		[]alphabet.Letter("GCTGCTTGGGAGGCTGAGGCAGGAG"),
-		[]alphabet.Letter("AGACCTTTGGATACAATGAACGACT"),
-		[]alphabet.Letter("AGGGAATTTTAGAGGAGGGCTGCCG"),
-		[]alphabet.Letter("TCTCCATGTTGGTCAGGCTGGTCTC"),
-		[]alphabet.Letter("TGAACGTCGAGACGCAAGGCCCGCC"),
-		[]alphabet.Letter("CTGTCCCCACGGCGGGGGGGCCTGG"),
-		[]alphabet.Letter("GATGTACTCTTACACCCAGACTTTG"),
-		[]alphabet.Letter("TCAAGGGTGGATCTTGGCTCCCAGT"),
-		[]alphabet.Letter("TTGCGACAGAGTTTTGCTCTTGTCC"),
-		[]alphabet.Letter("TCTGCTCCAGCTCCAAGACGCCGCC"),
-		[]alphabet.Letter("TACGGAGCCGCGGGCGGGAAAGGCG"),
-		[]alphabet.Letter("CCTCCCAGGTTCAAGCGATTATCCT"),
-		[]alphabet.Letter("GTCATGGCGGCCCGCGCGGGGAGCG"),
-		[]alphabet.Letter("ACAGTGGGTTCTTAAAGAAGAGTCG"),
-		[]alphabet.Letter("AACGAGGGGCGCGACTTGACCTTGG"),
-		[]alphabet.Letter("TTTCCCACCCCAGGAAGCCTTGGAC"),
-		[]alphabet.Letter("TCAGCCTCCGTGCCCAGCCCACTCC"),
-		[]alphabet.Letter("CTCGGGAGGCTGAGGCAGGGGGGTT"),
-		[]alphabet.Letter("CCAAATCTTGAATTGTAGCTCCCCT"),
-	}
+	expectedQLetters = constructQL(
+		[][]alphabet.Letter{
+			[]alphabet.Letter("AACGAGGGGCGCGACTTGACCTTGG"),
+			[]alphabet.Letter("TTTCCCACCCCAGGAAGCCTTGGAC"),
+			[]alphabet.Letter("TCAGCCTCCGTGCCCAGCCCACTCC"),
+			[]alphabet.Letter("CTCGGGAGGCTGAGGCAGGGGGGTT"),
+			[]alphabet.Letter("CCAAATCTTGAATTGTAGCTCCCCT"),
+		},
+		[][]alphabet.Qphred{
+			{49, 55, 44, 50, 50, 55, 55, 55, 55, 50, 55, 48, 55, 48, 55, 37, 50, 55, 48, 37, 48, 42, 44, 55, 50},
+			{55, 55, 55, 37, 42, 46, 49, 46, 44, 42, 46, 46, 49, 44, 40, 44, 49, 40, 40, 42, 42, 46, 49, 37, 37},
+			{55, 48, 55, 46, 50, 55, 55, 55, 55, 55, 52, 55, 55, 55, 55, 40, 55, 55, 55, 55, 48, 51, 46, 55, 37},
+			{46, 55, 51, 55, 55, 55, 50, 55, 55, 48, 55, 55, 46, 55, 55, 42, 44, 55, 55, 44, 55, 46, 42, 48, 37},
+			{46, 50, 55, 46, 48, 55, 55, 55, 55, 55, 50, 55, 55, 52, 55, 55, 51, 55, 55, 55, 55, 51, 49, 44, 50},
+		},
+	)
 
-	expectQ = [][]alphabet.Qphred{
-		{50, 55, 55, 51, 55, 55, 55, 55, 55, 55, 55, 55, 55, 51, 51, 50, 52, 55, 50, 50, 55, 42, 51, 44, 48},
-		{46, 55, 55, 55, 55, 55, 55, 55, 55, 55, 55, 55, 55, 55, 55, 55, 55, 55, 51, 50, 55, 48, 51, 55, 52},
-		{46, 48, 51, 46, 46, 50, 37, 46, 49, 51, 37, 37, 37, 40, 40, 46, 37, 37, 37, 37, 37, 37, 37, 37, 37},
-		{55, 55, 55, 55, 55, 55, 55, 55, 55, 55, 55, 55, 55, 55, 50, 55, 55, 55, 55, 40, 50, 51, 55, 48, 50},
-		{55, 55, 55, 55, 55, 55, 55, 55, 55, 55, 55, 55, 55, 55, 55, 52, 55, 55, 52, 50, 55, 55, 51, 55, 54},
-		{55, 37, 55, 44, 55, 50, 55, 55, 50, 55, 55, 55, 46, 50, 48, 49, 46, 46, 50, 49, 46, 37, 48, 40, 48},
-		{52, 50, 55, 50, 55, 55, 55, 55, 55, 55, 52, 55, 55, 55, 50, 55, 48, 55, 55, 52, 48, 55, 55, 42, 50},
-		{44, 42, 42, 44, 48, 51, 50, 49, 55, 44, 50, 48, 51, 46, 44, 49, 37, 46, 46, 40, 37, 37, 37, 37, 37},
-		{50, 51, 48, 44, 46, 50, 55, 50, 55, 50, 48, 55, 48, 55, 55, 42, 55, 55, 55, 42, 37, 55, 37, 37, 42},
-		{55, 55, 55, 55, 55, 55, 55, 55, 55, 55, 55, 55, 55, 55, 55, 55, 55, 55, 55, 55, 55, 50, 55, 50, 54},
-		{55, 44, 55, 50, 50, 55, 44, 55, 55, 50, 55, 48, 50, 55, 51, 50, 48, 55, 37, 42, 50, 42, 51, 46, 37},
-		{51, 55, 55, 55, 55, 50, 55, 55, 55, 55, 55, 55, 55, 55, 55, 55, 55, 55, 55, 49, 42, 37, 46, 55, 50},
-		{50, 46, 55, 55, 55, 55, 55, 52, 55, 55, 55, 55, 55, 55, 48, 42, 48, 42, 42, 49, 46, 46, 48, 50, 52},
-		{55, 51, 55, 51, 52, 55, 55, 55, 55, 55, 49, 55, 55, 55, 51, 55, 55, 50, 52, 55, 50, 49, 37, 55, 48},
-		{55, 55, 48, 49, 46, 55, 55, 55, 55, 40, 55, 37, 48, 55, 55, 55, 46, 40, 48, 50, 50, 55, 52, 37, 37},
-		{55, 49, 55, 51, 50, 55, 55, 55, 49, 55, 55, 50, 55, 48, 48, 46, 55, 48, 51, 50, 48, 50, 55, 42, 48},
-		{55, 50, 48, 48, 55, 55, 55, 55, 55, 55, 55, 55, 55, 55, 50, 55, 55, 44, 37, 37, 48, 55, 51, 42, 52},
-		{49, 44, 55, 52, 50, 55, 51, 55, 55, 48, 55, 55, 48, 52, 55, 55, 55, 50, 48, 40, 50, 40, 50, 50, 46},
-		{46, 46, 46, 50, 50, 55, 55, 50, 55, 55, 46, 44, 42, 44, 46, 37, 44, 42, 37, 46, 42, 37, 37, 37, 37},
-		{51, 46, 50, 50, 49, 55, 55, 55, 50, 50, 44, 50, 55, 44, 46, 44, 55, 40, 49, 55, 46, 55, 37, 37, 50},
-		{49, 55, 44, 50, 50, 55, 55, 55, 55, 50, 55, 48, 55, 48, 55, 37, 50, 55, 48, 37, 48, 42, 44, 55, 50},
-		{55, 55, 55, 37, 42, 46, 49, 46, 44, 42, 46, 46, 49, 44, 40, 44, 49, 40, 40, 42, 42, 46, 49, 37, 37},
-		{55, 48, 55, 46, 50, 55, 55, 55, 55, 55, 52, 55, 55, 55, 55, 40, 55, 55, 55, 55, 48, 51, 46, 55, 37},
-		{46, 55, 51, 55, 55, 55, 50, 55, 55, 48, 55, 55, 46, 55, 55, 42, 44, 55, 55, 44, 55, 46, 42, 48, 37},
-		{46, 50, 55, 46, 48, 55, 55, 55, 55, 55, 50, 55, 55, 52, 55, 55, 51, 55, 55, 55, 55, 51, 49, 44, 50},
-	}
+	plusStart = constructQL(
+		[][]alphabet.Letter{
+			[]alphabet.Letter("AACGAGGGGCGCGACTTGACCTTGG"),
+		},
+		[][]alphabet.Qphred{
+			{10, 55, 44, 50, 50, 55, 55, 55, 55, 50, 55, 48, 55, 48, 55, 37, 50, 55, 48, 37, 48, 42, 44, 55, 50},
+		},
+	)
+	atStart = constructQL(
+		[][]alphabet.Letter{
+			[]alphabet.Letter("AACGAGGGGCGCGACTTGACCTTGG"),
+		},
+		[][]alphabet.Qphred{
+			{31, 55, 44, 50, 50, 55, 55, 55, 55, 50, 55, 48, 55, 48, 55, 37, 50, 55, 48, 37, 48, 42, 44, 55, 50},
+		},
+	)
+)
 
-	expectQL = constructQL(expectS, expectQ)
+var (
+	fqTests = []struct {
+		fq       string
+		verbatim bool
+		ids      []string
+		seqs     []alphabet.QLetters
+	}{
+		{
+			fq: `@FC12044_91407_8_200_981_857
+AACGAGGGGCGCGACTTGACCTTGG
++FC12044_91407_8_200_981_857
+RXMSSXXXXSXQXQXFSXQFQKMXS
+@FC12044_91407_8_200_8_865
+TTTCCCACCCCAGGAAGCCTTGGAC
++FC12044_91407_8_200_8_865
+XXXFKOROMKOORMIMRIIKKORFF
+@FC12044_91407_8_200_292_484
+TCAGCCTCCGTGCCCAGCCCACTCC
++FC12044_91407_8_200_292_484
+XQXOSXXXXXUXXXXIXXXXQTOXF
+@FC12044_91407_8_200_675_16
+CTCGGGAGGCTGAGGCAGGGGGGTT
++FC12044_91407_8_200_675_16
+OXTXXXSXXQXXOXXKMXXMXOKQF
+@FC12044_91407_8_200_285_136
+CCAAATCTTGAATTGTAGCTCCCCT
++FC12044_91407_8_200_285_136
+OSXOQXXXXXSXXUXXTXXXXTRMS
+`,
+			verbatim: true,
+			ids:      expectedIds,
+			seqs: []alphabet.QLetters{
+				expectedQLetters[0],
+				expectedQLetters[1],
+				expectedQLetters[2],
+				expectedQLetters[3],
+				expectedQLetters[4],
+			},
+		},
+		{
+			fq: `@FC12044_91407_8_200_981_857
+AACGAGGGGCGCGACTTGACCTTGG
++FC12044_91407_8_200_981_857
+@XMSSXXXXSXQXQXFSXQFQKMXS
+@FC12044_91407_8_200_8_865
+TTTCCCACCCCAGGAAGCCTTGGAC
++FC12044_91407_8_200_8_865
+XXXFKOROMKOORMIMRIIKKORFF
+@FC12044_91407_8_200_292_484
+TCAGCCTCCGTGCCCAGCCCACTCC
++FC12044_91407_8_200_292_484
+XQXOSXXXXXUXXXXIXXXXQTOXF
+@FC12044_91407_8_200_675_16
+CTCGGGAGGCTGAGGCAGGGGGGTT
++FC12044_91407_8_200_675_16
+OXTXXXSXXQXXOXXKMXXMXOKQF
+@FC12044_91407_8_200_285_136
+CCAAATCTTGAATTGTAGCTCCCCT
++FC12044_91407_8_200_285_136
+OSXOQXXXXXSXXUXXTXXXXTRMS
+`,
+			verbatim: true,
+			ids:      expectedIds,
+			seqs: []alphabet.QLetters{
+				atStart[0],
+				expectedQLetters[1],
+				expectedQLetters[2],
+				expectedQLetters[3],
+				expectedQLetters[4],
+			},
+		},
+		{
+			fq: `@FC12044_91407_8_200_981_857
+AACGAGGGGCGCGACTTGACCTTGG
++FC12044_91407_8_200_981_857
++XMSSXXXXSXQXQXFSXQFQKMXS
+@FC12044_91407_8_200_8_865
+TTTCCCACCCCAGGAAGCCTTGGAC
++FC12044_91407_8_200_8_865
+XXXFKOROMKOORMIMRIIKKORFF
+@FC12044_91407_8_200_292_484
+TCAGCCTCCGTGCCCAGCCCACTCC
++FC12044_91407_8_200_292_484
+XQXOSXXXXXUXXXXIXXXXQTOXF
+@FC12044_91407_8_200_675_16
+CTCGGGAGGCTGAGGCAGGGGGGTT
++FC12044_91407_8_200_675_16
+OXTXXXSXXQXXOXXKMXXMXOKQF
+@FC12044_91407_8_200_285_136
+CCAAATCTTGAATTGTAGCTCCCCT
++FC12044_91407_8_200_285_136
+OSXOQXXXXXSXXUXXTXXXXTRMS
+`,
+			verbatim: true,
+			ids:      expectedIds,
+			seqs: []alphabet.QLetters{
+				plusStart[0],
+				expectedQLetters[1],
+				expectedQLetters[2],
+				expectedQLetters[3],
+				expectedQLetters[4],
+			},
+		},
+		{
+			fq: `@FC12044_91407_8_200_981_857
+AACGAGGGGCGCGACTTGACCTTGG
++FC12044_91407_8_200_981_857
+RXMSSXXXXSXQXQXFSXQFQKMXS
+@FC12044_91407_8_200_8_865
+TTTCCCACCCCAGGAAGCCTTGGAC
++FC12044_91407_8_200_8_865
+XXXFKOROMKOORMIMRIIKKORFF
+@FC12044_91407_8_200_292_484
+TCAGCCTCCGTGCCCAGCCCACTCC
++FC12044_91407_8_200_292_484
+XQXOSXXXXXUXXXXIXXXXQTOXF
+@FC12044_91407_8_200_675_16
+CTCGGGAGGCTGAGGCAGGGGGGTT
++FC12044_91407_8_200_675_16
+OXTXXXSXXQXXOXXKMXXMXOKQF
+@FC12044_91407_8_200_285_136
+
++FC12044_91407_8_200_285_136
+
+`,
+			verbatim: true,
+			ids:      expectedIds,
+			seqs: []alphabet.QLetters{
+				expectedQLetters[0],
+				expectedQLetters[1],
+				expectedQLetters[2],
+				expectedQLetters[3],
+				nil,
+			},
+		},
+		{
+			fq: `@FC12044_91407_8_200_981_857
+
++FC12044_91407_8_200_981_857
+
+@FC12044_91407_8_200_8_865
+TTTCCCACCCCAGGAAGCCTTGGAC
++FC12044_91407_8_200_8_865
+XXXFKOROMKOORMIMRIIKKORFF
+@FC12044_91407_8_200_292_484
+TCAGCCTCCGTGCCCAGCCCACTCC
++FC12044_91407_8_200_292_484
+XQXOSXXXXXUXXXXIXXXXQTOXF
+@FC12044_91407_8_200_675_16
+CTCGGGAGGCTGAGGCAGGGGGGTT
++FC12044_91407_8_200_675_16
+OXTXXXSXXQXXOXXKMXXMXOKQF
+@FC12044_91407_8_200_285_136
+CCAAATCTTGAATTGTAGCTCCCCT
++FC12044_91407_8_200_285_136
+OSXOQXXXXXSXXUXXTXXXXTRMS
+`,
+			verbatim: true,
+			ids:      expectedIds,
+			seqs: []alphabet.QLetters{
+				nil,
+				expectedQLetters[1],
+				expectedQLetters[2],
+				expectedQLetters[3],
+				expectedQLetters[4],
+			},
+		},
+		{
+			fq: `@FC12044_91407_8_200_981_857
+AACGAGGGGCGCGACTTGACCTTGG
++FC12044_91407_8_200_981_857
+RXMSSXXXXSXQXQXFSXQFQKMXS
+@FC12044_91407_8_200_8_865
+
++FC12044_91407_8_200_8_865
+
+@FC12044_91407_8_200_292_484
+TCAGCCTCCGTGCCCAGCCCACTCC
++FC12044_91407_8_200_292_484
+XQXOSXXXXXUXXXXIXXXXQTOXF
+@FC12044_91407_8_200_675_16
+CTCGGGAGGCTGAGGCAGGGGGGTT
++FC12044_91407_8_200_675_16
+OXTXXXSXXQXXOXXKMXXMXOKQF
+@FC12044_91407_8_200_285_136
+CCAAATCTTGAATTGTAGCTCCCCT
++FC12044_91407_8_200_285_136
+OSXOQXXXXXSXXUXXTXXXXTRMS
+`,
+			verbatim: true,
+			ids:      expectedIds,
+			seqs: []alphabet.QLetters{
+				expectedQLetters[0],
+				nil,
+				expectedQLetters[2],
+				expectedQLetters[3],
+				expectedQLetters[4],
+			},
+		},
+		{
+			fq: `@FC12044_91407_8_200_981_857
+AACGAGGGGCGCGACTTGACCTTGG
++FC12044_91407_8_200_981_857
+RXMSSXXXXSXQXQXFSXQFQKMXS
+
+@FC12044_91407_8_200_8_865
+TTTCCCACCCCAGGAAGCCTTGGAC
++FC12044_91407_8_200_8_865
+
+XXXFKOROMKOORMIMRIIKKORFF
+@FC12044_91407_8_200_292_484
+
+TCAGCCTCCGTGCCCAGCCCACTCC
+
++FC12044_91407_8_200_292_484
+XQXOSXXXXXUXXXXIXXXXQTOXF
+@FC12044_91407_8_200_675_16
+
+CTCGGGAGGCTGAGGCAGGGGGGTT
++FC12044_91407_8_200_675_16
+OXTXXXSXXQXXOXXKMXXMXOKQF
+@FC12044_91407_8_200_285_136
+CCAAATCTTGAATTGTAGCTCCCCT
++FC12044_91407_8_200_285_136
+
+OSXOQXXXXXSXXUXXTXXXXTRMS`,
+			verbatim: false,
+			ids:      expectedIds,
+			seqs: []alphabet.QLetters{
+				expectedQLetters[0],
+				expectedQLetters[1],
+				expectedQLetters[2],
+				expectedQLetters[3],
+				expectedQLetters[4],
+			},
+		},
+		{
+			fq: `@FC12044_91407_8_200_981_857
+AACGAGGGGCGCGACTTGACCTTGG
++FC12044_91407_8_200_981_857
+RXMSSXXXXSXQXQXFSXQFQKMXS
+
+@FC12044_91407_8_200_8_865
+TTTCCCACCCCAGGAAGCCTTGGAC
++FC12044_91407_8_200_8_865
+
+XXXFKOROMKOORMIMRIIKKORFF
+@FC12044_91407_8_200_292_484
+
+TCAGCCTCCGTGCCCAGCCCACTCC
+
++FC12044_91407_8_200_292_484
+XQXOSXXXXXUXXXXIXXXXQTOXF
+@FC12044_91407_8_200_675_16
+
+CTCGGGAGGCTGAGGCAGGGGGGTT
++FC12044_91407_8_200_675_16
+OXTXXXSXXQXXOXXKMXXMXOKQF
+@FC12044_91407_8_200_285_136
+
++FC12044_91407_8_200_285_136
+
+`,
+			verbatim: false,
+			ids:      expectedIds,
+			seqs: []alphabet.QLetters{
+				expectedQLetters[0],
+				expectedQLetters[1],
+				expectedQLetters[2],
+				expectedQLetters[3],
+				nil,
+			},
+		},
+		{
+			fq: `@FC12044_91407_8_200_981_857
+AACGAGGGGCGCGACTTGACCTTGG
++FC12044_91407_8_200_981_857
+RXMSSXXXXSXQXQXFSXQFQKMXS
+
+@FC12044_91407_8_200_8_865
+TTTCCCACCCCAGGAAGCCTTGGAC
++FC12044_91407_8_200_8_865
+
+XXXFKOROMKOORMIMRIIKKORFF
+@FC12044_91407_8_200_292_484
+
+TCAGCCTCCGTGCCCAGCCCACTCC
+
++FC12044_91407_8_200_292_484
+XQXOSXXXXXUXXXXIXXXXQTOXF
+@FC12044_91407_8_200_675_16
+
+CTCGGGAGGCTGAGGCAGGGGGGTT
++FC12044_91407_8_200_675_16
+OXTXXXSXXQXXOXXKMXXMXOKQF
+@FC12044_91407_8_200_285_136
++FC12044_91407_8_200_285_136`,
+			verbatim: false,
+			ids:      expectedIds,
+			seqs: []alphabet.QLetters{
+				expectedQLetters[0],
+				expectedQLetters[1],
+				expectedQLetters[2],
+				expectedQLetters[3],
+				nil,
+			},
+		},
+	}
 )
 
 func (s *S) TestReadFastq(c *check.C) {
-	var (
-		obtainN  []string
-		obtainQL [][]alphabet.QLetter
-	)
-
-	for _, fq := range fqs {
-		r := NewReader(bytes.NewBufferString(fq), linear.NewQSeq("", nil, alphabet.DNA, alphabet.Sanger))
-		for {
+	for _, t := range fqTests {
+		r := NewReader(bytes.NewBufferString(t.fq), linear.NewQSeq("", nil, alphabet.DNA, alphabet.Sanger))
+		var n int
+		for n = 0; ; n++ {
 			if s, err := r.Read(); err != nil {
 				if err == io.EOF {
 					break
 				} else {
-					c.Fatalf("Failed to read %q: %s", fq, err)
+					c.Fatalf("Failed to read %s in %q: %s", expectedIds[n], t.fq, err)
 				}
 			} else {
-				t := s.(*linear.QSeq)
-				header := t.Name()
-				if desc := t.Description(); len(desc) > 0 {
+				l := s.(*linear.QSeq)
+				header := l.Name()
+				if desc := l.Description(); len(desc) > 0 {
 					header += " " + desc
 				}
-				obtainN = append(obtainN, header)
-				obtainQL = append(obtainQL, (t.Slice().(alphabet.QLetters)))
+				c.Check(header, check.Equals, t.ids[n])
+				c.Check(l.Slice(), check.DeepEquals, t.seqs[n])
 			}
 		}
-		c.Check(obtainN, check.DeepEquals, expectN)
-		obtainN = nil
-		c.Check(obtainQL, check.DeepEquals, expectQL)
-		obtainQL = nil
+		c.Check(n, check.Equals, len(t.ids))
 	}
 }
 
 func (s *S) TestWriteFastq(c *check.C) {
-	fq := fqs[0]
+	for i, t := range fqTests {
+		if !t.verbatim {
+			continue
+		}
+		for j := 0; j < 2; j++ {
+			var n int
+			b := &bytes.Buffer{}
+			w := NewWriter(b)
+			w.QID = j == 0
+			seq := linear.NewQSeq("", nil, alphabet.DNA, alphabet.Sanger)
 
-	for j := 0; j < 2; j++ {
-		var n int
-		b := &bytes.Buffer{}
-		w := NewWriter(b)
-		w.QID = j == 0
-		seq := linear.NewQSeq("", nil, alphabet.DNA, alphabet.Sanger)
-
-		for i := range expectN {
-			seq.ID = expectN[i]
-			seq.Seq = expectQL[i]
-			if _n, err := w.Write(seq); err != nil {
-				c.Fatalf("Failed to write to buffer: %s", err)
-			} else {
+			for i := range expectedIds {
+				seq.ID = t.ids[i]
+				seq.Seq = t.seqs[i]
+				_n, err := w.Write(seq)
+				c.Assert(err, check.Equals, nil, check.Commentf("Failed to write to buffer: %s", err))
 				n += _n
 			}
-		}
 
-		c.Check(n, check.Equals, b.Len())
+			c.Check(n, check.Equals, b.Len())
 
-		if w.QID {
-			c.Check(string(b.Bytes()), check.Equals, fq)
+			if w.QID {
+				c.Check(string(b.Bytes()), check.Equals, t.fq, check.Commentf("Write test %d", i))
+			}
 		}
 	}
 }
