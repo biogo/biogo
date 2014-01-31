@@ -108,7 +108,7 @@ loop:
 			if len(label) == 0 {
 				return nil, errors.New("fastq: no header line parsed before +line in fastq format")
 			}
-			if bytes.Compare(label[1:], line[1:]) != 0 {
+			if len(line) != 1 && bytes.Compare(label[1:], line[1:]) != 0 {
 				return nil, errors.New("fastq: quality header does not match sequence header")
 			}
 		case state == letters && len(line) > 0:
