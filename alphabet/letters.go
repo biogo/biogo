@@ -53,13 +53,13 @@ type Slice interface {
 type Encoding int8
 
 const (
-	None        Encoding = iota - 1
-	Sanger               // Phred+33
-	Solexa               // Solexa+64
-	Illumina1_3          // Phred+64
-	Illumina1_5          // Phred+64 0,1=unused, 2=Read Segment Quality Control Indicator (Ḇ)
-	Illumina1_8          // Phred+33
-	Illumina1_9          // Phred+33
+	None        Encoding = iota - 1 // All letters are decoded as scores with p(Error) = NaN.
+	Sanger                          // Phred+33
+	Solexa                          // Solexa+64
+	Illumina1_3                     // Phred+64
+	Illumina1_5                     // Phred+64 0,1=unused, 2=Read Segment Quality Control Indicator (Ḇ)
+	Illumina1_8                     // Phred+33
+	Illumina1_9                     // Phred+33
 )
 
 // DecodeToPhred interpets the byte q as an e encoded quality and returns the corresponding Phred score.
@@ -72,7 +72,7 @@ func (e Encoding) DecodeToQphred(q byte) Qphred {
 	case Solexa:
 		return (Qsolexa(q) - 64).Qphred()
 	case None:
-		panic("alphabet: no encoding defined")
+		return 0xff
 	default:
 		panic("alphabet: illegal encoding")
 	}
@@ -88,7 +88,7 @@ func (e Encoding) DecodeToQsolexa(q byte) Qsolexa {
 	case Solexa:
 		return Qsolexa(q) - 64
 	case None:
-		panic("alphabet: no encoding defined")
+		return -128
 	default:
 		panic("alphabet: illegal encoding")
 	}
@@ -351,6 +351,8 @@ func (qp Qphred) Encode(e Encoding) (q byte) {
 		if q <= 62 {
 			q += 64
 		}
+	case None:
+		return ' '
 	}
 
 	return
@@ -453,6 +455,8 @@ func (qs Qsolexa) Encode(e Encoding) (q byte) {
 		if q <= 62 {
 			q += 64
 		}
+	case None:
+		return ' '
 	}
 
 	return
