@@ -15,7 +15,6 @@ import (
 
 	"errors"
 	"io"
-	"os"
 	"unsafe"
 )
 
@@ -334,10 +333,6 @@ func (p *PALS) CleanUp() error { return p.morass.CleanUp() }
 type Logger interface {
 	Print(v ...interface{})
 	Printf(format string, v ...interface{})
-	Println(v ...interface{})
-	Fatal(v ...interface{})
-	Fatalf(format string, v ...interface{})
-	Fatalln(v ...interface{})
 }
 
 func (p *PALS) notify(n string) {
@@ -350,18 +345,4 @@ func (p *PALS) notifyf(f string, n ...interface{}) {
 	if p.log != nil {
 		p.log.Printf(f, n...)
 	}
-}
-
-func (p *PALS) fatal(n string) {
-	if p.log != nil {
-		p.log.Fatal(n)
-	}
-	os.Exit(1)
-}
-
-func (p *PALS) fatalf(f string, n ...interface{}) {
-	if p.log != nil {
-		p.log.Fatalf(f, n...)
-	}
-	os.Exit(1)
 }
