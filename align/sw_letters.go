@@ -35,11 +35,7 @@ func drawSWTableLetters(rSeq, qSeq alphabet.Letters, index alphabet.Index, table
 
 		for j := 0; j < c; j++ {
 			p := pointerSWLetters(rSeq, qSeq, i, j, table, index, a, c)
-			if p != "" {
-				fmt.Fprintf(tw, "%s %3v\t", p, table[i*c+j])
-			} else {
-				fmt.Fprintf(tw, "%v\t", table[i*c+j])
-			}
+			fmt.Fprintf(tw, "%s %3v\t", p, table[i*c+j])
 		}
 		fmt.Fprintln(tw)
 	}
@@ -48,16 +44,19 @@ func drawSWTableLetters(rSeq, qSeq alphabet.Letters, index alphabet.Index, table
 
 func pointerSWLetters(rSeq, qSeq alphabet.Letters, i, j int, table []int, index alphabet.Index, a [][]int, c int) string {
 	if i == 0 || j == 0 {
-		return ""
+		return " "
 	}
 	rVal := index[rSeq[i-1]]
 	qVal := index[qSeq[j-1]]
 	if rVal < 0 || qVal < 0 {
 		return " "
 	}
+	if table[(i-1)*c+j-1] == 0 {
+		return " "
+	}
 	switch p := i*c + j; table[p] {
 	case 0:
-		return ""
+		return " "
 	case table[p-c-1] + a[rVal][qVal]:
 		return "⬉"
 	case table[p-c] + a[rVal][gap]:
@@ -65,7 +64,7 @@ func pointerSWLetters(rSeq, qSeq alphabet.Letters, i, j int, table []int, index 
 	case table[p-1] + a[gap][qVal]:
 		return "⬅"
 	default:
-		return ""
+		return " "
 	}
 }
 

@@ -40,11 +40,7 @@ func drawSWAffineTableLetters(rSeq, qSeq alphabet.Letters, index alphabet.Index,
 				if vi = table[i*c+j][l]; vi == minInt {
 					vi = "-Inf"
 				}
-				if p != "" {
-					fmt.Fprintf(tw, "%s % 4v\t", p, vi)
-				} else {
-					fmt.Fprintf(tw, "%v\t", vi)
-				}
+				fmt.Fprintf(tw, "%s % 4v\t", p, vi)
 			}
 			fmt.Fprintln(tw)
 		}
@@ -55,16 +51,19 @@ func drawSWAffineTableLetters(rSeq, qSeq alphabet.Letters, index alphabet.Index,
 
 func pointerSWAffineLetters(rSeq, qSeq alphabet.Letters, i, j, l int, table [][3]int, index alphabet.Index, a SWAffine, c int) string {
 	if i == 0 || j == 0 {
-		return ""
+		return "   "
 	}
 	rVal := index[rSeq[i-1]]
 	qVal := index[qSeq[j-1]]
 	if rVal < 0 || qVal < 0 {
-		return ""
+		return "   "
+	}
+	if table[(i-1)*c+j-1][l] == 0 {
+		return "   "
 	}
 	switch p := i*c + j; table[p][l] {
 	case 0:
-		return ""
+		return "   "
 	case table[p-c][up] + a.Matrix[rVal][gap]:
 		return "⬆ u"
 	case table[p-1][left] + a.Matrix[gap][qVal]:
