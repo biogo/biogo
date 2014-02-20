@@ -23,7 +23,7 @@ func stringToSeq(s string) *linear.Seq {
 }
 
 // Tests
-func (s *S) TestEntropicComplexity(c *check.C) {
+func (s *S) TestEntropic(c *check.C) {
 	for i, t := range []struct {
 		s string
 		c float64
@@ -37,13 +37,13 @@ func (s *S) TestEntropicComplexity(c *check.C) {
 		{"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", 0},
 		{"cctccctaactcattttatgaggccagcatcattctgataccaaagcc---cagagacacaaccaaaaaagagaattttagaccaatatccttgatgaacattgatgcaaaaatcctcaataaaatactggcaaaccgaatccagcagcacatcaaaaagcttatccaccatgatcaagtgggcttcatccctgggatgcaaggctggttcaatatacgcaaatcaataaatgtaatccagcatataaacagagccaaagacaaaaaccacatgattatctcaatagatgcagaaaaaccctttgacaaaattcaacaacccttcatgctaaaaactctcaataaattaggtattgatgggacgtatttcaaaataataagagctatctatgacaaacccacagccaatatcatactgaatgggcaaaaactggaagcattccctttgaaaactggcacaagacagggatgccctctctcaccgctcctattcaacatag", 0.958612004852684},
 	} {
-		ec, err := EntropicComplexity(stringToSeq(t.s), 0, len(t.s))
+		ec, err := Entropic(stringToSeq(t.s), 0, len(t.s))
 		c.Check(err, check.Equals, nil, check.Commentf("Test: %d", i))
 		c.Check(ec, check.Equals, t.c, check.Commentf("Test: %d", i))
 	}
 }
 
-func (s *S) TestWFComplexity(c *check.C) {
+func (s *S) TestWF(c *check.C) {
 	for i, t := range []struct {
 		s string
 		c float64
@@ -57,13 +57,13 @@ func (s *S) TestWFComplexity(c *check.C) {
 		{"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", 0},
 		{"cctccctaactcattttatgaggccagcatcattctgataccaaagcc---cagagacacaaccaaaaaagagaattttagaccaatatccttgatgaacattgatgcaaaaatcctcaataaaatactggcaaaccgaatccagcagcacatcaaaaagcttatccaccatgatcaagtgggcttcatccctgggatgcaaggctggttcaatatacgcaaatcaataaatgtaatccagcatataaacagagccaaagacaaaaaccacatgattatctcaatagatgcagaaaaaccctttgacaaaattcaacaacccttcatgctaaaaactctcaataaattaggtattgatgggacgtatttcaaaataataagagctatctatgacaaacccacagccaatatcatactgaatgggcaaaaactggaagcattccctttgaaaactggcacaagacagggatgccctctctcaccgctcctattcaacatag", 0.9452813728370209},
 	} {
-		wfc, err := WFComplexity(stringToSeq(t.s), 0, len(t.s))
+		wfc, err := WF(stringToSeq(t.s), 0, len(t.s))
 		c.Check(err, check.Equals, nil, check.Commentf("Test: %d", i))
 		c.Check(wfc, check.Equals, t.c, check.Commentf("Test: %d", i))
 	}
 }
 
-func (s *S) TestZComplexity(c *check.C) {
+func (s *S) TestZ(c *check.C) {
 	for i, t := range []struct {
 		s string
 		c float64
@@ -77,7 +77,7 @@ func (s *S) TestZComplexity(c *check.C) {
 		{"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", 0.01},
 		{"cctccctaactcattttatgaggccagcatcattctgataccaaagcc---cagagacacaaccaaaaaagagaattttagaccaatatccttgatgaacattgatgcaaaaatcctcaataaaatactggcaaaccgaatccagcagcacatcaaaaagcttatccaccatgatcaagtgggcttcatccctgggatgcaaggctggttcaatatacgcaaatcaataaatgtaatccagcatataaacagagccaaagacaaaaaccacatgattatctcaatagatgcagaaaaaccctttgacaaaattcaacaacccttcatgctaaaaactctcaataaattaggtattgatgggacgtatttcaaaataataagagctatctatgacaaacccacagccaatatcatactgaatgggcaaaaactggaagcattccctttgaaaactggcacaagacagggatgccctctctcaccgctcctattcaacatag", 0.35412474849094566},
 	} {
-		zc, err := ZComplexity(stringToSeq(t.s), 0, len(t.s))
+		zc, err := Z(stringToSeq(t.s), 0, len(t.s))
 		c.Check(err, check.Equals, nil, check.Commentf("Test: %d", i))
 		c.Check(zc, check.Equals, t.c, check.Commentf("Test: %d", i))
 	}

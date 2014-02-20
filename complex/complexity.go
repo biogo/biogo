@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// Package complex provides routines for evaluating sequence complexity.
+// Package complexity provides routines for evaluating sequence complexity.
 package complexity
 
 import (
@@ -43,9 +43,9 @@ func logBaseK(logk, x float64) float64 {
 	return math.Log(x) / logk
 }
 
-// EntropicComplexity returns the entropic complexity of a segment of s defined by
+// Entropic returns the entropic complexity of a segment of s defined by
 // start and end.
-func EntropicComplexity(s seq.Sequence, start, end int) (ce float64, err error) {
+func Entropic(s seq.Sequence, start, end int) (ce float64, err error) {
 	if start < s.Start() || end > s.End() {
 		err = fmt.Errorf("complex: index out of range")
 		return
@@ -79,9 +79,9 @@ func EntropicComplexity(s seq.Sequence, start, end int) (ce float64, err error) 
 	return
 }
 
-// WFComplexity returns the Wootton and Federhen complexity of a segment of s defined by
+// WF returns the Wootton and Federhen complexity of a segment of s defined by
 // start and end.
-func WFComplexity(s seq.Sequence, start, end int) (cwf float64, err error) {
+func WF(s seq.Sequence, start, end int) (cwf float64, err error) {
 	if start < s.Start() || end > s.End() {
 		err = fmt.Errorf("complex: index out of range")
 		return
@@ -132,9 +132,9 @@ func calcOverhead() byteCounter {
 	return *b - 1
 }
 
-// ZComplexity returns the zlib compression estimate of complexity of a segment of s defined by
+// Z returns the zlib compression estimate of complexity of a segment of s defined by
 // start and end.
-func ZComplexity(s seq.Sequence, start, end int) (cz float64, err error) {
+func Z(s seq.Sequence, start, end int) (cz float64, err error) {
 	if start < s.Start() || end > s.End() {
 		err = fmt.Errorf("complex: index out of range")
 		return
