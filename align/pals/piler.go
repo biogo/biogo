@@ -5,7 +5,7 @@
 package pals
 
 import (
-	"code.google.com/p/biogo.interval"
+	"code.google.com/p/biogo.store/interval"
 	"code.google.com/p/biogo/feat"
 
 	"fmt"
