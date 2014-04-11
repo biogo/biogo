@@ -72,7 +72,7 @@ func Truncate(dst, src Sliceable, start, end int) error {
 		if dst == src {
 			dst.SetSlice(sl.Slice(start-offset, end-offset))
 		} else {
-			dst.SetSlice(sl.Make(0, sl.Len()).Append(sl.Slice(start-offset, end-offset)))
+			dst.SetSlice(sl.Make(0, end-start).Append(sl.Slice(start-offset, end-offset)))
 		}
 		dst.SetOffset(start)
 		if dst, ok := dst.(seq.ConformationSetter); ok {
