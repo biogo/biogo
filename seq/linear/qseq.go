@@ -228,7 +228,7 @@ func (s *QSeq) Format(fs fmt.State, c rune) {
 	case 'q':
 		s.formatDescLineTo(fs, '@')
 		for _, ql := range buf {
-			fmt.Fprintf(fs, "%c", ql.L)
+			fmt.Fprintf(fs, "%c", s.QFilter(s.Alpha, s.Threshold, ql))
 		}
 		if pOk && p < s.Len() {
 			fmt.Fprintln(fs, "...")
