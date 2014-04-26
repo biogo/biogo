@@ -4,6 +4,10 @@
 
 package errors
 
+import (
+	"sync"
+)
+
 // Chain is an error and layered error annotations.
 type Chain interface {
 	// The error behavior of a Chain is based on the last annotation applied.
@@ -30,7 +34,7 @@ func NewChain(err error) Chain {
 	if c, ok := err.(Chain); ok {
 		return c
 	}
-	return chain{err}
+	return chain{m: new(sync.RWMutex), errors: []error{err}}
 }
 
 // Cause returns the initially identified cause of an error if the error is a Chain, or the error
@@ -85,29 +89,48 @@ func reverse(err []error) []error {
 }
 
 // chain is the basic implementation.
-type chain []error
+type chain struct {
+	m      *sync.RWMutex
+	errors []error
+}
 
 func (c chain) Error() string {
-	if len(c) > 0 {
-		return c[len(c)-1].Error()
+	c.m.RLock()
+	defer c.m.RUnlock()
+	if len(c.errors) > 0 {
+		return c.errors[len(c.errors)-1].Error()
 	}
 	return ""
 }
 func (c chain) Cause() error {
-	if len(c) > 0 {
-		return c[0]
+	c.m.RLock()
+	defer c.m.RUnlock()
+	if len(c.errors) > 0 {
+		return c.errors[0]
 	}
 	return nil
 }
-func (c chain) Link(err error) Chain { return append(c, err) }
+func (c chain) Link(err error) Chain {
+	c.m.Lock()
+	defer c.m.Unlock()
+	c.errors = append(c.errors, err)
+	return c
+}
 func (c chain) Last() (Chain, error) {
-	switch len(c) {
+	c.m.RLock()
+	defer c.m.RUnlock()
+	switch len(c.errors) {
 	case 0:
 		return nil, nil
 	case 1:
-		return nil, c[0]
+		return nil, c.errors[0]
 	default:
-		return c[:len(c)-1], c[len(c)-1]
+		c.errors = c.errors[:len(c.errors)-1]
+		return c, c.errors[len(c.errors)-1]
 	}
 }
-func (c chain) Errors() []error { return c }
+func (c chain) Errors() []error {
+	c.m.RLock()
+	defer c.m.RUnlock()
+	return c.errors
+}
