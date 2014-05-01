@@ -6,7 +6,6 @@ package pals
 
 import (
 	"code.google.com/p/biogo/alphabet"
-	"code.google.com/p/biogo/feat"
 	"code.google.com/p/biogo/seq"
 	"code.google.com/p/biogo/seq/linear"
 	"code.google.com/p/biogo/util"
@@ -32,7 +31,7 @@ type Packed struct {
 }
 
 // Convert coordinates in a packed sequence into a feat.Feature.
-func (pa *Packed) feature(from, to int, comp bool) (feat.Feature, error) {
+func (pa *Packed) feature(from, to int, comp bool) (*Feature, error) {
 	if comp {
 		from, to = pa.Len()-to, pa.Len()-from
 	}

@@ -5,7 +5,6 @@
 package pals
 
 import (
-	"code.google.com/p/biogo/feat"
 	check "launchpad.net/gocheck"
 )
 
@@ -44,7 +43,7 @@ func (s *S) TestPiler(c *check.C) {
 	epsilon := 0.95
 	for _, f := range []PileFilter{
 		nil,
-		func(a, b feat.Feature, pa, pb *PileInterval) bool {
+		func(a, b *Feature, pa, pb *PileInterval) bool {
 			lpa := float64(pa.End - pa.Start)
 			lpb := float64(pb.End - pb.Start)
 

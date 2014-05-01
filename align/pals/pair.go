@@ -6,7 +6,6 @@ package pals
 
 import (
 	"code.google.com/p/biogo/align/pals/dp"
-	"code.google.com/p/biogo/feat"
 	"code.google.com/p/biogo/io/featio/gff"
 	"code.google.com/p/biogo/seq"
 
@@ -17,7 +16,7 @@ import (
 
 // A Pair holds a pair of features with additional information relating the two.
 type Pair struct {
-	A, B   feat.Feature
+	A, B   *Feature
 	Score  int        // Score of alignment between features.
 	Error  float64    // Identity difference between feature sequences.
 	Strand seq.Strand // Strand relationship: seq.Plus indicates same strand, seq.Minus indicates opposite strand.

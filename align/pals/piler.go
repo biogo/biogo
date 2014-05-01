@@ -25,20 +25,10 @@ type PileInterval struct {
 func (i *PileInterval) Overlap(b interval.IntRange) bool {
 	return i.End-i.overlap >= b.Start && i.Start <= b.End-i.overlap
 }
-func (i *PileInterval) ID() uintptr              { return uintptr(unsafe.Pointer(i)) }
-func (i *PileInterval) Range() interval.IntRange { return interval.IntRange{Start: i.Start, End: i.End} }
-
-type containQuery struct {
-	start, end int
-	slop       int
-	location   feat.Feature
+func (i *PileInterval) ID() uintptr { return uintptr(unsafe.Pointer(i)) }
+func (i *PileInterval) Range() interval.IntRange {
+	return interval.IntRange{Start: i.Start + i.overlap, End: i.End - i.overlap}
 }
-
-func (q containQuery) Overlap(b interval.IntRange) bool {
-	return b.Start <= q.start+q.slop && b.End >= q.end-q.slop
-}
-func (q containQuery) ID() uintptr              { return 0 }
-func (q containQuery) Range() interval.IntRange { return interval.IntRange{Start: q.start, End: q.end} }
 
 // A Piler performs the aggregation of feature pairs according to the description in section 2.3
 // of Edgar and Myers (2005) using an interval tree, giving O(nlogn) time but better space complexity
@@ -131,7 +121,7 @@ func (p *Piler) merge(pi *PileInterval) {
 }
 
 // A PileFilter is used to determine whether a Pair is included in a Pile
-type PileFilter func(a, b feat.Feature, pa, pb *PileInterval) bool
+type PileFilter func(a, b *Feature, pa, pb *PileInterval) bool
 
 // Piles returns a slice of piles determined by application of the filter function f to
 // the feature pairs that have been added to the piler.
@@ -161,10 +151,10 @@ func (p *Piler) Piles(f PileFilter) ([]*Pile, error) {
 							Loc: pa.Location, From: pa.Start, To: pa.End,
 							Images: []*Pair{pp},
 						}
-						pp.A.(*Feature).Loc = tp
+						pp.A.Loc = tp
 						pm[pa] = tp
 					} else {
-						pp.A.(*Feature).Loc = wp
+						pp.A.Loc = wp
 						wp.Images = append(wp.Images, pp)
 					}
 					if wp, ok := pm[pb]; !ok {
@@ -172,10 +162,10 @@ func (p *Piler) Piles(f PileFilter) ([]*Pile, error) {
 							Loc: pb.Location, From: pb.Start, To: pb.End,
 							Images: []*Pair{pp.Invert()},
 						}
-						pp.B.(*Feature).Loc = tp
+						pp.B.Loc = tp
 						pm[pb] = tp
 					} else {
-						pp.B.(*Feature).Loc = wp
+						pp.B.Loc = wp
 						wp.Images = append(wp.Images, pp.Invert())
 					}
 				}
@@ -197,7 +187,7 @@ func (p *Piler) Piles(f PileFilter) ([]*Pile, error) {
 
 // Pile returns a Pile representation of the pile containing q.
 // An error is returned if more than one pile would be returned.
-func (p *Piler) Pile(q feat.Feature) (*Pile, error) {
+func (p *Piler) Pile(q *Feature) (*Pile, error) {
 	pi, err := p.pile(q)
 	if err != nil {
 		return nil, err
@@ -210,24 +200,22 @@ func (p *Piler) Pile(q feat.Feature) (*Pile, error) {
 	}, nil
 }
 
-func (p *Piler) pile(q feat.Feature) (*PileInterval, error) {
+func (p *Piler) pile(q *Feature) (*PileInterval, error) {
 	var (
-		qi = containQuery{
-			start:    q.Start(),
-			end:      q.End(),
-			location: q.Location(),
-			slop:     p.overlap,
+		qi = query{
+			start: q.Start() + p.overlap,
+			end:   q.End() - p.overlap,
 		}
-		t  = p.intervals[qi.location]
+		t  = p.intervals[q.Location()]
 		c  = 0
 		pt interval.IntInterface
 	)
 
-	t.DoMatching(
-		func(e interval.IntInterface) (done bool) {
+	findContainers(
+		t.Root,
+		func(e interval.IntInterface) {
 			c++
 			pt = e
-			return
 		},
 		qi,
 	)
@@ -239,4 +227,34 @@ func (p *Piler) pile(q feat.Feature) (*PileInterval, error) {
 	}
 
 	return pt.(*PileInterval), nil
+}
+
+type query struct {
+	start, end int
+}
+
+func (q query) Range() interval.IntRange { return interval.IntRange{Start: q.start, End: q.end} }
+
+type simple struct{ query }
+
+func (q simple) Overlap(b interval.IntRange) bool {
+	return q.end > b.Start && q.start < b.End
+}
+
+type contained struct{ query }
+
+func (q contained) Overlap(b interval.IntRange) bool {
+	return q.start >= b.Start && q.end <= b.End
+}
+
+func findContainers(n *interval.IntNode, fn func(interval.IntInterface), q query) {
+	if n.Left != nil && (simple{q}.Overlap(n.Left.Range)) {
+		findContainers(n.Left, fn, q)
+	}
+	if (contained{q}.Overlap(n.Interval)) {
+		fn(n.Elem)
+	}
+	if n.Right != nil && (simple{q}.Overlap(n.Right.Range)) {
+		findContainers(n.Right, fn, q)
+	}
 }
