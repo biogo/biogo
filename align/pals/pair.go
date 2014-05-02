@@ -102,20 +102,11 @@ func ExpandFeature(f *gff.Feature) (*Pair, error) {
 		Error:  maxe,
 		Strand: f.FeatStrand,
 	}
+	fp.A.Pair = fp
+	fp.B.Pair = fp
 	f.FeatScore = nil
 	f.FeatAttributes = nil
 	f.FeatStrand = seq.None
 
 	return fp, nil
-}
-
-// Invert returns a reversed copy of the feature pair such that A', B' = B, A.
-func (fp *Pair) Invert() *Pair {
-	return &Pair{
-		A:      fp.B,
-		B:      fp.A,
-		Score:  fp.Score,
-		Error:  fp.Error,
-		Strand: fp.Strand,
-	}
 }

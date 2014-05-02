@@ -41,33 +41,28 @@ var (
 
 func (s *S) TestPiler(c *check.C) {
 	epsilon := 0.95
-	for _, f := range []PileFilter{
+	for _, f := range []PairFilter{
 		nil,
-		func(a, b *Feature, pa, pb *PileInterval) bool {
-			lpa := float64(pa.End - pa.Start)
-			lpb := float64(pb.End - pb.Start)
-
-			return float64(a.Len()) >= lpa*epsilon || float64(b.Len()) >= lpb*epsilon
+		func(p *Pair) bool {
+			return float64(p.A.Len()) >= float64(p.A.Loc.Len())*epsilon ||
+				float64(p.B.Len()) >= float64(p.B.Loc.Len())*epsilon
 		},
 	} {
 		p := NewPiler(0)
 		for _, fp := range testPairs {
+			fp.A.Pair = fp
+			fp.B.Pair = fp
 			err := p.Add(fp)
 			if err != nil {
 				c.Fatal(err)
 			}
 		}
 
-		piles, err := p.Piles(f)
-		if err != nil {
-			c.Fatal(err)
-		}
-
-		for i, pi := range piles {
+		for i, pi := range p.Piles(f) {
 			c.Logf("%d %v", i, pi)
-			for _, fp := range pi.Images {
-				c.Logf("\t%v", fp)
-				c.Check(fp.A.Location(), check.DeepEquals, pi)
+			for _, f := range pi.Images {
+				c.Logf("\t%v", f.Pair)
+				c.Check(f.Location(), check.DeepEquals, pi)
 			}
 		}
 	}

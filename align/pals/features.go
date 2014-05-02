@@ -43,6 +43,7 @@ type Feature struct {
 	From int
 	To   int
 	Loc  feat.Feature
+	Pair *Pair
 }
 
 func (f *Feature) Name() string {
@@ -66,6 +67,17 @@ func (f *Feature) String() string {
 	return fmt.Sprintf("%s[%d,%d)", f.Loc.Name(), f.From, f.To)
 }
 
+// Mate returns the feature pair mate of the receiver.
+func (f *Feature) Mate() *Feature {
+	switch f {
+	case f.Pair.A:
+		return f.Pair.B
+	case f.Pair.B:
+		return f.Pair.A
+	}
+	return nil
+}
+
 // A Pile is a collection of features covering a maximal (potentially contiguous, depending on
 // the value of overlap used for creation of the Piler) region of copy count > 0.
 type Pile struct {
@@ -73,7 +85,7 @@ type Pile struct {
 	To     int
 	Strand seq.Strand
 	Loc    feat.Feature
-	Images []*Pair
+	Images []*Feature
 	graph.Node
 }
 
