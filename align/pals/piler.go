@@ -17,6 +17,7 @@ var duplicatePair = fmt.Errorf("pals: attempt to add duplicate feature pair to p
 // Note Location must be comparable according to http://golang.org/ref/spec#Comparison_operators.
 type pileInterval struct {
 	start, end int
+	pile       *Pile
 	location   feat.Feature
 	images     []*Feature
 	overlap    int
@@ -128,57 +129,72 @@ type PairFilter func(*Pair) bool
 // the feature pairs that have been added to the piler. Piles may be called more than once,
 // but the piles returned in earlier invocations will be altered by subsequent calls.
 func (p *Piler) Piles(f PairFilter) []*Pile {
-	pm := make(map[*pileInterval]*Pile)
-
 	if !p.piled {
 		for _, t := range p.intervals {
 			t.Do(func(e interval.IntInterface) (done bool) {
 				pa := e.(*pileInterval)
+				if pa.pile == nil {
+					pa.pile = &Pile{Loc: pa.location, From: pa.start, To: pa.end}
+				}
 				for _, im := range pa.images {
-					pi, ok := pm[pa]
-					if !ok {
-						pi = &Pile{Loc: pa.location, From: pa.start, To: pa.end}
-						pm[pa] = pi
+					if checkSanity {
+						assertPileSanity(t, im, pa.pile)
 					}
-					im.Loc = pi
+					im.Loc = pa.pile
 				}
 				return
 			})
 		}
 		p.piled = true
-	} else {
-		for _, t := range p.intervals {
-			t.Do(func(e interval.IntInterface) (done bool) {
-				pa := e.(*pileInterval)
-				for _, im := range pa.images {
-					pi := im.Loc.(*Pile)
-					pi.Images = pi.Images[:0]
-					pm[pa] = pi
-				}
-				return
-			})
-		}
 	}
 
+	var piles []*Pile
 	for _, t := range p.intervals {
 		t.Do(func(e interval.IntInterface) (done bool) {
 			pa := e.(*pileInterval)
+			pa.pile.Images = pa.pile.Images[:0]
 			for _, im := range pa.images {
 				if f != nil && !f(im.Pair) {
-					delete(pm, pa)
 					continue
 				}
-				pi := im.Loc.(*Pile)
-				pi.Images = append(pi.Images, im)
+				if checkSanity {
+					assertPairSanity(im)
+				}
+				pa.pile.Images = append(pa.pile.Images, im)
 			}
+			piles = append(piles, pa.pile)
 			return
 		})
 	}
 
-	piles := make([]*Pile, 0, len(pm))
-	for _, pile := range pm {
-		piles = append(piles, pile)
-	}
-
 	return piles
+}
+
+const checkSanity = false
+
+func assertPileSanity(t *interval.IntTree, im *Feature, pi *Pile) {
+	if im.Start() < pi.Start() || im.End() > pi.End() {
+		panic(fmt.Sprintf("image extends beyond pile: %#v", im))
+	}
+	if foundPiles := t.Get(&pileInterval{start: im.Start(), end: im.End()}); len(foundPiles) > 1 {
+		var containing int
+		for _, pile := range foundPiles {
+			r := pile.Range()
+			if (r.Start <= im.Start() && r.End > im.End()) || (r.Start < im.Start() && r.End >= im.End()) {
+				containing++
+			}
+		}
+		if containing > 1 {
+			panic(fmt.Sprintf("found too many piles for %#v", im))
+		}
+	}
+}
+
+func assertPairSanity(im *Feature) {
+	if _, ok := im.Loc.(*Pile); !ok {
+		panic(fmt.Sprintf("image not allocated to pile %#v", im))
+	}
+	if _, ok := im.Mate().Loc.(*Pile); !ok {
+		panic(fmt.Sprintf("image mate not allocated to pile %#v", im.Mate()))
+	}
 }
