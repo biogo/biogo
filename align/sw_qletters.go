@@ -105,11 +105,13 @@ func (a SW) alignQLetters(rSeq, qSeq alphabet.QLetters, alpha alphabet.Alphabet)
 				left: table[p-1] + la[qVal],
 			}
 			score = max(&scores)
-			if score < 0 {
+			switch {
+			case score > 0:
+				if score >= maxS && score == scores[diag] {
+					maxS, maxI, maxJ = score, i, j
+				}
+			default:
 				score = 0
-			}
-			if score >= maxS && score == scores[diag] {
-				maxS, maxI, maxJ = score, i, j
 			}
 			table[p] = score
 		}

@@ -124,11 +124,13 @@ func (a SWAffine) alignQLetters(rSeq, qSeq alphabet.QLetters, alpha alphabet.Alp
 			score = max(&scores)
 			matched := score == scores[diag]
 			score += la[rVal*let+qVal]
-			if score < 0 {
+			switch {
+			case score > 0:
+				if score >= maxS && matched {
+					maxS, maxI, maxJ = score, i, j
+				}
+			default:
 				score = 0
-			}
-			if score >= maxS && matched {
-				maxS, maxI, maxJ = score, i, j
 			}
 			table[p][diag] = score
 
