@@ -99,9 +99,8 @@ func (a SW) alignLetters(rSeq, qSeq alphabet.Letters, alpha alphabet.Alphabet) (
 				continue
 			}
 			p := i*c + j
-			match := la[rVal*let+qVal]
 			scores = [3]int{
-				diag: table[p-c-1] + match,
+				diag: table[p-c-1] + la[rVal*let+qVal],
 				up:   table[p-c] + la[rVal*let],
 				left: table[p-1] + la[qVal],
 			}
@@ -109,7 +108,7 @@ func (a SW) alignLetters(rSeq, qSeq alphabet.Letters, alpha alphabet.Alphabet) (
 			if score < 0 {
 				score = 0
 			}
-			if score >= maxS && match > 0 {
+			if score >= maxS && score == scores[diag] {
 				maxS, maxI, maxJ = score, i, j
 			}
 			table[p] = score
