@@ -119,11 +119,12 @@ func (a SWAffine) alignType(rSeq, qSeq Type, alpha alphabet.Alphabet) ([]feat.Pa
 				up:   table[p-c-1][up],
 				left: table[p-c-1][left],
 			}
-			score = max(&scores) + la[rVal*let+qVal]
+			match := la[rVal*let+qVal]
+			score = max(&scores) + match
 			if score < 0 {
 				score = 0
 			}
-			if score >= maxS { // greedy so make farthest down and right
+			if score >= maxS && match > 0 {
 				maxS, maxI, maxJ = score, i, j
 			}
 			table[p][diag] = score
