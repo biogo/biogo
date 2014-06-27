@@ -49,20 +49,17 @@ func pointerSWType(rSeq, qSeq Type, i, j int, table []int, index alphabet.Index,
 	if rVal < 0 || qVal < 0 {
 		return " "
 	}
-	if table[(i-1)*c+j-1] == 0 {
+	switch p := i*c + j; {
+	case table[p] == 0:
 		return " "
-	}
-	switch p := i*c + j; table[p] {
-	case 0:
-		return " "
-	case table[p-c-1] + a[rVal][qVal]:
+	case table[p-c-1]+a[rVal][qVal] == table[p] && table[p-c-1] != 0:
 		return "⬉"
-	case table[p-c] + a[rVal][gap]:
+	case table[p-c]+a[rVal][gap] == table[p] && table[p-c] != 0:
 		return "⬆"
-	case table[p-1] + a[gap][qVal]:
+	case table[p-1]+a[gap][qVal] == table[p] && table[p-1] != 0:
 		return "⬅"
 	default:
-		return " "
+		return "⌜"
 	}
 }
 

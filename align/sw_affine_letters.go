@@ -58,30 +58,27 @@ func pointerSWAffineLetters(rSeq, qSeq alphabet.Letters, i, j, l int, table [][3
 	if rVal < 0 || qVal < 0 {
 		return "   "
 	}
-	if table[(i-1)*c+j-1][l] == 0 {
+	switch p := i*c + j; {
+	case table[p][l] == 0:
 		return "   "
-	}
-	switch p := i*c + j; table[p][l] {
-	case 0:
-		return "   "
-	case table[p-c][up] + a.Matrix[rVal][gap]:
+	case table[p-c][up]+a.Matrix[rVal][gap] == table[p][l] && table[(i-1)*c+j-1][l] != 0:
 		return "⬆ u"
-	case table[p-1][left] + a.Matrix[gap][qVal]:
+	case table[p-1][left]+a.Matrix[gap][qVal] == table[p][l] && table[(i-1)*c+j-1][l] != 0:
 		return "⬅ l"
 
-	case table[p-c][diag] + a.GapOpen + a.Matrix[rVal][gap]:
+	case table[p-c][diag]+a.GapOpen+a.Matrix[rVal][gap] == table[p][l] && table[(i-1)*c+j-1][l] != 0:
 		return "⬆ m"
-	case table[p-1][diag] + a.GapOpen + a.Matrix[gap][qVal]:
+	case table[p-1][diag]+a.GapOpen+a.Matrix[gap][qVal] == table[p][l] && table[(i-1)*c+j-1][l] != 0:
 		return "⬅ m"
 
-	case table[p-c-1][diag] + a.Matrix[rVal][qVal]:
+	case table[p-c-1][diag]+a.Matrix[rVal][qVal] == table[p][l] && table[(i-1)*c+j-1][l] != 0:
 		return "⬉ m"
-	case table[p-c-1][up] + a.Matrix[rVal][qVal]:
+	case table[p-c-1][up]+a.Matrix[rVal][qVal] == table[p][l] && table[(i-1)*c+j-1][l] != 0:
 		return "⬉ u"
-	case table[p-c-1][left] + a.Matrix[rVal][qVal]:
+	case table[p-c-1][left]+a.Matrix[rVal][qVal] == table[p][l] && table[(i-1)*c+j-1][l] != 0:
 		return "⬉ l"
 	default:
-		return [3]string{"", "⬆ u", "⬅ l"}[l]
+		return [3]string{"⌜  ", "⬆ u", "⬅ l"}[l]
 	}
 }
 
