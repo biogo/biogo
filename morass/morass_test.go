@@ -5,8 +5,8 @@
 package morass
 
 import (
+	"gopkg.in/check.v1"
 	"io"
-	check "launchpad.net/gocheck"
 	"math/rand"
 	"runtime"
 	"testing"

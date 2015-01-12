@@ -9,7 +9,7 @@ import (
 	"code.google.com/p/biogo/feat"
 	"code.google.com/p/biogo/seq"
 	"fmt"
-	check "launchpad.net/gocheck"
+	"gopkg.in/check.v1"
 	"reflect"
 	"testing"
 	"unsafe"

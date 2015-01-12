@@ -10,7 +10,7 @@ import (
 	"code.google.com/p/biogo/seq"
 
 	"bytes"
-	check "launchpad.net/gocheck"
+	"gopkg.in/check.v1"
 	"testing"
 )
 

@@ -10,8 +10,8 @@ import (
 
 	"bytes"
 	"fmt"
+	"gopkg.in/check.v1"
 	"image/color"
-	check "launchpad.net/gocheck"
 	"strings"
 	"testing"
 )

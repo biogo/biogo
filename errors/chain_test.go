@@ -6,8 +6,8 @@ package errors
 
 import (
 	"fmt"
+	"gopkg.in/check.v1"
 	"io"
-	check "launchpad.net/gocheck"
 )
 
 func (s *S) TestChain(c *check.C) {

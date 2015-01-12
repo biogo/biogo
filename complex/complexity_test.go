@@ -7,7 +7,7 @@ package complexity
 import (
 	"code.google.com/p/biogo/alphabet"
 	"code.google.com/p/biogo/seq/linear"
-	check "launchpad.net/gocheck"
+	"gopkg.in/check.v1"
 	"testing"
 )
 

@@ -6,7 +6,7 @@ package alphabet
 
 import (
 	"fmt"
-	check "launchpad.net/gocheck"
+	"gopkg.in/check.v1"
 	"math"
 )
 

@@ -12,7 +12,7 @@ import (
 	"code.google.com/p/biogo/seq/linear"
 	"code.google.com/p/biogo/seq/multi"
 
-	check "launchpad.net/gocheck"
+	"gopkg.in/check.v1"
 	"strings"
 	"testing"
 )

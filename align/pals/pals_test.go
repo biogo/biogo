@@ -14,7 +14,7 @@ import (
 
 	"bytes"
 	"fmt"
-	check "launchpad.net/gocheck"
+	"gopkg.in/check.v1"
 	"math"
 	"testing"
 )

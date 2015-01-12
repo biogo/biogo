@@ -8,8 +8,8 @@ import (
 	"bytes"
 	"crypto/md5"
 	"fmt"
+	"gopkg.in/check.v1"
 	"io/ioutil"
-	check "launchpad.net/gocheck"
 	"os"
 	"os/exec"
 )

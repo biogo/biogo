@@ -11,8 +11,8 @@ import (
 	"code.google.com/p/biogo/seq/linear"
 
 	"bytes"
+	"gopkg.in/check.v1"
 	"io"
-	check "launchpad.net/gocheck"
 	"strings"
 	"testing"
 	"time"
