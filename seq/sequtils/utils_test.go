@@ -12,7 +12,6 @@ import (
 	"gopkg.in/check.v1"
 	"reflect"
 	"testing"
-	"unsafe"
 )
 
 // Tests
@@ -29,8 +28,7 @@ var (
 type slice []byte
 
 func stringToSlice(s string) slice {
-	b := []byte(s)
-	return *(*slice)(unsafe.Pointer(&b))
+	return []byte(s)
 }
 func (s slice) Make(len, cap int) alphabet.Slice       { return make(slice, len, cap) }
 func (s slice) Len() int                               { return len(s) }
