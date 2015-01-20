@@ -101,3 +101,25 @@ type Collection interface {
 	Set
 	Location() Feature
 }
+
+// OrientationOf returns the orientation of the given feature relative to
+// the deepest orientable location and the reference feature, which may be
+// the feature itself if it is not an Orienter or has a nil Location.
+// The returned orientation will always be Forward or Reverse.
+// OrientationOf will panic if the feature chain is deeper than 1000 links.
+func OrientationOf(f Feature) (ori Orientation, ref Feature) {
+	ori = Forward
+	for n := 0; n < 1000; n++ {
+		o, ok := f.(Orienter)
+		if !ok {
+			return ori, f
+		}
+		if o := o.Orientation(); o != NotOriented {
+			ori *= o
+			f = f.Location()
+			continue
+		}
+		return ori, f
+	}
+	panic("feat: feature chain too long")
+}
