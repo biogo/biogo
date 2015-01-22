@@ -231,29 +231,29 @@ var (
 	}
 )
 
-func (s *S) TestOrientationOf(c *check.C) {
+func (s *S) TestBaseOrientationOf(c *check.C) {
 	for _, t := range orientationTests {
-		ori, ref := feat.OrientationOf(t.f)
+		ori, ref := feat.BaseOrientationOf(t.f)
 		c.Check(ori, check.Equals, t.ori)
 		c.Check(ref, check.Equals, t.ref)
 	}
 
 	// Check that we find the same reference where possible.
-	_, refGeneA := feat.OrientationOf(geneA)
-	_, refGeneB := feat.OrientationOf(geneB)
+	_, refGeneA := feat.BaseOrientationOf(geneA)
+	_, refGeneB := feat.BaseOrientationOf(geneB)
 	c.Check(refGeneA, check.Equals, refGeneB)
 
 	// Check that unorientable features return different reference features.
-	_, refOpA := feat.OrientationOf(opA)
-	_, refOpB := feat.OrientationOf(opB)
+	_, refOpA := feat.BaseOrientationOf(opA)
+	_, refOpB := feat.BaseOrientationOf(opB)
 	c.Check(refOpA, check.Not(check.Equals), refOpB)
-	_, refChrom1 := feat.OrientationOf(chrom1)
-	_, refChrom2 := feat.OrientationOf(chrom2)
+	_, refChrom1 := feat.BaseOrientationOf(chrom1)
+	_, refChrom2 := feat.BaseOrientationOf(chrom2)
 	c.Check(refChrom1, check.Not(check.Equals), refChrom2)
 
 	// Check we detect cycles.
 	var cycle ori
 	cycle.orient = feat.Forward
 	cycle.loc = &cycle
-	c.Check(func() { feat.OrientationOf(cycle) }, check.Panics, "feat: feature chain too long")
+	c.Check(func() { feat.BaseOrientationOf(cycle) }, check.Panics, "feat: feature chain too long")
 }
