@@ -88,6 +88,15 @@ var (
 		},
 		orient: feat.Forward,
 	}
+	pribA = ori{
+		nonOri: nonOri{
+			start: 15, end: 20,
+			name: "pribA",
+			desc: "promoter box",
+			loc:  proA,
+		},
+		orient: feat.Forward,
+	}
 	opA = nonOri{
 		start: 12, end: 16,
 		name: "genb",
@@ -256,4 +265,26 @@ func (s *S) TestBaseOrientationOf(c *check.C) {
 	cycle.orient = feat.Forward
 	cycle.loc = &cycle
 	c.Check(func() { feat.BaseOrientationOf(cycle) }, check.Panics, "feat: feature chain too long")
+}
+
+func (s *S) TestOrientationWithin(c *check.C) {
+	for _, t := range orientationTests {
+		c.Check(feat.OrientationWithin(t.f, t.ref), check.Equals, t.ori)
+	}
+
+	// Check we can find things that are all along the feature chain.
+	for ref := feat.Feature(pribA); ref != nil; ref = ref.Location() {
+		c.Check(feat.OrientationWithin(pribA, ref), check.Equals, feat.Forward)
+	}
+
+	// Check that unorientable features return different reference features.
+	c.Check(feat.OrientationWithin(pribA, nil), check.Equals, feat.NotOriented)
+	c.Check(feat.OrientationWithin(opA, chrom2), check.Equals, feat.NotOriented)
+	c.Check(feat.OrientationWithin(opA, geneB), check.Equals, feat.NotOriented)
+
+	// Check we detect cycles.
+	var cycle ori
+	cycle.orient = feat.Forward
+	cycle.loc = &cycle
+	c.Check(func() { feat.OrientationWithin(cycle, chrom1) }, check.Panics, "feat: feature chain too long")
 }

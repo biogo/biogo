@@ -126,3 +126,27 @@ func BaseOrientationOf(f Feature) (ori Orientation, ref Feature) {
 	}
 	panic("feat: feature chain too long")
 }
+
+// OrientationWithin returns the orientation of the given feature relative to
+// the given reference. If f is not located within the reference OrientationWithin
+// will return NotOriented.
+// OrientationWithin will panic if the feature chain is deeper than 1000 links.
+func OrientationWithin(f, ref Feature) Orientation {
+	ori := Forward
+	for n := 0; n < 1000; n++ {
+		if f == ref {
+			return ori
+		}
+		o, ok := f.(Orienter)
+		if !ok {
+			return NotOriented
+		}
+		if o := o.Orientation(); o != NotOriented {
+			ori *= o
+			f = f.Location()
+			continue
+		}
+		return ori
+	}
+	panic("feat: feature chain too long")
+}
