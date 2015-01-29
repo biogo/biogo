@@ -57,8 +57,8 @@ func NewScannerFromFunc(f func() (seq.Sequence, error)) *Scanner { return &Scann
 
 // Next advances the Scanner past the next sequence, which will then be available through
 // the Seq method. It returns false when the scan stops, either by reaching the end of the
-// input or an error. After Next returns false, the Err method will return any error that
-// occurred during scanning, except that if it was io.EOF, Err will return nil.
+// input or an error. After Next returns false, the Error method will return any error that
+// occurred during scanning, except that if it was io.EOF, Error will return nil.
 func (s *Scanner) Next() bool {
 	if s.err != nil {
 		return false
@@ -67,7 +67,7 @@ func (s *Scanner) Next() bool {
 	return s.err == nil
 }
 
-// Err returns the first non-EOF error that was encountered by the Scanner.
+// Error returns the first non-EOF error that was encountered by the Scanner.
 func (s *Scanner) Error() error {
 	if s.err == io.EOF {
 		return nil
