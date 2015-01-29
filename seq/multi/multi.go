@@ -96,7 +96,7 @@ func (m *Multi) Rows() int {
 	return len(m.Seq)
 }
 
-// SetOffset sets the global offset of the sequence to o.
+// SetOffset sets the location-relative offset of the sequence to o.
 func (m *Multi) SetOffset(o int) error {
 	for _, r := range m.Seq {
 		r.SetOffset(r.Start() - m.Offset + o)
@@ -105,7 +105,8 @@ func (m *Multi) SetOffset(o int) error {
 	return nil
 }
 
-// Start returns the start position of the sequence in global coordinates.
+// Start returns the start position of the sequence in coordinates relative to
+// the sequence location.
 func (m *Multi) Start() int {
 	start := util.MaxInt
 	for _, r := range m.Seq {
@@ -117,7 +118,8 @@ func (m *Multi) Start() int {
 	return start
 }
 
-// End returns the end position of the sequence in global coordinates.
+// End returns the end position of the sequence in coordinates relative to
+// the sequence location.
 func (m *Multi) End() int {
 	end := util.MinInt
 	for _, m := range m.Seq {

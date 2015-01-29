@@ -77,10 +77,12 @@ func (s *Seq) Set(i int, l alphabet.QLetter) error {
 // Len returns the length of the sequence.
 func (s *Seq) Len() int { return len(s.Seq) }
 
-// Start returns the start position of the sequence in global coordinates.
+// Start returns the start position of the sequence in coordinates relative to the sequence
+// location.
 func (s *Seq) Start() int { return s.Offset }
 
-// End returns the end position of the sequence in global coordinates.
+// End returns the end position of the sequence in coordinates relative to the sequence
+// location.
 func (s *Seq) End() int { return s.Offset + s.Len() }
 
 // Validate validates the letters of the sequence according to the sequence alphabet.

@@ -20,7 +20,7 @@ var (
 	_ seq.RowAppender = (*Set)(nil)
 )
 
-// Append each []byte in a to the appropriate sequence in the reciever.
+// Append each []byte in a to the appropriate sequence in the receiver.
 func (s Set) AppendEach(a [][]alphabet.QLetter) (err error) {
 	if len(a) != s.Rows() {
 		return fmt.Errorf("multi: number of sequences does not match row count: %d != %d.", len(a), s.Rows())

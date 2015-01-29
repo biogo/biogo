@@ -103,10 +103,12 @@ func (s *QSeq) SetE(i int, e float64) error {
 // Len returns the length of the sequence.
 func (s *QSeq) Len() int { return len(s.Seq) }
 
-// Start return the start position of the sequence in global coordinates.
+// Start return the start position of the sequence in coordinates relative to the
+// sequence location.
 func (s *QSeq) Start() int { return s.Offset }
 
-// End returns the end position of the sequence in global coordinates.
+// End returns the end position of the sequence in coordinates relative to the
+// sequence location.
 func (s *QSeq) End() int { return s.Offset + s.Len() }
 
 // Validate validates the letters of the sequence according to the sequence alphabet.

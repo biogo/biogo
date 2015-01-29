@@ -81,10 +81,12 @@ func (s *Seq) Len() int { return len(s.Seq) }
 // Rows returns the number of rows in the alignment.
 func (s *Seq) Rows() int { return s.Seq.Rows() }
 
-// Start returns the start position of the sequence in global coordinates.
+// Start returns the start position of the sequence in coordinates relative to the
+// sequence location.
 func (s *Seq) Start() int { return s.Offset }
 
-// End returns the end position of the sequence in global coordinates.
+// End returns the end position of the sequence in coordinates relative to the
+// sequence location.
 func (s *Seq) End() int { return s.Offset + s.Len() }
 
 // Clone returns a copy of the sequence.
@@ -326,10 +328,12 @@ func (r Row) Set(i int, l alphabet.QLetter) error {
 // Len returns the length of the row.
 func (r Row) Len() int { return len(r.Align.Seq) }
 
-// Start returns the start position of the sequence in global coordinates.
+// Start returns the start position of the sequence in coordinates relative to the
+// sequence location.
 func (r Row) Start() int { return r.Align.SubAnnotations[r.Row].Offset }
 
-// End returns the end position of the sequence in global coordinates.
+// End returns the end position of the sequence in coordinates relative to the
+// sequence location.
 func (r Row) End() int { return r.Start() + r.Len() }
 
 // Location returns the feature containing the row's sequence.
