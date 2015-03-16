@@ -2,15 +2,15 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// Package providing PALS sequence hit filter routines based on 
+// Package providing PALS sequence hit filter routines based on
 // 'Efficient q-gram filters for finding all 𝛜-matches over a given length.'
 //   Kim R. Rasmussen, Jens Stoye, and Eugene W. Myers. J. of Computational Biology 13:296–308 (2006).
 package filter
 
 import (
-	"code.google.com/p/biogo/index/kmerindex"
-	"code.google.com/p/biogo/morass"
-	"code.google.com/p/biogo/seq/linear"
+	"github.com/biogo/biogo/index/kmerindex"
+	"github.com/biogo/biogo/morass"
+	"github.com/biogo/biogo/seq/linear"
 
 	"errors"
 )

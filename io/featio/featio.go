@@ -6,7 +6,7 @@
 package featio
 
 import (
-	"code.google.com/p/biogo/feat"
+	"github.com/biogo/biogo/feat"
 
 	"io"
 )

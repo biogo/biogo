@@ -5,13 +5,14 @@
 package seq_test
 
 import (
-	"code.google.com/p/biogo/seq"
-	"code.google.com/p/biogo/seq/alignment"
-	"code.google.com/p/biogo/seq/linear"
-	"code.google.com/p/biogo/seq/multi"
+	"github.com/biogo/biogo/seq"
+	"github.com/biogo/biogo/seq/alignment"
+	"github.com/biogo/biogo/seq/linear"
+	"github.com/biogo/biogo/seq/multi"
+
+	"testing"
 
 	_ "gopkg.in/check.v1" // Necessary to squelch complaints when testing ./biogo/... verbosely.
-	"testing"
 )
 
 func TestSeq(t *testing.T) {

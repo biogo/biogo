@@ -6,8 +6,9 @@ package alphabet
 
 import (
 	"fmt"
-	"gopkg.in/check.v1"
 	"math"
+
+	"gopkg.in/check.v1"
 )
 
 type approxChecker struct {

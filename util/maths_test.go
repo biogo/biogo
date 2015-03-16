@@ -5,8 +5,9 @@
 package util
 
 import (
-	"gopkg.in/check.v1"
 	"math"
+
+	"gopkg.in/check.v1"
 )
 
 // Tests

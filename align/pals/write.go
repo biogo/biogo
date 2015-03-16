@@ -5,8 +5,8 @@
 package pals
 
 import (
-	"code.google.com/p/biogo/feat"
-	"code.google.com/p/biogo/io/featio/gff"
+	"github.com/biogo/biogo/feat"
+	"github.com/biogo/biogo/io/featio/gff"
 
 	"fmt"
 	"io"

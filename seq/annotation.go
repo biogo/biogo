@@ -5,8 +5,8 @@
 package seq
 
 import (
-	"code.google.com/p/biogo/alphabet"
-	"code.google.com/p/biogo/feat"
+	"github.com/biogo/biogo/alphabet"
+	"github.com/biogo/biogo/feat"
 )
 
 // Strand stores linear sequence strand information.

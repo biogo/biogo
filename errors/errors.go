@@ -33,7 +33,7 @@ type Error interface {
 	Items() []interface{}
 
 	// Tracef returns a formatted stack trace of the error
-	// extending depth frames into the stack, 0 indicates no limit. 
+	// extending depth frames into the stack, 0 indicates no limit.
 	Tracef(depth int) string
 	error
 }

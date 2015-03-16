@@ -4,7 +4,7 @@
 package bt7
 
 import (
-	"code.google.com/p/biogo/feat/genome"
+	"github.com/biogo/biogo/feat/genome"
 )
 
 var (

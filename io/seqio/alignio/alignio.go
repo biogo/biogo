@@ -6,8 +6,8 @@
 package alignio
 
 import (
-	"code.google.com/p/biogo/io/seqio"
-	"code.google.com/p/biogo/seq/multi"
+	"github.com/biogo/biogo/io/seqio"
+	"github.com/biogo/biogo/seq/multi"
 
 	"io"
 )
@@ -56,7 +56,7 @@ func NewWriter(w seqio.Writer) *Writer {
 }
 
 // Write a multi.Multi to the embedded seqio.Writer.
-// Returns the number of bytes written and any error. 
+// Returns the number of bytes written and any error.
 func (w *Writer) Write(m *multi.Multi) (n int, err error) {
 	var _n int
 	for _, s := range m.Seq {

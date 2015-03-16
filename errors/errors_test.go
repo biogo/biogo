@@ -5,8 +5,9 @@
 package errors
 
 import (
-	"gopkg.in/check.v1"
 	"testing"
+
+	"gopkg.in/check.v1"
 )
 
 func Test(t *testing.T) { check.TestingT(t) }
@@ -27,16 +28,16 @@ func f(i int) error {
 
 var traceRE = `Trace: message:
 
- code.google.com/p/biogo/errors.f:
-	(?:[A-Z]:)?/.*/code.google.com/p/biogo/errors/errors_test.go#L=21
-	(?:[A-Z]:)?/.*/code.google.com/p/biogo/errors/errors_test.go#L=25
-	(?:[A-Z]:)?/.*/code.google.com/p/biogo/errors/errors_test.go#L=25
-	(?:[A-Z]:)?/.*/code.google.com/p/biogo/errors/errors_test.go#L=25
-	(?:[A-Z]:)?/.*/code.google.com/p/biogo/errors/errors_test.go#L=25
-	(?:[A-Z]:)?/.*/code.google.com/p/biogo/errors/errors_test.go#L=25
+ github.com/biogo/biogo/errors.f:
+	(?:[A-Z]:)?/.*/github.com/biogo/biogo/errors/errors_test.go#L=22
+	(?:[A-Z]:)?/.*/github.com/biogo/biogo/errors/errors_test.go#L=26
+	(?:[A-Z]:)?/.*/github.com/biogo/biogo/errors/errors_test.go#L=26
+	(?:[A-Z]:)?/.*/github.com/biogo/biogo/errors/errors_test.go#L=26
+	(?:[A-Z]:)?/.*/github.com/biogo/biogo/errors/errors_test.go#L=26
+	(?:[A-Z]:)?/.*/github.com/biogo/biogo/errors/errors_test.go#L=26
 
- code.google.com/p/biogo/errors.\(\*S\).TestCaller:
-	(?:[A-Z]:)?/.*/code.google.com/p/biogo/errors/errors_test.go#L=51
+ github.com/biogo/biogo/errors.\(\*S\).TestCaller:
+	(?:[A-Z]:)?/.*/github.com/biogo/biogo/errors/errors_test.go#L=52
 `
 
 // Tests
@@ -45,8 +46,8 @@ func (s *S) TestCaller(c *check.C) {
 	c.Check(err.Error(), check.Equals, "message")
 	fn, ln := err.FileLine()
 	c.Check(fn, check.Matches, "(?:[A-Z]:)?/.*/biogo/errors/errors_test.go")
-	c.Check(ln, check.Equals, 44)
-	c.Check(err.Package(), check.Equals, "code.google.com/p/biogo/errors.(*S)")
+	c.Check(ln, check.Equals, 45)
+	c.Check(err.Package(), check.Equals, "github.com/biogo/biogo/errors.(*S)")
 	c.Check(err.Function(), check.Equals, "TestCaller")
 	err = f(5).(Error)
 	c.Check(err.Tracef(7), check.Matches, traceRE)

@@ -10,7 +10,7 @@ import (
 	"strings"
 	"testing"
 
-	"code.google.com/p/biogo/io/seqio/fai"
+	"github.com/biogo/biogo/io/seqio/fai"
 
 	"gopkg.in/check.v1"
 )

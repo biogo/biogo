@@ -7,9 +7,9 @@
 package pwm
 
 import (
-	"code.google.com/p/biogo/feat"
-	"code.google.com/p/biogo/seq"
-	"code.google.com/p/biogo/seq/sequtils"
+	"github.com/biogo/biogo/feat"
+	"github.com/biogo/biogo/seq"
+	"github.com/biogo/biogo/seq/sequtils"
 
 	"fmt"
 	"math"

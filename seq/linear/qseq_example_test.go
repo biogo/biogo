@@ -5,9 +5,10 @@
 package linear
 
 import (
-	"code.google.com/p/biogo/alphabet"
 	"fmt"
 	"strings"
+
+	"github.com/biogo/biogo/alphabet"
 )
 
 func ExampleNewQSeq() {

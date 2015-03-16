@@ -6,8 +6,9 @@ package errors
 
 import (
 	"fmt"
-	"gopkg.in/check.v1"
 	"io"
+
+	"gopkg.in/check.v1"
 )
 
 func (s *S) TestChain(c *check.C) {

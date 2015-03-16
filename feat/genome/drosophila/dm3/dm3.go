@@ -4,8 +4,8 @@
 package dm3
 
 import (
-	"code.google.com/p/biogo/feat"
-	"code.google.com/p/biogo/feat/genome"
+	"github.com/biogo/biogo/feat"
+	"github.com/biogo/biogo/feat/genome"
 )
 
 var (

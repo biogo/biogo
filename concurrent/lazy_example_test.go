@@ -5,7 +5,7 @@
 package concurrent_test
 
 import (
-	"code.google.com/p/biogo/concurrent"
+	"github.com/biogo/biogo/concurrent"
 
 	"fmt"
 )

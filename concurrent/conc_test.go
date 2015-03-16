@@ -5,8 +5,9 @@
 package concurrent
 
 import (
-	"gopkg.in/check.v1"
 	"testing"
+
+	"gopkg.in/check.v1"
 )
 
 // Tests

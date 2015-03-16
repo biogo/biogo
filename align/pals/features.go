@@ -5,9 +5,9 @@
 package pals
 
 import (
-	"code.google.com/p/biogo.graph"
-	"code.google.com/p/biogo/feat"
-	"code.google.com/p/biogo/seq"
+	"github.com/biogo/biogo/feat"
+	"github.com/biogo/biogo/seq"
+	"github.com/biogo/graph"
 
 	"fmt"
 )

@@ -6,8 +6,8 @@
 package genome
 
 import (
-	"code.google.com/p/biogo/feat"
-	"code.google.com/p/biogo/seq"
+	"github.com/biogo/biogo/feat"
+	"github.com/biogo/biogo/seq"
 )
 
 // Chromosome represent a chromosome and associated features. Elements in the

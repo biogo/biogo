@@ -5,12 +5,13 @@
 package alignment
 
 import (
-	"code.google.com/p/biogo/alphabet"
-	"code.google.com/p/biogo/feat"
-	"code.google.com/p/biogo/seq"
-	"code.google.com/p/biogo/seq/linear"
-	"code.google.com/p/biogo/seq/sequtils"
 	"fmt"
+
+	"github.com/biogo/biogo/alphabet"
+	"github.com/biogo/biogo/feat"
+	"github.com/biogo/biogo/seq"
+	"github.com/biogo/biogo/seq/linear"
+	"github.com/biogo/biogo/seq/sequtils"
 )
 
 var m, n *Seq
@@ -82,7 +83,7 @@ func ExampleNewSeq() {
 	// ACGCTGACTTGGTGCACGT
 	// ACGGTGACCTGGCGCGCAT
 	// ACGATGACGTGGCGCTCAT
-	// 
+	//
 	// acgntgacntggcgcncat
 }
 
@@ -107,14 +108,14 @@ func ExampleSeq_Copy() {
 	// ACGGTGACCTGGCGCGCAT
 	// ACGATGACGTGGCGCTCAT
 	// acgCtg-------------
-	// 
+	//
 	// acgctgacntggcgcncat
-	// 
+	//
 	// ACGCTGACTTGGTGCACGT
 	// ACGGTGACCTGGCGCGCAT
 	// ACGtTGACGTGGCGCTCAT
 	// acgCtg-------------
-	// 
+	//
 	// acgctgacntggcgcncat
 }
 
@@ -135,14 +136,14 @@ func ExampleSeq_Join() {
 	// ACGGTGACCTGGCGCGCAT
 	// ACGtTGACGTGGCGCTCAT
 	// acgCtg-------------
-	// 
+	//
 	// acgctgacntggcgcncat
-	// 
+	//
 	// ACGCTGACTTGGTGCACGTACGCTGACTTGGTGCACGT
 	// ACGGTGACCTGGCGCGCATACGGTGACCTGGCGCGCAT
 	// ACGtTGACGTGGCGCTCATACGATGACGTGGCGCTCAT
 	// acgCtg-------------acgCtg-------------
-	// 
+	//
 	// acgctgacntggcgcncatacgctgacntggcgcncat
 }
 
@@ -162,14 +163,14 @@ func ExampleSeq_RevComp() {
 	// ACGGTGACCTGGCGCGCAT
 	// ACGATGACGTGGCGCTCAT
 	// acgCtg-------------
-	// 
+	//
 	// acgctgacntggcgcncat
-	// 
+	//
 	// ACGTGCACCAAGTCAGCGT
 	// ATGCGCGCCAGGTCACCGT
 	// ATGAGCGCCACGTCATCGT
 	// -------------caGcgt
-	// 
+	//
 	// atgngcgccangtcagcgt
 }
 
@@ -204,14 +205,14 @@ func ExampleSeq_Stitch() {
 	// ACGGTGACCTGGCGCGCATATGCGCGCCAGGTCACCGT
 	// ACGtTGACGTGGCGCTCATATGAGCGCCACGTCATCGT
 	// acgCtg--------------------------caGcgt
-	// 
+	//
 	// acgctgacntggcgcncatatgngcgccangtcagcgt
-	// 
+	//
 	// ACGCGTCAGCGT
 	// ACGGGTCACCGT
 	// ACGtGTCATCGT
 	// acgC--caGcgt
-	// 
+	//
 	// acgcgtcagcgt
 }
 
@@ -226,13 +227,13 @@ func ExampleSeq_Truncate() {
 	// ATGCGCGCCAGGTCACCGT
 	// ATGAGCGCCACGTCATCGT
 	// -------------caGcgt
-	// 
+	//
 	// atgngcgccangtcagcgt
-	// 
+	//
 	// GCACCAAG
 	// GCGCCAGG
 	// GCGCCACG
 	// --------
-	// 
+	//
 	// gcgccang
 }

@@ -5,8 +5,8 @@
 package pals
 
 import (
-	"code.google.com/p/biogo.store/interval"
-	"code.google.com/p/biogo/feat"
+	"github.com/biogo/biogo/feat"
+	"github.com/biogo/store/interval"
 
 	"fmt"
 	"unsafe"

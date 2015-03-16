@@ -5,10 +5,11 @@
 package alphabet
 
 import (
-	"gopkg.in/check.v1"
 	"strings"
 	"testing"
 	"unicode"
+
+	"gopkg.in/check.v1"
 )
 
 // Tests

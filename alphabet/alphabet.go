@@ -6,7 +6,7 @@
 package alphabet
 
 import (
-	"code.google.com/p/biogo/feat"
+	"github.com/biogo/biogo/feat"
 
 	"errors"
 	"fmt"

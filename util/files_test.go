@@ -8,10 +8,11 @@ import (
 	"bytes"
 	"crypto/md5"
 	"fmt"
-	"gopkg.in/check.v1"
 	"io/ioutil"
 	"os"
 	"os/exec"
+
+	"gopkg.in/check.v1"
 )
 
 // Tests

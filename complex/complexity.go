@@ -6,7 +6,7 @@
 package complexity
 
 import (
-	"code.google.com/p/biogo/seq"
+	"github.com/biogo/biogo/seq"
 
 	"compress/zlib"
 	"fmt"

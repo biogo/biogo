@@ -3,7 +3,6 @@
 package main
 
 import (
-	"code.google.com/p/biogo/alphabet"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -11,6 +10,8 @@ import (
 	"os"
 	"strconv"
 	"strings"
+
+	"github.com/biogo/biogo/alphabet"
 )
 
 var matrices = []struct {

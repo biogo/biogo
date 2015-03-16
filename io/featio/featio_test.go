@@ -5,13 +5,14 @@
 package featio_test
 
 import (
-	"code.google.com/p/biogo/io/featio"
-	"code.google.com/p/biogo/io/featio/gff"
-	"code.google.com/p/biogo/seq"
+	"github.com/biogo/biogo/io/featio"
+	"github.com/biogo/biogo/io/featio/gff"
+	"github.com/biogo/biogo/seq"
 
 	"bytes"
-	"gopkg.in/check.v1"
 	"testing"
+
+	"gopkg.in/check.v1"
 )
 
 // Helpers

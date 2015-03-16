@@ -10,7 +10,7 @@ type Evaluator func(...interface{}) (interface{}, State)
 type State []interface{}
 
 // Lazily is function to generate a lazy evaluator.
-// 
+//
 // Lazy functions are terminated by closing the reaper channel. nil should be passed as
 // a reaper for perpetual lazy functions.
 func Lazily(f Evaluator, lookahead int, reaper <-chan struct{}, init ...interface{}) func() interface{} {

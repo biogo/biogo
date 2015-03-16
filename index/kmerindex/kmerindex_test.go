@@ -5,14 +5,15 @@
 package kmerindex
 
 import (
-	"code.google.com/p/biogo/alphabet"
-	"code.google.com/p/biogo/seq/linear"
-	"code.google.com/p/biogo/util"
+	"github.com/biogo/biogo/alphabet"
+	"github.com/biogo/biogo/seq/linear"
+	"github.com/biogo/biogo/util"
 
-	"gopkg.in/check.v1"
 	"math/rand"
 	"strings"
 	"testing"
+
+	"gopkg.in/check.v1"
 )
 
 // Tests

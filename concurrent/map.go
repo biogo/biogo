@@ -5,7 +5,7 @@
 package concurrent
 
 import (
-	"code.google.com/p/biogo/util"
+	"github.com/biogo/biogo/util"
 
 	"fmt"
 	"math"

@@ -5,15 +5,16 @@
 package bed
 
 import (
-	"code.google.com/p/biogo/feat"
-	"code.google.com/p/biogo/seq"
+	"github.com/biogo/biogo/feat"
+	"github.com/biogo/biogo/seq"
 
 	"bytes"
 	"fmt"
-	"gopkg.in/check.v1"
 	"image/color"
 	"strings"
 	"testing"
+
+	"gopkg.in/check.v1"
 )
 
 var (

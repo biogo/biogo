@@ -1,4 +1,4 @@
-/* 
+/*
 bíogo is a bioinformatics library for the Go language. It is a work in progress.
 
 The Purpose of bíogo
@@ -93,7 +93,7 @@ inclusive indexing in its input and output of GFF files.
 	EWD831 Why numbering should start at zero
 
 	To denote the subsequence of natural numbers 2, 3, ..., 12 without the
-	pernicious three dots, four conventions are open to us 
+	pernicious three dots, four conventions are open to us
 
 	a) 2 ≤ i< 13
 	b) 1 < i≤ 12
@@ -129,7 +129,7 @@ inclusive indexing in its input and output of GFF files.
 	uncomfortable with conclusions that have not been confirmed in practice.
 	(End of Remark.)
 
-				*                * 
+				*                *
 					*
 
 	When dealing with a sequence of length N, the elements of which we wish
@@ -149,7 +149,7 @@ inclusive indexing in its input and output of GFF files.
 	the same time a function on the positive integers. Pity! (End of
 	Remark.)
 
-				*                * 
+				*                *
 					*
 
 	The above has been triggered by a recent incident, when, in an emotional

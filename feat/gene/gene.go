@@ -14,7 +14,7 @@
 package gene
 
 import (
-	"code.google.com/p/biogo/feat"
+	"github.com/biogo/biogo/feat"
 
 	"errors"
 	"sort"

@@ -7,12 +7,13 @@ package multi
 
 import (
 	"bytes"
-	"code.google.com/p/biogo/alphabet"
-	"code.google.com/p/biogo/feat"
-	"code.google.com/p/biogo/seq"
-	"code.google.com/p/biogo/seq/linear"
-	"code.google.com/p/biogo/seq/sequtils"
-	"code.google.com/p/biogo/util"
+
+	"github.com/biogo/biogo/alphabet"
+	"github.com/biogo/biogo/feat"
+	"github.com/biogo/biogo/seq"
+	"github.com/biogo/biogo/seq/linear"
+	"github.com/biogo/biogo/seq/sequtils"
+	"github.com/biogo/biogo/util"
 
 	"errors"
 	"fmt"

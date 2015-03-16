@@ -5,11 +5,12 @@
 package alignment
 
 import (
-	"code.google.com/p/biogo/alphabet"
-	"code.google.com/p/biogo/seq"
-	"code.google.com/p/biogo/seq/linear"
-	"code.google.com/p/biogo/seq/sequtils"
 	"fmt"
+
+	"github.com/biogo/biogo/alphabet"
+	"github.com/biogo/biogo/seq"
+	"github.com/biogo/biogo/seq/linear"
+	"github.com/biogo/biogo/seq/sequtils"
 )
 
 var qm, qn *QSeq
@@ -83,7 +84,7 @@ func ExampleNewQSeq() {
 	// ACGCTGACTTGGTGCACGT
 	// ACGGTGACCTGGCGCGCAT
 	// ACGATGACGTGGCGCTCAT
-	// 
+	//
 	// acgntgacntggcgcncat
 }
 
@@ -108,14 +109,14 @@ func ExampleQSeq_Copy() {
 	// ACGGTGACCTGGCGCGCAT
 	// ACGATGACGTGGCGCTCAT
 	// acgCtg-------------
-	// 
+	//
 	// acgctgacntggcgcncat
-	// 
+	//
 	// ACGCTGACTTGGTGCACGT
 	// ACGGTGACCTGGCGCGCAT
 	// ACGtTGACGTGGCGCTCAT
 	// acgCtg-------------
-	// 
+	//
 	// acgctgacntggcgcncat
 }
 
@@ -136,14 +137,14 @@ func ExampleQSeq_Join() {
 	// ACGGTGACCTGGCGCGCAT
 	// ACGtTGACGTGGCGCTCAT
 	// acgCtg-------------
-	// 
+	//
 	// acgctgacntggcgcncat
-	// 
+	//
 	// ACGCTGACTTGGTGCACGTACGCTGACTTGGTGCACGT
 	// ACGGTGACCTGGCGCGCATACGGTGACCTGGCGCGCAT
 	// ACGtTGACGTGGCGCTCATACGATGACGTGGCGCTCAT
 	// acgCtg-------------acgCtg-------------
-	// 
+	//
 	// acgctgacntggcgcncatacgctgacntggcgcncat
 }
 
@@ -162,14 +163,14 @@ func ExampleQSeq_RevComp() {
 	// ACGGTGACCTGGCGCGCAT
 	// ACGATGACGTGGCGCTCAT
 	// acgCtg-------------
-	// 
+	//
 	// acgctgacntggcgcncat
-	// 
+	//
 	// ACGTGCACCAAGTCAGCGT
 	// ATGCGCGCCAGGTCACCGT
 	// ATGAGCGCCACGTCATCGT
 	// -------------caGcgt
-	// 
+	//
 	// atgngcgccangtcagcgt
 }
 
@@ -189,14 +190,14 @@ func ExampleQSeq_Stitch() {
 	// ACGGTGACCTGGCGCGCATATGCGCGCCAGGTCACCGT
 	// ACGtTGACGTGGCGCTCATATGAGCGCCACGTCATCGT
 	// acgCtg--------------------------caGcgt
-	// 
+	//
 	// acgctgacntggcgcncatatgngcgccangtcagcgt
-	// 
+	//
 	// ACGCGTCAGCGT
 	// ACGGGTCACCGT
 	// ACGtGTCATCGT
 	// acgC--caGcgt
-	// 
+	//
 	// acgcgtcagcgt
 }
 
@@ -211,13 +212,13 @@ func ExampleQSeq_Truncate() {
 	// ATGCGCGCCAGGTCACCGT
 	// ATGAGCGCCACGTCATCGT
 	// -------------caGcgt
-	// 
+	//
 	// atgngcgccangtcagcgt
-	// 
+	//
 	// GCACCAAG
 	// GCGCCAGG
 	// GCGCCACG
 	// --------
-	// 
+	//
 	// gcgccang
 }

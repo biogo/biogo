@@ -6,12 +6,12 @@
 package pals
 
 import (
-	"code.google.com/p/biogo/align/pals/dp"
-	"code.google.com/p/biogo/align/pals/filter"
-	"code.google.com/p/biogo/index/kmerindex"
-	"code.google.com/p/biogo/morass"
-	"code.google.com/p/biogo/seq/linear"
-	"code.google.com/p/biogo/util"
+	"github.com/biogo/biogo/align/pals/dp"
+	"github.com/biogo/biogo/align/pals/filter"
+	"github.com/biogo/biogo/index/kmerindex"
+	"github.com/biogo/biogo/morass"
+	"github.com/biogo/biogo/seq/linear"
+	"github.com/biogo/biogo/util"
 
 	"errors"
 	"io"

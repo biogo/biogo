@@ -5,13 +5,14 @@
 package filter
 
 import (
-	"code.google.com/p/biogo/alphabet"
-	"code.google.com/p/biogo/index/kmerindex"
-	"code.google.com/p/biogo/morass"
-	"code.google.com/p/biogo/seq/linear"
-	"code.google.com/p/biogo/util"
-	"gopkg.in/check.v1"
 	"testing"
+
+	"github.com/biogo/biogo/alphabet"
+	"github.com/biogo/biogo/index/kmerindex"
+	"github.com/biogo/biogo/morass"
+	"github.com/biogo/biogo/seq/linear"
+	"github.com/biogo/biogo/util"
+	"gopkg.in/check.v1"
 )
 
 var k byte = 6

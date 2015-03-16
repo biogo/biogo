@@ -5,10 +5,10 @@
 package feat_test
 
 import (
-	"code.google.com/p/biogo/feat"
-	"code.google.com/p/biogo/seq/alignment"
-	"code.google.com/p/biogo/seq/linear"
-	"code.google.com/p/biogo/seq/multi"
+	"github.com/biogo/biogo/feat"
+	"github.com/biogo/biogo/seq/alignment"
+	"github.com/biogo/biogo/seq/linear"
+	"github.com/biogo/biogo/seq/multi"
 
 	"gopkg.in/check.v1"
 )

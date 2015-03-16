@@ -5,8 +5,8 @@
 package align
 
 import (
-	"code.google.com/p/biogo/alphabet"
-	"code.google.com/p/biogo/feat"
+	"github.com/biogo/biogo/alphabet"
+	"github.com/biogo/biogo/feat"
 )
 
 // Setting debugFitted to true gives verbose scoring table output for the dynamic programming.

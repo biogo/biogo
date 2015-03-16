@@ -5,10 +5,11 @@
 package gene
 
 import (
-	"code.google.com/p/biogo/feat"
+	"github.com/biogo/biogo/feat"
+
+	"testing"
 
 	"gopkg.in/check.v1"
-	"testing"
 )
 
 // Assert that interfaces are satisfied

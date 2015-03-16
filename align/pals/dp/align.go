@@ -6,8 +6,8 @@
 package dp
 
 import (
-	"code.google.com/p/biogo/align/pals/filter"
-	"code.google.com/p/biogo/seq/linear"
+	"github.com/biogo/biogo/align/pals/filter"
+	"github.com/biogo/biogo/seq/linear"
 
 	"errors"
 	"sort"

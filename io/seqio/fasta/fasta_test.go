@@ -6,12 +6,14 @@ package fasta
 
 import (
 	"bytes"
-	"code.google.com/p/biogo/alphabet"
-	"code.google.com/p/biogo/seq/linear"
 
-	"gopkg.in/check.v1"
+	"github.com/biogo/biogo/alphabet"
+	"github.com/biogo/biogo/seq/linear"
+
 	"io"
 	"testing"
+
+	"gopkg.in/check.v1"
 )
 
 var (

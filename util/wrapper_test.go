@@ -6,6 +6,7 @@ package util
 
 import (
 	"bytes"
+
 	"gopkg.in/check.v1"
 )
 

@@ -5,9 +5,9 @@
 package pals
 
 import (
-	"code.google.com/p/biogo/align/pals/dp"
-	"code.google.com/p/biogo/io/featio/gff"
-	"code.google.com/p/biogo/seq"
+	"github.com/biogo/biogo/align/pals/dp"
+	"github.com/biogo/biogo/io/featio/gff"
+	"github.com/biogo/biogo/seq"
 
 	"fmt"
 	"strconv"

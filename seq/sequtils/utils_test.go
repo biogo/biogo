@@ -5,13 +5,14 @@
 package sequtils
 
 import (
-	"code.google.com/p/biogo/alphabet"
-	"code.google.com/p/biogo/feat"
-	"code.google.com/p/biogo/seq"
 	"fmt"
-	"gopkg.in/check.v1"
 	"reflect"
 	"testing"
+
+	"github.com/biogo/biogo/alphabet"
+	"github.com/biogo/biogo/feat"
+	"github.com/biogo/biogo/seq"
+	"gopkg.in/check.v1"
 )
 
 // Tests

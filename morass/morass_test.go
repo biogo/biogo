@@ -5,12 +5,13 @@
 package morass
 
 import (
-	"gopkg.in/check.v1"
 	"io"
 	"math/rand"
 	"runtime"
 	"testing"
 	"unsafe"
+
+	"gopkg.in/check.v1"
 )
 
 const minInt = -int(^uint(0)>>1) - 1

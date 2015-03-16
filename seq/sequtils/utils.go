@@ -6,9 +6,9 @@
 package sequtils
 
 import (
-	"code.google.com/p/biogo/alphabet"
-	"code.google.com/p/biogo/feat"
-	"code.google.com/p/biogo/seq"
+	"github.com/biogo/biogo/alphabet"
+	"github.com/biogo/biogo/feat"
+	"github.com/biogo/biogo/seq"
 
 	"errors"
 	"sort"

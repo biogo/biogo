@@ -5,11 +5,12 @@
 package multi
 
 import (
-	"code.google.com/p/biogo/alphabet"
-	"code.google.com/p/biogo/feat"
-	"code.google.com/p/biogo/seq"
-	"code.google.com/p/biogo/seq/linear"
 	"fmt"
+
+	"github.com/biogo/biogo/alphabet"
+	"github.com/biogo/biogo/feat"
+	"github.com/biogo/biogo/seq"
+	"github.com/biogo/biogo/seq/linear"
 )
 
 var m, n *Multi
@@ -47,7 +48,7 @@ func ExampleNewMulti() {
 	// ACGCTGACTTGGTGCACGT
 	// ACGGTGACCTGGCGCGCAT
 	// ACGATGACGTGGCGCTCAT
-	// 
+	//
 	// acgntgacntggcgcncat
 }
 
@@ -87,14 +88,14 @@ func ExampleMulti_Copy() {
 	// ACGGTGACCTGGCGCGCAT
 	// ACGATGACGTGGCGCTCAT
 	// acgCtg
-	// 
+	//
 	// acgctgacntggcgcncat
-	// 
+	//
 	// ACGCTGACTTGGTGCACGT
 	// ACGGTGACCTGGCGCGCAT
 	// ACGtTGACGTGGCGCTCAT
 	// acgCtg
-	// 
+	//
 	// acgctgacntggcgcncat
 }
 
@@ -116,17 +117,17 @@ func ExampleMulti_IsFlush() {
 	// ACGGTGACCTGGCGCGCAT
 	// ACGATGACGTGGCGCTCAT
 	//              acgCtg
-	// 
+	//
 	// acgntgacntggcgcgcat
-	// 
+	//
 	// Flush at left: false
 	// Flush at right: true
-	// 
+	//
 	// ACGCTGACTTGGTGCACGT
 	// ACGGTGACCTGGCGCGCAT
 	// ACGATGACGTGGCGCTCAT
 	// -------------acgCtg
-	// 
+	//
 	// acgntgacntggcgcgcat
 	//
 	// Flush at left: true
@@ -142,14 +143,14 @@ func ExampleMulti_Join() {
 	// ACGGTGACCTGGCGCGCAT
 	// ACGtTGACGTGGCGCTCAT
 	// acgCtg
-	// 
+	//
 	// acgctgacntggcgcncat
-	// 
+	//
 	// ACGCTGACTTGGTGCACGTACGCTGACTTGGTGCACGT
 	// ACGGTGACCTGGCGCGCATACGGTGACCTGGCGCGCAT
 	// ACGtTGACGTGGCGCTCATACGATGACGTGGCGCTCAT
 	// acgCtg--------------------------acgCtg
-	// 
+	//
 	// acgctgacntggcgcncatacgntgacntggcgcgcat
 }
 
@@ -168,14 +169,14 @@ func ExampleMulti_RevComp() {
 	// ACGGTGACCTGGCGCGCAT
 	// ACGATGACGTGGCGCTCAT
 	// -------------acgCtg
-	// 
+	//
 	// acgntgacntggcgcgcat
-	// 
+	//
 	// ACGTGCACCAAGTCAGCGT
 	// ATGCGCGCCAGGTCACCGT
 	// ATGAGCGCCACGTCATCGT
 	// caGcgt-------------
-	// 
+	//
 	// atgcgcgccangtcancgt
 }
 
@@ -210,14 +211,14 @@ func ExampleMulti_Stitch() {
 	// ACGGTGACCTGGCGCGCATACGGTGACCTGGCGCGCAT
 	// ACGtTGACGTGGCGCTCATACGATGACGTGGCGCTCAT
 	// acgCtg--------------------------acgCtg
-	// 
+	//
 	// acgctgacntggcgcncatacgntgacntggcgcgcat
 	//
 	// ACGCGTGCACGT
 	// ACGGGCGCGCAT
 	// ACGtGCGCTCAT
 	// acgC--acgCtg
-	// 
+	//
 	// acgcgcgcgcat
 }
 
@@ -230,9 +231,9 @@ func ExampleMulti_Truncate() {
 	// ATGCGCGCCAGGTCACCGT
 	// ATGAGCGCCACGTCATCGT
 	// caGcgt-------------
-	// 
+	//
 	// atgcgcgccangtcancgt
-	// 
+	//
 	// GCACCAAG
 	// GCGCCAGG
 	// GCGCCACG
