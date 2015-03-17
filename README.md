@@ -4,7 +4,7 @@
 
 ##Installation
 
-        $ go get github.com/biogo/...
+        $ go get github.com/biogo/biogo/...
 
 ##Overview
 
