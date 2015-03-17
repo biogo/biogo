@@ -10,6 +10,10 @@
 
 bíogo is a bioinformatics library for the Go language.
 
+## Citing ##
+
+If you use bíogo, please cite Kortschak and Adelson "bíogo: a simple high-performance bioinformatics toolkit for the Go language", doi:[10.1101/005033](http://biorxiv.org/content/early/2014/05/12/005033).
+
 ##The Purpose of bíogo
 
 bíogo stems from the need to address the size and structure of modern genomic
@@ -42,6 +46,14 @@ The issue of code release is the first of the principles formalised in the
 A language with a simple, yet expressive, syntax should facilitate development
 of higher quality code and thus help reduce this barrier to research code
 release.
+
+## Articles ##
+
+[bíogo: a simple high-performance bioinformatics toolkit for the Go language](http://biorxiv.org/content/early/2014/05/12/005033)
+
+[Analysis of Illumina sequencing data using bíogo](http://talks.godoc.org/github.com/biogo/talks/illumination/illumina.article)
+
+[Using and extending types in bíogo](http://talks.godoc.org/github.com/biogo/talks/types/types.article)
 
 ##Yet Another Bioinformatics Library
 
