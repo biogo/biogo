@@ -1,10 +1,10 @@
-![bíogo](http://biogo.googlecode.com/git/biogo.png)
+![bíogo](https://raw.githubusercontent.com/biogo/biogo/master/biogo.png)
 
 #bíogo
 
 ##Installation
 
-        $ go get code.google.com/p/biogo/...
+        $ go get github.com/biogo/...
 
 ##Overview
 
