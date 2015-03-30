@@ -2,6 +2,8 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+// Package morass implements file system-backed sorting.
+//
 // Use morass when you don't want your data to be a quagmire.
 //
 // Sort data larger than can fit in memory.
@@ -93,13 +95,17 @@ type Morass struct {
 	chunkSize   int
 	pool        chan sortable
 	writable    chan sortable
-	err         error
 	prefix      string
 	dir         string
-	files       files
 	fast        bool
 	AutoClear   bool
 	AutoClean   bool
+
+	filesLock sync.Mutex
+	files     files
+
+	errLock sync.Mutex
+	_err    error
 }
 
 // Create a new Morass. prefix and dir are passed to ioutil.TempDir. chunkSize specifies
@@ -151,8 +157,8 @@ func (m *Morass) Push(e LessInterface) error {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 
-	if m.err != nil {
-		return m.err
+	if err := m.err(); err != nil {
+		return err
 	}
 
 	if m.chunk == nil {
@@ -163,8 +169,8 @@ func (m *Morass) Push(e LessInterface) error {
 		m.writable <- m.chunk
 		go m.write()
 		m.chunk = <-m.pool
-		if m.err != nil {
-			return m.err
+		if err := m.err(); err != nil {
+			return err
 		}
 		if cap(m.chunk) == 0 {
 			m.chunk = make(sortable, 0, m.chunkSize)
@@ -186,23 +192,43 @@ func (m *Morass) write() {
 
 	sort.Sort(&writing)
 
-	var tf *os.File
-	if tf, m.err = ioutil.TempFile(m.dir, m.prefix); m.err != nil {
+	var (
+		tf  *os.File
+		err error
+	)
+	if tf, err = ioutil.TempFile(m.dir, m.prefix); err != nil {
+		m.setErr(err)
 		return
 	}
 
 	enc := gob.NewEncoder(tf)
 	dec := gob.NewDecoder(tf)
 	f := &file{head: nil, file: tf, encoder: enc, decoder: dec}
+
+	m.filesLock.Lock()
 	m.files = append(m.files, f)
+	m.filesLock.Unlock()
 
 	for _, e := range writing {
-		if m.err = enc.Encode(&e); m.err != nil {
+		if err := enc.Encode(&e); err != nil {
+			m.setErr(err)
 			return
 		}
 	}
 
-	m.err = tf.Sync()
+	m.setErr(tf.Sync())
+}
+
+func (m *Morass) setErr(err error) {
+	m.errLock.Lock()
+	m._err = err
+	m.errLock.Unlock()
+}
+
+func (m *Morass) err() error {
+	m.errLock.Lock()
+	defer m.errLock.Unlock()
+	return m._err
 }
 
 // Return the corrent position of the cursor in the Morass.
@@ -217,8 +243,8 @@ func (m *Morass) Finalise() error {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 
-	if m.err != nil {
-		return m.err
+	if err := m.err(); err != nil {
+		return err
 	}
 
 	if m.chunk != nil {
@@ -230,8 +256,8 @@ func (m *Morass) Finalise() error {
 				m.writable <- m.chunk
 				m.chunk = nil
 				m.write()
-				if m.err != nil {
-					return m.err
+				if err := m.err(); err != nil {
+					return err
 				}
 			}
 		}
@@ -279,7 +305,7 @@ func (m *Morass) clear() error {
 			return err
 		}
 	}
-	m.err = nil
+	m._err = nil
 	m.files = m.files[:0]
 	m.pos = 0
 	m.length = 0
