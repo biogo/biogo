@@ -88,7 +88,6 @@ func (f *files) Push(x interface{}) { *f = append(*f, x.(*file)) }
 // Setting AutoClean to true causes the Morass to delete temporary sort files
 // when they are depleted.
 type Morass struct {
-	mutex       sync.Mutex
 	t           reflect.Type
 	pos, length int64
 	chunk       sortable
@@ -154,8 +153,6 @@ func (m *Morass) Push(e LessInterface) error {
 	if t := reflect.TypeOf(e); t != m.t {
 		return errors.New(fmt.Sprintf("Type mismatch: %s != %s", t, m.t))
 	}
-	m.mutex.Lock()
-	defer m.mutex.Unlock()
 
 	if err := m.err(); err != nil {
 		return err
@@ -240,9 +237,6 @@ func (m *Morass) Len() int64 { return m.length }
 // Indicate that the last element has been pushed on to the Morass and write out final data.
 // Returns any error that occurs.
 func (m *Morass) Finalise() error {
-	m.mutex.Lock()
-	defer m.mutex.Unlock()
-
 	if err := m.err(); err != nil {
 		return err
 	}
@@ -287,9 +281,6 @@ func (m *Morass) Finalise() error {
 // Reset the Morass to an empty state.
 // Returns any error that occurs.
 func (m *Morass) Clear() error {
-	m.mutex.Lock()
-	defer m.mutex.Unlock()
-
 	return m.clear()
 }
 
@@ -323,18 +314,12 @@ func (m *Morass) clear() error {
 // Delete the file system components of the Morass. After this call the Morass is not usable.
 // Returns any error that occurs.
 func (m *Morass) CleanUp() error {
-	m.mutex.Lock()
-	defer m.mutex.Unlock()
-
 	return os.RemoveAll(m.dir)
 }
 
 // Set the settable value e to the lowest value in the Morass.
 // io.EOF indicate the Morass is empty. Any other error results in no value being set on e.
 func (m *Morass) Pull(e LessInterface) error {
-	m.mutex.Lock()
-	defer m.mutex.Unlock()
-
 	var err error
 	v := reflect.ValueOf(e)
 	if !reflect.Indirect(v).CanSet() {
