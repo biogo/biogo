@@ -378,9 +378,10 @@ func (m *Morass) Pull(e LessInterface) error {
 		}
 	}
 
-	if err != io.EOF {
-		reflect.Indirect(v).Set(reflect.ValueOf(e))
+	if err != nil {
+		return err
 	}
+	reflect.Indirect(v).Set(reflect.ValueOf(e))
 
-	return err
+	return nil
 }
