@@ -48,18 +48,19 @@ func register(e interface{}, t reflect.Type) {
 	}
 }
 
-// Is the receiver less than the parameterised interface
+// LessInterface wraps the Less method.
 type LessInterface interface {
+	// Is the receiver less than the parameterised interface
 	Less(i interface{}) bool
 }
 
-type sortable []LessInterface
+type sorter []LessInterface
 
-func (s sortable) Len() int { return len(s) }
+func (s sorter) Len() int { return len(s) }
 
-func (s sortable) Less(i, j int) bool { return s[i].Less(s[j]) }
+func (s sorter) Less(i, j int) bool { return s[i].Less(s[j]) }
 
-func (s sortable) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
+func (s sorter) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
 
 type file struct {
 	head    LessInterface
@@ -84,21 +85,36 @@ func (f *files) Pop() (i interface{}) {
 
 func (f *files) Push(x interface{}) { *f = append(*f, x.(*file)) }
 
-// Type to manage sorting very large data sets.
-// Setting AutoClean to true causes the Morass to delete temporary sort files
-// when they are depleted.
+// Morass implements sorting of very large data sets.
 type Morass struct {
-	t           reflect.Type
+	typ reflect.Type
+
 	pos, length int64
-	chunk       sortable
-	chunkSize   int
-	pool        chan sortable
-	writable    chan sortable
-	prefix      string
-	dir         string
-	fast        bool
-	AutoClear   bool
-	AutoClean   bool
+
+	// dir and prefix specify the location
+	// of temporary file.
+	dir    string
+	prefix string
+
+	// AutoClear specifies that the Morass
+	// should call Clear when emptied by
+	// a call to Pull.
+	AutoClear bool
+
+	// AutoClean specifies that the Morass
+	// should call delete temporary sort
+	// files when it has been emptied by
+	// a call to Pull.
+	AutoClean bool
+
+	// fast indicates sorting was performed
+	// entirely in memory.
+	fast bool
+
+	chunk     sorter
+	chunkSize int
+	pool      chan sorter
+	writable  chan sorter
 
 	filesLock sync.Mutex
 	files     files
@@ -107,7 +123,7 @@ type Morass struct {
 	_err    error
 }
 
-// Create a new Morass. prefix and dir are passed to ioutil.TempDir. chunkSize specifies
+// New creates a new Morass. prefix and dir are passed to ioutil.TempDir. chunkSize specifies
 // the amount of sorting to be done in memory, concurrent specifies that temporary file
 // writing occurs concurrently with sorting.
 // An error is returned if no temporary directory can be created.
@@ -126,15 +142,15 @@ func New(e interface{}, prefix, dir string, chunkSize int, concurrent bool) (*Mo
 		chunkSize: chunkSize,
 		prefix:    prefix,
 		dir:       d,
-		pool:      make(chan sortable, 2),
-		writable:  make(chan sortable, 1),
+		pool:      make(chan sorter, 2),
+		writable:  make(chan sorter, 1),
 		files:     files{},
 	}
 
-	m.t = reflect.TypeOf(e)
-	register(e, m.t)
+	m.typ = reflect.TypeOf(e)
+	register(e, m.typ)
 
-	m.chunk = make(sortable, 0, chunkSize)
+	m.chunk = make(sorter, 0, chunkSize)
 	if concurrent {
 		m.pool <- nil
 	}
@@ -150,8 +166,8 @@ func New(e interface{}, prefix, dir string, chunkSize int, concurrent bool) (*Mo
 
 // Push a value on to the Morass. Returns any error that occurs.
 func (m *Morass) Push(e LessInterface) error {
-	if t := reflect.TypeOf(e); t != m.t {
-		return errors.New(fmt.Sprintf("Type mismatch: %s != %s", t, m.t))
+	if typ := reflect.TypeOf(e); typ != m.typ {
+		return fmt.Errorf("morass: type mismatch: %s != %s", typ, m.typ)
 	}
 
 	if err := m.err(); err != nil {
@@ -159,7 +175,7 @@ func (m *Morass) Push(e LessInterface) error {
 	}
 
 	if m.chunk == nil {
-		return errors.New("Push on finalised morass")
+		return errors.New("morass: push on finalised morass")
 	}
 
 	if len(m.chunk) == m.chunkSize {
@@ -170,7 +186,7 @@ func (m *Morass) Push(e LessInterface) error {
 			return err
 		}
 		if cap(m.chunk) == 0 {
-			m.chunk = make(sortable, 0, m.chunkSize)
+			m.chunk = make(sorter, 0, m.chunkSize)
 		}
 	}
 
@@ -189,11 +205,8 @@ func (m *Morass) write() {
 
 	sort.Sort(&writing)
 
-	var (
-		tf  *os.File
-		err error
-	)
-	if tf, err = ioutil.TempFile(m.dir, m.prefix); err != nil {
+	tf, err := ioutil.TempFile(m.dir, m.prefix)
+	if err != nil {
 		m.setErr(err)
 		return
 	}
@@ -228,14 +241,14 @@ func (m *Morass) err() error {
 	return m._err
 }
 
-// Return the corrent position of the cursor in the Morass.
+// Pos returns the current position of the cursor in the Morass.
 func (m *Morass) Pos() int64 { return m.pos }
 
-// Return the corrent length of the Morass.
+// Len returns the current length of the Morass.
 func (m *Morass) Len() int64 { return m.length }
 
-// Indicate that the last element has been pushed on to the Morass and write out final data.
-// Returns any error that occurs.
+// Finalise is called to indicate that the last element has been pushed on to the Morass
+// and write out final data.
 func (m *Morass) Finalise() error {
 	if err := m.err(); err != nil {
 		return err
@@ -278,13 +291,8 @@ func (m *Morass) Finalise() error {
 	return nil
 }
 
-// Reset the Morass to an empty state.
-// Returns any error that occurs.
+// Clear resets the Morass to an empty state.
 func (m *Morass) Clear() error {
-	return m.clear()
-}
-
-func (m *Morass) clear() error {
 	var err error
 	for _, f := range m.files {
 		err = f.file.Close()
@@ -303,7 +311,7 @@ func (m *Morass) clear() error {
 	select {
 	case m.chunk = <-m.pool:
 		if m.chunk == nil {
-			m.chunk = make(sortable, 0, m.chunkSize)
+			m.chunk = make(sorter, 0, m.chunkSize)
 		}
 	default:
 	}
@@ -311,14 +319,15 @@ func (m *Morass) clear() error {
 	return nil
 }
 
-// Delete the file system components of the Morass. After this call the Morass is not usable.
-// Returns any error that occurs.
+// CleanUp deletes the file system components of the Morass. After this call
+// the Morass is not usable.
 func (m *Morass) CleanUp() error {
 	return os.RemoveAll(m.dir)
 }
 
-// Set the settable value e to the lowest value in the Morass.
-// io.EOF indicate the Morass is empty. Any other error results in no value being set on e.
+// Pull sets the settable value e to the lowest value in the Morass.
+// If io.EOF is returned the Morass is empty. Any other error results
+// in no value being set on e.
 func (m *Morass) Pull(e LessInterface) error {
 	var err error
 	v := reflect.ValueOf(e)
@@ -337,7 +346,7 @@ func (m *Morass) Pull(e LessInterface) error {
 			fallthrough
 		default:
 			if m.AutoClear {
-				m.clear()
+				m.Clear()
 			}
 			err = io.EOF
 		}
@@ -360,7 +369,7 @@ func (m *Morass) Pull(e LessInterface) error {
 			}
 		} else {
 			if m.AutoClear {
-				m.clear()
+				m.Clear()
 			}
 			if m.AutoClean {
 				os.RemoveAll(m.dir)
