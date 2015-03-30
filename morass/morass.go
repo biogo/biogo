@@ -332,7 +332,7 @@ func (m *Morass) Pull(e LessInterface) error {
 	var err error
 	v := reflect.ValueOf(e)
 	if !reflect.Indirect(v).CanSet() {
-		return errors.New("morass: Cannot set e")
+		return errors.New("morass: cannot set e")
 	}
 
 	if m.fast {
