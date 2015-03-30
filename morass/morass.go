@@ -89,10 +89,10 @@ func (f *files) Push(x interface{}) { *f = append(*f, x.(*file)) }
 type Morass struct {
 	typ reflect.Type
 
-	pos, length int64
+	pos, len int64
 
 	// dir and prefix specify the location
-	// of temporary file.
+	// of temporary files.
 	dir    string
 	prefix string
 
@@ -192,7 +192,7 @@ func (m *Morass) Push(e LessInterface) error {
 
 	m.chunk = append(m.chunk, e)
 	m.pos++
-	m.length++
+	m.len++
 
 	return nil
 }
@@ -245,7 +245,7 @@ func (m *Morass) err() error {
 func (m *Morass) Pos() int64 { return m.pos }
 
 // Len returns the current length of the Morass.
-func (m *Morass) Len() int64 { return m.length }
+func (m *Morass) Len() int64 { return m.len }
 
 // Finalise is called to indicate that the last element has been pushed on to the Morass
 // and write out final data.
@@ -307,7 +307,7 @@ func (m *Morass) Clear() error {
 	m._err = nil
 	m.files = m.files[:0]
 	m.pos = 0
-	m.length = 0
+	m.len = 0
 	select {
 	case m.chunk = <-m.pool:
 		if m.chunk == nil {
