@@ -203,7 +203,7 @@ func (m *Morass) write() {
 		m.pool <- writing[:0]
 	}()
 
-	sort.Sort(&writing)
+	sort.Sort(writing)
 
 	tf, err := ioutil.TempFile(m.dir, m.prefix)
 	if err != nil {
@@ -257,7 +257,7 @@ func (m *Morass) Finalise() error {
 	if m.chunk != nil {
 		if m.pos < int64(cap(m.chunk)) {
 			m.fast = true
-			sort.Sort(&m.chunk)
+			sort.Sort(m.chunk)
 		} else {
 			if len(m.chunk) > 0 {
 				m.writable <- m.chunk
