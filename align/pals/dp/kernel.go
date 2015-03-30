@@ -46,8 +46,14 @@ type offsetSlice struct {
 	slice  []int
 }
 
-func (o *offsetSlice) at(i int) (v int) { return o.slice[i-o.offset] } // v return name due to go issue 3315 TODO: Remove when issue is resolved.
-func (o *offsetSlice) set(i, v int)     { o.slice[i-o.offset] = v }
+func (o *offsetSlice) at(i int) int {
+	i -= o.offset
+	if i == -1 || i == len(o.slice) {
+		return 0
+	}
+	return o.slice[i]
+}
+func (o *offsetSlice) set(i, v int) { o.slice[i-o.offset] = v }
 
 var vecBuffering int = 100000
 
