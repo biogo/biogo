@@ -5,20 +5,21 @@
 package dp
 
 import (
+	"testing"
+
+	"gopkg.in/check.v1"
+
 	"github.com/biogo/biogo/align"
 	"github.com/biogo/biogo/align/pals/filter"
 	"github.com/biogo/biogo/alphabet"
 	"github.com/biogo/biogo/seq/linear"
 	"github.com/biogo/biogo/util"
-
-	"testing"
-
-	"gopkg.in/check.v1"
 )
 
 var (
-	k byte              = 6
-	T filter.Trapezoids = filter.Trapezoids{
+	k byte = 6
+
+	T = filter.Trapezoids{
 		{Next: nil, Top: 452, Bottom: 0, Left: -128, Right: 3},
 		{Next: nil, Top: 433, Bottom: 237, Left: -1120, Right: -1085},
 		{Next: nil, Top: 628, Bottom: 447, Left: -1984, Right: -1917},
@@ -26,7 +27,7 @@ var (
 		{Next: nil, Top: 939, Bottom: 868, Left: -2880, Right: -2845},
 		{Next: nil, Top: 1024, Bottom: 938, Left: -3072, Right: -3005},
 	}
-	H DPHits = DPHits{
+	H = Hits{
 		{Abpos: 1, Bbpos: 0, Aepos: 290, Bepos: 242, LowDiagonal: -3, HighDiagonal: 54, Score: 101, Error: 0.19421487603305784},
 		{Abpos: 365, Bbpos: 286, Aepos: 435, Bepos: 345, LowDiagonal: 74, HighDiagonal: 96, Score: 26, Error: 0.1864406779661017},
 		{Abpos: 437, Bbpos: 341, Aepos: 507, Bepos: 400, LowDiagonal: 91, HighDiagonal: 113, Score: 26, Error: 0.1864406779661017},

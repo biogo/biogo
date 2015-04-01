@@ -62,13 +62,13 @@ func NewMerger(ki *kmerindex.Index, query *linear.Seq, filterParams *Params, max
 }
 
 // Merge a filter hit into the collection.
-func (m *Merger) MergeFilterHit(hit *FilterHit) {
-	Left := -hit.DiagIndex
+func (m *Merger) MergeFilterHit(h *Hit) {
+	Left := -h.Diagonal
 	if m.selfComparison && Left <= m.filterParams.MaxError {
 		return
 	}
-	Top := hit.QTo
-	Bottom := hit.QFrom
+	Top := h.To
+	Bottom := h.From
 
 	var temp, free *Trapezoid
 	for base := m.trapOrder; ; base = temp {

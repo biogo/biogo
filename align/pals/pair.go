@@ -32,8 +32,8 @@ func (fp *Pair) String() string {
 	)
 }
 
-// NewPair converts a DPHit and two packed sequences into a Pair.
-func NewPair(target, query *Packed, hit dp.DPHit, comp bool) (*Pair, error) {
+// NewPair converts a dp.Hit and two packed sequences into a Pair.
+func NewPair(target, query *Packed, hit dp.Hit, comp bool) (*Pair, error) {
 	t, err := target.feature(hit.Abpos, hit.Aepos, false)
 	if err != nil {
 		return nil, err

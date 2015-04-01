@@ -268,7 +268,7 @@ func (p *PALS) Share(m *PALS) {
 }
 
 // Perform filtering and alignment for one strand of query.
-func (p *PALS) Align(complement bool) (dp.DPHits, error) {
+func (p *PALS) Align(complement bool) (dp.Hits, error) {
 	if p.err != nil {
 		return nil, p.err
 	}
@@ -294,12 +294,12 @@ func (p *PALS) Align(complement bool) (dp.DPHits, error) {
 
 	p.notify("Merging")
 	merger := filter.NewMerger(p.index, working, p.FilterParams, p.MaxIGap, p.selfCompare)
-	var hit filter.FilterHit
+	var h filter.Hit
 	for {
-		if err = p.morass.Pull(&hit); err != nil {
+		if err = p.morass.Pull(&h); err != nil {
 			break
 		}
-		merger.MergeFilterHit(&hit)
+		merger.MergeFilterHit(&h)
 	}
 	if err != nil && err != io.EOF {
 		return nil, err

@@ -247,10 +247,10 @@ func (f *Filter) tubeEnd(q int) error {
 }
 
 func (f *Filter) addHit(tubeIndex, QLo, QHi int) error {
-	fh := FilterHit{
-		QFrom:     QLo,
-		QTo:       QHi + f.k,
-		DiagIndex: f.target.Len() - tubeIndex*f.tubeOffset,
+	fh := Hit{
+		From:     QLo,
+		To:       QHi + f.k,
+		Diagonal: f.target.Len() - tubeIndex*f.tubeOffset,
 	}
 
 	return f.morass.Push(fh)

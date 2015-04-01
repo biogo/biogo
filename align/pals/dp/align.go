@@ -36,7 +36,7 @@ type Aligner struct {
 	k             int
 	minHitLength  int
 	minId         float64
-	segs          DPHits
+	segs          Hits
 	Costs         *Costs
 }
 
@@ -53,7 +53,7 @@ func NewAligner(target, query *linear.Seq, k, minLength int, minId float64) *Ali
 
 // Align pairs of sequence segments defined by trapezoids.
 // Returns aligning segment pairs satisfying length and identity requirements.
-func (a *Aligner) AlignTraps(trapezoids filter.Trapezoids) DPHits {
+func (a *Aligner) AlignTraps(trapezoids filter.Trapezoids) Hits {
 	covered := make([]bool, len(trapezoids))
 
 	dp := &kernel{
@@ -67,11 +67,11 @@ func (a *Aligner) AlignTraps(trapezoids filter.Trapezoids) DPHits {
 
 		Costs: *a.Costs,
 
-		result: make(chan DPHit),
+		result: make(chan Hit),
 	}
 	wg := &sync.WaitGroup{}
 	wg.Add(1)
-	var segs DPHits
+	var segs Hits
 	go func() {
 		defer wg.Done()
 		for h := range dp.result {
@@ -142,8 +142,8 @@ func (a *Aligner) AlignTraps(trapezoids filter.Trapezoids) DPHits {
 	return segs
 }
 
-// DPHit holds details of alignment result.
-type DPHit struct {
+// Hit holds details of alignment result.
+type Hit struct {
 	Abpos, Bbpos              int     // Start coordinate of local alignment
 	Aepos, Bepos              int     // End coordinate of local alignment
 	LowDiagonal, HighDiagonal int     // Alignment is between (anti)diagonals LowDiagonal & HighDiagonal
@@ -152,10 +152,10 @@ type DPHit struct {
 }
 
 // DPHits is a collection of alignment results.
-type DPHits []DPHit
+type Hits []Hit
 
 // Returns the sums of alignment lengths.
-func (h DPHits) Sum() (a, b int, err error) {
+func (h Hits) Sum() (a, b int, err error) {
 	for _, hit := range h {
 		la, lb := hit.Aepos-hit.Abpos, hit.Bepos-hit.Bbpos
 		if la < 0 || lb < 0 {

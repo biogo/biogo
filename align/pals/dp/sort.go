@@ -5,7 +5,7 @@
 package dp
 
 // Sort DPHits on start position.
-type starts DPHits
+type starts Hits
 
 func (s starts) Len() int {
 	return len(s)
@@ -20,7 +20,7 @@ func (s starts) Swap(i, j int) {
 }
 
 // Sort DPHits on end position.
-type ends DPHits
+type ends Hits
 
 func (e ends) Len() int {
 	return len(e)

@@ -7,12 +7,13 @@ package filter
 import (
 	"testing"
 
+	"gopkg.in/check.v1"
+
 	"github.com/biogo/biogo/alphabet"
 	"github.com/biogo/biogo/index/kmerindex"
 	"github.com/biogo/biogo/morass"
 	"github.com/biogo/biogo/seq/linear"
 	"github.com/biogo/biogo/util"
-	"gopkg.in/check.v1"
 )
 
 var k byte = 6
@@ -45,33 +46,33 @@ func (s *S) TestFilterAndMerge(c *check.C) {
 	p := &Params{WordSize: int(k), MinMatch: 50, MaxError: 4, TubeOffset: 32}
 	f := New(i, p)
 	var sorter *morass.Morass
-	if sorter, err = morass.New(FilterHit{}, "", "", 2<<20, false); err != nil {
+	if sorter, err = morass.New(Hit{}, "", "", 2<<20, false); err != nil {
 		c.Fatalf("Failed to create morass: %v", err)
 	}
 	f.Filter(b, false, false, sorter)
 	c.Check(sorter.Len(), check.Equals, int64(12))
-	r := make([]FilterHit, 1, sorter.Len())
+	r := make([]Hit, 1, sorter.Len())
 	for {
 		err = sorter.Pull(&r[len(r)-1])
 		if err != nil {
 			r = r[:len(r)-1]
 			break
 		}
-		r = append(r, FilterHit{})
+		r = append(r, Hit{})
 	}
-	c.Check(r, check.DeepEquals, []FilterHit{
-		{QFrom: 0, QTo: 163, DiagIndex: 32},
-		{QFrom: 141, QTo: 247, DiagIndex: 64},
-		{QFrom: 237, QTo: 433, DiagIndex: 1120},
-		{QFrom: 241, QTo: 347, DiagIndex: 96},
-		{QFrom: 341, QTo: 452, DiagIndex: 128},
-		{QFrom: 447, QTo: 565, DiagIndex: 1952},
-		{QFrom: 542, QTo: 628, DiagIndex: 1984},
-		{QFrom: 627, QTo: 814, DiagIndex: 2592},
-		{QFrom: 786, QTo: 898, DiagIndex: 2624},
-		{QFrom: 868, QTo: 939, DiagIndex: 2880},
-		{QFrom: 938, QTo: 997, DiagIndex: 3040},
-		{QFrom: 938, QTo: 1024, DiagIndex: 3072},
+	c.Check(r, check.DeepEquals, []Hit{
+		{From: 0, To: 163, Diagonal: 32},
+		{From: 141, To: 247, Diagonal: 64},
+		{From: 237, To: 433, Diagonal: 1120},
+		{From: 241, To: 347, Diagonal: 96},
+		{From: 341, To: 452, Diagonal: 128},
+		{From: 447, To: 565, Diagonal: 1952},
+		{From: 542, To: 628, Diagonal: 1984},
+		{From: 627, To: 814, Diagonal: 2592},
+		{From: 786, To: 898, Diagonal: 2624},
+		{From: 868, To: 939, Diagonal: 2880},
+		{From: 938, To: 997, Diagonal: 3040},
+		{From: 938, To: 1024, Diagonal: 3072},
 	})
 	m := NewMerger(i, b, p, 5, false)
 	for _, h := range r {

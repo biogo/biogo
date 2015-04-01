@@ -21,13 +21,13 @@ type kernel struct {
 
 	Costs
 
-	lowEnd     DPHit
-	highEnd    DPHit
+	lowEnd     Hit
+	highEnd    Hit
 	vectors    [2][]int
 	trapezoids []*filter.Trapezoid
 	covered    []bool
 	slot       int
-	result     chan DPHit
+	result     chan Hit
 }
 
 // An offset slice seems to be the easiest way to implement the C idiom used in PALS to implement
