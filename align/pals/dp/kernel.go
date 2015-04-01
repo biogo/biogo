@@ -36,11 +36,13 @@ type kernel struct {
 }
 
 // An offset slice seems to be the easiest way to implement the C idiom used in PALS to implement
-// an offset (by o)  view (v) on an array (a):
+// an offset (by o) view (v) on an array (a):
+//
 //  int *v, o;
 //  int [n]a;
 //  v = a - o;
-//  // now v[i] is a view on a[i-o]
+//
+// now v[i] is a view on a[i-o]
 type offsetSlice struct {
 	offset int
 	slice  []int
@@ -57,7 +59,7 @@ func (o *offsetSlice) set(i, v int) { o.slice[i-o.offset] = v }
 
 var vecBuffering int = 100000
 
-// Handle the recusive search for alignable segments.
+// Handle the recursive search for alignable segments.
 func (k *kernel) alignRecursion(workingTrap *filter.Trapezoid) {
 	mid := (workingTrap.Bottom + workingTrap.Top) / 2
 
@@ -122,7 +124,7 @@ func (k *kernel) alignRecursion(workingTrap *filter.Trapezoid) {
 				}
 			}
 
-			// diagonals to this point are query-target, not target-query.
+			// Diagonals to this point are query-target, not target-query.
 			k.highEnd.LowDiagonal, k.highEnd.HighDiagonal = -k.highEnd.HighDiagonal, -k.highEnd.LowDiagonal
 
 			k.result <- k.highEnd
@@ -158,7 +160,7 @@ func (k *kernel) traceForward(mid, low, high int) {
 		i, j              int
 	)
 
-	/* Set basis from (mid,low) .. (mid,high) */
+	// Set basis from (mid,low) .. (mid,high).
 	if low < 0 {
 		low = 0
 	}
@@ -194,7 +196,7 @@ func (k *kernel) traceForward(mid, low, high int) {
 	maxI = mid
 	maxJ = low
 
-	/* Advance to next row */
+	// Advance to next row.
 	thatVector := &offsetSlice{}
 	for i = mid; low <= high && i < k.query.Len(); i++ {
 		var cost, score int
@@ -305,7 +307,7 @@ func (k *kernel) traceReverse(top, low, high, bottom, xfactor int) {
 		i, j              int
 	)
 
-	/* Set basis from (top,low) .. (top,high) */
+	// Set basis from (top,low) .. (top,high).
 	if low < 0 {
 		low = 0
 	}
@@ -340,7 +342,7 @@ func (k *kernel) traceReverse(top, low, high, bottom, xfactor int) {
 	maxI = top
 	maxJ = low
 
-	/* Advance to next row */
+	// Advance to next row.
 	if top-1 <= bottom {
 		xfactor = k.BlockCost
 	}
