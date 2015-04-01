@@ -10,11 +10,6 @@ import (
 	"github.com/biogo/biogo/seq/linear"
 )
 
-const (
-	low = iota
-	high
-)
-
 // A kernel handles the actual dp alignment process.
 type kernel struct {
 	target, query *linear.Seq
