@@ -55,10 +55,10 @@ func (o *offsetSlice) set(i, v int) { o.slice[i-o.offset] = v }
 var vecBuffering int = 100000
 
 // Handle the recursive search for alignable segments.
-func (k *kernel) alignRecursion(workingTrap *filter.Trapezoid) {
-	mid := (workingTrap.Bottom + workingTrap.Top) / 2
+func (k *kernel) alignRecursion(t *filter.Trapezoid) {
+	mid := (t.Bottom + t.Top) / 2
 
-	k.traceForward(mid, mid-workingTrap.Right, mid-workingTrap.Left)
+	k.traceForward(mid, mid-t.Right, mid-t.Left)
 
 	for x := 1; x == 1 || k.highEnd.Bbpos > mid+x*k.MaxIGap && k.highEnd.Score < k.lowEnd.Score; x++ {
 		k.traceReverse(k.lowEnd.Bepos, k.lowEnd.Aepos, k.lowEnd.Aepos, mid+k.MaxIGap, k.BlockCost+2*x*k.DiffCost)
@@ -66,7 +66,7 @@ func (k *kernel) alignRecursion(workingTrap *filter.Trapezoid) {
 
 	k.highEnd.Aepos, k.highEnd.Bepos = k.lowEnd.Aepos, k.lowEnd.Bepos
 
-	lowTrap, highTrap := *workingTrap, *workingTrap
+	lowTrap, highTrap := *t, *t
 	lowTrap.Top = k.highEnd.Bbpos - k.MaxIGap
 	highTrap.Bottom = k.highEnd.Bepos + k.MaxIGap
 
@@ -126,7 +126,7 @@ func (k *kernel) alignRecursion(workingTrap *filter.Trapezoid) {
 		}
 	}
 
-	if lowTrap.Top-lowTrap.Bottom > k.minLen && lowTrap.Top < workingTrap.Top-k.MaxIGap {
+	if lowTrap.Top-lowTrap.Bottom > k.minLen && lowTrap.Top < t.Top-k.MaxIGap {
 		k.alignRecursion(&lowTrap)
 	}
 	if highTrap.Top-highTrap.Bottom > k.minLen {
