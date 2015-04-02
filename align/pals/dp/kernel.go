@@ -43,13 +43,7 @@ type offsetSlice struct {
 	slice  []int
 }
 
-func (o *offsetSlice) at(i int) int {
-	i -= o.offset
-	if i == -1 || i == len(o.slice) {
-		return 0
-	}
-	return o.slice[i]
-}
+func (o *offsetSlice) at(i int) int { return o.slice[i-o.offset] }
 func (o *offsetSlice) set(i, v int) { o.slice[i-o.offset] = v }
 
 var vecBuffering int = 100000
@@ -161,6 +155,9 @@ func (k *kernel) traceForward(mid, low, high int) {
 	}
 	if high > k.target.Len() {
 		high = k.target.Len()
+	}
+	if high < low {
+		high = low
 	}
 
 	if required := (high - low) + k.MaxIGap; required >= len(k.vectors[0]) {
@@ -308,6 +305,9 @@ func (k *kernel) traceReverse(top, low, high, bottom, xfactor int) {
 	}
 	if high > k.target.Len() {
 		high = k.target.Len()
+	}
+	if high < low {
+		high = low
 	}
 
 	if required := (high - low) + k.MaxIGap; required >= len(k.vectors[0]) {
