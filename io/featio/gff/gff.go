@@ -38,7 +38,7 @@ var (
 const Version = 2
 
 // "Astronomical" time format is the format specified in the GFF specification
-const Astronomical = "2006-01-02"
+const Astronomical = "2006-1-02"
 
 type Error string
 
