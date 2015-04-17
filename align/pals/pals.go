@@ -71,6 +71,7 @@ type PALS struct {
 	maxMem     *uintptr
 	hitFilter  *filter.Filter
 	morass     *morass.Morass
+	trapezoids filter.Trapezoids
 	err        error
 	threads    int
 }
@@ -267,7 +268,7 @@ func (p *PALS) Share(m *PALS) {
 	p.hitFilter = filter.New(p.index, p.FilterParams)
 }
 
-// Perform filtering and alignment for one strand of query.
+// Align performs filtering and alignment for one strand of query.
 func (p *PALS) Align(complement bool) (dp.Hits, error) {
 	if p.err != nil {
 		return nil, p.err
@@ -305,9 +306,9 @@ func (p *PALS) Align(complement bool) (dp.Hits, error) {
 		return nil, err
 	}
 	p.err = p.morass.Clear()
-	trapezoids := merger.FinaliseMerge()
-	lt, lq := trapezoids.Sum()
-	p.notifyf("Merged %d trapezoids covering %d x %d", len(trapezoids), lt, lq)
+	p.trapezoids = merger.FinaliseMerge()
+	lt, lq := p.trapezoids.Sum()
+	p.notifyf("Merged %d trapezoids covering %d x %d", len(p.trapezoids), lt, lq)
 
 	p.notify("Aligning")
 	aligner := dp.NewAligner(
@@ -315,7 +316,45 @@ func (p *PALS) Align(complement bool) (dp.Hits, error) {
 		p.FilterParams.WordSize, p.DPParams.MinHitLength, p.DPParams.MinId,
 	)
 	aligner.Costs = &p.Costs
-	hits := aligner.AlignTraps(trapezoids)
+	hits := aligner.AlignTraps(p.trapezoids)
+	hitCoverageA, hitCoverageB, err := hits.Sum()
+	if err != nil {
+		return nil, err
+	}
+	p.notifyf("Aligned %d hits covering %d x %d", len(hits), hitCoverageA, hitCoverageB)
+
+	return hits, nil
+}
+
+// Trapezoids returns the filter trapezoids identified during a call to Align.
+func (p *PALS) Trapezoids() filter.Trapezoids { return p.trapezoids }
+
+// AlignFrom performs filtering and alignment for one strand of query using the
+// provided filter trapezoids as seeds.
+func (p *PALS) AlignFrom(traps filter.Trapezoids, complement bool) (dp.Hits, error) {
+	if p.err != nil {
+		return nil, p.err
+	}
+	var (
+		working *linear.Seq
+		err     error
+	)
+	if complement {
+		p.notify("Complementing query")
+		working = p.query.Clone().(*linear.Seq)
+		working.RevComp()
+		p.notify("Complemented query")
+	} else {
+		working = p.query
+	}
+
+	p.notify("Aligning")
+	aligner := dp.NewAligner(
+		p.target, working,
+		p.FilterParams.WordSize, p.DPParams.MinHitLength, p.DPParams.MinId,
+	)
+	aligner.Costs = &p.Costs
+	hits := aligner.AlignTraps(traps)
 	hitCoverageA, hitCoverageB, err := hits.Sum()
 	if err != nil {
 		return nil, err
