@@ -154,29 +154,29 @@ func (m *Merger) clipVertical() {
 			lastPosition = m.query.Len()
 		}
 
-		i := 0
-		for i = lagPosition; i < lastPosition; i++ {
-			if m.valueToCode[m.query.Seq[i]] >= 0 {
-				if i-lagPosition >= m.maxIGap {
+		var pos int
+		for pos = lagPosition; pos < lastPosition; pos++ {
+			if m.valueToCode[m.query.Seq[pos]] >= 0 {
+				if pos-lagPosition >= m.maxIGap {
 					if lagPosition-base.Bottom > 0 {
 						if m.freeTraps == nil {
 							m.freeTraps = &Trapezoid{}
 						}
 
-						m.freeTraps = m.freeTraps.shunt(base)
+						m.freeTraps = m.freeTraps.prependFrontTo(base)
 
 						base.Top = lagPosition
 						base = base.Next
-						base.Bottom = i
+						base.Bottom = pos
 						m.trapCount++
 					} else {
-						base.Bottom = i
+						base.Bottom = pos
 					}
 				}
-				lagPosition = i + 1
+				lagPosition = pos + 1
 			}
 		}
-		if i-lagPosition >= m.maxIGap {
+		if pos-lagPosition >= m.maxIGap {
 			base.Top = lagPosition
 		}
 	}
@@ -201,29 +201,29 @@ func (m *Merger) clipTrapezoids() {
 		}
 
 		lagClip := aBottom
-		i := 0
-		for i = lagPosition; i < lastPosition; i++ {
-			if m.valueToCode[m.target.Seq[i]] >= 0 {
-				if i-lagPosition >= m.maxIGap {
+		var pos int
+		for pos = lagPosition; pos < lastPosition; pos++ {
+			if m.valueToCode[m.target.Seq[pos]] >= 0 {
+				if pos-lagPosition >= m.maxIGap {
 					if lagPosition > lagClip {
 						if m.freeTraps == nil {
 							m.freeTraps = &Trapezoid{}
 						}
 
-						m.freeTraps = m.freeTraps.shunt(base)
+						m.freeTraps = m.freeTraps.prependFrontTo(base)
 
 						base.clip(lagPosition, lagClip)
 
 						base = base.Next
 						m.trapCount++
 					}
-					lagClip = i
+					lagClip = pos
 				}
-				lagPosition = i + 1
+				lagPosition = pos + 1
 			}
 		}
 
-		if i-lagPosition < m.maxIGap {
+		if pos-lagPosition < m.maxIGap {
 			lagPosition = aTop
 		}
 

@@ -11,16 +11,17 @@ type Trapezoid struct {
 	Left, Right int        // Left and right diagonals of trapzoidal zone
 }
 
-// Move the receiver from the head of the current list to follow element.
-// Returns the subsequent Trapezoid of the current list.
-func (tr *Trapezoid) shunt(element *Trapezoid) (head *Trapezoid) {
-	head = tr.Next
-	*tr = *element
-	element.join(tr)
-	return
+// prependFrontTo prepends a copy of front of list onto the front of the list
+// taking the allocation from the receiver which acts as a pool. It returns the
+// next element of the pool.
+func (tr *Trapezoid) prependFrontTo(list *Trapezoid) *Trapezoid {
+	next := tr.Next
+	*tr = *list
+	list.join(tr)
+	return next
 }
 
-// Joing list to the receiver, returning the reciever.
+// join joins list to the receiver, returning the receiver.
 func (tr *Trapezoid) join(list *Trapezoid) *Trapezoid {
 	tr.Next = list
 	return tr
@@ -31,7 +32,7 @@ func (tr *Trapezoid) decapitate() (*Trapezoid, *Trapezoid) {
 	return tr, tr.Next
 }
 
-// Trapezoid timming method used during merge.
+// clip is the trapezoid trimming method used during merge.
 func (tr *Trapezoid) clip(lagPosition, lagClip int) {
 	if bottom := lagClip + tr.Left; tr.Bottom < bottom {
 		tr.Bottom = bottom
@@ -48,7 +49,7 @@ func (tr *Trapezoid) clip(lagPosition, lagClip int) {
 	}
 }
 
-// Trapezoid slice type used for sorting Trapezoids during merge.
+// Trapezoids implements the sort.Sort interface.
 type Trapezoids []*Trapezoid
 
 // Return the sum of all Trapezoids in the slice.
