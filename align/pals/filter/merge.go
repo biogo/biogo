@@ -234,7 +234,7 @@ func (m *Merger) clipTrapezoids() {
 }
 
 // Finalise the merged collection and return a sorted slice of Trapezoids.
-func (m *Merger) FinaliseMerge() (trapezoids Trapezoids) {
+func (m *Merger) FinaliseMerge() Trapezoids {
 	var next *Trapezoid
 	for base := m.trapOrder; base != m.eoTerm; base = next {
 		next = base.Next
@@ -249,14 +249,14 @@ func (m *Merger) FinaliseMerge() (trapezoids Trapezoids) {
 		m.freeTraps = m.tail.join(m.freeTraps)
 	}
 
-	trapezoids = make(Trapezoids, m.trapCount)
+	traps := make(Trapezoids, m.trapCount)
 	for i, z := 0, m.trapList; i < m.trapCount; i++ {
-		trapezoids[i] = z
+		traps[i] = z
 		z = z.Next
-		trapezoids[i].Next = nil
+		traps[i].Next = nil
 	}
 
-	sort.Sort(Trapezoids(trapezoids))
+	sort.Sort(Trapezoids(traps))
 
-	return
+	return traps
 }
