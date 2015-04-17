@@ -256,7 +256,7 @@ func (m *Merger) FinaliseMerge() Trapezoids {
 		traps[i].Next = nil
 	}
 
-	sort.Sort(Trapezoids(traps))
+	sort.Sort(traps)
 
 	return traps
 }
