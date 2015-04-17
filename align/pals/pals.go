@@ -77,7 +77,7 @@ type PALS struct {
 }
 
 // Return a new PALS aligner. Requires
-func New(target, query *linear.Seq, selfComp bool, m *morass.Morass, threads, tubeOffset int, mem *uintptr, log Logger) *PALS {
+func New(target, query *linear.Seq, selfComp bool, m *morass.Morass, tubeOffset int, mem *uintptr, log Logger) *PALS {
 	return &PALS{
 		target:      target,
 		query:       query,
@@ -87,7 +87,6 @@ func New(target, query *linear.Seq, selfComp bool, m *morass.Morass, threads, tu
 		Costs:       defaultCosts,
 		maxMem:      mem,
 		morass:      m,
-		threads:     threads,
 	}
 }
 

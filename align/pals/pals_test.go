@@ -122,7 +122,7 @@ func (s *S) TestOptimise(c *check.C) {
 	// minHitLen int, minId float64, target, query *seq.Seq, tubeOffset int, maxMem uint64
 	t := &linear.Seq{Seq: make(alphabet.Letters, 29940)}
 	for _, p := range P {
-		pa := New(t, t, true, nil, 1, 0, nil, nil)
+		pa := New(t, t, true, nil, 0, nil, nil)
 		err := pa.Optimise(p.l, p.id)
 		if err == nil {
 			c.Check(*pa.FilterParams, check.Equals, filter.Params{WordSize: p.k, MinMatch: p.s, MaxError: p.d, TubeOffset: p.t})
