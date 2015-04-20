@@ -6,34 +6,38 @@ package filter
 
 // Type to store a successfully filtered w × e Parallelogram
 type Trapezoid struct {
-	Next        *Trapezoid // Organized in a list linked on this field
-	Top, Bottom int        // B (query) coords of top and bottom of trapzoidal zone
-	Left, Right int        // Left and right diagonals of trapzoidal zone
+	Top, Bottom int // B (query) coords of top and bottom of trapzoidal zone
+	Left, Right int // Left and right diagonals of trapzoidal zone
+}
+
+type trapezoid struct {
+	next *trapezoid // Organized in a list linked on this field
+	Trapezoid
 }
 
 // prependFrontTo prepends a copy of front of list onto the front of the list
 // taking the allocation from the receiver which acts as a pool. It returns the
 // next element of the pool.
-func (tr *Trapezoid) prependFrontTo(list *Trapezoid) *Trapezoid {
-	next := tr.Next
+func (tr *trapezoid) prependFrontTo(list *trapezoid) *trapezoid {
+	next := tr.next
 	*tr = *list
 	list.join(tr)
 	return next
 }
 
 // join joins list to the receiver, returning the receiver.
-func (tr *Trapezoid) join(list *Trapezoid) *Trapezoid {
-	tr.Next = list
+func (tr *trapezoid) join(list *trapezoid) *trapezoid {
+	tr.next = list
 	return tr
 }
 
-// Return the receiver and the subsequent Trapezoid in the list.
-func (tr *Trapezoid) decapitate() (*Trapezoid, *Trapezoid) {
-	return tr, tr.Next
+// Return the receiver and the subsequent trapezoid in the list.
+func (tr *trapezoid) decapitate() (*trapezoid, *trapezoid) {
+	return tr, tr.next
 }
 
 // clip is the trapezoid trimming method used during merge.
-func (tr *Trapezoid) clip(lagPosition, lagClip int) {
+func (tr *trapezoid) clip(lagPosition, lagClip int) {
 	if bottom := lagClip + tr.Left; tr.Bottom < bottom {
 		tr.Bottom = bottom
 	}
@@ -50,7 +54,7 @@ func (tr *Trapezoid) clip(lagPosition, lagClip int) {
 }
 
 // Trapezoids implements the sort.Sort interface.
-type Trapezoids []*Trapezoid
+type Trapezoids []Trapezoid
 
 // Return the sum of all Trapezoids in the slice.
 func (tr Trapezoids) Sum() (a, b int) {

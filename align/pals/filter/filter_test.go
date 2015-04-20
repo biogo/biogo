@@ -85,11 +85,11 @@ func (s *S) TestFilterAndMerge(c *check.C) {
 	c.Check(la, check.Equals, 1257)
 	c.Check(lb, check.Equals, 402)
 	c.Check(t, check.DeepEquals, Trapezoids{
-		{Next: nil, Top: 452, Bottom: 0, Left: -128, Right: 3},
-		{Next: nil, Top: 433, Bottom: 237, Left: -1120, Right: -1085},
-		{Next: nil, Top: 628, Bottom: 447, Left: -1984, Right: -1917},
-		{Next: nil, Top: 898, Bottom: 627, Left: -2624, Right: -2557},
-		{Next: nil, Top: 939, Bottom: 868, Left: -2880, Right: -2845},
-		{Next: nil, Top: 1024, Bottom: 938, Left: -3072, Right: -3005},
+		{Top: 452, Bottom: 0, Left: -128, Right: 3},
+		{Top: 433, Bottom: 237, Left: -1120, Right: -1085},
+		{Top: 628, Bottom: 447, Left: -1984, Right: -1917},
+		{Top: 898, Bottom: 627, Left: -2624, Right: -2557},
+		{Top: 939, Bottom: 868, Left: -2880, Right: -2845},
+		{Top: 1024, Bottom: 938, Left: -3072, Right: -3005},
 	})
 }

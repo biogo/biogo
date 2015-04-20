@@ -24,9 +24,9 @@ type Merger struct {
 	leftPadding, bottomPadding int
 	binWidth                   int
 	selfComparison             bool
-	freeTraps, trapList        *Trapezoid
-	trapOrder, tail            *Trapezoid
-	eoTerm                     *Trapezoid
+	freeTraps, trapList        *trapezoid
+	trapOrder, tail            *trapezoid
+	eoTerm                     *trapezoid
 	trapCount                  int
 	valueToCode                alphabet.Index
 }
@@ -38,13 +38,12 @@ func NewMerger(ki *kmerindex.Index, query *linear.Seq, filterParams *Params, max
 	binWidth := tubeWidth - 1
 	leftPadding := diagonalPadding + binWidth
 
-	eoTerm := &Trapezoid{
+	eoTerm := &trapezoid{Trapezoid: Trapezoid{
 		Left:   query.Len() + 1 + leftPadding,
 		Right:  query.Len() + 1,
 		Bottom: -1,
 		Top:    query.Len() + 1,
-		Next:   nil,
-	}
+	}}
 
 	return &Merger{
 		target:         ki.Seq(),
@@ -70,9 +69,9 @@ func (m *Merger) MergeFilterHit(h *Hit) {
 	Top := h.To
 	Bottom := h.From
 
-	var temp, free *Trapezoid
+	var temp, free *trapezoid
 	for base := m.trapOrder; ; base = temp {
-		temp = base.Next
+		temp = base.next
 		switch {
 		case Bottom-m.bottomPadding > base.Top:
 			if free == nil {
@@ -114,15 +113,15 @@ func (m *Merger) MergeFilterHit(h *Hit) {
 				if base.Top < temp.Top {
 					base.Top = temp.Top
 				}
-				base.join(temp.Next)
+				base.join(temp.next)
 				m.freeTraps = temp.join(m.freeTraps)
-				temp = base.Next
+				temp = base.next
 			}
 
 			return
 		default:
 			if m.freeTraps == nil {
-				m.freeTraps = &Trapezoid{}
+				m.freeTraps = &trapezoid{}
 			}
 			if free == nil {
 				m.trapOrder = m.freeTraps
@@ -144,7 +143,7 @@ func (m *Merger) MergeFilterHit(h *Hit) {
 }
 
 func (m *Merger) clipVertical() {
-	for base := m.trapList; base != nil; base = base.Next {
+	for base := m.trapList; base != nil; base = base.next {
 		lagPosition := base.Bottom - m.maxIGap + 1
 		if lagPosition < 0 {
 			lagPosition = 0
@@ -160,13 +159,13 @@ func (m *Merger) clipVertical() {
 				if pos-lagPosition >= m.maxIGap {
 					if lagPosition-base.Bottom > 0 {
 						if m.freeTraps == nil {
-							m.freeTraps = &Trapezoid{}
+							m.freeTraps = &trapezoid{}
 						}
 
 						m.freeTraps = m.freeTraps.prependFrontTo(base)
 
 						base.Top = lagPosition
-						base = base.Next
+						base = base.next
 						base.Bottom = pos
 						m.trapCount++
 					} else {
@@ -183,7 +182,7 @@ func (m *Merger) clipVertical() {
 }
 
 func (m *Merger) clipTrapezoids() {
-	for base := m.trapList; base != nil; base = base.Next {
+	for base := m.trapList; base != nil; base = base.next {
 		if base.Top-base.Bottom < m.bottomPadding-2 {
 			continue
 		}
@@ -207,14 +206,14 @@ func (m *Merger) clipTrapezoids() {
 				if pos-lagPosition >= m.maxIGap {
 					if lagPosition > lagClip {
 						if m.freeTraps == nil {
-							m.freeTraps = &Trapezoid{}
+							m.freeTraps = &trapezoid{}
 						}
 
 						m.freeTraps = m.freeTraps.prependFrontTo(base)
 
 						base.clip(lagPosition, lagClip)
 
-						base = base.Next
+						base = base.next
 						m.trapCount++
 					}
 					lagClip = pos
@@ -235,9 +234,9 @@ func (m *Merger) clipTrapezoids() {
 
 // Finalise the merged collection and return a sorted slice of Trapezoids.
 func (m *Merger) FinaliseMerge() Trapezoids {
-	var next *Trapezoid
+	var next *trapezoid
 	for base := m.trapOrder; base != m.eoTerm; base = next {
-		next = base.Next
+		next = base.next
 		m.trapList = base.join(m.trapList)
 		m.trapCount++
 	}
@@ -251,9 +250,8 @@ func (m *Merger) FinaliseMerge() Trapezoids {
 
 	traps := make(Trapezoids, m.trapCount)
 	for i, z := 0, m.trapList; i < m.trapCount; i++ {
-		traps[i] = z
-		z = z.Next
-		traps[i].Next = nil
+		traps[i] = z.Trapezoid
+		z, z.next = z.next, nil
 	}
 
 	sort.Sort(traps)

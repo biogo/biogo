@@ -24,7 +24,7 @@ type kernel struct {
 	lowEnd     Hit
 	highEnd    Hit
 	vectors    [2][]int
-	trapezoids []*filter.Trapezoid
+	trapezoids []filter.Trapezoid
 	covered    []bool
 	slot       int
 	result     chan Hit
@@ -49,7 +49,7 @@ func (o *offsetSlice) set(i, v int) { o.slice[i-o.offset] = v }
 var vecBuffering int = 100000
 
 // Handle the recursive search for alignable segments.
-func (k *kernel) alignRecursion(t *filter.Trapezoid) {
+func (k *kernel) alignRecursion(t filter.Trapezoid) {
 	mid := (t.Bottom + t.Top) / 2
 
 	k.traceForward(mid, mid-t.Right, mid-t.Left)
@@ -60,7 +60,7 @@ func (k *kernel) alignRecursion(t *filter.Trapezoid) {
 
 	k.highEnd.Aepos, k.highEnd.Bepos = k.lowEnd.Aepos, k.lowEnd.Bepos
 
-	lowTrap, highTrap := *t, *t
+	lowTrap, highTrap := t, t
 	lowTrap.Top = k.highEnd.Bbpos - k.MaxIGap
 	highTrap.Bottom = k.highEnd.Bepos + k.MaxIGap
 
@@ -121,10 +121,10 @@ func (k *kernel) alignRecursion(t *filter.Trapezoid) {
 	}
 
 	if lowTrap.Top-lowTrap.Bottom > k.minLen && lowTrap.Top < t.Top-k.MaxIGap {
-		k.alignRecursion(&lowTrap)
+		k.alignRecursion(lowTrap)
 	}
 	if highTrap.Top-highTrap.Bottom > k.minLen {
-		k.alignRecursion(&highTrap)
+		k.alignRecursion(highTrap)
 	}
 }
 
