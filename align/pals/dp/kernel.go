@@ -153,6 +153,9 @@ func (k *kernel) traceForward(mid, low, high int) {
 	if low < 0 {
 		low = 0
 	}
+	if low > k.target.Len() {
+		low = k.target.Len()
+	}
 	if high > k.target.Len() {
 		high = k.target.Len()
 	}
@@ -302,6 +305,9 @@ func (k *kernel) traceReverse(top, low, high, bottom, xfactor int) {
 	// Set basis from (top,low) .. (top,high).
 	if low < 0 {
 		low = 0
+	}
+	if low > k.target.Len() {
+		low = k.target.Len()
 	}
 	if high > k.target.Len() {
 		high = k.target.Len()
