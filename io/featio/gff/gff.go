@@ -577,7 +577,11 @@ func (w *Writer) Write(f feat.Feature) (n int, err error) {
 		}
 		var _n int
 		if f.FeatScore != nil && !math.IsNaN(*f.FeatScore) {
-			_n, err = fmt.Fprintf(w.w, "%.*f", w.Precision, *f.FeatScore)
+			if w.Precision < 0 {
+				_n, err = fmt.Fprintf(w.w, "%v", *f.FeatScore)
+			} else {
+				_n, err = fmt.Fprintf(w.w, "%.*f", w.Precision, *f.FeatScore)
+			}
 			if err != nil {
 				return n, err
 			}
