@@ -40,22 +40,23 @@ const Version = 2
 // "Astronomical" time format is the format specified in the GFF specification
 const Astronomical = "2006-1-02"
 
-type Error string
+type Error struct{ string }
 
-func (e Error) Error() string { return string(e) }
+func (e Error) Error() string { return e.string }
 
 var (
-	ErrBadStrandField = Error("gff: bad strand field")
-	ErrBadStrand      = Error("gff: invalid strand")
-	ErrClosed         = Error("gff: writer closed")
-	ErrBadTag         = Error("gff: invalid tag")
-	ErrCannotHeader   = Error("gff: cannot write header: data written")
-	ErrNotHandled     = Error("gff: type not handled")
-	ErrFieldMissing   = Error("gff: missing fields")
-	ErrBadMoltype     = Error("gff: invalid moltype")
-	ErrEmptyMetaLine  = Error("gff: empty comment metaline")
-	ErrBadMetaLine    = Error("gff: incomplete metaline")
-	ErrBadSequence    = Error("gff: corrupt metasequence")
+	ErrBadFeature     = Error{"gff: feature start not less than feature end"}
+	ErrBadStrandField = Error{"gff: bad strand field"}
+	ErrBadStrand      = Error{"gff: invalid strand"}
+	ErrClosed         = Error{"gff: writer closed"}
+	ErrBadTag         = Error{"gff: invalid tag"}
+	ErrCannotHeader   = Error{"gff: cannot write header: data written"}
+	ErrNotHandled     = Error{"gff: type not handled"}
+	ErrFieldMissing   = Error{"gff: missing fields"}
+	ErrBadMoltype     = Error{"gff: invalid moltype"}
+	ErrEmptyMetaLine  = Error{"gff: empty comment metaline"}
+	ErrBadMetaLine    = Error{"gff: incomplete metaline"}
+	ErrBadSequence    = Error{"gff: corrupt metasequence"}
 )
 
 const (
@@ -517,6 +518,9 @@ func (r *Reader) Read() (f feat.Feature, err error) {
 	}
 	gff.Comments = string(fields[commentField])
 
+	if gff.FeatStart >= gff.FeatEnd {
+		err = ErrBadFeature
+	}
 	return gff, nil
 }
 
@@ -552,6 +556,9 @@ func NewWriter(w io.Writer, width int, header bool) *Writer {
 // are supported). gff.Sequences are not handled as they have a zero length. All other
 // feat.Feature are written as sequence region metadata lines.
 func (w *Writer) Write(f feat.Feature) (n int, err error) {
+	if f.Start() >= f.End() {
+		return 0, ErrBadFeature
+	}
 	w.header = true
 	switch f := f.(type) {
 	case *Feature:
