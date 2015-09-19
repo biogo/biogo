@@ -209,7 +209,8 @@ func (p *PALS) Optimise(minHitLen int, minId float64) error {
 
 // Return an estimate of the average number of hits for any given kmer.
 func (p *PALS) AvgIndexListLength(filterParams *filter.Params) float64 {
-	return float64(p.target.Len()) / float64(int(1)<<(uint(filterParams.WordSize)*2))
+	d := int(1) << (uint(filterParams.WordSize) * 2)
+	return float64(p.target.Len()) / float64(d)
 }
 
 // Return an estimate of the amount of memory required for the filter.
