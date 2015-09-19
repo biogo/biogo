@@ -2,6 +2,8 @@
 
 #bíogo
 
+[![Build Status](https://travis-ci.org/biogo/biogo.svg?branch=master)](https://travis-ci.org/biogo/biogo)
+
 ##Installation
 
         $ go get github.com/biogo/biogo/...
