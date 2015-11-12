@@ -5,17 +5,17 @@
 package pals
 
 import (
+	"fmt"
+
 	"github.com/biogo/biogo/feat"
 	"github.com/biogo/store/interval"
-
-	"fmt"
-	"unsafe"
 )
 
 var duplicatePair = fmt.Errorf("pals: attempt to add duplicate feature pair to pile")
 
 // Note Location must be comparable according to http://golang.org/ref/spec#Comparison_operators.
 type pileInterval struct {
+	id         uintptr
 	start, end int
 	pile       *Pile
 	location   feat.Feature
@@ -26,7 +26,7 @@ type pileInterval struct {
 func (i *pileInterval) Overlap(b interval.IntRange) bool {
 	return i.end-i.overlap >= b.Start && i.start <= b.End-i.overlap
 }
-func (i *pileInterval) ID() uintptr { return uintptr(unsafe.Pointer(i)) }
+func (i *pileInterval) ID() uintptr { return i.id }
 func (i *pileInterval) Range() interval.IntRange {
 	return interval.IntRange{Start: i.start + i.overlap, End: i.end - i.overlap}
 }
@@ -39,6 +39,11 @@ type Piler struct {
 	seen      map[[2]sf]struct{}
 	overlap   int
 	piled     bool
+
+	// next provides the next ID
+	// for merged intervals. IDs
+	// are unique across all intervals.
+	next uintptr
 }
 
 type sf struct {
@@ -68,11 +73,17 @@ func (p *Piler) Add(fp *Pair) error {
 		return duplicatePair
 	}
 
-	p.merge(&pileInterval{start: fp.A.Start(), end: fp.A.End(), location: fp.A.Location(), images: []*Feature{fp.A}, overlap: p.overlap})
-	p.merge(&pileInterval{start: fp.B.Start(), end: fp.B.End(), location: fp.B.Location(), images: []*Feature{fp.B}, overlap: p.overlap})
+	p.merge(&pileInterval{id: p.nextID(), start: fp.A.Start(), end: fp.A.End(), location: fp.A.Location(), images: []*Feature{fp.A}, overlap: p.overlap})
+	p.merge(&pileInterval{id: p.nextID(), start: fp.B.Start(), end: fp.B.End(), location: fp.B.Location(), images: []*Feature{fp.B}, overlap: p.overlap})
 	p.seen[ab] = struct{}{}
 
 	return nil
+}
+
+func (p *Piler) nextID() uintptr {
+	id := p.next
+	p.next++
+	return id
 }
 
 func min(a, b int) int {
