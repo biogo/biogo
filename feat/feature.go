@@ -67,10 +67,17 @@ type Range interface {
 	Len() int
 }
 
+// Feature is a Range whose coordinates are defined relative to a feature
+// location. Start and End return the coordinates of the feature relative to
+// its location which can be nil. In the latter case callers should make no
+// assumptions whether coordinates of such features are comparable.
 type Feature interface {
 	Range
+	// Name returns the name of the feature.
 	Name() string
+	// Description returns the description of the feature.
 	Description() string
+	// Location returns the reference feature on which the feature is located.
 	Location() Feature
 }
 
@@ -105,9 +112,11 @@ type Collection interface {
 	Location() Feature
 }
 
-// BasePositionOf returns the position in f converted to coordinates in the
-// deepest feature location and the deepest non nil reference feature, which
-// may be the feature itself if it has a nil Location.
+// BasePositionOf returns the position in f coordinates converted to
+// coordinates relative to the first nil feature location, and a reference
+// which is the feature location preceding the nil. The returned reference
+// feature should be used by callers of BasePositionOf to verify that
+// coordinates are comparable.
 // BasePositionOf will panic if the feature chain is deeper than 1000 links.
 func BasePositionOf(f Feature, position int) (int, Feature) {
 	for n := 0; n < 1000; n++ {
@@ -121,9 +130,9 @@ func BasePositionOf(f Feature, position int) (int, Feature) {
 	panic("feat: feature chain too long")
 }
 
-// PositionWithin returns the position in f converted to coordinates in a
-// given reference feature and a boolean indicating whether f can be
-// located relative to ref.
+// PositionWithin returns the position in f coordinates converted to
+// coordinates relative to the given reference feature and a boolean
+// indicating whether f can be located relative to ref.
 // PositionWithin will panic if the feature chain is deeper than 1000 links.
 func PositionWithin(f, ref Feature, position int) (pos int, ok bool) {
 	for n := 0; n < 1000; n++ {
@@ -140,48 +149,69 @@ func PositionWithin(f, ref Feature, position int) (pos int, ok bool) {
 	panic("feat: feature chain too long")
 }
 
-// BaseOrientationOf returns the orientation of the given feature relative to
-// the deepest orientable location and the reference feature, which may be
-// the feature itself if it is not an Orienter or has a nil Location.
-// The returned orientation will always be Forward or Reverse.
+// BaseOrientationOf returns the orientation of f relative to a reference
+// which is the first non-nil, non-orientable feature location, and that
+// reference feature. The returned reference feature should be used by callers
+// of BaseOrientationOf to verify that orientations are comparable. If f is
+// not orientable, the returned orientation will be NotOriented and the
+// reference will be the first orientable or last non-nil feature.
 // BaseOrientationOf will panic if the feature chain is deeper than 1000 links.
 func BaseOrientationOf(f Feature) (ori Orientation, ref Feature) {
+	o, ok := f.(Orienter)
+	if !ok || o.Orientation() == NotOriented {
+		for n := 0; n < 1000; n++ {
+			if o, ok = f.Location().(Orienter); ok && o.Orientation() != NotOriented {
+				return NotOriented, f.Location()
+			}
+			if f.Location() == nil {
+				return NotOriented, f
+			}
+			f = f.Location()
+		}
+		panic("feat: feature chain too long")
+	}
+
 	ori = Forward
 	for n := 0; n < 1000; n++ {
-		o, ok := f.(Orienter)
-		if !ok {
-			return ori, f
-		}
-		if o := o.Orientation(); o != NotOriented {
-			ori *= o
+		ori *= o.Orientation()
+		if o, ok = f.Location().(Orienter); ok && o.Orientation() != NotOriented {
 			f = f.Location()
 			continue
+		}
+		if f.Location() != nil {
+			return ori, f.Location()
 		}
 		return ori, f
 	}
 	panic("feat: feature chain too long")
 }
 
-// OrientationWithin returns the orientation of the given feature relative to
-// the given reference. If f is not located within the reference OrientationWithin
-// will return NotOriented.
+// OrientationWithin returns the orientation of f relative to the given
+// reference feature. The returned orientation will be NotOriented if f is not
+// located within the reference or if f is not orientable.
 // OrientationWithin will panic if the feature chain is deeper than 1000 links.
 func OrientationWithin(f, ref Feature) Orientation {
+	if ref == nil {
+		return NotOriented
+	}
 	ori := Forward
 	for n := 0; n < 1000; n++ {
-		if f == ref {
-			return ori
-		}
 		o, ok := f.(Orienter)
 		if !ok {
 			return NotOriented
 		}
 		if o := o.Orientation(); o != NotOriented {
+			if f == ref {
+				return ori
+			}
 			ori *= o
 			f = f.Location()
+			if f == ref {
+				return ori
+			}
 			continue
 		}
-		return ori
+		return NotOriented
 	}
 	panic("feat: feature chain too long")
 }
