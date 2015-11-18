@@ -165,7 +165,7 @@ var (
 
 	freeOri = ori{
 		nonOri: nonOri{
-			start: 0, end: 100,
+			start: 10, end: 100,
 			name: "frag",
 			desc: "fragment",
 		},
@@ -287,4 +287,90 @@ func (s *S) TestOrientationWithin(c *check.C) {
 	cycle.orient = feat.Forward
 	cycle.loc = &cycle
 	c.Check(func() { feat.OrientationWithin(cycle, chrom1) }, check.Panics, "feat: feature chain too long")
+}
+
+// Tests for BasePositionOf and PositionWithin.
+var baseCoordsTests = []struct {
+	f, ref                  feat.Feature
+	pos, basePos, posWithin int
+}{
+	{
+		f:         chrom1,
+		pos:       20,
+		basePos:   20,
+		posWithin: 20,
+		ref:       chrom1,
+	},
+	{
+		f:         geneA,
+		pos:       30,
+		basePos:   40,
+		posWithin: 40,
+		ref:       chrom1,
+	},
+	{
+		f:         proA,
+		pos:       40,
+		basePos:   60,
+		posWithin: 60,
+		ref:       chrom1,
+	},
+	{
+		f:         opA,
+		pos:       20,
+		basePos:   52,
+		posWithin: 52,
+		ref:       chrom1,
+	},
+	{
+		f:         antiA,
+		pos:       20,
+		basePos:   75,
+		posWithin: 75,
+		ref:       chrom1,
+	},
+	{
+		f:         freeOri,
+		pos:       0,
+		basePos:   10,
+		posWithin: 0,
+		ref:       freeOri,
+	},
+}
+
+func (s *S) TestBasePositionOf(c *check.C) {
+	for _, t := range baseCoordsTests {
+		pos, ref := feat.BasePositionOf(t.f, t.pos)
+		c.Check(pos, check.Equals, t.basePos)
+		c.Check(ref, check.Equals, t.ref)
+	}
+
+	// Check that we find the same reference where possible.
+	_, refGeneA := feat.BasePositionOf(geneA, 0)
+	_, refGeneB := feat.BasePositionOf(geneB, 0)
+	c.Check(refGeneA, check.Equals, refGeneB)
+
+	// Check we detect cycles.
+	var cycle ori
+	cycle.loc = &cycle
+	c.Check(func() { feat.BasePositionOf(cycle, 10) }, check.Panics, "feat: feature chain too long")
+}
+
+func (s *S) TestPositionWithin(c *check.C) {
+	for _, t := range baseCoordsTests {
+		pos, ok := feat.PositionWithin(t.f, t.ref, t.pos)
+		c.Check(pos, check.Equals, t.posWithin)
+		c.Check(ok, check.Equals, true)
+	}
+
+	// Check unorthodox tree structures.
+	_, ok := feat.PositionWithin(opA, chrom2, 10)
+	c.Check(ok, check.Equals, false)
+	_, ok = feat.PositionWithin(nil, nil, 10)
+	c.Check(ok, check.Equals, false)
+
+	// Check we detect cycles.
+	var cycle ori
+	cycle.loc = &cycle
+	c.Check(func() { feat.PositionWithin(cycle, chrom1, 10) }, check.Panics, "feat: feature chain too long")
 }
