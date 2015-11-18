@@ -105,6 +105,41 @@ type Collection interface {
 	Location() Feature
 }
 
+// BasePositionOf returns the position in f converted to coordinates in the
+// deepest feature location and the deepest non nil reference feature, which
+// may be the feature itself if it has a nil Location.
+// BasePositionOf will panic if the feature chain is deeper than 1000 links.
+func BasePositionOf(f Feature, position int) (int, Feature) {
+	for n := 0; n < 1000; n++ {
+		position += f.Start()
+		if f.Location() != nil {
+			f = f.Location()
+			continue
+		}
+		return position, f
+	}
+	panic("feat: feature chain too long")
+}
+
+// PositionWithin returns the position in f converted to coordinates in a
+// given reference feature and a boolean indicating whether f can be
+// located relative to ref.
+// PositionWithin will panic if the feature chain is deeper than 1000 links.
+func PositionWithin(f, ref Feature, position int) (pos int, ok bool) {
+	for n := 0; n < 1000; n++ {
+		if f == ref {
+			return position, f != nil
+		}
+		position += f.Start()
+		if f.Location() != nil {
+			f = f.Location()
+			continue
+		}
+		return 0, false
+	}
+	panic("feat: feature chain too long")
+}
+
 // BaseOrientationOf returns the orientation of the given feature relative to
 // the deepest orientable location and the reference feature, which may be
 // the feature itself if it is not an Orienter or has a nil Location.
