@@ -373,25 +373,25 @@ func NewReader(r io.Reader) *Reader {
 func (r *Reader) commentMetaline(line []byte) (f feat.Feature, err error) {
 	fields := bytes.Split(line, []byte{' '})
 	if len(fields) < 1 {
-		return nil, ErrEmptyMetaLine
+		return nil, &csv.ParseError{Line: r.line, Err: ErrEmptyMetaLine}
 	}
 	switch unsafeString(fields[0]) {
 	case "gff-version":
 		v := mustAtoi(fields, 1, r.line)
 		if v > Version {
-			return nil, ErrNotHandled
+			return nil, &csv.ParseError{Line: r.line, Err: ErrNotHandled}
 		}
 		r.Version = Version
 		return r.Read()
 	case "source-version":
 		if len(fields) <= 1 {
-			return nil, ErrBadMetaLine
+			return nil, &csv.ParseError{Line: r.line, Err: ErrBadMetaLine}
 		}
 		r.SourceVersion = string(bytes.Join(fields[1:], []byte{' '}))
 		return r.Read()
 	case "date":
 		if len(fields) <= 1 {
-			return nil, ErrBadMetaLine
+			return nil, &csv.ParseError{Line: r.line, Err: ErrBadMetaLine}
 		}
 		if len(r.TimeFormat) > 0 {
 			r.Date, err = time.Parse(r.TimeFormat, unsafeString(bytes.Join(fields[1:], []byte{' '})))
@@ -402,7 +402,7 @@ func (r *Reader) commentMetaline(line []byte) (f feat.Feature, err error) {
 		return r.Read()
 	case "Type", "type":
 		if len(fields) <= 1 {
-			return nil, ErrBadMetaLine
+			return nil, &csv.ParseError{Line: r.line, Err: ErrBadMetaLine}
 		}
 		r.Type = feat.ParseMoltype(unsafeString(fields[1]))
 		if len(fields) > 2 {
@@ -411,7 +411,7 @@ func (r *Reader) commentMetaline(line []byte) (f feat.Feature, err error) {
 		return r.Read()
 	case "sequence-region":
 		if len(fields) <= 3 {
-			return nil, ErrBadMetaLine
+			return nil, &csv.ParseError{Line: r.line, Err: ErrBadMetaLine}
 		}
 		return &Region{
 			Sequence:    Sequence{SeqName: string(fields[1]), Type: r.Type},
@@ -420,11 +420,11 @@ func (r *Reader) commentMetaline(line []byte) (f feat.Feature, err error) {
 		}, nil
 	case "DNA", "RNA", "Protein", "dna", "rna", "protein":
 		if len(fields) <= 1 {
-			return nil, ErrBadMetaLine
+			return nil, &csv.ParseError{Line: r.line, Err: ErrBadMetaLine}
 		}
 		return r.metaSeq(fields[0], fields[1])
 	default:
-		return nil, ErrNotHandled
+		return nil, &csv.ParseError{Line: r.line, Err: ErrNotHandled}
 	}
 }
 
@@ -435,7 +435,10 @@ func (r *Reader) metaSeq(moltype, id []byte) (seq.Sequence, error) {
 	for {
 		line, err = r.r.ReadBytes('\n')
 		if err != nil {
-			return nil, err
+			if err == io.EOF {
+				return nil, err
+			}
+			return nil, &csv.ParseError{Line: r.line, Err: err}
 		}
 		r.line++
 		line = bytes.TrimSpace(line)
@@ -443,7 +446,7 @@ func (r *Reader) metaSeq(moltype, id []byte) (seq.Sequence, error) {
 			continue
 		}
 		if len(line) < 2 || !bytes.HasPrefix(line, []byte("##")) {
-			return nil, ErrBadSequence
+			return nil, &csv.ParseError{Line: r.line, Err: ErrBadSequence}
 		}
 		line = bytes.TrimSpace(line[2:])
 		if unsafeString(line) == "end-"+unsafeString(moltype) {
@@ -479,7 +482,10 @@ func (r *Reader) Read() (f feat.Feature, err error) {
 	for {
 		line, err = r.r.ReadBytes('\n')
 		if err != nil {
-			return
+			if err == io.EOF {
+				return f, err
+			}
+			return nil, &csv.ParseError{Line: r.line, Err: err}
 		}
 		r.line++
 		line = bytes.TrimSpace(line)
@@ -495,7 +501,7 @@ func (r *Reader) Read() (f feat.Feature, err error) {
 
 	fields := bytes.SplitN(line, []byte{'\t'}, lastField)
 	if len(fields) < frameField {
-		return nil, ErrFieldMissing
+		return nil, &csv.ParseError{Line: r.line, Column: len(fields), Err: ErrFieldMissing}
 	}
 
 	gff := &Feature{
