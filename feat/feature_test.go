@@ -163,79 +163,116 @@ var (
 		loc:  chrom1,
 	}
 
-	freeOri = ori{
+	freeOri1 = ori{
 		nonOri: nonOri{
 			start: 10, end: 100,
-			name: "frag",
+			name: "frag1",
 			desc: "fragment",
 		},
 		orient: feat.Reverse,
 	}
 
+	freeOri2 = ori{
+		nonOri: nonOri{
+			start: 100, end: 200,
+			name: "frag2",
+			desc: "fragment",
+		},
+		orient: feat.Forward,
+	}
+
+	freeOriNotOriented = ori{
+		nonOri: nonOri{
+			start: 10, end: 100,
+			name: "frag",
+			desc: "fragment",
+		},
+		orient: feat.NotOriented,
+	}
+
 	orientationTests = []struct {
-		f   feat.Feature
-		ori feat.Orientation
-		ref feat.Feature
+		f         feat.Feature
+		baseOri   feat.Orientation
+		oriWithin feat.Orientation
+		ref       feat.Feature
 	}{
 		{
-			f:   chrom1,
-			ori: feat.Forward,
-			ref: chrom1,
+			f:         chrom1,
+			baseOri:   feat.NotOriented,
+			oriWithin: feat.NotOriented,
+			ref:       chrom1,
 		},
 		{
-			f:   geneA,
-			ori: feat.Forward,
-			ref: chrom1,
+			f:         geneA,
+			baseOri:   feat.Forward,
+			oriWithin: feat.Forward,
+			ref:       chrom1,
 		},
 		{
-			f:   orfA,
-			ori: feat.Forward,
-			ref: chrom1,
+			f:         orfA,
+			baseOri:   feat.Forward,
+			oriWithin: feat.Forward,
+			ref:       chrom1,
 		},
 		{
-			f:   antiA,
-			ori: feat.Reverse,
-			ref: chrom1,
+			f:         antiA,
+			baseOri:   feat.Reverse,
+			oriWithin: feat.Reverse,
+			ref:       chrom1,
 		},
 		{
-			f:   proA,
-			ori: feat.Forward,
-			ref: chrom1,
+			f:         proA,
+			baseOri:   feat.Forward,
+			oriWithin: feat.Forward,
+			ref:       chrom1,
 		},
 		{
-			f:   opA,
-			ori: feat.Forward,
-			ref: opA,
+			f:         opA,
+			baseOri:   feat.NotOriented,
+			oriWithin: feat.NotOriented,
+			ref:       proA,
 		},
 		{
-			f:   geneB,
-			ori: feat.Reverse,
-			ref: chrom1,
+			f:         geneB,
+			baseOri:   feat.Reverse,
+			oriWithin: feat.Reverse,
+			ref:       chrom1,
 		},
 		{
-			f:   orfB,
-			ori: feat.Reverse,
-			ref: chrom1,
+			f:         orfB,
+			baseOri:   feat.Reverse,
+			oriWithin: feat.Reverse,
+			ref:       chrom1,
 		},
 		{
-			f:   proB,
-			ori: feat.Reverse,
-			ref: chrom1,
+			f:         proB,
+			baseOri:   feat.Reverse,
+			oriWithin: feat.Reverse,
+			ref:       chrom1,
 		},
 		{
-			f:   opB,
-			ori: feat.Forward,
-			ref: opB,
+			f:         opB,
+			baseOri:   feat.NotOriented,
+			oriWithin: feat.NotOriented,
+			ref:       proB,
 		},
 		{
-			f:   pal,
-			ori: feat.Forward,
-			ref: pal,
+			f:         pal,
+			baseOri:   feat.NotOriented,
+			oriWithin: feat.NotOriented,
+			ref:       chrom1,
 		},
 		{
-			f:   freeOri,
-			ori: feat.Reverse,
-			ref: nil,
+			f:         freeOri1,
+			baseOri:   feat.Reverse,
+			oriWithin: feat.Forward,
+			ref:       freeOri1,
+		},
+		{
+			f:         freeOriNotOriented,
+			baseOri:   feat.NotOriented,
+			oriWithin: feat.NotOriented,
+			ref:       freeOriNotOriented,
 		},
 	}
 )
@@ -243,22 +280,20 @@ var (
 func (s *S) TestBaseOrientationOf(c *check.C) {
 	for _, t := range orientationTests {
 		ori, ref := feat.BaseOrientationOf(t.f)
-		c.Check(ori, check.Equals, t.ori)
+		c.Check(ori, check.Equals, t.baseOri)
 		c.Check(ref, check.Equals, t.ref)
 	}
 
 	// Check that we find the same reference where possible.
-	_, refGeneA := feat.BaseOrientationOf(geneA)
-	_, refGeneB := feat.BaseOrientationOf(geneB)
-	c.Check(refGeneA, check.Equals, refGeneB)
-
-	// Check that unorientable features return different reference features.
-	_, refOpA := feat.BaseOrientationOf(opA)
-	_, refOpB := feat.BaseOrientationOf(opB)
-	c.Check(refOpA, check.Not(check.Equals), refOpB)
-	_, refChrom1 := feat.BaseOrientationOf(chrom1)
-	_, refChrom2 := feat.BaseOrientationOf(chrom2)
-	c.Check(refChrom1, check.Not(check.Equals), refChrom2)
+	_, ref1 := feat.BaseOrientationOf(orfA)
+	_, ref2 := feat.BaseOrientationOf(antiA)
+	c.Check(ref1, check.Equals, ref2)
+	_, ref1 = feat.BaseOrientationOf(orfA)
+	_, ref2 = feat.BaseOrientationOf(orfB)
+	c.Check(ref1, check.Equals, ref2)
+	_, ref1 = feat.BaseOrientationOf(freeOri1)
+	_, ref2 = feat.BaseOrientationOf(freeOri2)
+	c.Check(ref1, check.Not(check.Equals), ref2)
 
 	// Check we detect cycles.
 	var cycle ori
@@ -269,18 +304,16 @@ func (s *S) TestBaseOrientationOf(c *check.C) {
 
 func (s *S) TestOrientationWithin(c *check.C) {
 	for _, t := range orientationTests {
-		c.Check(feat.OrientationWithin(t.f, t.ref), check.Equals, t.ori)
+		c.Check(feat.OrientationWithin(t.f, t.ref), check.Equals, t.oriWithin)
 	}
 
-	// Check we can find things that are all along the feature chain.
-	for ref := feat.Feature(pribA); ref != nil; ref = ref.Location() {
-		c.Check(feat.OrientationWithin(pribA, ref), check.Equals, feat.Forward)
-	}
-
-	// Check that unorientable features return different reference features.
+	// Check that a nil reference, an unorientable f or an f not located on
+	// reference return NotOriented.
+	c.Check(feat.OrientationWithin(freeOri1, nil), check.Equals, feat.NotOriented)
 	c.Check(feat.OrientationWithin(pribA, nil), check.Equals, feat.NotOriented)
 	c.Check(feat.OrientationWithin(opA, chrom2), check.Equals, feat.NotOriented)
 	c.Check(feat.OrientationWithin(opA, geneB), check.Equals, feat.NotOriented)
+	c.Check(feat.OrientationWithin(geneA, chrom2), check.Equals, feat.NotOriented)
 
 	// Check we detect cycles.
 	var cycle ori
@@ -330,11 +363,11 @@ var baseCoordsTests = []struct {
 		ref:       chrom1,
 	},
 	{
-		f:         freeOri,
+		f:         freeOri1,
 		pos:       0,
 		basePos:   10,
 		posWithin: 0,
-		ref:       freeOri,
+		ref:       freeOri1,
 	},
 }
 
@@ -365,6 +398,8 @@ func (s *S) TestPositionWithin(c *check.C) {
 
 	// Check unorthodox tree structures.
 	_, ok := feat.PositionWithin(opA, chrom2, 10)
+	c.Check(ok, check.Equals, false)
+	_, ok = feat.PositionWithin(opA, nil, 10)
 	c.Check(ok, check.Equals, false)
 	_, ok = feat.PositionWithin(nil, nil, 10)
 	c.Check(ok, check.Equals, false)
