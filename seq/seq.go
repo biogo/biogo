@@ -8,7 +8,7 @@
 // with and without quality scores. Multiple sequence data is also supported as unaligned sets and aligned sequences.
 //
 // Quality scoring is based on Phred scores, although there is the capacity to interconvert between Phred and
-// Solexa scores and a Solexa quality package is provide, though not integrated.
+// Solexa scores and a Solexa quality package is provided, though not integrated.
 package seq
 
 import (
@@ -142,7 +142,7 @@ type Aligned interface {
 	ColumnQL(pos int, fill bool) []alphabet.QLetter
 }
 
-// An AlignedAppenderis a multiple sequence alignment that can append letters.
+// An AlignedAppender is a multiple sequence alignment that can append letters.
 type AlignedAppender interface {
 	Aligned
 	AppendColumns(a ...[]alphabet.QLetter) (err error)
