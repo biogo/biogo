@@ -24,7 +24,6 @@ var _ = check.Suite(&S{})
 func (s *S) TestWarning(c *check.C) { c.Log("\nFIXME: Tests only in example tests.\n") }
 
 func BenchmarkSWAlign(b *testing.B) {
-	b.StopTimer()
 	t := &linear.Seq{}
 	t.Alpha = alphabet.DNAgapped
 	r := fasta.NewReader(strings.NewReader(crspFa), t)
@@ -38,14 +37,13 @@ func BenchmarkSWAlign(b *testing.B) {
 		{-1, -1, -1, 2, -1},
 		{-1, -1, -1, -1, 0},
 	}
-	b.StartTimer()
+	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		smith.Align(swsa, swsb)
 	}
 }
 
 func BenchmarkNWAlign(b *testing.B) {
-	b.StopTimer()
 	t := &linear.Seq{}
 	t.Alpha = alphabet.DNAgapped
 	r := fasta.NewReader(strings.NewReader(crspFa), t)
@@ -60,14 +58,13 @@ func BenchmarkNWAlign(b *testing.B) {
 		{-4, -4, -4, -4, 0},
 	}
 
-	b.StartTimer()
+	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		needle.Align(nwsa, nwsb)
 	}
 }
 
 func BenchmarkSWAffineAlign(b *testing.B) {
-	b.StopTimer()
 	t := &linear.Seq{}
 	t.Alpha = alphabet.DNAgapped
 	r := fasta.NewReader(strings.NewReader(crspFa), t)
@@ -84,14 +81,13 @@ func BenchmarkSWAffineAlign(b *testing.B) {
 		},
 		GapOpen: -5,
 	}
-	b.StartTimer()
+	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		smith.Align(swsa, swsb)
 	}
 }
 
 func BenchmarkNWAffineAlign(b *testing.B) {
-	b.StopTimer()
 	t := &linear.Seq{}
 	t.Alpha = alphabet.DNAgapped
 	r := fasta.NewReader(strings.NewReader(crspFa), t)
@@ -109,7 +105,7 @@ func BenchmarkNWAffineAlign(b *testing.B) {
 		GapOpen: -10,
 	}
 
-	b.StartTimer()
+	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		needle.Align(nwsa, nwsb)
 	}

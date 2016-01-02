@@ -132,9 +132,8 @@ func (s *S) TestRangeCheck(c *check.C) {
 }
 
 func BenchmarkIsValid(b *testing.B) {
-	b.StopTimer()
 	g, _ := newAlphabet("-abcdefghijklmnpqrstvwxyz*", 0, 0, 0, !CaseSensitive)
-	b.StartTimer()
+	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		g.IsValid(Letter(i))
 	}
