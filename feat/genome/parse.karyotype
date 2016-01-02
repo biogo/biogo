@@ -31,7 +31,7 @@ label="$(tr '[:lower:]' '[:upper:]' <<< ${prefix:0:1})${prefix:1}"
 	echo "// Package $package defines chromosome and band intervals for the $species karyotype based on the $package assembly."
 	echo -e "package $package\n"
 
-	echo -e "import (\n\t\"code.google.com/p/biogo/feat\"\n\t\"code.google.com/p/biogo/feat/genome\"\n)\n"
+	echo -e "import (\n\t\"github.com/biogo/biogo/feat\"\n\t\"github.com/biogo/biogo/feat/genome\"\n)\n"
 
 	# # chromosomes
 	echo 'var ('

@@ -41,9 +41,9 @@ label="$(tr '[:lower:]' '[:upper:]' <<< ${prefix:0:1})${prefix:1}"
 
 	echo "import ("
 	if [ -z "$nofrags" ]; then
-		echo -e "\t\"code.google.com/p/biogo/feat\""
+		echo -e "\t\"github.com/biogo/biogo/feat\""
 	fi
-	echo -e "\t\"code.google.com/p/biogo/feat/genome\"\n)\n"
+	echo -e "\t\"github.com/biogo/biogo/feat/genome\"\n)\n"
 
 	# chromosomes
 	echo 'var ('
