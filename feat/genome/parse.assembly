@@ -53,7 +53,7 @@ label="$(tr '[:lower:]' '[:upper:]' <<< ${prefix:0:1})${prefix:1}"
 	| sed -e 's/\t/ /g' -e 's/chr//' | tr -s ' ' \
 	| awk '{print $2,$0}' \
 	| sed -e 's/^[XZ]/1.1e10/' -e 's/^[YW]/1.2e10/' -e 's/^M/1.3e10/' -e's/^Un[^ ]\+/2e10/' \
-	| sed -e 's/^\([1-9][0-9]*\)L/\1/i' -e 's/^\([1-9][0-9]*\)R/\1.5/i' \
+	| sed -e 's/^\([1-9][0-9]*\)[lL]/\1/' -e 's/^\([1-9][0-9]*\)[rR]/\1.5/' \
 	| sort -k1,1g -k5rn,5 \
 	| sort -k1,1g -k3,3 -u \
 	| awk -v prefix=$prefix -v label=$label '{print "\t"label$3" = genome.Chromosome{Chr: \""prefix$3"\", Desc: \"Chromosome\", Length:",$5"}"}'
@@ -65,7 +65,7 @@ label="$(tr '[:lower:]' '[:upper:]' <<< ${prefix:0:1})${prefix:1}"
 	| sed -e 's/\t/ /g' -e 's/chr//' | tr -s ' ' \
 	| awk '{print $2,$0}' \
 	| sed -e 's/^[XZ]/1.1e10/' -e 's/^[YW]/1.2e10/' -e 's/^M/1.3e10/' -e's/^Un[^ ]\+/2e10/' \
-	| sed -e 's/^\([1-9][0-9]*\)L/\1/i' -e 's/^\([1-9][0-9]*\)R/\1.5/i' \
+	| sed -e 's/^\([1-9][0-9]*\)[lL]/\1/' -e 's/^\([1-9][0-9]*\)[rR]/\1.5/' \
 	| sort -k1,1g -k5rn,5 \
 	| sort -k1,1g -k3,3 -u \
 	| awk  -v label=$label '{print "\t&"label$3","}'
@@ -80,7 +80,7 @@ label="$(tr '[:lower:]' '[:upper:]' <<< ${prefix:0:1})${prefix:1}"
 		| sed -e 's/\t/ /g' -e 's/chr//' | tr -s ' ' \
 		| awk '{print $2,$0}' \
 		| sed -e 's/^[XZ]/1.1e10/' -e 's/^[YW]/1.2e10/' -e 's/^M/1.3e10/' -e's/^Un[^ ]\+/2e10/' \
-		| sed -e 's/^\([1-9][0-9]*\)L/\1/i' -e 's/^\([1-9][0-9]*\)R/\1.5/i' \
+		| sed -e 's/^\([1-9][0-9]*\)[lL]/\1/' -e 's/^\([1-9][0-9]*\)[rR]/\1.5/' \
 		| sort -k1,1g -k3,3 \
 		| awk -v prefix=$prefix -v label=$label '{print "\t"label$3"_"$8"_"$4" = genome.Fragment{Frag: \""$8"\", Desc: \"Fragment\", Chr: &"label$3", ChrStart:",$4", ChrEnd: "$5", FragStart:",$9", FragEnd: "$10", Type: \x27"$7"\x27, Strand:",$11"1}"}' \
 		| sed 's/\.\(.*=\)/_\1/'
@@ -92,7 +92,7 @@ label="$(tr '[:lower:]' '[:upper:]' <<< ${prefix:0:1})${prefix:1}"
 		| sed -e 's/\t/ /g' -e 's/chr//' | tr -s ' ' \
 		| awk '{print $2,$0}' \
 		| sed -e 's/^[XZ]/1.1e10/' -e 's/^[YW]/1.2e10/' -e 's/^M/1.3e10/' -e's/^Un[^ ]\+/2e10/' \
-		| sed -e 's/^\([1-9][0-9]*\)L/\1/i' -e 's/^\([1-9][0-9]*\)R/\1.5/i' \
+		| sed -e 's/^\([1-9][0-9]*\)[lL]/\1/' -e 's/^\([1-9][0-9]*\)[rR]/\1.5/' \
 		| sort -k1,1g -k3,3 \
 		| awk -v prefix=$prefix -v label=$label '{print "\t&"label$3"_"$8"_"$46","}' \
 		| sed 's/\./_/'
