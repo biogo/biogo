@@ -14,7 +14,7 @@
 
 file=$1
 prefix=$2
-soecies=$3
+species=$3
 package=$4
 filter=$5
 nofrags=$6
