@@ -144,14 +144,14 @@ type Alphabet interface {
 	// order. In case insensitive alphabets, both cases are presented.
 	Letters() string
 
-	// ValidLetters return a slice of the internal []bool indicating valid
+	// ValidLetters returns a slice of the internal []bool indicating valid
 	// letters. The returned slice should not be altered.
 	ValidLetters() []bool
 
-	// Gap return the gap character used by the alphabet.
+	// Gap returns the gap character used by the alphabet.
 	Gap() Letter
 
-	// Ambiguous return the character representing an ambiguous letter.
+	// Ambiguous returns the character representing an ambiguous letter.
 	Ambiguous() Letter
 
 	// Moltype returns the molecule type of the alphabet.
