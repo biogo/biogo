@@ -114,17 +114,17 @@ type Index *[256]int
 
 // An Alphabet describes valid single character letters within a sequence.
 type Alphabet interface {
-	// IsValid returns whether a letter conforms to the alphabet.
+	// IsValid reports whether a letter conforms to the alphabet.
 	IsValid(Letter) bool
 
-	// AllValid checks that a slice of bytes conforms to the alphabet,
-	// returning false and the position of the first invalid byte if
-	// invalid and true and a negative int if valid.
+	// AllValid reports whether a slice of bytes conforms to the alphabet.
+	// It returns the index of the first invalid byte,
+	// or a negative int if all bytes are valid.
 	AllValid([]Letter) (ok bool, pos int)
 
-	// AllValidQLetter checks that a slice of bytes conforms to the alphabet,
-	// returning false and the position of the first invalid byte if invalid
-	// and true and a negative int if valid.
+	// AllValidQLetter reports whether a slice of bytes conforms to the alphabet.
+	// It returns the index of the first invalid byte,
+	// or a negative int if all bytes are valid.
 	AllValidQLetter([]QLetter) (ok bool, pos int)
 
 	// Len returns the number of distinct valid letters in the alphabet.
