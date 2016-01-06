@@ -84,6 +84,9 @@ func pointerSWAffineLetters(rSeq, qSeq alphabet.Letters, i, j, l int, table [][3
 
 func (a SWAffine) alignLetters(rSeq, qSeq alphabet.Letters, alpha alphabet.Alphabet) ([]feat.Pair, error) {
 	let := len(a.Matrix)
+	if let < alpha.Len() {
+		return nil, ErrMatrixWrongSize{Size: let, Len: alpha.Len()}
+	}
 	la := make([]int, 0, let*let)
 	for _, row := range a.Matrix {
 		if len(row) != let {

@@ -74,6 +74,9 @@ func pointerNWLetters(rSeq, qSeq alphabet.Letters, i, j int, table []int, index 
 
 func (a NW) alignLetters(rSeq, qSeq alphabet.Letters, alpha alphabet.Alphabet) ([]feat.Pair, error) {
 	let := len(a)
+	if let < alpha.Len() {
+		return nil, ErrMatrixWrongSize{Size: let, Len: alpha.Len()}
+	}
 	la := make([]int, 0, let*let)
 	for _, row := range a {
 		if len(row) != let {
