@@ -80,6 +80,16 @@ func max(a *[3]int) int {
 	return m
 }
 
+func max3(a, b, c int) int {
+	if b > a {
+		a = b
+	}
+	if c > a {
+		return c
+	}
+	return a
+}
+
 func max2(a, b int) int {
 	if a > b {
 		return a
