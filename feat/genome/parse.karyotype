@@ -31,7 +31,7 @@ label="$(tr '[:lower:]' '[:upper:]' <<< ${prefix:0:1})${prefix:1}"
 	echo "// Package $package defines chromosome and band intervals for the $species karyotype based on the $package assembly."
 	echo -e "package $package\n"
 
-	echo -e "import (\n\t\"code.google.com/p/biogo/feat\"\n\t\"code.google.com/p/biogo/feat/genome\"\n)\n"
+	echo -e "import (\n\t\"github.com/biogo/biogo/feat\"\n\t\"github.com/biogo/biogo/feat/genome\"\n)\n"
 
 	# # chromosomes
 	echo 'var ('
@@ -40,7 +40,7 @@ label="$(tr '[:lower:]' '[:upper:]' <<< ${prefix:0:1})${prefix:1}"
 	| sed -e 's/\t/ /g' -e 's/chr//' | tr -s ' ' \
 	| awk '{print $1,$0}' \
 	| sed -e 's/^[XZ]/1.1e10/' -e 's/^[YW]/1.2e10/' -e 's/^M/1.3e10/' \
-	| sed -e 's/^\([1-9][0-9]*\)L/\1/i' -e 's/^\([1-9][0-9]*\)R/\1.5/i' \
+	| sed -e 's/^\([1-9][0-9]*\)[lL]/\1/' -e 's/^\([1-9][0-9]*\)[rR]/\1.5/' \
 	| sort -k1,1g -k3rn,3 \
 	| sort -u -k1g,1 \
 	| awk -v prefix=$prefix -v label=$label '{print "\t"label$2" = genome.Chromosome{Chr: \""prefix$2"\", Desc: \"Chromosome\", Length:",$4"}"}'
@@ -51,7 +51,7 @@ label="$(tr '[:lower:]' '[:upper:]' <<< ${prefix:0:1})${prefix:1}"
 	| sed -e 's/\t/ /g' -e 's/chr//' | tr -s ' ' \
 	| awk '{print $1,$0}' \
 	| sed -e 's/^[XZ]/1.1e10/' -e 's/^[YW]/1.2e10/' -e 's/^M/1.3e10/' \
-	| sed -e 's/^\([1-9][0-9]*\)L/\1/i' -e 's/^\([1-9][0-9]*\)R/\1.5/i' \
+	| sed -e 's/^\([1-9][0-9]*\)[lL]/\1/' -e 's/^\([1-9][0-9]*\)[rR]/\1.5/' \
 	| sort -k1,1g -k3rn,3 \
 	| sort -u -k1g,1 \
 	| awk  -v label=$label '{print "\t&"label$2","}'
@@ -64,7 +64,7 @@ label="$(tr '[:lower:]' '[:upper:]' <<< ${prefix:0:1})${prefix:1}"
 	| sed -e 's/\t/ /g' -e 's/chr//' | tr -s ' ' \
 	| awk '{print $1,$0}' \
 	| sed -e 's/^[XZ]/1.1e10/' -e 's/^[YW]/1.2e10/' -e 's/^M/1.3e10/' \
-	| sed -e 's/^\([1-9][0-9]*\)L/\1/i' -e 's/^\([1-9][0-9]*\)R/\1.5/i' \
+	| sed -e 's/^\([1-9][0-9]*\)[lL]/\1/' -e 's/^\([1-9][0-9]*\)[rR]/\1.5/' \
 	| sort -k1,1g -k3n,3 \
 	| awk  -v label=$label '{print "\t"label$2"_"$5" = genome.Band{Band: \""$5"\", Desc: \"Band\", StartPos:",$3", EndPos:",$4", Giemsa: \""$6"\", Chr: &"label$2"}"}' \
 	| sed 's/\.\(.*=\)/_\1/'
@@ -75,7 +75,7 @@ label="$(tr '[:lower:]' '[:upper:]' <<< ${prefix:0:1})${prefix:1}"
 	| sed -e 's/\t/ /g' -e 's/chr//' | tr -s ' ' \
 	| awk '{print $1,$0}' \
 	| sed -e 's/^[XZ]/1.1e10/' -e 's/^[YW]/1.2e10/' -e 's/^M/1.3e10/' \
-	| sed -e 's/^\([1-9][0-9]*\)L/\1/i' -e 's/^\([1-9][0-9]*\)R/\1.5/i' \
+	| sed -e 's/^\([1-9][0-9]*\)[lL]/\1/' -e 's/^\([1-9][0-9]*\)[rR]/\1.5/' \
 	| sort -k1,1g -k3n,3 \
 	| awk  -v label=$label '{print "\t&"label$2"_"$5","}' \
 	| sed 's/\./_/'

@@ -61,6 +61,15 @@ var (
 	ErrMatrixNotSquare     = errors.New("align: scoring matrix is not square")
 )
 
+type ErrMatrixWrongSize struct {
+	Size int // size of the matrix
+	Len  int // length of the alphabet
+}
+
+func (e ErrMatrixWrongSize) Error() string {
+	return fmt.Sprintf("align: scoring matrix size %d does not match alphabet length %d", e.Size, e.Len)
+}
+
 func max(a *[3]int) int {
 	m := minInt
 	for _, v := range a {
@@ -69,6 +78,16 @@ func max(a *[3]int) int {
 		}
 	}
 	return m
+}
+
+func max3(a, b, c int) int {
+	if b > a {
+		a = b
+	}
+	if c > a {
+		return c
+	}
+	return a
 }
 
 func max2(a, b int) int {

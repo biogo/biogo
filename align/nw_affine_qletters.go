@@ -97,6 +97,9 @@ func pointerNWAffineQLetters(rSeq, qSeq alphabet.QLetters, i, j, l int, table []
 
 func (a NWAffine) alignQLetters(rSeq, qSeq alphabet.QLetters, alpha alphabet.Alphabet) ([]feat.Pair, error) {
 	let := len(a.Matrix)
+	if let < alpha.Len() {
+		return nil, ErrMatrixWrongSize{Size: let, Len: alpha.Len()}
+	}
 	la := make([]int, 0, let*let)
 	for _, row := range a.Matrix {
 		if len(row) != let {

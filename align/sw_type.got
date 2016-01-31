@@ -5,8 +5,8 @@
 package align
 
 import (
-	"code.google.com/p/biogo/alphabet"
-	"code.google.com/p/biogo/feat"
+	"github.com/biogo/biogo/alphabet"
+	"github.com/biogo/biogo/feat"
 
 	"fmt"
 	"os"
@@ -65,6 +65,9 @@ func pointerSWType(rSeq, qSeq Type, i, j int, table []int, index alphabet.Index,
 
 func (a SW) alignType(rSeq, qSeq Type, alpha alphabet.Alphabet) ([]feat.Pair, error) {
 	let := len(a)
+	if let < alpha.Len() {
+		return nil, ErrMatrixWrongSize{Size: let, Len: alpha.Len()}
+	}
 	la := make([]int, 0, let*let)
 	for _, row := range a {
 		if len(row) != let {

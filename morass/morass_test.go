@@ -382,9 +382,8 @@ func BenchmarkSequential(b *testing.B) {
 }
 
 func benchmark(b *testing.B, chunk, count int, concurrent bool) {
-	b.StopTimer()
-	runtime.GC()
-	b.StartTimer()
+	runtime.GC() // TODO: is this really necessary? If so, two calls are probably necessary.
+	b.ResetTimer()
 	b.SetBytes(int64(unsafe.Sizeof(intLesser(0))) * int64(count))
 	if m, err := New(intLesser(0), "", "", chunk, concurrent); err == nil {
 		m.AutoClear = true
