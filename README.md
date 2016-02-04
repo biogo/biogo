@@ -2,6 +2,7 @@
 
 #bíogo
 
+[![GoDoc](https://godoc.org/github.com/biogo/biogo?status.png)](http://godoc.org/github.com/biogo/biogo)
 [![Build Status](https://travis-ci.org/biogo/biogo.svg?branch=master)](https://travis-ci.org/biogo/biogo)
 
 ##Installation
