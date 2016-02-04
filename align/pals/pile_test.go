@@ -11,27 +11,27 @@ import (
 var (
 	testChr   = Contig("testchr")
 	testPairs = []*Pair{
-		&Pair{
+		{
 			A:     &Feature{ID: "a", Loc: testChr, From: 2, To: 4},
 			B:     &Feature{ID: "g", Loc: testChr, From: 7, To: 9},
 			Score: 1,
 		},
-		&Pair{
+		{
 			A:     &Feature{ID: "b", Loc: testChr, From: 3, To: 4},
 			B:     &Feature{ID: "i", Loc: testChr, From: 7, To: 8},
 			Score: 1,
 		},
-		&Pair{
+		{
 			A:     &Feature{ID: "c", Loc: testChr, From: 1, To: 3},
 			B:     &Feature{ID: "j", Loc: testChr, From: 8, To: 9},
 			Score: 1,
 		},
-		&Pair{
+		{
 			A:     &Feature{ID: "d", Loc: testChr, From: 1, To: 4},
 			B:     &Feature{ID: "f", Loc: testChr, From: 6, To: 9},
 			Score: 1,
 		},
-		&Pair{
+		{
 			A:     &Feature{ID: "k", Loc: testChr, From: 10, To: 11},
 			B:     &Feature{ID: "e", Loc: testChr, From: 4, To: 5},
 			Score: 1,

@@ -350,8 +350,8 @@ var exonsTests = []struct {
 	{
 		Test: "Exons not in order",
 		InputExons: []Exon{
-			Exon{Offset: 300, Length: 100},
-			Exon{Offset: 0, Length: 100},
+			{Offset: 300, Length: 100},
+			{Offset: 0, Length: 100},
 		},
 		Start:      0,
 		End:        400,
@@ -364,16 +364,16 @@ var exonsTests = []struct {
 	{
 		Test: "Exons overlap",
 		InputExons: []Exon{
-			Exon{Offset: 0, Length: 100},
-			Exon{Offset: 50, Length: 100},
+			{Offset: 0, Length: 100},
+			{Offset: 50, Length: 100},
 		},
 		AddErr: "exons overlap",
 	},
 	{
 		Test: "Exons on different transcripts",
 		InputExons: []Exon{
-			Exon{Transcript: &codingTranscriptA},
-			Exon{Transcript: &codingTranscriptB},
+			{Transcript: &codingTranscriptA},
+			{Transcript: &codingTranscriptB},
 		},
 		AddErr: "exons location differ",
 	},
