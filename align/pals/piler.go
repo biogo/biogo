@@ -6,6 +6,7 @@ package pals
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/biogo/biogo/feat"
 	"github.com/biogo/store/interval"
@@ -35,6 +36,13 @@ func (i *pileInterval) Range() interval.IntRange {
 // of Edgar and Myers (2005) using an interval tree, giving O(nlogn) time but better space complexity
 // and flexibility with feature overlap.
 type Piler struct {
+	// Logger logs pile construction during
+	// Piles calls if non-nil.
+	Logger *log.Logger
+	// LogFreq specifies how frequently
+	// log lines are witten if not zero.
+	LogFreq int
+
 	intervals map[feat.Feature]*interval.IntTree
 	seen      map[[2]sf]struct{}
 	overlap   int
@@ -140,6 +148,7 @@ type PairFilter func(*Pair) bool
 // the feature pairs that have been added to the piler. Piles may be called more than once,
 // but the piles returned in earlier invocations will be altered by subsequent calls.
 func (p *Piler) Piles(f PairFilter) []*Pile {
+	var n int
 	if !p.piled {
 		for _, t := range p.intervals {
 			t.Do(func(e interval.IntInterface) (done bool) {
@@ -155,10 +164,15 @@ func (p *Piler) Piles(f PairFilter) []*Pile {
 				}
 				return
 			})
+			n++
+			if p.Logger != nil && p.LogFreq != 0 && n%p.LogFreq == 0 {
+				p.Logger.Printf("piled %d intervals of %d", n, len(p.intervals))
+			}
 		}
 		p.piled = true
 	}
 
+	n = 0
 	var piles []*Pile
 	for _, t := range p.intervals {
 		t.Do(func(e interval.IntInterface) (done bool) {
@@ -176,6 +190,10 @@ func (p *Piler) Piles(f PairFilter) []*Pile {
 			piles = append(piles, pa.pile)
 			return
 		})
+		n++
+		if p.Logger != nil && p.LogFreq != 0 && n%p.LogFreq == 0 {
+			p.Logger.Printf("filtered %d intervals of %d", n, len(p.intervals))
+		}
 	}
 
 	return piles
