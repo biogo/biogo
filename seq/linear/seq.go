@@ -196,7 +196,7 @@ func (s *Seq) Format(fs fmt.State, c rune) {
 		if e >= unicode.MaxASCII {
 			e = unicode.MaxASCII - 1
 		}
-		for _ = range buf {
+		for range buf {
 			fmt.Fprintf(fs, "%c", e)
 		}
 		if pOk && p < s.Len() {
