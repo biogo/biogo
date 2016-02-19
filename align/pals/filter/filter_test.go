@@ -5,6 +5,7 @@
 package filter
 
 import (
+	"sort"
 	"testing"
 
 	"gopkg.in/check.v1"
@@ -60,20 +61,26 @@ func (s *S) TestFilterAndMerge(c *check.C) {
 		}
 		r = append(r, Hit{})
 	}
-	c.Check(r, check.DeepEquals, []Hit{
-		{From: 0, To: 163, Diagonal: 32},
-		{From: 141, To: 247, Diagonal: 64},
-		{From: 237, To: 433, Diagonal: 1120},
-		{From: 241, To: 347, Diagonal: 96},
-		{From: 341, To: 452, Diagonal: 128},
-		{From: 447, To: 565, Diagonal: 1952},
-		{From: 542, To: 628, Diagonal: 1984},
-		{From: 627, To: 814, Diagonal: 2592},
-		{From: 786, To: 898, Diagonal: 2624},
-		{From: 868, To: 939, Diagonal: 2880},
-		{From: 938, To: 997, Diagonal: 3040},
-		{From: 938, To: 1024, Diagonal: 3072},
-	})
+	want := map[Hit]bool{
+		Hit{From: 0, To: 163, Diagonal: 32}:      true,
+		Hit{From: 141, To: 247, Diagonal: 64}:    true,
+		Hit{From: 237, To: 433, Diagonal: 1120}:  true,
+		Hit{From: 241, To: 347, Diagonal: 96}:    true,
+		Hit{From: 341, To: 452, Diagonal: 128}:   true,
+		Hit{From: 447, To: 565, Diagonal: 1952}:  true,
+		Hit{From: 542, To: 628, Diagonal: 1984}:  true,
+		Hit{From: 627, To: 814, Diagonal: 2592}:  true,
+		Hit{From: 786, To: 898, Diagonal: 2624}:  true,
+		Hit{From: 868, To: 939, Diagonal: 2880}:  true,
+		Hit{From: 938, To: 997, Diagonal: 3040}:  true,
+		Hit{From: 938, To: 1024, Diagonal: 3072}: true,
+	}
+	got := make(map[Hit]bool)
+	for _, h := range r {
+		got[h] = true
+	}
+	c.Check(got, check.DeepEquals, want)
+	c.Check(sort.IsSorted(hits(r)), check.Equals, true)
 	m := NewMerger(i, b, p, 5, false)
 	for _, h := range r {
 		m.MergeFilterHit(&h)
@@ -93,3 +100,9 @@ func (s *S) TestFilterAndMerge(c *check.C) {
 		{Top: 1024, Bottom: 938, Left: -3072, Right: -3005},
 	})
 }
+
+type hits []Hit
+
+func (h hits) Len() int           { return len(h) }
+func (h hits) Less(i, j int) bool { return h[i].Less(h[j]) }
+func (h hits) Swap(i, j int)      { h[i], h[j] = h[j], h[i] }
