@@ -102,8 +102,11 @@ func (a NW) alignLetters(rSeq, qSeq alphabet.Letters, alpha alphabet.Alphabet) (
 				rVal = index[rSeq[i-1]]
 				qVal = index[qSeq[j-1]]
 			)
-			if rVal < 0 || qVal < 0 {
-				continue
+			if rVal < 0 {
+				return nil, fmt.Errorf("align: illegal letter %q at position %d in rSeq", rSeq[i-1], i-1)
+			}
+			if qVal < 0 {
+				return nil, fmt.Errorf("align: illegal letter %q at position %d in qSeq", qSeq[j-1], j-1)
 			}
 			p := i*c + j
 			scores = [3]int{
@@ -127,9 +130,6 @@ func (a NW) alignLetters(rSeq, qSeq alphabet.Letters, alpha alphabet.Alphabet) (
 			rVal = index[rSeq[i-1]]
 			qVal = index[qSeq[j-1]]
 		)
-		if rVal < 0 || qVal < 0 {
-			continue
-		}
 		switch p := i*c + j; table[p] {
 		case table[p-c-1] + la[rVal*let+qVal]:
 			if last != diag {
