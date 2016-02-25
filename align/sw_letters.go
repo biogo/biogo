@@ -85,8 +85,7 @@ func (a SW) alignLetters(rSeq, qSeq alphabet.Letters, alpha alphabet.Alphabet) (
 
 		maxS, maxI, maxJ = 0, 0, 0
 
-		score  int
-		scores [3]int
+		score int
 	)
 
 	for i := 1; i < r; i++ {
@@ -102,15 +101,15 @@ func (a SW) alignLetters(rSeq, qSeq alphabet.Letters, alpha alphabet.Alphabet) (
 				return nil, fmt.Errorf("align: illegal letter %q at position %d in qSeq", qSeq[j-1], j-1)
 			}
 			p := i*c + j
-			scores = [3]int{
-				diag: table[p-c-1] + la[rVal*let+qVal],
-				up:   table[p-c] + la[rVal*let],
-				left: table[p-1] + la[qVal],
-			}
-			score = max(&scores)
+
+			diagScore := table[p-c-1] + la[rVal*let+qVal]
+			upScore := table[p-c] + la[rVal*let]
+			leftScore := table[p-1] + la[qVal]
+
+			score = max3(diagScore, upScore, leftScore)
 			switch {
 			case score > 0:
-				if score >= maxS && score == scores[diag] {
+				if score >= maxS && score == diagScore {
 					maxS, maxI, maxJ = score, i, j
 				}
 			default:

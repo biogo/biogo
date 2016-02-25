@@ -72,16 +72,6 @@ func (e ErrMatrixWrongSize) Error() string {
 	return fmt.Sprintf("align: scoring matrix size %d does not match alphabet length %d", e.Size, e.Len)
 }
 
-func max(a *[3]int) int {
-	m := minInt
-	for _, v := range a {
-		if v > m {
-			m = v
-		}
-	}
-	return m
-}
-
 func max3(a, b, c int) int {
 	if b > a {
 		a = b

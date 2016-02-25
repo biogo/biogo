@@ -95,7 +95,6 @@ func (a NW) alignLetters(rSeq, qSeq alphabet.Letters, alpha alphabet.Alphabet) (
 		table[i*c] = table[(i-1)*c] + la[index[rSeq[i-1]]*let]
 	}
 
-	var scores [3]int
 	for i := 1; i < r; i++ {
 		for j := 1; j < c; j++ {
 			var (
@@ -109,12 +108,12 @@ func (a NW) alignLetters(rSeq, qSeq alphabet.Letters, alpha alphabet.Alphabet) (
 				return nil, fmt.Errorf("align: illegal letter %q at position %d in qSeq", qSeq[j-1], j-1)
 			}
 			p := i*c + j
-			scores = [3]int{
-				diag: table[p-c-1] + la[rVal*let+qVal],
-				up:   table[p-c] + la[rVal*let],
-				left: table[p-1] + la[qVal],
-			}
-			table[p] = max(&scores)
+
+			diagScore := table[p-c-1] + la[rVal*let+qVal]
+			upScore := table[p-c] + la[rVal*let]
+			leftScore := table[p-1] + la[qVal]
+
+			table[p] = max3(diagScore, upScore, leftScore)
 		}
 	}
 	if debugNeedle {

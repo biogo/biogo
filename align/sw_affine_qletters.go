@@ -102,8 +102,7 @@ func (a SWAffine) alignQLetters(rSeq, qSeq alphabet.QLetters, alpha alphabet.Alp
 
 		maxS, maxI, maxJ = 0, 0, 0
 
-		score  int
-		scores [3]int
+		score int
 	)
 
 	for i := 1; i < r; i++ {
@@ -119,13 +118,13 @@ func (a SWAffine) alignQLetters(rSeq, qSeq alphabet.QLetters, alpha alphabet.Alp
 				return nil, fmt.Errorf("align: illegal letter %q at position %d in qSeq", qSeq[j-1].L, j-1)
 			}
 			p := i*c + j
-			scores = [3]int{
-				diag: table[p-c-1][diag],
-				up:   table[p-c-1][up],
-				left: table[p-c-1][left],
-			}
-			score = max(&scores)
-			matched := score == scores[diag]
+
+			diagScore := table[p-c-1][diag]
+			upScore := table[p-c-1][up]
+			leftScore := table[p-c-1][left]
+
+			score = max3(diagScore, upScore, leftScore)
+			matched := score == diagScore
 			score += la[rVal*let+qVal]
 			switch {
 			case score > 0:

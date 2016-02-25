@@ -131,7 +131,6 @@ func (a FittedAffine) alignLetters(rSeq, qSeq alphabet.Letters, alpha alphabet.A
 		}
 	}
 
-	var scores [3]int
 	for i := 1; i < r; i++ {
 		for j := 1; j < c; j++ {
 			var (
@@ -145,12 +144,12 @@ func (a FittedAffine) alignLetters(rSeq, qSeq alphabet.Letters, alpha alphabet.A
 				return nil, fmt.Errorf("align: illegal letter %q at position %d in qSeq", qSeq[j-1], j-1)
 			}
 			p := i*c + j
-			scores = [3]int{
-				diag: table[p-c-1][diag],
-				up:   table[p-c-1][up],
-				left: table[p-c-1][left],
-			}
-			table[p][diag] = max(&scores) + la[rVal*let+qVal]
+
+			diagScore := table[p-c-1][diag]
+			upScore := table[p-c-1][up]
+			leftScore := table[p-c-1][left]
+
+			table[p][diag] = max3(diagScore, upScore, leftScore) + la[rVal*let+qVal]
 
 			table[p][up] = max2(
 				add(table[p-c][diag], a.GapOpen+la[rVal*let]),
