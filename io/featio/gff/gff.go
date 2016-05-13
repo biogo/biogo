@@ -215,7 +215,7 @@ func (g *Feature) Name() string {
 func (g *Feature) Description() string    { return fmt.Sprintf("%s/%s", g.Feature, g.Source) }
 func (g *Feature) Location() feat.Feature { return Sequence{SeqName: g.SeqName} }
 
-func handlePanic(f feat.Feature, err *error) {
+func handlePanic(f *feat.Feature, err *error) {
 	r := recover()
 	if r != nil {
 		e, ok := r.(error)
@@ -226,7 +226,7 @@ func handlePanic(f feat.Feature, err *error) {
 			panic(r)
 		}
 		*err = e
-		f = nil
+		*f = nil
 	}
 }
 
@@ -476,7 +476,7 @@ func (r *Reader) metaSeq(moltype, id []byte) (seq.Sequence, error) {
 // Read reads a single feature or part and return it or an error. A call to read may
 // have side effects on the Reader's Metadata field.
 func (r *Reader) Read() (f feat.Feature, err error) {
-	defer handlePanic(f, &err)
+	defer handlePanic(&f, &err)
 
 	var line []byte
 	for {
