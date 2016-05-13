@@ -74,7 +74,7 @@ func (q *Phred) Encoding() alphabet.Encoding { return q.Encode }
 // Set the quality Encode type to e.
 func (q *Phred) SetEncoding(e alphabet.Encoding) error { q.Encode = e; return nil }
 
-// Return the lenght of the score sequence.
+// Return the length of the score sequence.
 func (q *Phred) Len() int { return len(q.Qual) }
 
 // Return the start position of the score sequence.

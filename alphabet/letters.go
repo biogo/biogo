@@ -9,7 +9,7 @@ import (
 	"unsafe"
 )
 
-// The Slice interface reflects the builtin slice type behaviour.
+// The Slice interface reflects the built-in slice type behavior.
 type Slice interface {
 	// Make makes a Slice with the same concrete type as the receiver. Make will
 	// panic if len or cap are less than zero or cap is less than len.
@@ -26,7 +26,7 @@ type Slice interface {
 	Slice(start, end int) Slice
 
 	// Append appends src... to the receiver and returns the resulting slice. If the append
-	// results in a grow slice the reciever will not reflect the appended slice, so the
+	// results in a grow slice the receiver will not reflect the appended slice, so the
 	// returned Slice should always be stored. Append should panic if src and the receiver
 	// are not the same concrete type.
 	Append(src Slice) Slice
@@ -62,7 +62,7 @@ const (
 	Illumina1_9                     // Phred+33
 )
 
-// DecodeToPhred interpets the byte q as an e encoded quality and returns the corresponding Phred score.
+// DecodeToPhred interprets the byte q as an e encoded quality and returns the corresponding Phred score.
 func (e Encoding) DecodeToQphred(q byte) Qphred {
 	switch e {
 	case Sanger, Illumina1_8, Illumina1_9:
@@ -78,7 +78,7 @@ func (e Encoding) DecodeToQphred(q byte) Qphred {
 	}
 }
 
-// DecodeToPhred interpets the byte q as an e encoded quality and returns the corresponding Solexa score.
+// DecodeToPhred interprets the byte q as an e encoded quality and returns the corresponding Solexa score.
 func (e Encoding) DecodeToQsolexa(q byte) Qsolexa {
 	switch e {
 	case Sanger, Illumina1_8, Illumina1_9:

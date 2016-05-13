@@ -60,7 +60,7 @@ func New(ki *kmerindex.Index, params *Params) (f *Filter) {
 }
 
 // Filter a query sequence against the stored index. If query and the target are the same sequence,
-// selfAlign can be used to avoid double seaching - behavior is undefined if the the sequences are not the same.
+// selfAlign can be used to avoid double searching - behavior is undefined if the the sequences are not the same.
 // A morass is used to store and sort individual filter hits.
 func (f *Filter) Filter(query *linear.Seq, selfAlign, complement bool, morass *morass.Morass) error {
 	f.selfAlign = selfAlign

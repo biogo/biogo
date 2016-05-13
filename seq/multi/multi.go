@@ -205,7 +205,7 @@ func (m *Multi) Append(i int, a ...alphabet.QLetter) (err error) {
 	return m.Row(i).(seq.Appender).AppendQLetters(a...)
 }
 
-// Append each byte of each a to the appropriate sequence in the reciever.
+// Append each byte of each a to the appropriate sequence in the receiver.
 func (m *Multi) AppendColumns(a ...[]alphabet.QLetter) (err error) {
 	for i, c := range a {
 		if len(c) != m.Rows() {
