@@ -98,6 +98,15 @@ var (
 		Orient: feat.Reverse,
 		Desc:   "reverse non coding transcript",
 	}
+	codingTranscriptE = CodingTranscript{
+		ID:       "E1",
+		Loc:      &geneB,
+		Offset:   500,
+		CDSstart: 300,
+		CDSend:   1300,
+		Orient:   feat.Forward,
+		Desc:     "forward transcript with cds on reverse gene",
+	}
 )
 
 // Tests for Gene
@@ -114,7 +123,7 @@ var geneTests = []struct {
 	TransCount  int
 }{
 	{
-		Test:        "forward gene with legit feats",
+		Test:        "forward gene with valid feats",
 		Gene:        &geneA,
 		Name:        "A",
 		Chrom:       "Y",
@@ -129,7 +138,7 @@ var geneTests = []struct {
 		TransCount: 2,
 	},
 	{
-		Test:        "reverse gene with legit feats",
+		Test:        "reverse gene with valid feats",
 		Gene:        &geneB,
 		Name:        "B",
 		Chrom:       "X",
@@ -193,7 +202,7 @@ var transcriptTests = []struct {
 	ExonicLen          int
 }{
 	{
-		Test:        "forward transcript with cds and legit exons",
+		Test:        "forward transcript with cds and valid exons",
 		Transcript:  &codingTranscriptA,
 		Name:        "A1",
 		Loc:         Chr("Y"),
@@ -213,7 +222,7 @@ var transcriptTests = []struct {
 		ExonicLen: 500,
 	},
 	{
-		Test:        "reverse transcript with cds and legit exons",
+		Test:        "reverse transcript with cds and valid exons",
 		Transcript:  &codingTranscriptB,
 		Name:        "B1",
 		Loc:         Chr("X"),
@@ -233,7 +242,27 @@ var transcriptTests = []struct {
 		ExonicLen: 1200,
 	},
 	{
-		Test:        "forward non cds transcript with legit exons",
+		Test:        "forward transcript with cds and valid exons on reverse gene",
+		Transcript:  &codingTranscriptE,
+		Name:        "E1",
+		Loc:         &geneB,
+		Orientation: feat.Forward,
+		Exons: []Exon{
+			{Transcript: &codingTranscriptE, Offset: 0, Length: 600},
+			{Transcript: &codingTranscriptE, Offset: 900, Length: 600}},
+		Start:     500,
+		End:       2000,
+		UTR3start: 0,
+		UTR3end:   300,
+		CDSstart:  300,
+		CDSend:    1300,
+		UTR5start: 1300,
+		UTR5end:   1500,
+		Len:       1500,
+		ExonicLen: 1200,
+	},
+	{
+		Test:        "forward non-coding transcript with valid exons",
 		Transcript:  &nonCodingTranscriptA,
 		Name:        "C1",
 		Loc:         Chr("Y"),
@@ -247,7 +276,7 @@ var transcriptTests = []struct {
 		ExonicLen: 500,
 	},
 	{
-		Test:        "reverse non cds transcript without exon at 0",
+		Test:        "reverse non-coding transcript without exon at 0",
 		Transcript:  &nonCodingTranscriptB,
 		Orientation: feat.Reverse,
 		Exons: []Exon{
@@ -255,7 +284,7 @@ var transcriptTests = []struct {
 		AddErr: "no exon with a zero start",
 	},
 	{
-		Test:        "reverse non cds transcript with wrong exon location",
+		Test:        "reverse non-coding transcript with wrong exon location",
 		Transcript:  &nonCodingTranscriptB,
 		Orientation: feat.Reverse,
 		Exons:       []Exon{{Offset: 0, Length: 10000}},
