@@ -52,11 +52,11 @@ func TranscriptsOf(s feat.Set) []Transcript {
 
 // A Gene occupies a specific region on the genome and may have 0 or more
 // features, including transcripts, associated with it. The gene is tightly
-// coupled with its fetures in the sense that the gene boundaries are defined
-// by the features. By definition one of the fetures must always start at
+// coupled with its features in the sense that the gene boundaries are defined
+// by the features. By definition one of the features must always start at
 // position 0 relative to the gene and this or another one has to end at the
 // end of the gene. The former is asserted when features are set and the
-// latter is guarranted by setting the gene end at the largest end of the
+// latter is guaranteed by setting the gene end at the largest end of the
 // features.
 type Gene struct {
 	ID     string
@@ -119,12 +119,12 @@ func (g *Gene) SetFeatures(feats ...feat.Feature) error {
 
 // A NonCodingTranscript is a gene transcript that has no coding potential. It
 // can be located on any feat.Feature such as a gene or a chromosome. The
-// concept of exons is tighly coupled with the NonCodingTranscript in the
+// concept of exons is tightly coupled with the NonCodingTranscript in the
 // sense that the transcript borders are basically defined by the contained
 // exons. By definition one of the exons must always start at position 0
 // relative to the transcript and this or another one must end at the end of
 // transcript. The former is asserted when exons are set and the latter is
-// guarranted by setting the transcript end at the end of the last exon.
+// guaranteed by setting the transcript end at the end of the last exon.
 type NonCodingTranscript struct {
 	ID     string
 	Loc    feat.Feature
@@ -177,11 +177,11 @@ func (t *NonCodingTranscript) SetExons(exons ...Exon) error {
 
 // A CodingTranscript is a gene transcript that has coding potential. It can
 // be located on any feat.Feature such as a gene or a chromosome. The concept
-// of exons is tighly coupled with the CodingTranscript in the sense that
+// of exons is tightly coupled with the CodingTranscript in the sense that
 // the transcript borders are basically defined by the contained exons. By
 // definition one of the exons must always start at position 0 relative to the
 // transcript and this or another one must end at the transcript end. The
-// former is asserted when exons are set and the latter is guarranted by
+// former is asserted when exons are set and the latter is guaranteed by
 // setting the transcript end at the end of the last exon.
 type CodingTranscript struct {
 	ID       string
@@ -220,42 +220,50 @@ func (t *CodingTranscript) Orientation() feat.Orientation {
 
 // UTR5start returns the start of the 5'UTR relative to the transcript.
 func (t *CodingTranscript) UTR5start() int {
-	if t.Orient == feat.Forward {
+	ori, _ := feat.BaseOrientationOf(t)
+	switch ori {
+	case feat.Forward:
 		return 0
-	} else if t.Orient == feat.Reverse {
+	case feat.Reverse:
 		return t.CDSend
 	}
-	panic("zero orientation for transcript")
+	panic("gene: zero orientation for transcript")
 }
 
 // UTR5end returns the end of the 5'UTR relative to the transcript.
 func (t *CodingTranscript) UTR5end() int {
-	if t.Orient == feat.Forward {
+	ori, _ := feat.BaseOrientationOf(t)
+	switch ori {
+	case feat.Forward:
 		return t.CDSstart
-	} else if t.Orient == feat.Reverse {
+	case feat.Reverse:
 		return t.Len()
 	}
-	panic("zero orientation for transcript")
+	panic("gene: zero orientation for transcript")
 }
 
-// UTR3start returns the start of the 3'UTR relative to the trnscript.
+// UTR3start returns the start of the 3'UTR relative to the transcript.
 func (t *CodingTranscript) UTR3start() int {
-	if t.Orient == feat.Forward {
+	ori, _ := feat.BaseOrientationOf(t)
+	switch ori {
+	case feat.Forward:
 		return t.CDSend
-	} else if t.Orient == feat.Reverse {
+	case feat.Reverse:
 		return 0
 	}
-	panic("zero orientation for transcript")
+	panic("gene: zero orientation for transcript")
 }
 
-// UTR3end returns the end of the 3'UTR relative to the trnscript.
+// UTR3end returns the end of the 3'UTR relative to the transcript.
 func (t *CodingTranscript) UTR3end() int {
-	if t.Orient == feat.Forward {
+	ori, _ := feat.BaseOrientationOf(t)
+	switch ori {
+	case feat.Forward:
 		return t.Len()
-	} else if t.Orient == feat.Reverse {
+	case feat.Reverse:
 		return t.CDSstart
 	}
-	panic("zero orientation for transcript")
+	panic("gene: zero orientation for transcript")
 }
 
 // Exons returns a typed slice with the transcript exons.
@@ -354,7 +362,7 @@ func (s Exons) Start() int {
 	return s[0].Start()
 }
 
-// Introns returns a typed slice of Introns. Iintrons are built dynamically.
+// Introns returns a typed slice of Introns. Introns are built dynamically.
 func (s Exons) Introns() Introns {
 	var introns Introns
 	if s.Len() < 2 {
