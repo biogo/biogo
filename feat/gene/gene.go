@@ -227,7 +227,7 @@ func (t *CodingTranscript) UTR5start() int {
 	case feat.Reverse:
 		return t.CDSend
 	}
-	panic("zero orientation for transcript")
+	panic("gene: zero orientation for transcript")
 }
 
 // UTR5end returns the end of the 5'UTR relative to the transcript.
@@ -239,7 +239,7 @@ func (t *CodingTranscript) UTR5end() int {
 	case feat.Reverse:
 		return t.Len()
 	}
-	panic("zero orientation for transcript")
+	panic("gene: zero orientation for transcript")
 }
 
 // UTR3start returns the start of the 3'UTR relative to the transcript.
@@ -251,7 +251,7 @@ func (t *CodingTranscript) UTR3start() int {
 	case feat.Reverse:
 		return 0
 	}
-	panic("zero orientation for transcript")
+	panic("gene: zero orientation for transcript")
 }
 
 // UTR3end returns the end of the 3'UTR relative to the transcript.
@@ -263,7 +263,7 @@ func (t *CodingTranscript) UTR3end() int {
 	case feat.Reverse:
 		return t.CDSstart
 	}
-	panic("zero orientation for transcript")
+	panic("gene: zero orientation for transcript")
 }
 
 // Exons returns a typed slice with the transcript exons.

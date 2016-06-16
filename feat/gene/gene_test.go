@@ -87,11 +87,11 @@ var (
 		ID: "geneC",
 		Chrom: ori{
 			start:  0,
-			end:    1000,
+			end:    800,
 			orient: feat.Reverse,
 			loc: ori{
 				start:  0,
-				end:    1000,
+				end:    900,
 				orient: feat.Forward,
 				loc: ori{
 					start:  0,
@@ -284,18 +284,18 @@ var transcriptTests = []struct {
 		Loc:         &geneC,
 		Orientation: feat.Forward,
 		Exons: []Exon{
-			{Transcript: &codingTranscriptC, Offset: 0, Length: 600},
-			{Transcript: &codingTranscriptC, Offset: 700, Length: 100}},
+			{Transcript: &codingTranscriptC, Offset: 0, Length: 500},
+			{Transcript: &codingTranscriptC, Offset: 600, Length: 100}},
 		Start:     20,
-		End:       820,
+		End:       720,
 		UTR3start: 0,
 		UTR3end:   100,
 		CDSstart:  100,
 		CDSend:    500,
 		UTR5start: 500,
-		UTR5end:   800,
-		Len:       800,
-		ExonicLen: 700,
+		UTR5end:   700,
+		Len:       700,
+		ExonicLen: 600,
 	},
 	{
 		Test:        "forward non-coding transcript with valid exons",
