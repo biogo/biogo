@@ -9,6 +9,7 @@ authors:
    orcid: 0000-0001-8295-2301
    affiliation: 1
  - name: Josh Bleecher Snyder
+   orcid: 0000-0001-8327-7643
  - name: Manolis Maragkakis
    orcid: 0000-0002-3158-1763
    affiliation: 2
