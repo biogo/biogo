@@ -1,0 +1,44 @@
+{
+  "@context": "https://raw.githubusercontent.com/mbjones/codemeta/master/codemeta.jsonld",
+  "@type": "Code",
+  "author": [
+    {
+      "@id": "http://orcid.org/0000-0001-8295-2301",
+      "@type": "Person",
+      "email": "dan.kortschak@adelaide.edu.au",
+      "name": "R Daniel Kortschak",
+      "affiliation": "School of Biology, The University of Adelaide"
+    },
+    {
+      "@id": "http://orcid.org/0000-0001-8327-7643",
+      "@type": "Person",
+      "email": "josharian@gmail.com",
+      "name": "Josh Bleecher Snyder",
+      "affiliation": ""
+    },
+    {
+      "@id": "http://orcid.org/0000-0002-3158-1763",
+      "@type": "Person",
+      "email": "emarag@mail.med.upenn.edu",
+      "name": "Manolis Maragkakis",
+      "affiliation": "Department of Pathology and Laboratory Medicine, Perelman School of Medicine, University of Pennsylvania"
+    },
+    {
+      "@id": "http://orcid.org/0000-0003-2404-5636",
+      "@type": "Person",
+      "email": "david.adelson@adelaide.edu.au",
+      "name": "David L Adelson",
+      "affiliation": "School of Biology, The University of Adelaide"
+    }
+  ],
+  "identifier": "",
+  "codeRepository": "https://github.com/biogo/biogo",
+  "datePublished": "2017-01-05",
+  "dateModified": "2017-01-05",
+  "dateCreated": "2017-01-05",
+  "description": "a simple high-performance bioinformatics toolkit for the Go language",
+  "keywords": "bioinformatics, toolkit, golang",
+  "license": "BSD-3 like",
+  "title": "bíogo",
+  "version": "v1.0.0"
+}
