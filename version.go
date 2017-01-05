@@ -4,4 +4,4 @@
 
 package biogo
 
-const Version = "beta"
+const Version = "v1.0.0"
