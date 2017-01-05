@@ -80,6 +80,9 @@ func (f *Feature) Mate() *Feature {
 
 // A Pile is a collection of features covering a maximal (potentially contiguous, depending on
 // the value of overlap used for creation of the Piler) region of copy count > 0.
+//
+// The graph.Node interface support of Pile is subject to change.
+// TODO(kortschak): Replace biogo/graph use with gonum/graph.
 type Pile struct {
 	From   int
 	To     int
