@@ -17,7 +17,7 @@ authors:
    orcid: 0000-0003-2404-5636
    affiliation: 1
 affiliations:
- - name: School of Biology, The University of Adelaide
+ - name: School of Biological Sciences, The University of Adelaide
    index: 1
  - name: Department of Pathology and Laboratory Medicine, Perelman School of Medicine, University of Pennsylvania
    index: 2
