@@ -19,6 +19,7 @@ var (
 	_ feat.Feature = (*CodingTranscript)(nil)
 	_ feat.Feature = (*Exon)(nil)
 	_ feat.Feature = (*Intron)(nil)
+	_ feat.Feature = (*TranscriptFeature)(nil)
 
 	_ featureOrienter = (*Gene)(nil)
 	_ featureOrienter = (*NonCodingTranscript)(nil)
