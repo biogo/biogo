@@ -276,21 +276,25 @@ func (t *CodingTranscript) UTR3() feat.Feature {
 }
 
 // UTR5start returns the start of the 5'UTR relative to the transcript.
+// Deprecated: New code should use t.UTR5().Start() instead.
 func (t *CodingTranscript) UTR5start() int {
 	return t.UTR5().Start()
 }
 
 // UTR5end returns the end of the 5'UTR relative to the transcript.
+// Deprecated: New code should use t.UTR5().End() instead.
 func (t *CodingTranscript) UTR5end() int {
 	return t.UTR5().End()
 }
 
 // UTR3start returns the start of the 3'UTR relative to the transcript.
+// Deprecated: New code should use t.UTR3().Start() instead.
 func (t *CodingTranscript) UTR3start() int {
 	return t.UTR3().Start()
 }
 
 // UTR3end returns the end of the 3'UTR relative to the transcript.
+// Deprecated: New code should use t.UTR3().End() instead.
 func (t *CodingTranscript) UTR3end() int {
 	return t.UTR3().End()
 }
@@ -316,11 +320,12 @@ func (t *CodingTranscript) SetExons(exons ...Exon) error {
 
 // TranscriptFeature defines a feature on a transcript.
 type TranscriptFeature struct {
-	Transcript Transcript
-	Offset     int
-	Length     int
-	Orient     feat.Orientation
-	Desc       string
+	Transcript Transcript       // Transcript is the transcript that the feature is located.
+	Offset     int              // Offset is the position of the feature relative to Transcript.
+	Length     int              // Length is the feature length.
+	Orient     feat.Orientation // Orientation is the feature orientation relative to Transcript.
+	FeatName   string           // FeatName is the name of the feature.
+	Desc       string           // Desc is the description of the feature.
 }
 
 // Start returns the feature start relative to Transcript.
@@ -333,7 +338,7 @@ func (t *TranscriptFeature) End() int { return t.Offset + t.Length }
 func (t *TranscriptFeature) Len() int { return t.Length }
 
 // Name returns an empty string.
-func (t *TranscriptFeature) Name() string { return "" }
+func (t *TranscriptFeature) Name() string { return t.FeatName }
 
 // Description returns the feature description.
 func (t *TranscriptFeature) Description() string { return t.Desc }
