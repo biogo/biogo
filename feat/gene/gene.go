@@ -221,24 +221,19 @@ func (t *CodingTranscript) Orientation() feat.Orientation {
 // UTR5 returns a feat.Feature that corresponds to the 5'UTR of the
 // transcript.
 func (t *CodingTranscript) UTR5() feat.Feature {
-	var start, end int
+	tf := &TranscriptFeature{Transcript: t, Orient: feat.Forward}
 	ori, _ := feat.BaseOrientationOf(t)
 	switch ori {
 	case feat.Forward:
-		start = 0
-		end = t.CDSstart
+		tf.Offset = 0
+		tf.Length = t.CDSstart
 	case feat.Reverse:
-		start = t.CDSend
-		end = t.Len()
+		tf.Offset = t.CDSend
+		tf.Length = t.Len() - t.CDSend
 	default:
-		panic("gene: zero orientation for transcript")
+		panic("gene: invalid base orientation for transcript")
 	}
-	return &TranscriptFeature{
-		Transcript: t,
-		Offset:     start,
-		Length:     end - start,
-		Orient:     feat.Forward,
-	}
+	return tf
 }
 
 // CDS returns a feat.Feature that corresponds to the coding region of the
@@ -255,46 +250,41 @@ func (t *CodingTranscript) CDS() feat.Feature {
 // UTR3 returns a feat.Feature that corresponds to the 3'UTR of the
 // transcript.
 func (t *CodingTranscript) UTR3() feat.Feature {
-	var start, end int
+	tf := &TranscriptFeature{Transcript: t, Orient: feat.Forward}
 	ori, _ := feat.BaseOrientationOf(t)
 	switch ori {
 	case feat.Forward:
-		start = t.CDSend
-		end = t.Len()
+		tf.Offset = t.CDSend
+		tf.Length = t.Len() - t.CDSend
 	case feat.Reverse:
-		start = 0
-		end = t.CDSstart
+		tf.Offset = 0
+		tf.Length = t.CDSstart
 	default:
-		panic("gene: zero orientation for transcript")
+		panic("gene: invalid base orientation for transcript")
 	}
-	return &TranscriptFeature{
-		Transcript: t,
-		Offset:     start,
-		Length:     end - start,
-		Orient:     feat.Forward,
-	}
+	return tf
 }
 
 // UTR5start returns the start of the 5'UTR relative to the transcript.
-// Deprecated: New code should use t.UTR5().Start() instead.
+// UTR5start is shorthand for t.UTR5().Start().
 func (t *CodingTranscript) UTR5start() int {
 	return t.UTR5().Start()
 }
 
 // UTR5end returns the end of the 5'UTR relative to the transcript.
-// Deprecated: New code should use t.UTR5().End() instead.
+// UTR5end is shorthand for t.UTR5().End().
 func (t *CodingTranscript) UTR5end() int {
 	return t.UTR5().End()
 }
 
 // UTR3start returns the start of the 3'UTR relative to the transcript.
-// Deprecated: New code should use t.UTR3().Start() instead.
+// UTR3start is shorthand for t.UTR3().Start().
 func (t *CodingTranscript) UTR3start() int {
 	return t.UTR3().Start()
 }
 
 // UTR3end returns the end of the 3'UTR relative to the transcript.
-// Deprecated: New code should use t.UTR3().End() instead.
+// UTR3end is shorthand for t.UTR3().End().
 func (t *CodingTranscript) UTR3end() int {
 	return t.UTR3().End()
 }

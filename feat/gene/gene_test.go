@@ -26,6 +26,7 @@ var (
 	_ featureOrienter = (*CodingTranscript)(nil)
 	_ featureOrienter = (*Exon)(nil)
 	_ featureOrienter = (*Intron)(nil)
+	_ featureOrienter = (*TranscriptFeature)(nil)
 
 	_ Transcript = (*NonCodingTranscript)(nil)
 	_ Transcript = (*CodingTranscript)(nil)
@@ -348,6 +349,17 @@ func (s *S) TestTranscript(c *check.C) {
 
 			// Test CodingTranscript specifics
 			if t, ok := t.(*CodingTranscript); ok {
+				utr5, cds, utr3 := t.UTR5(), t.CDS(), t.UTR3()
+				c.Check(utr5.Start(), check.Equals, d.UTR5start)
+				c.Check(utr5.End(), check.Equals, d.UTR5end)
+				c.Check(utr5.Location(), check.Equals, t)
+				c.Check(cds.Start(), check.Equals, d.CDSstart)
+				c.Check(cds.End(), check.Equals, d.CDSend)
+				c.Check(cds.Location(), check.Equals, t)
+				c.Check(utr3.Start(), check.Equals, d.UTR3start)
+				c.Check(utr3.End(), check.Equals, d.UTR3end)
+				c.Check(utr3.Location(), check.Equals, t)
+
 				c.Check(t.CDSstart, check.Equals, d.CDSstart)
 				c.Check(t.CDSend, check.Equals, d.CDSend)
 				c.Check(t.UTR5start(), check.Equals, d.UTR5start)
