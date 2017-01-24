@@ -218,52 +218,75 @@ func (t *CodingTranscript) Orientation() feat.Orientation {
 	return t.Orient
 }
 
-// UTR5start returns the start of the 5'UTR relative to the transcript.
-func (t *CodingTranscript) UTR5start() int {
+// UTR5 returns a feat.Feature that corresponds to the 5'UTR of the
+// transcript.
+func (t *CodingTranscript) UTR5() feat.Feature {
+	tf := &TranscriptFeature{Transcript: t, Orient: feat.Forward}
 	ori, _ := feat.BaseOrientationOf(t)
 	switch ori {
 	case feat.Forward:
-		return 0
+		tf.Offset = 0
+		tf.Length = t.CDSstart
 	case feat.Reverse:
-		return t.CDSend
+		tf.Offset = t.CDSend
+		tf.Length = t.Len() - t.CDSend
+	default:
+		panic("gene: invalid base orientation for transcript")
 	}
-	panic("gene: zero orientation for transcript")
+	return tf
+}
+
+// CDS returns a feat.Feature that corresponds to the coding region of the
+// transcript.
+func (t *CodingTranscript) CDS() feat.Feature {
+	return &TranscriptFeature{
+		Transcript: t,
+		Offset:     t.CDSstart,
+		Length:     t.CDSend - t.CDSstart,
+		Orient:     feat.Forward,
+	}
+}
+
+// UTR3 returns a feat.Feature that corresponds to the 3'UTR of the
+// transcript.
+func (t *CodingTranscript) UTR3() feat.Feature {
+	tf := &TranscriptFeature{Transcript: t, Orient: feat.Forward}
+	ori, _ := feat.BaseOrientationOf(t)
+	switch ori {
+	case feat.Forward:
+		tf.Offset = t.CDSend
+		tf.Length = t.Len() - t.CDSend
+	case feat.Reverse:
+		tf.Offset = 0
+		tf.Length = t.CDSstart
+	default:
+		panic("gene: invalid base orientation for transcript")
+	}
+	return tf
+}
+
+// UTR5start returns the start of the 5'UTR relative to the transcript.
+// UTR5start is shorthand for t.UTR5().Start().
+func (t *CodingTranscript) UTR5start() int {
+	return t.UTR5().Start()
 }
 
 // UTR5end returns the end of the 5'UTR relative to the transcript.
+// UTR5end is shorthand for t.UTR5().End().
 func (t *CodingTranscript) UTR5end() int {
-	ori, _ := feat.BaseOrientationOf(t)
-	switch ori {
-	case feat.Forward:
-		return t.CDSstart
-	case feat.Reverse:
-		return t.Len()
-	}
-	panic("gene: zero orientation for transcript")
+	return t.UTR5().End()
 }
 
 // UTR3start returns the start of the 3'UTR relative to the transcript.
+// UTR3start is shorthand for t.UTR3().Start().
 func (t *CodingTranscript) UTR3start() int {
-	ori, _ := feat.BaseOrientationOf(t)
-	switch ori {
-	case feat.Forward:
-		return t.CDSend
-	case feat.Reverse:
-		return 0
-	}
-	panic("gene: zero orientation for transcript")
+	return t.UTR3().Start()
 }
 
 // UTR3end returns the end of the 3'UTR relative to the transcript.
+// UTR3end is shorthand for t.UTR3().End().
 func (t *CodingTranscript) UTR3end() int {
-	ori, _ := feat.BaseOrientationOf(t)
-	switch ori {
-	case feat.Forward:
-		return t.Len()
-	case feat.Reverse:
-		return t.CDSstart
-	}
-	panic("gene: zero orientation for transcript")
+	return t.UTR3().End()
 }
 
 // Exons returns a typed slice with the transcript exons.
@@ -283,6 +306,39 @@ func (t *CodingTranscript) SetExons(exons ...Exon) error {
 	}
 	t.exons = newExons
 	return nil
+}
+
+// TranscriptFeature defines a feature on a transcript.
+type TranscriptFeature struct {
+	Transcript Transcript       // Transcript is the transcript that the feature is located.
+	Offset     int              // Offset is the position of the feature relative to Transcript.
+	Length     int              // Length is the feature length.
+	Orient     feat.Orientation // Orientation is the feature orientation relative to Transcript.
+	FeatName   string           // FeatName is the name of the feature.
+	Desc       string           // Desc is the description of the feature.
+}
+
+// Start returns the feature start relative to Transcript.
+func (t *TranscriptFeature) Start() int { return t.Offset }
+
+// End returns the feature end relative to TranscriptLocation.
+func (t *TranscriptFeature) End() int { return t.Offset + t.Length }
+
+// Len returns the length of the feature.
+func (t *TranscriptFeature) Len() int { return t.Length }
+
+// Name returns an empty string.
+func (t *TranscriptFeature) Name() string { return t.FeatName }
+
+// Description returns the feature description.
+func (t *TranscriptFeature) Description() string { return t.Desc }
+
+// Location returns the Transcript.
+func (t *TranscriptFeature) Location() feat.Feature { return t.Transcript }
+
+// Orientation returns the orientation of the feature relative to Transcript.
+func (t *TranscriptFeature) Orientation() feat.Orientation {
+	return t.Orient
 }
 
 // Exons is a typed slice of Exon. It guarantees that exons are always sorted
