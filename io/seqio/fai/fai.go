@@ -52,11 +52,11 @@ func (r Record) Position(p int) int64 {
 }
 
 func mustAtoi(fields []string, index, line int) int {
-	i, err := strconv.Atoi(fields[index])
+	i, err := strconv.ParseInt(fields[index], 10, 0)
 	if err != nil {
 		panic(&csv.ParseError{Line: line, Column: index, Err: err})
 	}
-	return i
+	return int(i)
 }
 
 func mustAtoi64(fields []string, index, line int) int64 {
