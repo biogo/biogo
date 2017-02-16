@@ -4,7 +4,7 @@ go:
  - 1.5.4
  - 1.6.4
  - 1.7.4
- - 1.8rc2
+ - 1.8
 
 # Get deps, build, test, and ensure the code is gofmt'ed.
 script:
