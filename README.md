@@ -1,15 +1,15 @@
 ![bíogo](https://raw.githubusercontent.com/biogo/biogo/master/biogo.png)
 
-#bíogo
+# bíogo
 
 [![GoDoc](https://godoc.org/github.com/biogo/biogo?status.png)](http://godoc.org/github.com/biogo/biogo)
 [![Build Status](https://travis-ci.org/biogo/biogo.svg?branch=master)](https://travis-ci.org/biogo/biogo)
 
-##Installation
+## Installation
 
         $ go get github.com/biogo/biogo/...
 
-##Overview
+## Overview
 
 bíogo is a bioinformatics library for the Go language.
 
@@ -17,7 +17,7 @@ bíogo is a bioinformatics library for the Go language.
 
 If you use bíogo, please cite Kortschak, Snyder, Maragkakis and Adelson "bíogo: a simple high-performance bioinformatics toolkit for the Go language", doi:[10.21105/joss.00167](http://dx.doi.org/10.21105/joss.00167), and Kortschak and Adelson "bíogo: a simple high-performance bioinformatics toolkit for the Go language", doi:[10.1101/005033](http://biorxiv.org/content/early/2014/05/12/005033).
 
-##The Purpose of bíogo
+## The Purpose of bíogo
 
 bíogo stems from the need to address the size and structure of modern genomic
 and metagenomic data sets. These properties enforce requirements on the
@@ -58,7 +58,7 @@ release.
 
 [Using and extending types in bíogo](http://talks.godoc.org/github.com/biogo/talks/types/types.article)
 
-##Yet Another Bioinformatics Library
+## Yet Another Bioinformatics Library
 
 It seems that nearly every language has it own bioinformatics library, some of
 which are very mature, for example [BioPerl](http://bioperl.org) and
@@ -104,14 +104,14 @@ research software for computationally intensive tasks.
 6. SeqAn
     http://www.biomedcentral.com/1471-2105/9/11
 
-##Library Structure and Coding Style
+## Library Structure and Coding Style
 
 The bíogo library structure is influenced both by the Go core library.
 
 The coding style should be aligned with normal Go idioms as represented in the
 Go core libraries.
 
-##Quality Scores
+## Quality Scores
 
 Quality scores are supported for all sequence types, including protein. Phred
 and Solexa scoring systems are able to be read from files, however internal
@@ -119,7 +119,7 @@ representation of quality scores is with Phred, so there will be precision loss
 in conversion. A Solexa quality score type is provided for use where this will
 be a problem.
 
-##Copyright and License
+## Copyright and License
 
 Copyright ©2011-2013 The bíogo Authors except where otherwise noted. All rights
 reserved. Use of this source code is governed by a BSD-style license that can be
