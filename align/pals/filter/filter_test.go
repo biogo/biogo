@@ -62,18 +62,18 @@ func (s *S) TestFilterAndMerge(c *check.C) {
 		r = append(r, Hit{})
 	}
 	want := map[Hit]bool{
-		Hit{From: 0, To: 163, Diagonal: 32}:      true,
-		Hit{From: 141, To: 247, Diagonal: 64}:    true,
-		Hit{From: 237, To: 433, Diagonal: 1120}:  true,
-		Hit{From: 241, To: 347, Diagonal: 96}:    true,
-		Hit{From: 341, To: 452, Diagonal: 128}:   true,
-		Hit{From: 447, To: 565, Diagonal: 1952}:  true,
-		Hit{From: 542, To: 628, Diagonal: 1984}:  true,
-		Hit{From: 627, To: 814, Diagonal: 2592}:  true,
-		Hit{From: 786, To: 898, Diagonal: 2624}:  true,
-		Hit{From: 868, To: 939, Diagonal: 2880}:  true,
-		Hit{From: 938, To: 997, Diagonal: 3040}:  true,
-		Hit{From: 938, To: 1024, Diagonal: 3072}: true,
+		{From: 0, To: 163, Diagonal: 32}:      true,
+		{From: 141, To: 247, Diagonal: 64}:    true,
+		{From: 237, To: 433, Diagonal: 1120}:  true,
+		{From: 241, To: 347, Diagonal: 96}:    true,
+		{From: 341, To: 452, Diagonal: 128}:   true,
+		{From: 447, To: 565, Diagonal: 1952}:  true,
+		{From: 542, To: 628, Diagonal: 1984}:  true,
+		{From: 627, To: 814, Diagonal: 2592}:  true,
+		{From: 786, To: 898, Diagonal: 2624}:  true,
+		{From: 868, To: 939, Diagonal: 2880}:  true,
+		{From: 938, To: 997, Diagonal: 3040}:  true,
+		{From: 938, To: 1024, Diagonal: 3072}: true,
 	}
 	got := make(map[Hit]bool)
 	for _, h := range r {
