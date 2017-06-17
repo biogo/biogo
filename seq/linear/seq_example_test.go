@@ -34,7 +34,7 @@ func ExampleSeq_Validate() {
 	//     ^ first invalid RNA position
 }
 
-func ExampleSeq_truncate_1() {
+func ExampleSeq_truncate_a() {
 	s := NewSeq("example DNA", []alphabet.Letter("ACGCTGACTTGGTGCACGT"), alphabet.DNA)
 	fmt.Printf("%-s\n", s)
 	if err := sequtils.Truncate(s, s, 5, 12); err == nil {
@@ -45,7 +45,7 @@ func ExampleSeq_truncate_1() {
 	// GACTTGG
 }
 
-func ExampleSeq_truncate_2() {
+func ExampleSeq_truncate_b() {
 	var s *Seq
 
 	s = NewSeq("example DNA", []alphabet.Letter("ACGCTGACTTGGTGCACGT"), alphabet.DNA)
