@@ -34,7 +34,7 @@ func ExampleSeq_Validate() {
 	//     ^ first invalid RNA position
 }
 
-func ExampleSeq_Truncate_1() {
+func ExampleSeq_truncate_1() {
 	s := NewSeq("example DNA", []alphabet.Letter("ACGCTGACTTGGTGCACGT"), alphabet.DNA)
 	fmt.Printf("%-s\n", s)
 	if err := sequtils.Truncate(s, s, 5, 12); err == nil {
@@ -45,7 +45,7 @@ func ExampleSeq_Truncate_1() {
 	// GACTTGG
 }
 
-func ExampleSeq_Truncate_2() {
+func ExampleSeq_truncate_2() {
 	var s *Seq
 
 	s = NewSeq("example DNA", []alphabet.Letter("ACGCTGACTTGGTGCACGT"), alphabet.DNA)
@@ -81,7 +81,7 @@ func ExampleSeq_RevComp() {
 	// ACGTGCACCAAGTCaGCAT
 }
 
-func ExampleSeq_Join() {
+func ExampleSeq_join() {
 	var s1, s2 *Seq
 
 	s1 = NewSeq("a", []alphabet.Letter("agctgtgctga"), alphabet.DNA)
@@ -117,7 +117,7 @@ type fs []feat.Feature
 
 func (f fs) Features() []feat.Feature { return []feat.Feature(f) }
 
-func ExampleSeq_Stitch() {
+func ExampleSeq_stitch() {
 	s := NewSeq("example DNA", []alphabet.Letter("aAGTATAAgtcagtgcagtgtctggcagTGCTCGTGCgtagtgaagtagGGTTAGTTTa"), alphabet.DNA)
 	f := fs{
 		fe{s: 1, e: 8},
@@ -133,7 +133,7 @@ func ExampleSeq_Stitch() {
 	// AGTATAATGCTCGTGCGGTTAGTTT
 }
 
-func ExampleSeq_Compose() {
+func ExampleSeq_compose() {
 	s := NewSeq("example DNA", []alphabet.Letter("aAGTATAAgtcagtgcagtgtctggcag<TS>gtagtgaagtagggttagttta"), alphabet.DNA)
 	f := fs{
 		fe{s: 0, e: 32},

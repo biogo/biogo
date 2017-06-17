@@ -11,7 +11,7 @@ import (
 	"fmt"
 )
 
-func ExampleSW_Align_1() {
+func ExampleSW_Align_a() {
 	swsa := &linear.Seq{Seq: alphabet.BytesToLetters([]byte("ACACACTA"))}
 	swsa.Alpha = alphabet.DNAgapped
 	swsb := &linear.Seq{Seq: alphabet.BytesToLetters([]byte("AGCACACA"))}
@@ -40,7 +40,7 @@ func ExampleSW_Align_1() {
 	// AGCACAC-A
 }
 
-func ExampleSW_Align_2() {
+func ExampleSW_Align_b() {
 	swsa := &linear.Seq{Seq: alphabet.BytesToLetters([]byte("AAAATTTAAAA"))}
 	swsa.Alpha = alphabet.DNAgapped
 	swsb := &linear.Seq{Seq: alphabet.BytesToLetters([]byte("AAAAGGGAAAA"))}

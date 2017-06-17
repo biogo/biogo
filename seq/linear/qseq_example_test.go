@@ -31,7 +31,7 @@ func ExampleQSeq_Validate() {
 	//     ^ first invalid RNA position
 }
 
-func ExampleQSeq_Append() {
+func ExampleQSeq_AppendQLetters() {
 	q := []alphabet.Qphred{
 		1, 13, 19, 22, 19, 18, 20, 23, 23, 20, 16, 21, 24, 22, 22, 18, 17, 18, 22, 23, 22, 24, 22, 24, 20, 15,
 		18, 18, 19, 19, 20, 12, 18, 17, 20, 20, 20, 18, 15, 18, 24, 21, 13, 8, 15, 20, 20, 19, 20, 20, 20, 18,

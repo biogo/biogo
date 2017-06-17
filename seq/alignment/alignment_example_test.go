@@ -98,7 +98,7 @@ func ExampleSeq_Add() {
 	// 4 acgctgacntggcgcncat
 }
 
-func ExampleSeq_Copy() {
+func ExampleSeq_Clone() {
 	n = m.Clone().(*Seq)
 	n.Row(2).Set(3, alphabet.QLetter{L: 't'})
 	fmt.Printf("%-s\n\n%-s\n\n", m, m.Consensus(false))
@@ -119,13 +119,13 @@ func ExampleSeq_Copy() {
 	// acgctgacntggcgcncat
 }
 
-func ExampleSeq_Count() {
+func ExampleSeq_Rows() {
 	fmt.Println(m.Rows())
 	// Output:
 	// 4
 }
 
-func ExampleSeq_Join() {
+func ExampleSeq_join() {
 	fmt.Printf("%-s\n\n%-s\n", n, n.Consensus(false))
 	err := sequtils.Join(n, m, seq.End)
 	if err == nil {
@@ -147,7 +147,7 @@ func ExampleSeq_Join() {
 	// acgctgacntggcgcncatacgctgacntggcgcncat
 }
 
-func ExampleAlignment_Len() {
+func ExampleSeq_Len() {
 	fmt.Println(m.Len())
 	// Output:
 	// 19
@@ -189,7 +189,7 @@ type fs []feat.Feature
 
 func (f fs) Features() []feat.Feature { return []feat.Feature(f) }
 
-func ExampleSeq_Stitch() {
+func ExampleSeq_stitch() {
 	f := fs{
 		&fe{s: -1, e: 4},
 		&fe{s: 30, e: 38},
@@ -216,7 +216,7 @@ func ExampleSeq_Stitch() {
 	// acgcgtcagcgt
 }
 
-func ExampleSeq_Truncate() {
+func ExampleSeq_truncate() {
 	fmt.Printf("%-s\n\n%-s\n", m, m.Consensus(false))
 	err := sequtils.Truncate(m, m, 4, 12)
 	if err == nil {

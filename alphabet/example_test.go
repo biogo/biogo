@@ -8,13 +8,13 @@ import (
 	"fmt"
 )
 
-func Example_1() {
+func Example_allValid() {
 	fmt.Println(DNA.AllValid([]Letter("acgatcgatatagctatnagcatgc")))
 	// Output:
 	// false 17
 }
 
-func Example_2() {
+func Example_complement() {
 	var (
 		c  Letter
 		ok bool

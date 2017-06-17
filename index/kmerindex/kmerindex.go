@@ -367,7 +367,7 @@ func (ki *Index) KmerOf(kmertext string) (kmer Kmer, err error) {
 	return
 }
 
-// Return the Euclidian distance between two sequences measured by abolsolute kmer frequencies.
+// Return the Euclidean distance between two sequences measured by abolsolute kmer frequencies.
 func Distance(a, b map[Kmer]float64) (dist float64) {
 	c := make(map[Kmer]struct{}, len(a)+len(b))
 	for k := range a {

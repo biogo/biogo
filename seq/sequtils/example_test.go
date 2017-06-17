@@ -11,7 +11,7 @@ import (
 	"github.com/biogo/biogo/seq"
 )
 
-func ExampleTruncate_1() {
+func ExampleTruncate_a() {
 	s := stringToConformRangeOffSlice("ACGCTGACTTGGTGCACGT")
 	s.conf = feat.Linear
 	fmt.Printf("%s\n", s)
@@ -23,7 +23,7 @@ func ExampleTruncate_1() {
 	// GACTTGG
 }
 
-func ExampleTruncate_2() {
+func ExampleTruncate_b() {
 	var (
 		src = stringToConformRangeOffSlice("ACGCTGACTTGGTGCACGT")
 		dst = &conformRangeOffSlice{}

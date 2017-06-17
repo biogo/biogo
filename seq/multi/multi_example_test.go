@@ -76,7 +76,7 @@ func ExampleMulti_Add() {
 	// multi: inconsistent alphabets
 }
 
-func ExampleMulti_Copy() {
+func ExampleMulti_Clone() {
 	n = m.Clone().(*Multi)
 	n.Row(2).Set(3, alphabet.QLetter{L: 't'})
 	fmt.Printf("%- s\n\n%-s\n\n%- s\n\n%-s\n",
@@ -99,7 +99,7 @@ func ExampleMulti_Copy() {
 	// acgctgacntggcgcncat
 }
 
-func ExampleMulti_Count() {
+func ExampleMulti_Rows() {
 	fmt.Println(m.Rows())
 	// Output:
 	// 4

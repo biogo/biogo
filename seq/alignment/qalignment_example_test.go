@@ -99,7 +99,7 @@ func ExampleQSeq_Add() {
 	// 4 acgctgacntggcgcncat
 }
 
-func ExampleQSeq_Copy() {
+func ExampleQSeq_Clone() {
 	qn = qm.Clone().(*QSeq)
 	qn.Row(2).Set(3, alphabet.QLetter{L: 't', Q: 40})
 	fmt.Printf("%-s\n\n%-s\n\n", qm, qm.Consensus(false))
@@ -120,13 +120,13 @@ func ExampleQSeq_Copy() {
 	// acgctgacntggcgcncat
 }
 
-func ExampleQSeq_Count() {
+func ExampleQSeq_Rows() {
 	fmt.Println(qm.Rows())
 	// Output:
 	// 4
 }
 
-func ExampleQSeq_Join() {
+func ExampleQSeq_join() {
 	fmt.Printf("%-s\n\n%-s\n", qn, qn.Consensus(false))
 	err := sequtils.Join(qn, qm, seq.End)
 	if err == nil {
@@ -148,7 +148,7 @@ func ExampleQSeq_Join() {
 	// acgctgacntggcgcncatacgctgacntggcgcncat
 }
 
-func ExampleQAlignment_Len() {
+func ExampleQSeq_Len() {
 	fmt.Println(qm.Len())
 	// Output:
 	// 19
@@ -174,7 +174,7 @@ func ExampleQSeq_RevComp() {
 	// atgngcgccangtcagcgt
 }
 
-func ExampleQSeq_Stitch() {
+func ExampleQSeq_stitch() {
 	f := fs{
 		&fe{s: -1, e: 4},
 		&fe{s: 30, e: 38},
@@ -201,7 +201,7 @@ func ExampleQSeq_Stitch() {
 	// acgcgtcagcgt
 }
 
-func ExampleQSeq_Truncate() {
+func ExampleQSeq_truncate() {
 	fmt.Printf("%-s\n\n%-s\n", qm, qm.Consensus(false))
 	err := sequtils.Truncate(qm, qm, 4, 12)
 	if err == nil {

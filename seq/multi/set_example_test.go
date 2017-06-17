@@ -49,7 +49,7 @@ func ExampleSet_Rows() {
 	// 4
 }
 
-func ExampleSet_Get() {
+func ExampleSet_Row() {
 	fmt.Printf("%-s\n", set.Row(2))
 	// Output:
 	// ACGCTGACTGGCCGTGG
