@@ -5,6 +5,7 @@
 package align
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 
@@ -22,6 +23,32 @@ type S struct{}
 var _ = check.Suite(&S{})
 
 func (s *S) TestWarning(c *check.C) { c.Log("\nFIXME: Tests only in example tests.\n") }
+
+// https://github.com/biogo/biogo/issues/58
+func (s *S) TestIssue58(c *check.C) {
+	a := "GCTCACTAAAAACACAATCTACAACAGACGTTGCACTAACACTGTAATTGCCTTTAGTCC"
+	b := "ACTGCGTA"
+
+	nwsa := &linear.Seq{Seq: alphabet.BytesToLetters([]byte(a))}
+	nwsa.Alpha = alphabet.DNAgapped
+	nwsb := &linear.Seq{Seq: alphabet.BytesToLetters([]byte(b))}
+	nwsb.Alpha = alphabet.DNAgapped
+
+	needle := NWAffine{
+		Matrix: Linear{
+			{0, -1, -1, -1, -1},
+			{-1, 1, -1, -1, -1},
+			{-1, -1, 1, -1, -1},
+			{-1, -1, -1, 1, -1},
+			{-1, -1, -1, -1, 1},
+		},
+		GapOpen: -1,
+	}
+
+	aln, err := needle.Align(nwsa, nwsb)
+	c.Check(err, check.Equals, nil)
+	c.Check(fmt.Sprint(aln), check.Equals, "[[0,4)/-=-5 [4,7)/[0,3)=3 [7,32)/-=-26 [32,34)/[3,5)=2 [34,43)/-=-10 [43,46)/[5,8)=3 [46,60)/-=-15]")
+}
 
 func BenchmarkSWAlign(b *testing.B) {
 	t := &linear.Seq{}
