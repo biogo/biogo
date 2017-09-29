@@ -309,6 +309,14 @@ func (a NWAffine) alignQLetters(rSeq, qSeq alphabet.QLetters, alpha alphabet.Alp
 		score: score,
 	})
 	if i != j {
+		switch 0 {
+		case i:
+			last = left
+		case j:
+			last = up
+		default:
+			panic(fmt.Sprintf("align: nw affine internal error: unexpected final segment: row: %d col: %d", i, j))
+		}
 		aln = append(aln, &featPair{
 			a:     feature{start: 0, end: i},
 			b:     feature{start: 0, end: j},
