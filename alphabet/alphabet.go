@@ -257,8 +257,8 @@ func (a *alpha) Letters() string      { return a.letters }
 
 // A Pairing provides a lookup table between a letter and its complement.
 type Pairing struct {
-	pair []Letter
-	ok   []bool
+	pair        []Letter
+	ok          []bool
 	complements [256]Letter
 }
 
