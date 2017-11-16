@@ -307,6 +307,7 @@ func NewPairing(s, c string) (*Pairing, error) {
 func (p *Pairing) Complement(l Letter) (c Letter, ok bool) { return p.pair[l], p.ok[l] }
 
 // Returns a complementation table based on the internal representation. Invalid pairs hold a value outside the ASCII range.
+// The caller must not modify the returned table.
 func (p *Pairing) ComplementTable() []Letter {
 	return p.complements[:]
 }
