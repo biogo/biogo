@@ -7,6 +7,7 @@ package linear
 import (
 	"testing"
 
+	"github.com/biogo/biogo/alphabet"
 	"gopkg.in/check.v1"
 )
 
@@ -18,3 +19,11 @@ type S struct{}
 var _ = check.Suite(&S{})
 
 func (s *S) TestWarning(c *check.C) { c.Log("\nFIXME: Tests only in example tests.\n") }
+
+func BenchmarkRevComp(b *testing.B) {
+	in := []alphabet.Letter("ATGCtGACTTGGTGCACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTATGCtGACTTGGTGCACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTATGCtGACTTGGTGCACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTATGCtGACTTGGTGCACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTATGCtGACTTGGTGCACGTACGTACGTACGTACGTACGTACGTACGTACGTACGT")
+	for i := 0; i < b.N; i++ {
+		s := NewSeq("example DNA", in, alphabet.DNA)
+		s.RevComp()
+	}
+}

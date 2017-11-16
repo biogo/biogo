@@ -257,8 +257,9 @@ func (a *alpha) Letters() string      { return a.letters }
 
 // A Pairing provides a lookup table between a letter and its complement.
 type Pairing struct {
-	pair []Letter
-	ok   []bool
+	pair        []Letter
+	ok          []bool
+	complements [256]Letter
 }
 
 // NewPairing create a new Pairing from a pair of strings. Pairing definitions must be
@@ -293,7 +294,12 @@ func NewPairing(s, c string) (*Pairing, error) {
 			return nil, errors.New("alphabet: pairing definition is not a bijection")
 		}
 	}
-
+	copy(p.complements[:], p.pair)
+	for i, ok := range p.ok {
+		if !ok {
+			p.complements[i] |= unicode.MaxASCII + 1
+		}
+	}
 	return p, nil
 }
 
@@ -301,16 +307,9 @@ func NewPairing(s, c string) (*Pairing, error) {
 func (p *Pairing) Complement(l Letter) (c Letter, ok bool) { return p.pair[l], p.ok[l] }
 
 // Returns a complementation table based on the internal representation. Invalid pairs hold a value outside the ASCII range.
-func (p *Pairing) ComplementTable() (t []Letter) {
-	t = make([]Letter, 256)
-	copy(t, p.pair)
-	for i, ok := range p.ok {
-		if !ok {
-			t[i] |= unicode.MaxASCII + 1
-		}
-	}
-
-	return
+// The caller must not modify the returned table.
+func (p *Pairing) ComplementTable() []Letter {
+	return p.complements[:]
 }
 
 type nucleic struct {
