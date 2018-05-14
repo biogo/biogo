@@ -6,6 +6,13 @@ go:
  - 1.7.x
  - 1.8.x
  - 1.9.x
+ - 1.10.x
+ - master
+
+matrix:
+  fast_finish: true
+  allow_failures:
+    - go: master
 
 # Get deps, build, test, and ensure the code is gofmt'ed.
 script:

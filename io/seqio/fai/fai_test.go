@@ -2,15 +2,13 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-package fai_test
+package fai
 
 import (
 	"encoding/csv"
 	"strconv"
 	"strings"
 	"testing"
-
-	"github.com/biogo/biogo/io/seqio/fai"
 
 	"gopkg.in/check.v1"
 )
@@ -29,7 +27,7 @@ var (
 func (s *S) TestReadFrom(c *check.C) {
 	for i, t := range []struct {
 		in  string
-		idx fai.Index
+		idx Index
 		err error
 	}{
 		{
@@ -60,28 +58,28 @@ NODE_43724_length_236_cov_3.500000	256	5048	60	61
 NODE_44676_length_185_cov_1.421622	205	5345	60	61
 NODE_53327_length_192_cov_1.854167	212	5590	60	61
 `,
-			idx: fai.Index{
-				"NODE_7194_length_226_cov_2.672566":  fai.Record{Name: "NODE_7194_length_226_cov_2.672566", Length: 246, Start: 35, BasesPerLine: 60, BytesPerLine: 61},
-				"NODE_7195_length_193_cov_2.906736":  fai.Record{Name: "NODE_7195_length_193_cov_2.906736", Length: 213, Start: 321, BasesPerLine: 60, BytesPerLine: 61},
-				"NODE_7419_length_181_cov_4.668508":  fai.Record{Name: "NODE_7419_length_181_cov_4.668508", Length: 201, Start: 573, BasesPerLine: 60, BytesPerLine: 61},
-				"NODE_7473_length_222_cov_10.977477": fai.Record{Name: "NODE_7473_length_222_cov_10.977477", Length: 242, Start: 814, BasesPerLine: 60, BytesPerLine: 61},
-				"NODE_11804_length_273_cov_2.186813": fai.Record{Name: "NODE_11804_length_273_cov_2.186813", Length: 293, Start: 1097, BasesPerLine: 60, BytesPerLine: 61},
-				"NODE_12878_length_198_cov_2.358586": fai.Record{Name: "NODE_12878_length_198_cov_2.358586", Length: 218, Start: 1431, BasesPerLine: 60, BytesPerLine: 61},
-				"NODE_19170_length_305_cov_2.147541": fai.Record{Name: "NODE_19170_length_305_cov_2.147541", Length: 325, Start: 1689, BasesPerLine: 60, BytesPerLine: 61},
-				"NODE_23972_length_201_cov_2.452736": fai.Record{Name: "NODE_23972_length_201_cov_2.452736", Length: 221, Start: 2056, BasesPerLine: 60, BytesPerLine: 61},
-				"NODE_25171_length_223_cov_2.869955": fai.Record{Name: "NODE_25171_length_223_cov_2.869955", Length: 243, Start: 2317, BasesPerLine: 60, BytesPerLine: 61},
-				"NODE_26170_length_196_cov_2.658163": fai.Record{Name: "NODE_26170_length_196_cov_2.658163", Length: 216, Start: 2601, BasesPerLine: 60, BytesPerLine: 61},
-				"NODE_28488_length_231_cov_2.290043": fai.Record{Name: "NODE_28488_length_231_cov_2.290043", Length: 251, Start: 2857, BasesPerLine: 60, BytesPerLine: 61},
-				"NODE_29471_length_195_cov_5.102564": fai.Record{Name: "NODE_29471_length_195_cov_5.102564", Length: 215, Start: 3149, BasesPerLine: 60, BytesPerLine: 61},
-				"NODE_30404_length_252_cov_1.480159": fai.Record{Name: "NODE_30404_length_252_cov_1.480159", Length: 272, Start: 3404, BasesPerLine: 60, BytesPerLine: 61},
-				"NODE_30635_length_192_cov_2.947917": fai.Record{Name: "NODE_30635_length_192_cov_2.947917", Length: 212, Start: 3717, BasesPerLine: 60, BytesPerLine: 61},
-				"NODE_34404_length_184_cov_7.989130": fai.Record{Name: "NODE_34404_length_184_cov_7.989130", Length: 204, Start: 3969, BasesPerLine: 60, BytesPerLine: 61},
-				"NODE_36516_length_195_cov_3.517949": fai.Record{Name: "NODE_36516_length_195_cov_3.517949", Length: 215, Start: 4213, BasesPerLine: 60, BytesPerLine: 61},
-				"NODE_41230_length_277_cov_3.498195": fai.Record{Name: "NODE_41230_length_277_cov_3.498195", Length: 297, Start: 4468, BasesPerLine: 60, BytesPerLine: 61},
-				"NODE_42422_length_182_cov_2.609890": fai.Record{Name: "NODE_42422_length_182_cov_2.609890", Length: 202, Start: 4806, BasesPerLine: 60, BytesPerLine: 61},
-				"NODE_43724_length_236_cov_3.500000": fai.Record{Name: "NODE_43724_length_236_cov_3.500000", Length: 256, Start: 5048, BasesPerLine: 60, BytesPerLine: 61},
-				"NODE_44676_length_185_cov_1.421622": fai.Record{Name: "NODE_44676_length_185_cov_1.421622", Length: 205, Start: 5345, BasesPerLine: 60, BytesPerLine: 61},
-				"NODE_53327_length_192_cov_1.854167": fai.Record{Name: "NODE_53327_length_192_cov_1.854167", Length: 212, Start: 5590, BasesPerLine: 60, BytesPerLine: 61},
+			idx: Index{
+				"NODE_7194_length_226_cov_2.672566":  Record{Name: "NODE_7194_length_226_cov_2.672566", Length: 246, Start: 35, BasesPerLine: 60, BytesPerLine: 61},
+				"NODE_7195_length_193_cov_2.906736":  Record{Name: "NODE_7195_length_193_cov_2.906736", Length: 213, Start: 321, BasesPerLine: 60, BytesPerLine: 61},
+				"NODE_7419_length_181_cov_4.668508":  Record{Name: "NODE_7419_length_181_cov_4.668508", Length: 201, Start: 573, BasesPerLine: 60, BytesPerLine: 61},
+				"NODE_7473_length_222_cov_10.977477": Record{Name: "NODE_7473_length_222_cov_10.977477", Length: 242, Start: 814, BasesPerLine: 60, BytesPerLine: 61},
+				"NODE_11804_length_273_cov_2.186813": Record{Name: "NODE_11804_length_273_cov_2.186813", Length: 293, Start: 1097, BasesPerLine: 60, BytesPerLine: 61},
+				"NODE_12878_length_198_cov_2.358586": Record{Name: "NODE_12878_length_198_cov_2.358586", Length: 218, Start: 1431, BasesPerLine: 60, BytesPerLine: 61},
+				"NODE_19170_length_305_cov_2.147541": Record{Name: "NODE_19170_length_305_cov_2.147541", Length: 325, Start: 1689, BasesPerLine: 60, BytesPerLine: 61},
+				"NODE_23972_length_201_cov_2.452736": Record{Name: "NODE_23972_length_201_cov_2.452736", Length: 221, Start: 2056, BasesPerLine: 60, BytesPerLine: 61},
+				"NODE_25171_length_223_cov_2.869955": Record{Name: "NODE_25171_length_223_cov_2.869955", Length: 243, Start: 2317, BasesPerLine: 60, BytesPerLine: 61},
+				"NODE_26170_length_196_cov_2.658163": Record{Name: "NODE_26170_length_196_cov_2.658163", Length: 216, Start: 2601, BasesPerLine: 60, BytesPerLine: 61},
+				"NODE_28488_length_231_cov_2.290043": Record{Name: "NODE_28488_length_231_cov_2.290043", Length: 251, Start: 2857, BasesPerLine: 60, BytesPerLine: 61},
+				"NODE_29471_length_195_cov_5.102564": Record{Name: "NODE_29471_length_195_cov_5.102564", Length: 215, Start: 3149, BasesPerLine: 60, BytesPerLine: 61},
+				"NODE_30404_length_252_cov_1.480159": Record{Name: "NODE_30404_length_252_cov_1.480159", Length: 272, Start: 3404, BasesPerLine: 60, BytesPerLine: 61},
+				"NODE_30635_length_192_cov_2.947917": Record{Name: "NODE_30635_length_192_cov_2.947917", Length: 212, Start: 3717, BasesPerLine: 60, BytesPerLine: 61},
+				"NODE_34404_length_184_cov_7.989130": Record{Name: "NODE_34404_length_184_cov_7.989130", Length: 204, Start: 3969, BasesPerLine: 60, BytesPerLine: 61},
+				"NODE_36516_length_195_cov_3.517949": Record{Name: "NODE_36516_length_195_cov_3.517949", Length: 215, Start: 4213, BasesPerLine: 60, BytesPerLine: 61},
+				"NODE_41230_length_277_cov_3.498195": Record{Name: "NODE_41230_length_277_cov_3.498195", Length: 297, Start: 4468, BasesPerLine: 60, BytesPerLine: 61},
+				"NODE_42422_length_182_cov_2.609890": Record{Name: "NODE_42422_length_182_cov_2.609890", Length: 202, Start: 4806, BasesPerLine: 60, BytesPerLine: 61},
+				"NODE_43724_length_236_cov_3.500000": Record{Name: "NODE_43724_length_236_cov_3.500000", Length: 256, Start: 5048, BasesPerLine: 60, BytesPerLine: 61},
+				"NODE_44676_length_185_cov_1.421622": Record{Name: "NODE_44676_length_185_cov_1.421622", Length: 205, Start: 5345, BasesPerLine: 60, BytesPerLine: 61},
+				"NODE_53327_length_192_cov_1.854167": Record{Name: "NODE_53327_length_192_cov_1.854167", Length: 212, Start: 5590, BasesPerLine: 60, BytesPerLine: 61},
 			},
 			err: nil,
 		},
@@ -95,7 +93,7 @@ NODE_12878_length_198_cov_2.358586	218	1431	60	61
 NODE_19170_length_305_cov_2.147541	325	1689	60	61
 NODE_23972_length_201_cov_2`,
 			idx: nil,
-			err: &csv.ParseError{Line: 8, Column: 0, Err: csv.ErrFieldCount},
+			err: parseError(8, 0, csv.ErrFieldCount),
 		},
 		{
 			in: `NODE_7194_length_226_cov_2.672566	246	35	60	61
@@ -121,7 +119,7 @@ NODE_44676_length_185_cov_1.421622	205	5345	60	61
 NODE_53327_length_192_cov_1.854167	212	5590	60	61
 `,
 			idx: nil,
-			err: &csv.ParseError{Line: 13, Column: 0, Err: csv.ErrFieldCount},
+			err: parseError(13, 0, csv.ErrFieldCount),
 		},
 		{
 			in: `NODE_7194_length_226_cov_2.672566	246	35	60	61
@@ -147,7 +145,7 @@ NODE_44676_length_185_cov_1.421622	205	5345	60	61
 NODE_53327_length_192_cov_1.854167	212	5590	60	61
 `,
 			idx: nil,
-			err: &csv.ParseError{Line: 14, Column: 0, Err: fai.ErrNonUnique},
+			err: parseError(14, 0, ErrNonUnique),
 		},
 		{
 			in: `NODE_7194_length_226_cov_2.672566	246	35	60	61
@@ -173,10 +171,10 @@ NODE_44676_length_185_cov_1.421622	205	5345	60	61
 NODE_53327_length_192_cov_1.854167	212	5590	60	61
 `,
 			idx: nil,
-			err: &csv.ParseError{Line: 8, Column: 3, Err: &strconv.NumError{"ParseInt", "sixty", strconv.ErrSyntax}},
+			err: parseError(8, 3, &strconv.NumError{"ParseInt", "sixty", strconv.ErrSyntax}),
 		},
 	} {
-		idx, err := fai.ReadFrom(strings.NewReader(t.in))
+		idx, err := ReadFrom(strings.NewReader(t.in))
 		c.Assert(err, check.DeepEquals, t.err)
 		c.Check(idx, check.DeepEquals, t.idx, check.Commentf("Test: %d", i))
 	}

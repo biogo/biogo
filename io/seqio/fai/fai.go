@@ -54,7 +54,7 @@ func (r Record) Position(p int) int64 {
 func mustAtoi(fields []string, index, line int) int {
 	i, err := strconv.ParseInt(fields[index], 10, 0)
 	if err != nil {
-		panic(&csv.ParseError{Line: line, Column: index, Err: err})
+		panic(parseError(line, index, err))
 	}
 	return int(i)
 }
@@ -62,7 +62,7 @@ func mustAtoi(fields []string, index, line int) int {
 func mustAtoi64(fields []string, index, line int) int64 {
 	i, err := strconv.ParseInt(fields[index], 10, 64)
 	if err != nil {
-		panic(&csv.ParseError{Line: line, Column: index, Err: err})
+		panic(parseError(line, index, err))
 	}
 	return i
 }
@@ -99,7 +99,7 @@ func ReadFrom(r io.Reader) (idx Index, err error) {
 		if idx == nil {
 			idx = make(Index)
 		} else if _, exists := idx[rec[nameField]]; exists {
-			return nil, &csv.ParseError{Line: line, Err: ErrNonUnique}
+			return nil, parseError(line, 0, ErrNonUnique)
 		}
 		idx[rec[nameField]] = Record{
 			Name:         rec[nameField],

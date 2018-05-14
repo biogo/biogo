@@ -205,6 +205,8 @@ func (ql QLetter) Repeat(count int) []QLetter {
 	return r
 }
 
+func (ql QLetter) String() string { return string(ql.L) }
+
 // A QLetters is a slice of QLetter that satisfies the Slice interface.
 type QLetters []QLetter
 
