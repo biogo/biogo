@@ -7,6 +7,8 @@ package pals
 import (
 	"fmt"
 	"log"
+	"runtime"
+	"sync"
 
 	"github.com/biogo/biogo/feat"
 	"github.com/biogo/store/interval"
@@ -43,7 +45,10 @@ type Piler struct {
 	// log lines are witten if not zero.
 	LogFreq int
 
-	intervals map[feat.Feature]*interval.IntTree
+	limit     chan struct{}
+	wg        sync.WaitGroup
+	mu        sync.Mutex
+	intervals map[feat.Feature]*lockedTree
 	seen      map[[2]sf]struct{}
 	overlap   int
 	piled     bool
@@ -54,6 +59,11 @@ type Piler struct {
 	next uintptr
 }
 
+type lockedTree struct {
+	sync.Mutex
+	interval.IntTree
+}
+
 type sf struct {
 	loc  feat.Feature
 	s, e int
@@ -62,7 +72,8 @@ type sf struct {
 // NewPiler creates a Piler object ready for piling feature pairs.
 func NewPiler(overlap int) *Piler {
 	return &Piler{
-		intervals: make(map[feat.Feature]*interval.IntTree),
+		limit:     make(chan struct{}, max(runtime.GOMAXPROCS(0), 2)),
+		intervals: make(map[feat.Feature]*lockedTree),
 		seen:      make(map[[2]sf]struct{}),
 		overlap:   overlap,
 	}
@@ -81,8 +92,11 @@ func (p *Piler) Add(fp *Pair) error {
 		return duplicatePair
 	}
 
-	p.merge(&pileInterval{id: p.nextID(), start: fp.A.Start(), end: fp.A.End(), location: fp.A.Location(), images: []*Feature{fp.A}, overlap: p.overlap})
-	p.merge(&pileInterval{id: p.nextID(), start: fp.B.Start(), end: fp.B.End(), location: fp.B.Location(), images: []*Feature{fp.B}, overlap: p.overlap})
+	p.limit <- struct{}{}
+	p.limit <- struct{}{}
+	p.wg.Add(2)
+	go p.merge(&pileInterval{id: p.nextID(), start: fp.A.Start(), end: fp.A.End(), location: fp.A.Location(), images: []*Feature{fp.A}, overlap: p.overlap})
+	go p.merge(&pileInterval{id: p.nextID(), start: fp.B.Start(), end: fp.B.End(), location: fp.B.Location(), images: []*Feature{fp.B}, overlap: p.overlap})
 	p.seen[ab] = struct{}{}
 
 	return nil
@@ -116,11 +130,14 @@ func (p *Piler) merge(pi *pileInterval) {
 		r  []interval.IntInterface
 		qi = &pileInterval{start: pi.start, end: pi.end}
 	)
+	p.mu.Lock()
 	t, ok := p.intervals[pi.location]
 	if !ok {
-		t = &interval.IntTree{}
+		t = &lockedTree{}
 		p.intervals[pi.location] = t
 	}
+	p.mu.Unlock()
+	t.Lock()
 	t.DoMatching(
 		func(e interval.IntInterface) (done bool) {
 			r = append(r, e)
@@ -139,6 +156,10 @@ func (p *Piler) merge(pi *pileInterval) {
 		t.Delete(d, false)
 	}
 	t.Insert(pi, false)
+	t.Unlock()
+
+	<-p.limit
+	p.wg.Done()
 }
 
 // A PairFilter is used to determine whether a Pair's images are included in a Pile.
@@ -148,6 +169,8 @@ type PairFilter func(*Pair) bool
 // the feature pairs that have been added to the piler. Piles may be called more than once,
 // but the piles returned in earlier invocations will be altered by subsequent calls.
 func (p *Piler) Piles(f PairFilter) []*Pile {
+	p.wg.Wait()
+
 	var n int
 	if !p.piled {
 		for _, t := range p.intervals {
@@ -201,7 +224,7 @@ func (p *Piler) Piles(f PairFilter) []*Pile {
 
 const checkSanity = false
 
-func assertPileSanity(t *interval.IntTree, im *Feature, pi *Pile) {
+func assertPileSanity(t *lockedTree, im *Feature, pi *Pile) {
 	if im.Start() < pi.Start() || im.End() > pi.End() {
 		panic(fmt.Sprintf("image extends beyond pile: %#v", im))
 	}
