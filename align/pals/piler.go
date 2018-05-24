@@ -47,7 +47,7 @@ type Piler struct {
 
 	limit     chan struct{}
 	wg        sync.WaitGroup
-	mu        sync.Mutex
+	mu        sync.RWMutex
 	intervals map[feat.Feature]*lockedTree
 	seen      map[[2]sf]struct{}
 	overlap   int
@@ -130,13 +130,20 @@ func (p *Piler) merge(pi *pileInterval) {
 		r  []interval.IntInterface
 		qi = &pileInterval{start: pi.start, end: pi.end}
 	)
-	p.mu.Lock()
+
+	p.mu.RLock()
 	t, ok := p.intervals[pi.location]
+	p.mu.RUnlock()
 	if !ok {
-		t = &lockedTree{}
-		p.intervals[pi.location] = t
+		p.mu.Lock()
+		t, ok = p.intervals[pi.location]
+		if !ok {
+			t = &lockedTree{}
+			p.intervals[pi.location] = t
+		}
+		p.mu.Unlock()
 	}
-	p.mu.Unlock()
+
 	t.Lock()
 	t.DoMatching(
 		func(e interval.IntInterface) (done bool) {
