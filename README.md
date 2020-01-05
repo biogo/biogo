@@ -13,6 +13,19 @@
 
 bíogo is a bioinformatics library for the Go language.
 
+## Getting help
+
+Help or similar requests are preferred on the biogo-user Google Group.
+
+https://groups.google.com/forum/#!forum/biogo-user
+
+## Contributing
+
+If you find any bugs, feel free to file an issue on the github issue tracker.
+Pull requests are welcome, though if they involve changes to API or addition of features, please first open a discussion at the biogo-dev Google Group.
+
+https://groups.google.com/forum/#!forum/biogo-dev
+
 ## Citing ##
 
 If you use bíogo, please cite Kortschak, Snyder, Maragkakis and Adelson "bíogo: a simple high-performance bioinformatics toolkit for the Go language", doi:[10.21105/joss.00167](http://dx.doi.org/10.21105/joss.00167), and Kortschak and Adelson "bíogo: a simple high-performance bioinformatics toolkit for the Go language", doi:[10.1101/005033](http://biorxiv.org/content/early/2014/05/12/005033).
