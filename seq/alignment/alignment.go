@@ -388,7 +388,9 @@ func (r Row) Clone() seq.Sequence {
 	}
 	return linear.NewSeq(r.Name(), b, r.Alphabet())
 }
-func (r Row) CloneAnnotation() *seq.Annotation { return r.Align.SubAnnotations[r.Row].CloneAnnotation() }
+func (r Row) CloneAnnotation() *seq.Annotation {
+	return r.Align.SubAnnotations[r.Row].CloneAnnotation()
+}
 
 // String returns a string representation of the sequence data only.
 func (r Row) String() string { return fmt.Sprintf("%-s", r) }
