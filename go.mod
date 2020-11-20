@@ -1,6 +1,6 @@
 module github.com/biogo/biogo
 
-go 1.12
+go 1.14
 
 require (
 	github.com/biogo/graph v0.0.0-20150317020928-057c1989faed
