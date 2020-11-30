@@ -25,10 +25,12 @@ type S struct {
 
 var _ = check.Suite(&S{})
 
-var testLen = 1000
+var (
+	maxKmerLen = 14
+	testLen    = 1000
+)
 
 func (s *S) SetUpSuite(c *check.C) {
-	MaxKmerLen = 14
 	s.Seq = linear.NewSeq("", nil, alphabet.DNA)
 	s.Seq.Seq = make(alphabet.Letters, testLen)
 	for i := range s.Seq.Seq {
@@ -37,7 +39,7 @@ func (s *S) SetUpSuite(c *check.C) {
 }
 
 func (s *S) TestKmerIndexCheck(c *check.C) {
-	for k := MinKmerLen; k <= MaxKmerLen; k++ {
+	for k := MinKmerLen; k <= maxKmerLen; k++ {
 		if i, err := New(k, s.Seq); err != nil {
 			c.Fatalf("New KmerIndex failed: %v", err)
 		} else {
@@ -52,7 +54,7 @@ func (s *S) TestKmerIndexCheck(c *check.C) {
 }
 
 func (s *S) TestKmerFrequencies(c *check.C) {
-	for k := MinKmerLen; k <= MaxKmerLen; k++ {
+	for k := MinKmerLen; k <= maxKmerLen; k++ {
 		if i, err := New(k, s.Seq); err != nil {
 			c.Fatalf("New KmerIndex failed: %v", err)
 		} else {
@@ -79,7 +81,7 @@ func (s *S) TestKmerFrequencies(c *check.C) {
 }
 
 func (s *S) TestKmerPositions(c *check.C) {
-	for k := MinKmerLen; k < MaxKmerLen; k++ { // don't test full range to time's sake
+	for k := MinKmerLen; k < maxKmerLen; k++ { // don't test full range to time's sake
 		if i, err := New(k, s.Seq); err != nil {
 			c.Fatalf("New KmerIndex failed: %v", err)
 		} else {
@@ -99,7 +101,7 @@ func (s *S) TestKmerPositions(c *check.C) {
 }
 
 func (s *S) TestKmerPositionsString(c *check.C) {
-	for k := MinKmerLen; k < MaxKmerLen; k++ { // don't test full range to time's sake
+	for k := MinKmerLen; k < maxKmerLen; k++ { // don't test full range to time's sake
 		if i, err := New(k, s.Seq); err != nil {
 			c.Fatalf("New KmerIndex failed: %v", err)
 		} else {

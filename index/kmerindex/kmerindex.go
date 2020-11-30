@@ -7,13 +7,14 @@
 package kmerindex
 
 import (
-	"github.com/biogo/biogo/alphabet"
-	"github.com/biogo/biogo/seq/linear"
-	"github.com/biogo/biogo/util"
-
 	"errors"
 	"fmt"
 	"math"
+	"unsafe"
+
+	"github.com/biogo/biogo/alphabet"
+	"github.com/biogo/biogo/seq/linear"
+	"github.com/biogo/biogo/util"
 )
 
 var (
@@ -25,6 +26,17 @@ var (
 	ErrBadKmerTextLen = errors.New("kmerindex: kmertext length != k")
 	ErrBadKmerText    = errors.New("kmerindex: kmertext contains illegal character")
 )
+
+// Constraints on Kmer length.
+var (
+	MinKmerLen = 4 // default minimum
+
+	// MaxKmerLen is the maximum Kmer length that can be used.
+	// It is 16 on 64 bit architectures and 14 on 32 bit architectures.
+	MaxKmerLen = 16 - offset
+)
+
+const offset = int(unsafe.Sizeof(int(0))%0x4) / 2
 
 var Debug = false // Set Debug to true to prevent recovering from panics in ForEachKmer f Eval function.
 
