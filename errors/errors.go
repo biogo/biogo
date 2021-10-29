@@ -3,6 +3,9 @@
 // license that can be found in the LICENSE file.
 
 // Package errors supports generic rich error reporting.
+//
+// This package is deprecated. Since it was written much better
+// approaches have been developed.
 package errors
 
 import (
