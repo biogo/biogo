@@ -15,12 +15,13 @@ import (
 	"github.com/biogo/biogo/seq/sequtils"
 	"github.com/biogo/biogo/util"
 
-	"errors"
 	"fmt"
 	"reflect"
 	"sort"
 	"strings"
 	"sync"
+
+	"github.com/biogo/biogo/errors"
 )
 
 func init() {
@@ -45,7 +46,7 @@ func NewMulti(id string, n []seq.Sequence, cons seq.ConsenseFunc) (*Multi, error
 	var alpha alphabet.Alphabet
 	for _, s := range n {
 		if alpha != nil && s.Alphabet() != alpha {
-			return nil, errors.New("multi: inconsistent alphabets")
+			return nil, errors.InvalidAlphabetErr{}.Make("multi: inconsistent alphabets")
 		} else if alpha == nil {
 			alpha = s.Alphabet()
 		}
@@ -182,7 +183,7 @@ func (m *Multi) Add(n ...seq.Sequence) error {
 			m.Alpha = r.Alphabet()
 			continue
 		} else if r.Alphabet() != m.Alpha {
-			return errors.New("multi: inconsistent alphabets")
+			return errors.InvalidAlphabetErr{}.Make("multi: inconsistent alphabets")
 		}
 	}
 	m.Seq = append(m.Seq, n...)
@@ -209,7 +210,7 @@ func (m *Multi) Append(i int, a ...alphabet.QLetter) (err error) {
 func (m *Multi) AppendColumns(a ...[]alphabet.QLetter) (err error) {
 	for i, c := range a {
 		if len(c) != m.Rows() {
-			return fmt.Errorf("multi: column %d does not match Rows(): %d != %d.", i, len(c), m.Rows())
+			return errors.ArgErr{}.Make(fmt.Sprintf("multi: column %d does not match Rows(): %d != %d.", i, len(c), m.Rows()))
 		}
 	}
 	for i, b := 0, make([]alphabet.QLetter, 0, len(a)); i < m.Rows(); i, b = i+1, b[:0] {
@@ -225,7 +226,7 @@ func (m *Multi) AppendColumns(a ...[]alphabet.QLetter) (err error) {
 // AppendEach appends each []alphabet.QLetter in a to the appropriate sequence in the receiver.
 func (m *Multi) AppendEach(a [][]alphabet.QLetter) (err error) {
 	if len(a) != m.Rows() {
-		return fmt.Errorf("multi: number of sequences does not match Rows(): %d != %d.", len(a), m.Rows())
+		return errors.ArgErr{}.Make(fmt.Sprintf("multi: number of sequences does not match Rows(): %d != %d.", len(a), m.Rows()))
 	}
 	var i int
 	for _, r := range m.Seq {
@@ -394,7 +395,7 @@ func (m *Multi) Truncate(start, end int) error {
 // Join joins a to the receiver at the end specied by where.
 func (m *Multi) Join(a *Multi, where int) error {
 	if m.Rows() != a.Rows() {
-		return fmt.Errorf("multi: row number mismatch %d != %d", m.Rows(), a.Rows())
+		return errors.ArgErr{}.Make(fmt.Sprintf("multi: row number mismatch %d != %d", m.Rows(), a.Rows()))
 	}
 
 	switch where {
@@ -445,7 +446,7 @@ func joinOne(m, am seq.Sequence, where int) error {
 		defer joinerRegistryLock.RUnlock()
 		joinerFunc, ok := joinerRegistry[reflect.TypeOf(m)]
 		if !ok {
-			return fmt.Errorf("multi: sequence type %T not handled.", m)
+			return errors.StateErr{}.Make(fmt.Sprintf("multi: sequence type %T not handled.", m))
 		}
 		if reflect.TypeOf(m) != reflect.TypeOf(am) {
 			goto MISMATCH
@@ -454,7 +455,7 @@ func joinOne(m, am seq.Sequence, where int) error {
 	}
 
 MISMATCH:
-	return fmt.Errorf("multi: sequence type mismatch: %T != %T.", m, am)
+	return errors.StateErr{}.Make(fmt.Sprintf("multi: sequence type mismatch: %T != %T.", m, am))
 }
 
 type JoinFunc func(a, b seq.Sequence, where int) (err error)
@@ -503,7 +504,7 @@ func (m *Multi) Stitch(fs feat.Set) error {
 	ff := fs.Features()
 	for _, f := range ff {
 		if f.End() < f.Start() {
-			return errors.New("multi: feature end < feature start")
+			return errors.ArgErr{}.Make("multi: feature end < feature start")
 		}
 	}
 	ff = append(fts(nil), ff...)

@@ -12,10 +12,11 @@ import (
 	"github.com/biogo/biogo/seq/linear"
 	"github.com/biogo/biogo/util"
 
-	"errors"
 	"fmt"
 	"strings"
 	"unicode"
+
+	"github.com/biogo/biogo/errors"
 )
 
 // A Seq is an aligned sequence.
@@ -47,7 +48,7 @@ func NewSeq(id string, subids []string, b [][]alphabet.Letter, alpha alphabet.Al
 			}
 		}
 	default:
-		return nil, errors.New("alignment: id/seq number mismatch")
+		return nil, errors.ArgErr{}.Make("alignment: id/seq number mismatch")
 	}
 
 	return &Seq{
@@ -196,7 +197,7 @@ func (s *Seq) Row(i int) seq.Sequence {
 func (s *Seq) AppendColumns(a ...[]alphabet.QLetter) error {
 	for i, r := range a {
 		if len(r) != s.Rows() {
-			return fmt.Errorf("alignment: column %d does not match Rows(): %d != %d.", i, len(r), s.Rows())
+			return errors.ArgErr{}.Make(fmt.Sprintf("alignment: column %d does not match Rows(): %d != %d.", i, len(r), s.Rows()))
 		}
 	}
 
@@ -215,7 +216,7 @@ func (s *Seq) AppendColumns(a ...[]alphabet.QLetter) error {
 // AppendEach appends each []alphabet.QLetter in a to the appropriate sequence in the receiver.
 func (s *Seq) AppendEach(a [][]alphabet.QLetter) error {
 	if len(a) != s.Rows() {
-		return fmt.Errorf("alignment: number of sequences does not match Rows(): %d != %d.", len(a), s.Rows())
+		return errors.ArgErr{}.Make(fmt.Sprintf("alignment: number of sequences does not match Rows(): %d != %d.", len(a), s.Rows()))
 	}
 	max := util.MinInt
 	for _, ss := range a {

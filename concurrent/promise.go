@@ -5,9 +5,10 @@
 package concurrent
 
 import (
-	"errors"
 	"fmt"
 	"sync"
+
+	"github.com/biogo/biogo/errors"
 )
 
 // Implementation of a promise multiple goroutine synchronisation and communication system
@@ -64,19 +65,19 @@ func (p *Promise) fulfill(value interface{}) (err error) {
 	r, set := p.messageState()
 
 	if r.Err != nil {
-		err = fmt.Errorf("concurrent: attempt to fulfill failed promise: %v", r.Err)
+		err = errors.ConcurrencyErr{}.Make(fmt.Sprintf("concurrent: attempt to fulfill failed promise: %v", r.Err))
 	} else {
 		if !set || p.mutable {
 			r.Value = value
 			err = nil
 		} else {
-			err = errors.New("concurrent: attempt to fulfill already set immutable promise")
+			err = errors.ConcurrencyErr{}.Make("concurrent: attempt to fulfill already set immutable promise")
 		}
 	}
 
 	if err != nil && p.relay {
 		if r.Err != nil {
-			err = fmt.Errorf("concurrent: promise already failed - cannot relay: %v", r.Err)
+			err = errors.ConcurrencyErr{}.Make(fmt.Sprintf("concurrent: promise already failed - cannot relay: %v", r.Err))
 		} else {
 			r.Err = err
 		}

@@ -6,6 +6,7 @@ package pals
 
 import (
 	"github.com/biogo/biogo/align/pals/dp"
+	"github.com/biogo/biogo/errors"
 	"github.com/biogo/biogo/io/featio/gff"
 	"github.com/biogo/biogo/seq"
 
@@ -63,11 +64,11 @@ func NewPair(target, query *Packed, hit dp.Hit, comp bool) (*Pair, error) {
 func ExpandFeature(f *gff.Feature) (*Pair, error) {
 	targ := f.FeatAttributes.Get("Target")
 	if targ == "" {
-		return nil, fmt.Errorf("pals: not a feature pair")
+		return nil, errors.ArgErr{}.Make(fmt.Sprintf("pals: not a feature pair"))
 	}
 	fields := strings.Fields(targ)
 	if len(fields) != 3 {
-		return nil, fmt.Errorf("pals: not a feature pair")
+		return nil, errors.ArgErr{}.Make(fmt.Sprintf("pals: not a feature pair"))
 	}
 
 	s, err := strconv.Atoi(fields[1])

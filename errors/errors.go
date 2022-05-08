@@ -71,6 +71,28 @@ func Make(message string, skip, depth int, items ...interface{}) Error {
 	return err
 }
 
+// Make creates a new Error with message, storing information about the
+// caller stack frame skip levels above the caller and any item that may
+// be needed for handling the error. The number of frames stored is specified
+// by the depth parameter. If depth is zero, Make will panic.
+func MakeErr(err *errorBase, message string, skip, depth int, items ...interface{}) Error {
+	if depth == 0 {
+		panic("errors: zero trace depth")
+	}
+
+	err.pc = make([]uintptr, depth)
+	err.message = message
+	err.items = items
+
+	var n int
+	if n = runtime.Callers(skip+2, err.pc); n > 0 {
+		err.Func = runtime.FuncForPC(err.pc[0])
+	}
+	err.pc = err.pc[:n]
+
+	return err
+}
+
 // Return the file name and line number of caller stored at creation of
 // the Error.
 func (err *errorBase) FileLine() (file string, line int) {
@@ -124,6 +146,78 @@ func (err *errorBase) Tracef(depth int) string {
 }
 
 // Satisfy the error interface.
-func (err *errorBase) Error() string {
+func (err errorBase) Error() string {
 	return err.message
+}
+
+func (be errorBase) Make(message string) errorBase {
+	return be.MakeTrace(message, 0, 5)
+}
+
+func (be errorBase) MakeTrace(message string, skip, depth int, items ...interface{}) errorBase {
+	if depth == 0 {
+		panic("errors: zero trace depth")
+	}
+
+	be.pc = make([]uintptr, depth)
+	be.message = message
+	be.items = items
+
+	var n int
+	if n = runtime.Callers(skip+2, be.pc); n > 0 {
+		be.Func = runtime.FuncForPC(be.pc[0])
+	}
+	be.pc = be.pc[:n]
+
+	return be
+}
+
+// Argument Errors indicate that the function has been provided bad data
+type ArgErr struct{ errorBase }
+
+type InvalidAlphabetErr struct{ ArgErr }
+type InvalidAlphabetPairingErr struct{ ArgErr }
+type MismatchedTypesErr struct{ ArgErr }
+type MismatchedAlphabetsErr struct{ ArgErr }
+type NoAlphabetErr struct{ ArgErr }
+type NotGappedAlphabetErr struct{ ArgErr }
+type TypeNotHandledErr struct{ ArgErr }
+type MatrixNotSquareErr struct{ ArgErr }
+
+type BadBedTypeErr struct{ ArgErr }
+type BadStrandFieldErr struct{ ArgErr }
+type BadStrandErr struct{ ArgErr }
+type BadColorFieldErr struct{ ArgErr }
+type MissingBlockValuesErr struct{ ArgErr }
+type MissingChromFieldErr struct{ ArgErr }
+
+type KTooLargeErr struct{ ArgErr }
+type KTooSmallErr struct{ ArgErr }
+type KSeqTooShortErr struct{ ArgErr }
+type BadKmerErr struct{ ArgErr }
+type BadKmerTextLenErr struct{ ArgErr }
+type IllegalKmerTextErr struct{ ArgErr }
+
+type ExonNotInTranscriptErr struct{ ArgErr }
+type NoZeroStartExonErr struct{ ArgErr }
+type ExonOverlapErr struct{ ArgErr }
+type ExonLocationDiffersErr struct{ ArgErr }
+type NewExonLocationDiffersErr struct{ ArgErr }
+
+type TranscriptLocationMismatchesGeneErr struct{ ArgErr }
+type NoZeroStartTranscriptErr struct{ ArgErr }
+
+// StateErr types should indicate that, while processing, the function has entered a bad state
+type StateErr struct{ errorBase }
+
+type QualitySequenceHeaderMismatchErr struct{ StateErr }
+type QualitySequenceLengthMismatchErr struct{ StateErr }
+
+// ConcurrencyErr are thrown when a part of Biogo's concurrency model has failed
+type ConcurrencyErr struct{ StateErr }
+
+// MultiErr are used to wrap cases where more than a single error are thrown by a logic block
+type MultiError struct {
+	errorBase
+	Errors []error
 }

@@ -16,7 +16,6 @@ package morass
 import (
 	"container/heap"
 	"encoding/gob"
-	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -25,6 +24,8 @@ import (
 	"runtime"
 	"sort"
 	"sync"
+
+	"github.com/biogo/biogo/errors"
 )
 
 var (
@@ -167,7 +168,7 @@ func New(e interface{}, prefix, dir string, chunkSize int, concurrent bool) (*Mo
 // Push a value on to the Morass. Returns any error that occurs.
 func (m *Morass) Push(e LessInterface) error {
 	if typ := reflect.TypeOf(e); typ != m.typ {
-		return fmt.Errorf("morass: type mismatch: %s != %s", typ, m.typ)
+		return errors.ArgErr{}.Make(fmt.Sprintf("morass: type mismatch: %s != %s", typ, m.typ))
 	}
 
 	if err := m.err(); err != nil {
@@ -175,7 +176,7 @@ func (m *Morass) Push(e LessInterface) error {
 	}
 
 	if m.chunk == nil {
-		return errors.New("morass: push on finalised morass")
+		return errors.StateErr{}.Make("morass: push on finalised morass")
 	}
 
 	if len(m.chunk) == m.chunkSize {
@@ -332,7 +333,7 @@ func (m *Morass) Pull(e LessInterface) error {
 	var err error
 	v := reflect.ValueOf(e)
 	if !reflect.Indirect(v).CanSet() {
-		return errors.New("morass: cannot set e")
+		return errors.StateErr{}.Make("morass: cannot set e")
 	}
 
 	if m.fast {

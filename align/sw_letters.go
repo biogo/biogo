@@ -8,6 +8,7 @@ package align
 
 import (
 	"github.com/biogo/biogo/alphabet"
+	"github.com/biogo/biogo/errors"
 	"github.com/biogo/biogo/feat"
 
 	"fmt"
@@ -95,10 +96,10 @@ func (a SW) alignLetters(rSeq, qSeq alphabet.Letters, alpha alphabet.Alphabet) (
 				qVal = index[qSeq[j-1]]
 			)
 			if rVal < 0 {
-				return nil, fmt.Errorf("align: illegal letter %q at position %d in rSeq", rSeq[i-1], i-1)
+				return nil, errors.ArgErr{}.Make(fmt.Sprintf("align: illegal letter %q at position %d in rSeq", rSeq[i-1], i-1))
 			}
 			if qVal < 0 {
-				return nil, fmt.Errorf("align: illegal letter %q at position %d in qSeq", qSeq[j-1], j-1)
+				return nil, errors.ArgErr{}.Make(fmt.Sprintf("align: illegal letter %q at position %d in qSeq", qSeq[j-1], j-1))
 			}
 			p := i*c + j
 

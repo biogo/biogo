@@ -5,6 +5,7 @@
 package concurrent
 
 import (
+	"github.com/biogo/biogo/errors"
 	"github.com/biogo/biogo/util"
 
 	"fmt"
@@ -48,7 +49,7 @@ func Map(set Mapper, threads, maxChunkSize int) (results []interface{}, err erro
 	for r := 0; r*chunkSize < set.Len(); r++ {
 		result := <-p.out
 		if result.Err != nil {
-			err = fmt.Errorf("concurrent: map failed: %v", err)
+			err = errors.ConcurrencyErr{}.Make(fmt.Sprintf("concurrent: map failed: %v", err))
 			close(quit)
 			break
 		}

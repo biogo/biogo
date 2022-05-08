@@ -6,12 +6,14 @@
 package alphabet
 
 import (
+	"fmt"
+
 	"github.com/biogo/biogo/feat"
 
-	"errors"
-	"fmt"
 	"strings"
 	"unicode"
+
+	"github.com/biogo/biogo/errors"
 )
 
 const (
@@ -182,7 +184,7 @@ type alpha struct {
 
 func newAlphabet(letters string, molType feat.Moltype, gap, ambiguous Letter, caseSensitive bool) (*alpha, error) {
 	if strings.IndexFunc(letters, func(r rune) bool { return r < 0 || r > unicode.MaxASCII }) > -1 {
-		return nil, errors.New("alphabet: letters contains non-ASCII rune")
+		return nil, errors.InvalidAlphabetErr{}.Make("alphabet: letters contains non-ASCII rune")
 	}
 
 	a := &alpha{
@@ -266,7 +268,7 @@ type Pairing struct {
 // a bijection and must contain only ASCII characters.
 func NewPairing(s, c string) (*Pairing, error) {
 	if len(s) != len(c) {
-		return nil, errors.New("alphabet: length of pairing definitions do not match")
+		return nil, errors.ArgErr{}.Make("alphabet: length of pairing definitions do not match")
 	}
 
 	p := &Pairing{
@@ -281,17 +283,17 @@ func NewPairing(s, c string) (*Pairing, error) {
 	cr := []rune(c)
 	for i, v := range s {
 		if v < 0 || cr[i] < 0 || v > unicode.MaxASCII || cr[i] > unicode.MaxASCII {
-			return nil, errors.New("alphabet: pairing definition contains non-ASCII rune")
+			return nil, errors.InvalidAlphabetErr{}.Make("alphabet: pairing definition contains non-ASCII rune")
 		}
 		p.pair[v] = Letter(cr[i])
 		p.ok[v] = true
 	}
 	for i, l := range s {
 		if Letter(l) != p.pair[p.pair[l]] {
-			return nil, errors.New("alphabet: pairing definition is not a bijection")
+			return nil, errors.InvalidAlphabetPairingErr{}.Make("alphabet: pairing definition is not a bijection")
 		}
 		if Letter(c[i]) != p.pair[p.pair[c[i]]] {
-			return nil, errors.New("alphabet: pairing definition is not a bijection")
+			return nil, errors.InvalidAlphabetPairingErr{}.Make("alphabet: pairing definition is not a bijection")
 		}
 	}
 	copy(p.complements[:], p.pair)
@@ -330,7 +332,7 @@ func NewComplementor(letters string, molType feat.Moltype, pairs *Pairing, gap, 
 	if pairs != nil {
 		for i, v := range pairs.pair {
 			if !(pairs.ok[i] || Letter(i&unicode.MaxASCII) == v&unicode.MaxASCII) && !(a.valid[i] && a.valid[v]) {
-				return nil, fmt.Errorf("alphabet: invalid pairing: %c (%d) -> %c (%d)", i, i, v, v)
+				return nil, errors.InvalidAlphabetPairingErr{}.Make(fmt.Sprintf("alphabet: invalid pairing: %c (%d) -> %c (%d)", i, i, v, v))
 			}
 		}
 	}

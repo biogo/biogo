@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"runtime"
 	"sync"
+
+	"github.com/biogo/biogo/errors"
 )
 
 // Interface is a type that performs an operation on itself, returning any error.
@@ -51,7 +53,7 @@ func NewProcessor(queue chan Operator, buffer int, threads int) (p *Processor) {
 			<-p.work
 			defer func() {
 				if err := recover(); err != nil {
-					p.out <- Result{nil, fmt.Errorf("concurrent: processor panic: %v", err)}
+					p.out <- Result{nil, errors.ConcurrencyErr{}.Make(fmt.Sprintf("concurrent: processor panic: %v", err))}
 				}
 				p.work <- struct{}{}
 				if len(p.work) == p.threads {

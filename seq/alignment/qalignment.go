@@ -11,10 +11,11 @@ import (
 	"github.com/biogo/biogo/seq/linear"
 	"github.com/biogo/biogo/util"
 
-	"errors"
 	"fmt"
 	"strings"
 	"unicode"
+
+	"github.com/biogo/biogo/errors"
 )
 
 // A QSeq is an aligned sequence with quality scores.
@@ -49,7 +50,7 @@ func NewQSeq(id string, subids []string, ql [][]alphabet.QLetter, alpha alphabet
 			}
 		}
 	default:
-		return nil, errors.New("alignment: id/seq number mismatch")
+		return nil, errors.ArgErr{}.Make("alignment: id/seq number mismatch")
 	}
 
 	return &QSeq{
@@ -212,7 +213,7 @@ func (s *QSeq) Row(i int) seq.Sequence {
 func (s *QSeq) AppendColumns(a ...[]alphabet.QLetter) error {
 	for i, c := range a {
 		if len(c) != s.Rows() {
-			return fmt.Errorf("alignment: column %d does not match Rows(): %d != %d.", i, len(c), s.Rows())
+			return errors.ArgErr{}.Make(fmt.Sprintf("alignment: column %d does not match Rows(): %d != %d.", i, len(c), s.Rows()))
 		}
 	}
 
@@ -224,7 +225,7 @@ func (s *QSeq) AppendColumns(a ...[]alphabet.QLetter) error {
 // AppendEach appends each []alphabet.QLetter in a to the appropriate sequence in the receiver.
 func (s *QSeq) AppendEach(a [][]alphabet.QLetter) error {
 	if len(a) != s.Rows() {
-		return fmt.Errorf("alignment: number of sequences does not match Rows(): %d != %d.", len(a), s.Rows())
+		return errors.ArgErr{}.Make(fmt.Sprintf("alignment: number of sequences does not match Rows(): %d != %d.", len(a), s.Rows()))
 	}
 	max := util.MinInt
 	for _, r := range a {

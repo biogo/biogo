@@ -5,11 +5,12 @@
 package multi
 
 import (
+	"fmt"
+
 	"github.com/biogo/biogo/alphabet"
+	"github.com/biogo/biogo/errors"
 	"github.com/biogo/biogo/seq"
 	"github.com/biogo/biogo/util"
-
-	"fmt"
 )
 
 type Set []seq.Sequence
@@ -23,7 +24,7 @@ var (
 // Append each []byte in a to the appropriate sequence in the receiver.
 func (s Set) AppendEach(a [][]alphabet.QLetter) (err error) {
 	if len(a) != s.Rows() {
-		return fmt.Errorf("multi: number of sequences does not match row count: %d != %d.", len(a), s.Rows())
+		return errors.ArgErr{}.Make(fmt.Sprintf("multi: number of sequences does not match row count: %d != %d.", len(a), s.Rows()))
 	}
 	for i, r := range s {
 		r.(seq.Appender).AppendQLetters(a[i]...)

@@ -7,6 +7,7 @@ package fasta
 
 import (
 	"github.com/biogo/biogo/alphabet"
+	"github.com/biogo/biogo/errors"
 	"github.com/biogo/biogo/io/seqio"
 	"github.com/biogo/biogo/seq"
 
@@ -98,13 +99,13 @@ func (r *Reader) Read() (seq.Sequence, error) {
 			}
 		} else if bytes.HasPrefix(line, r.SeqPrefix) {
 			if r.working == nil {
-				return nil, fmt.Errorf("fasta: badly formed line %q", line)
+				return nil, errors.ArgErr{}.Make(fmt.Sprintf("fasta: badly formed line %q", line))
 			}
 			line = bytes.Join(bytes.Fields(line[len(r.SeqPrefix):]), nil)
 			r.working.AppendLetters(alphabet.BytesToLetters(line)...)
 			line = nil
 		} else {
-			return nil, fmt.Errorf("fasta: badly formed line %q", line)
+			return nil, errors.ArgErr{}.Make(fmt.Sprintf("fasta: badly formed line %q", line))
 		}
 	}
 }
@@ -124,7 +125,7 @@ func (r *Reader) header(line []byte) (seqio.SequenceAppender, error) {
 			case err == _err:
 				return s, err
 			case err != nil && _err != nil:
-				return s, fmt.Errorf("fasta: multiple errors: name: %s, desc:%s", err, _err)
+				return s, errors.MultiError{Errors: []error{err, _err}}.Make(fmt.Sprintf("fasta: multiple errors: name: %s, desc:%s", err, _err))
 			case err != nil:
 				return s, err
 			case _err != nil:

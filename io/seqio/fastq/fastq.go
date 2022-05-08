@@ -12,9 +12,10 @@ import (
 
 	"bufio"
 	"bytes"
-	"errors"
 	"fmt"
 	"io"
+
+	"github.com/biogo/biogo/errors"
 )
 
 var (
@@ -106,10 +107,10 @@ loop:
 		case state == id2 && maybeID2(line):
 			state = quality
 			if len(label) == 0 {
-				return nil, errors.New("fastq: no header line parsed before +line in fastq format")
+				return nil, errors.StateErr{}.Make("fastq: no header line parsed before +line in fastq format")
 			}
 			if len(line) != 1 && bytes.Compare(label[1:], line[1:]) != 0 {
-				return nil, errors.New("fastq: quality header does not match sequence header")
+				return nil, errors.QualitySequenceHeaderMismatchErr{}.Make("fastq: quality header does not match sequence header")
 			}
 		case state == letters && len(line) > 0:
 			if maybeID2(line) && (len(line) == 1 || bytes.Compare(label[1:], line[1:]) == 0) {
@@ -138,7 +139,7 @@ loop:
 
 	line = bytes.Join(bytes.Fields(line), nil)
 	if len(line) != len(seqBuff) {
-		return nil, errors.New("fastq: sequence/quality length mismatch")
+		return nil, errors.QualitySequenceLengthMismatchErr{}.Make("fastq: sequence/quality length mismatch")
 	}
 	for i := range line {
 		seqBuff[i].Q = r.enc.DecodeToQphred(line[i])
@@ -173,7 +174,8 @@ func (r *Reader) readHeader(line []byte) (seqio.SequenceAppender, error) {
 			case err == _err:
 				return s, err
 			case err != nil && _err != nil:
-				return s, fmt.Errorf("fastq: multiple errors: name: %s, desc:%s", err, _err)
+				//TODO what to do to handle a dualtype error here
+				return s, errors.MultiError{Errors: []error{err, _err}}.Make(fmt.Sprintf("fastq: multiple errors: name: %s, desc:%s", err, _err))
 			case err != nil:
 				return s, err
 			case _err != nil:

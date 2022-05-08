@@ -6,6 +6,7 @@
 package complexity
 
 import (
+	"github.com/biogo/biogo/errors"
 	"github.com/biogo/biogo/seq"
 
 	"compress/zlib"
@@ -47,7 +48,7 @@ func logBaseK(logk, x float64) float64 {
 // start and end.
 func Entropic(s seq.Sequence, start, end int) (ce float64, err error) {
 	if start < s.Start() || end > s.End() {
-		err = fmt.Errorf("complex: index out of range")
+		err = errors.ArgErr{}.Make(fmt.Sprintf("complex: index out of range"))
 		return
 	}
 	if start == end {
@@ -83,7 +84,7 @@ func Entropic(s seq.Sequence, start, end int) (ce float64, err error) {
 // start and end.
 func WF(s seq.Sequence, start, end int) (cwf float64, err error) {
 	if start < s.Start() || end > s.End() {
-		err = fmt.Errorf("complex: index out of range")
+		err = errors.ArgErr{}.Make(fmt.Sprintf("complex: index out of range"))
 		return
 	}
 	if start == end {
@@ -136,7 +137,7 @@ func calcOverhead() byteCounter {
 // start and end.
 func Z(s seq.Sequence, start, end int) (cz float64, err error) {
 	if start < s.Start() || end > s.End() {
-		err = fmt.Errorf("complex: index out of range")
+		err = errors.ArgErr{}.Make(fmt.Sprintf("complex: index out of range"))
 		return
 	}
 	if start == end {

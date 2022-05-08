@@ -7,10 +7,11 @@
 package kmerindex
 
 import (
-	"errors"
 	"fmt"
 	"math"
 	"unsafe"
+
+	"github.com/biogo/biogo/errors"
 
 	"github.com/biogo/biogo/alphabet"
 	"github.com/biogo/biogo/seq/linear"
@@ -18,13 +19,13 @@ import (
 )
 
 var (
-	ErrKTooLarge      = errors.New("kmerindex: k too large")
-	ErrKTooSmall      = errors.New("kmerindex: k too small")
-	ErrShortSeq       = errors.New("kmerindex: sequence to short for k")
-	ErrBadAlphabet    = errors.New("kmerindex: alphabet size != 4")
-	ErrBadKmer        = errors.New("kmerindex: kmer out of range")
-	ErrBadKmerTextLen = errors.New("kmerindex: kmertext length != k")
-	ErrBadKmerText    = errors.New("kmerindex: kmertext contains illegal character")
+	ErrKTooLarge      = errors.KTooLargeErr{}.Make("kmerindex: k too large")
+	ErrKTooSmall      = errors.KTooSmallErr{}.Make("kmerindex: k too small")
+	ErrShortSeq       = errors.KSeqTooShortErr{}.Make("kmerindex: sequence to short for k")
+	ErrBadAlphabet    = errors.InvalidAlphabetErr{}.Make("kmerindex: alphabet size != 4")
+	ErrBadKmer        = errors.BadKmerErr{}.Make("kmerindex: kmer out of range")
+	ErrBadKmerTextLen = errors.BadKmerTextLenErr{}.Make("kmerindex: kmertext length != k")
+	ErrBadKmerText    = errors.IllegalKmerTextErr{}.Make("kmerindex: kmertext contains illegal character")
 )
 
 // Constraints on Kmer length.
@@ -111,7 +112,7 @@ func (ki *Index) KmerPositionsString(kmertext string) (positions []int, err erro
 	case len(kmertext) != ki.k:
 		return nil, ErrBadKmerTextLen
 	case !ki.indexed:
-		return nil, errors.New("kmerindex: index not built: call Build()")
+		return nil, errors.StateErr{}.Make("kmerindex: index not built: call Build()")
 	}
 
 	var kmer Kmer

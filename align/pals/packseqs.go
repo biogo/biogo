@@ -5,10 +5,10 @@
 package pals
 
 import (
-	"errors"
 	"fmt"
 
 	"github.com/biogo/biogo/alphabet"
+	"github.com/biogo/biogo/errors"
 	"github.com/biogo/biogo/seq"
 	"github.com/biogo/biogo/seq/linear"
 	"github.com/biogo/biogo/util"
@@ -37,7 +37,7 @@ func (pa *Packed) feature(from, to int, comp bool) (*Feature, error) {
 		from, to = pa.Len()-to, pa.Len()-from
 	}
 	if from >= to {
-		return nil, errors.New("pals: from > to")
+		return nil, errors.ArgErr{}.Make("pals: from > to")
 	}
 
 	// DPHit coordinates sometimes over/underflow.
@@ -56,19 +56,19 @@ func (pa *Packed) feature(from, to int, comp bool) (*Feature, error) {
 	binCount := (pa.Len() + binSize - 1) / binSize
 
 	if bin < 0 || bin >= binCount {
-		return nil, fmt.Errorf("pals: bin %d out of range 0..%d", bin, binCount-1)
+		return nil, errors.ArgErr{}.Make(fmt.Sprintf("pals: bin %d out of range 0..%d", bin, binCount-1))
 	}
 
 	contigIndex := pa.seqMap.binMap[bin]
 
 	if contigIndex < 0 || contigIndex >= len(pa.seqMap.contigs) {
-		return nil, fmt.Errorf("pals: contig %s index %d out of range 0..%d", pa.ID, contigIndex, len(pa.seqMap.contigs))
+		return nil, errors.ArgErr{}.Make(fmt.Sprintf("pals: contig %s index %d out of range 0..%d", pa.ID, contigIndex, len(pa.seqMap.contigs)))
 	}
 
 	length := to - from
 
 	if length < 0 {
-		return nil, errors.New("pals: length < 0")
+		return nil, errors.ArgErr{}.Make("pals: length < 0")
 	}
 
 	contig := pa.seqMap.contigs[contigIndex]
@@ -106,7 +106,7 @@ func (pa *Packer) Pack(seq *linear.Seq) (string, error) {
 	if pa.packed.Alpha == nil {
 		pa.packed.Alpha = seq.Alpha
 	} else if pa.packed.Alpha != seq.Alpha {
-		return "", errors.New("pals: alphabet mismatch")
+		return "", errors.ArgErr{}.Make("pals: alphabet mismatch")
 	}
 
 	c := contig{Seq: seq}

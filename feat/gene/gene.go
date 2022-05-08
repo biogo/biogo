@@ -16,8 +16,9 @@ package gene
 import (
 	"github.com/biogo/biogo/feat"
 
-	"errors"
 	"sort"
+
+	"github.com/biogo/biogo/errors"
 )
 
 const maxInt = int(^uint(0) >> 1) // The maximum int value.
@@ -100,7 +101,7 @@ func (g *Gene) SetFeatures(feats ...feat.Feature) error {
 	end := 0
 	for _, f := range feats {
 		if f.Location() != g {
-			return errors.New("transcript location does not match the gene")
+			return errors.TranscriptLocationMismatchesGeneErr{}.Make("transcript location does not match the gene")
 		}
 		if f.Start() < pos {
 			pos = f.Start()
@@ -110,7 +111,7 @@ func (g *Gene) SetFeatures(feats ...feat.Feature) error {
 		}
 	}
 	if pos != 0 {
-		return errors.New("no transcript with 0 start on gene")
+		return errors.NoZeroStartTranscriptErr{}.Make("no transcript with 0 start on gene")
 	}
 	g.length = end - pos
 	g.feats = feats
@@ -363,15 +364,15 @@ func (s Exons) Add(exons ...Exon) (Exons, error) {
 	sort.Sort(newSlice)
 	for i, e := range newSlice {
 		if i != 0 && e.Start() < newSlice[i-1].End() {
-			return s, errors.New("exons overlap")
+			return s, errors.ExonOverlapErr{}.Make("exons overlap")
 		}
 		if i != 0 && e.Location() != newSlice[i-1].Location() {
-			return s, errors.New("exons location differ")
+			return s, errors.ExonLocationDiffersErr{}.Make("exons location differ")
 		}
 
 	}
 	if s.Location() != nil && s.Location() != newSlice.Location() {
-		return s, errors.New("new exons locations differ from old ones")
+		return s, errors.NewExonLocationDiffersErr{}.Make("new exons locations differ from old ones")
 	}
 	return newSlice, nil
 }
@@ -514,10 +515,10 @@ func buildExonsFor(t Transcript, exons ...Exon) (Exons, error) {
 		return newExons, err
 	}
 	if newExons.Location() != t {
-		return newExons, errors.New("exon location is not the transcript")
+		return newExons, errors.ExonNotInTranscriptErr{}.Make("exon location is not the transcript")
 	}
 	if newExons.Start() != 0 {
-		return newExons, errors.New("no exon with a zero start")
+		return newExons, errors.NoZeroStartExonErr{}.Make("no exon with a zero start")
 	}
 	return newExons, nil
 }

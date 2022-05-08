@@ -16,7 +16,6 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/csv"
-	"errors"
 	"fmt"
 	"image/color"
 	"io"
@@ -24,15 +23,17 @@ import (
 	"runtime"
 	"strconv"
 	"unsafe"
+
+	"github.com/biogo/biogo/errors"
 )
 
 var (
-	ErrBadBedType         = errors.New("bed: bad bed type")
-	ErrBadStrandField     = errors.New("bad strand field")
-	ErrBadStrand          = errors.New("invalid strand")
-	ErrBadColorField      = errors.New("bad color field")
-	ErrMissingBlockValues = errors.New("missing block values")
-	ErrNoChromField       = errors.New("no chrom field available")
+	ErrBadBedType         = errors.BadBedTypeErr{}.Make("bed: bad bed type")
+	ErrBadStrandField     = errors.BadStrandFieldErr{}.Make("bad strand field")
+	ErrBadStrand          = errors.BadStrandErr{}.Make("invalid strand")
+	ErrBadColorField      = errors.BadColorFieldErr{}.Make("bad color field")
+	ErrMissingBlockValues = errors.MissingBlockValuesErr{}.Make("missing block values")
+	ErrNoChromField       = errors.MissingChromFieldErr{}.Make("no chrom field available")
 )
 
 const (
@@ -403,7 +404,7 @@ func (r *Reader) Read() (f feat.Feature, err error) {
 			err.Line = r.line
 			return nil, err
 		}
-		return nil, fmt.Errorf("%v at line %d", err, r.line)
+		return nil, errors.StateErr{}.Make(fmt.Sprintf("%v at line %d", err, r.line))
 	}
 
 	return

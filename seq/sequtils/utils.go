@@ -10,8 +10,9 @@ import (
 	"github.com/biogo/biogo/feat"
 	"github.com/biogo/biogo/seq"
 
-	"errors"
 	"sort"
+
+	"github.com/biogo/biogo/errors"
 )
 
 // A Joinable can be joined to another of the same concrete type using the Join function.
@@ -29,7 +30,7 @@ func Join(dst, src Joinable, where int) error {
 	srcC, srcOk := src.(seq.Conformationer)
 	switch {
 	case dstOk && dstC.Conformation() > feat.Linear, srcOk && srcC.Conformation() > feat.Linear:
-		return errors.New("sequtils: cannot join circular sequence")
+		return errors.ArgErr{}.Make("sequtils: cannot join circular sequence")
 	}
 
 	o := dst
@@ -66,7 +67,7 @@ func Truncate(dst, src Sliceable, start, end int) error {
 		offset = src.Start()
 	)
 	if start < offset || end > src.End() {
-		return errors.New("sequtils: index out of range")
+		return errors.ArgErr{}.Make("sequtils: index out of range")
 	}
 	if start <= end {
 		if dst == src {
@@ -82,10 +83,10 @@ func Truncate(dst, src Sliceable, start, end int) error {
 	}
 
 	if src, ok := src.(seq.Conformationer); !ok || src.Conformation() == feat.Linear {
-		return errors.New("sequtils: start position greater than end position for linear sequence")
+		return errors.ArgErr{}.Make("sequtils: start position greater than end position for linear sequence")
 	}
 	if end < offset || start > src.End() {
-		return errors.New("sequtils: index out of range")
+		return errors.ArgErr{}.Make("sequtils: index out of range")
 	}
 	t := sl.Make(sl.Len()-start+offset, sl.Len()+end-start)
 	t.Copy(sl.Slice(start-offset, sl.Len()))
@@ -128,7 +129,7 @@ func Stitch(dst, src Sliceable, fs feat.Set) error {
 	)
 	for _, f := range ff {
 		if f.End() < f.Start() {
-			return errors.New("sequtils: feature end < feature start")
+			return errors.ArgErr{}.Make("sequtils: feature end < feature start")
 		}
 	}
 	ff = append(feats(nil), ff...)
@@ -207,7 +208,7 @@ func Compose(dst, src Sliceable, fs feat.Set) error {
 	var tl int
 	for i, f := range ff {
 		if f.End() < f.Start() {
-			return errors.New("sequtils: feature end < feature start")
+			return errors.ArgErr{}.Make("sequtils: feature end < feature start")
 		}
 		l := min(f.End(), end) - max(f.Start(), offset)
 		tl += l
@@ -233,7 +234,7 @@ func Compose(dst, src Sliceable, fs feat.Set) error {
 					}
 				}
 			default:
-				return errors.New("sequtils: unable to reverse segment during compose")
+				return errors.ArgErr{}.Make("sequtils: unable to reverse segment during compose")
 			}
 			c = c.Append(r.Slice())
 		} else {

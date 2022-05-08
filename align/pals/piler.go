@@ -8,11 +8,12 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/biogo/biogo/errors"
 	"github.com/biogo/biogo/feat"
 	"github.com/biogo/store/interval"
 )
 
-var duplicatePair = fmt.Errorf("pals: attempt to add duplicate feature pair to pile")
+var duplicatePair = errors.ArgErr{}.Make(fmt.Sprintf("pals: attempt to add duplicate feature pair to pile"))
 
 // Note Location must be comparable according to http://golang.org/ref/spec#Comparison_operators.
 type pileInterval struct {

@@ -5,6 +5,8 @@
 package bed
 
 import (
+	"reflect"
+
 	"github.com/biogo/biogo/feat"
 	"github.com/biogo/biogo/seq"
 
@@ -324,7 +326,12 @@ func (s *S) TestWriteFeature(c *check.C) {
 		c.Assert(err, check.Equals, nil)
 		n, err := w.Write(f.feat)
 		c.Check(n, check.Equals, buf.Len())
-		c.Check(err, check.Equals, f.err)
+		if err != nil && f.err != nil {
+			c.Check(err.Error(), check.Equals, f.err.Error())
+			c.Check(reflect.TypeOf(err), check.Equals, reflect.TypeOf(f.err))
+		} else {
+			c.Check(err, check.Equals, f.err)
+		}
 		c.Check(buf.String(), check.Equals, f.line, check.Commentf("Test: %d type: Bed%d", i, f.typ))
 	}
 }
